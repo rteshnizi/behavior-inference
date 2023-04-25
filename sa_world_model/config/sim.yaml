@@ -1,0 +1,20 @@
+true_objects_node:
+  ros__parameters:
+    detection_frequency: 10.0
+
+
+trajectory_estimation_node:
+  ros__parameters:
+    dynamic_object_list: ['car', 'tank']
+
+uav1:
+  sensor_planner_node:
+    ros__parameters:
+      dynamic_object_list: ['car', 'tank']
+      interest_object_list: ['car', 'tank']
+      plan_frequency: 1.0
+      horizon: 5
+  
+  sa_robot_node:
+    ros__parameters:
+      plan_frequency: 1.0
