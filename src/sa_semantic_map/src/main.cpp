@@ -200,7 +200,7 @@ int main(int argc, char* argv[])
 
 //  string file_name_json = "/home/anant/sa_ros2_ws/src/situational_awareness/sa_semantic_map/data/Features_quarry_V6.json";
 //   string file_name_json = "/home/anant/sa_ros2_ws/src/situational_awareness/sa_semantic_map/data/map_v1.json";
-  string file_name_json = "/home/reza/git/ros2_wrk/src/situational_awareness/sa_semantic_map/data/map_v1.json";
+  string file_name_json = "/home/reza/git/behavior-inference/src/sa_semantic_map/data/map_v1.json";
 
   ifstream file(file_name_json);
   if (file)
