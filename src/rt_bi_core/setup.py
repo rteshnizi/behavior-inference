@@ -2,7 +2,7 @@ import os
 from glob import glob
 from setuptools import find_packages, setup
 
-package_name = "teshnizi_bi_core"
+package_name = 'rt_bi_core'
 
 setup(
 	name=package_name,
@@ -31,7 +31,7 @@ setup(
 	tests_require=["pytest"],
 	entry_points={
 		"console_scripts": [
-			"main = teshnizi_bi_core.main:main"
+			"main = rt_bi_core.main:main"
 		],
 	},
 )

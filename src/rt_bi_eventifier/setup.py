@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = 'teshnizi_bi_utils'
+package_name = 'rt_bi_eventifier'
 
 setup(
     name=package_name,
@@ -20,6 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'main = rt_bi_eventifier.main:main'
         ],
     },
 )

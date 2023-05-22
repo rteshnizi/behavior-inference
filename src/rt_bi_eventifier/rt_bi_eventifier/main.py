@@ -1,5 +1,5 @@
 def main():
-    print('Hi from teshnizi_bi_eventifier.')
+    print('Hi from rt_bi_eventifier.')
 
 
 if __name__ == '__main__':
