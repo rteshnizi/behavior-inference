@@ -1,13 +1,13 @@
 import rclpy
-from sa_bil.viewer import Viewer
+from rt_bi_core.Interface.MapInterface import MapInterface
 
 def main(args=None):
 	"""
 	Start the viewer.
 	"""
 	rclpy.init(args=args)
-	viewer = Viewer()
-	rclpy.spin(viewer)
+	mapNode = MapInterface()
+	rclpy.spin(mapNode)
 	return
 
 if __name__ == "__main__":

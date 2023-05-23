@@ -6,10 +6,10 @@ from math import nan, isnan
 from queue import Queue
 from typing import Dict, List, Tuple, Union
 
-from rt_bi_core.Model.ShadowRegion import ShadowRegion
-from rt_bi_core.Specs.lambdas import NfaLambda
-from rt_bi_core.Specs.spaceTime import ProjectiveSpaceTimeSet
-from rt_bi_core.Specs.timeRegion import TimeInterval
+from sa_bil.core.model.shadowRegion import ShadowRegion
+from sa_bil.core.spec.lambdas import NfaLambda
+from sa_bil.core.spec.spaceTime import ProjectiveSpaceTimeSet
+from sa_bil.core.spec.timeRegion import TimeInterval
 
 Queue.__repr__ = lambda q: repr(q.queue)
 

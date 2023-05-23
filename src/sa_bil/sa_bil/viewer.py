@@ -1,4 +1,4 @@
-from sa_bil.core.utils.geometry import Geometry # I put this on top here to assign shapely repr functions
+# from sa_bil.core.utils.geometry import Geometry # I put this on top here to assign shapely repr functions
 import rclpy
 from rclpy.node import Node
 from sa_bil.core.model.map import Map
