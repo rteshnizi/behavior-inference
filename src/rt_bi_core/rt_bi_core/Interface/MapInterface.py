@@ -26,16 +26,24 @@ class MapInterface(Node):
 		self.__subscribeToTopics()
 
 	@property
+	def regions(self) -> Dict[str, MapRegion]:
+		if self.__regions is not None: return self.__regions
+		return {}
+
+	@property
 	def polygon(self) -> Polygon:
 		if self.__polygon is None:
 			polygons = [self.regions[r].polygon for r in self.regions]
 			self.__polygon = Geometry.union(polygons)
 		return self.__polygon
 
-	def regions(self, update: Union[FeatureInfo, None] = None) -> Dict[str, MapRegion]:
-		if self.__regionDefs is None and update is None: return {}
-		if update is not None and self.__regionDefs is not None and hash(update) == hash(self.__regionDefs):
-			return self.__regions
+	def updateRegions(self, update: Union[FeatureInfo, None] = None) -> bool:
+		if update is None: return False
+		if (
+			self.__regionDefs is not None and
+			hash(repr(update)) == hash(repr(self.__regionDefs))
+		):
+			return False
 		regions = {}
 		self.__regionDefs = update
 		self.get_logger().info("Updating region definitions...")
@@ -56,7 +64,7 @@ class MapInterface(Node):
 			self.get_logger().info("Creating region %s..." % regionName)
 			regions["r%d" % i] = MapRegion(regionName, coords, featureName, feature)
 		self.__regions = regions
-		return self.__regions
+		return True
 
 	def __subscribeToTopics(self) -> None:
 		self.create_subscription(FeatureInfo, "/sa_map/FeatureMap_BIL", self.mapUpdate, 10)
@@ -66,8 +74,10 @@ class MapInterface(Node):
 		"""
 		Callback function for the reception of map messages.
 		"""
-		self.regions(update=msg)
-		self.render()
+		updated = self.updateRegions(update=msg)
+		if updated:
+			self.clearRender()
+			self.render()
 		return
 
 	def observationUpdate(self, msg: EstimationMsg) -> None:
@@ -94,5 +104,7 @@ class MapInterface(Node):
 			region.render()
 
 	def clearRender(self):
+		self.get_logger().info("CLEAR RENDER")
+		return
 		for region in self.regions.values():
 			region.clearRender()
