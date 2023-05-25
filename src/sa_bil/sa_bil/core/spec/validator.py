@@ -1,5 +1,5 @@
 import sa_bil.core # If you remove this, this file will throw an error
-from sa_bil.core.model.polygonalRegion import PolygonalRegion
+from sa_bil.core.model.PolygonalRegion import PolygonalRegion
 from sa_bil.core.observation.pose import Pose
 from sa_bil.core.spec.lambdas import NfaLambda, Prototypes, LambdaType
 class Validator(object):

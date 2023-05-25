@@ -1,0 +1,27 @@
+{
+	// Use IntelliSense to learn about possible attributes.
+	// Hover to view descriptions of existing attributes.
+	// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "ROS: viewer",
+			"type": "ros",
+			"request": "launch",
+			"env": {
+				"DISPLAY": "localhost:10.0"
+			},
+			"sourceFileMap": {
+				"${workspaceFolder}/install/rt_bi_core/lib/python3.8/site-packages/": "${workspaceFolder}/src/rt_bi_core",
+				"${workspaceFolder}/install/rt_bi_eventifier/lib/python3.8/site-packages/": "${workspaceFolder}/src/rt_bi_eventifier/",
+				"${workspaceFolder}/install/rt_bi_msgs/lib/python3.8/site-packages/": "${workspaceFolder}/src/rt_bi_msgs/",
+				"${workspaceFolder}/install/rt_bi_utils/lib/python3.8/site-packages/": "${workspaceFolder}/src/rt_bi_utils/",
+				"${workspaceFolder}/install/sa_bil/lib/python3.8/site-packages/": "${workspaceFolder}/src/sa_bil/",
+				"${workspaceFolder}/install/sa_msgs/lib/python3.8/site-packages/": "${workspaceFolder}/src/sa_msgs/",
+			},
+			"target": "${workspaceFolder}/install/rt_bi_core/share/rt_bi_core/launch/main.launch.py",
+			"preLaunchTask": "ros: local_setup",
+			"launch": [],
+		}
+	]
+}

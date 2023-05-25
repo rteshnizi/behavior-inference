@@ -2,7 +2,7 @@ import networkx as nx
 from shapely.geometry import LineString, Polygon, MultiPolygon
 from typing import Dict, List, Tuple, Union
 
-from sa_bil.core.model.polygonalRegion import PolygonalRegion
+from sa_bil.core.model.PolygonalRegion import PolygonalRegion
 from sa_bil.core.model.sensingRegion import SensingRegion
 from sa_bil.core.model.shadowRegion import ShadowRegion
 from sa_bil.core.model.map import Map

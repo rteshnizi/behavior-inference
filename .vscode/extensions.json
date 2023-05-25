@@ -1,0 +1,13 @@
+{
+	"recommendations": [
+		"njpwerner.autodocstring",
+		"mgesbert.python-path",
+		"deitry.colcon-helper",
+		"ms-python.isort",
+		"ms-python.vscode-pylance",
+		"ms-python.python",
+		"ms-iot.vscode-ros",
+		"irongeek.vscode-env",
+		"streetsidesoftware.code-spell-checker"
+	]
+}

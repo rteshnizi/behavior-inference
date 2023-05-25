@@ -1,11 +1,9 @@
-from typing import Dict, List, Union
-from shapely.geometry import Polygon
+from typing import Dict, Union
 from rt_bi_core.Model.FeatureMap import Feature
 from rt_bi_core.Model.MapRegion import MapRegion
-from rt_bi_utils.geometry import Geometry, Polygon
+from rt_bi_utils.Geometry import Geometry, Polygon
 from sa_msgs.msg import FeatureInfo
 from rclpy.node import Node
-from sa_msgs.msg import EstimationMsg
 
 class MapInterface(Node):
 	"""The Viewer ROS Node"""
@@ -70,41 +68,22 @@ class MapInterface(Node):
 		self.create_subscription(FeatureInfo, "/sa_map/FeatureMap_BIL", self.mapUpdate, 10)
 		return
 
+	def __render(self):
+		self.get_logger().info("Rendering Map...")
+		for region in self.regions.values():
+			region.render()
+
+	def __clearRender(self):
+		self.get_logger().info("CLEAR RENDER")
+		return
+		for region in self.regions.values():
+			region.clearRender()
+
 	def mapUpdate(self, msg: FeatureInfo) -> None:
 		"""
 		Callback function for the reception of map messages.
 		"""
 		updated = self.updateRegions(update=msg)
 		if updated:
-			self.clearRender()
-			self.render()
+			self.__render()
 		return
-
-	def observationUpdate(self, msg: EstimationMsg) -> None:
-		"""
-		Callback function for the reception of trajectory estimation messages.
-
-		Parameters
-		----------
-		msg : EstimationMsg
-		```python
-		float detection_time
-		sa_msgs/RobotState robot_state
-		sa_msgs/PoseEstimation[] pose_estimations
-		int discrete_detections
-		```
-		"""
-		self.get_logger().info("EM")
-		return
-
-	def render(self):
-		self.get_logger().info("RENDER")
-		return
-		for region in self.regions.values():
-			region.render()
-
-	def clearRender(self):
-		self.get_logger().info("CLEAR RENDER")
-		return
-		for region in self.regions.values():
-			region.clearRender()

@@ -1,6 +1,6 @@
 from typing import List
 from shapely.geometry import Polygon
-from sa_bil.core.model.polygonalRegion import PolygonalRegion
+from sa_bil.core.model.PolygonalRegion import PolygonalRegion
 
 class ShadowRegion(PolygonalRegion):
 	def __init__(self, name, coords, polygon: Polygon = None):

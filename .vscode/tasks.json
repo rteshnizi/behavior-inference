@@ -1,0 +1,42 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "colcon: build",
+			"type": "shell",
+			"command": "colcon",
+			"args": [
+				"build",
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+		},
+		{
+			"label": "colcon: build-bi",
+			"type": "shell",
+			"command": "colcon",
+			"args": [
+				"build",
+				"--packages-up-to",
+				"rt_bi_core",
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+		},
+		{
+			"label": "ros: local_setup",
+			"type": "shell",
+			"command": "source",
+			"args": [
+				"${workspaceFolder}/install/local_setup.sh"
+			],
+			"dependsOn": [
+				"colcon: build"
+			]
+		},
+	]
+}
