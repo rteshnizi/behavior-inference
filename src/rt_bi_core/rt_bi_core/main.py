@@ -1,5 +1,6 @@
 import rclpy
 from rt_bi_core.Interface.MapInterface import MapInterface
+from rt_bi_utils.Renderer import RViz
 
 def main(args=None):
 	"""
@@ -7,7 +8,10 @@ def main(args=None):
 	"""
 	rclpy.init(args=args)
 	mapNode = MapInterface()
+	rViz = RViz("rt_bi_utils_rviz")
 	rclpy.spin(mapNode)
+	rclpy.spin(rViz)
+	rViz.destroy_node()
 	mapNode.destroy_node()
 	rclpy.shutdown()
 	return

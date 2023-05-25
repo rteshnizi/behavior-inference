@@ -1,6 +1,7 @@
 from typing import Dict, Union
 from rt_bi_core.Model.FeatureMap import Feature
 from rt_bi_core.Model.MapRegion import MapRegion
+# from rt_bi_utils.Ros import CreateSubscriber
 from rt_bi_utils.Geometry import Geometry, Polygon
 from sa_msgs.msg import FeatureInfo
 from rclpy.node import Node
@@ -8,14 +9,7 @@ from rclpy.node import Node
 class MapInterface(Node):
 	"""The Viewer ROS Node"""
 	def __init__(self):
-		"""
-		Create a Viewer ROS node.
-
-		Parameters
-		----------
-		mapPath : str, optional
-			The path to the JSON file to be parsed, by default "".
-		"""
+		"""Create a Viewer ROS node."""
 		super().__init__("rt_bi_core_mi")
 		self.get_logger().info("Map Interface...")
 		self.__regions: Union[Dict[str, MapRegion], None] = None
@@ -65,7 +59,10 @@ class MapInterface(Node):
 		return True
 
 	def __subscribeToTopics(self) -> None:
-		self.create_subscription(FeatureInfo, "/sa_map/FeatureMap_BIL", self.mapUpdate, 10)
+		# CreateSubscriber(self, FeatureInfo, "/sa_map/FeatureMap_BIL", self.mapUpdate)
+		mapTopic= "/sa_map/FeatureMap_BIL"
+		self.get_logger().info("Subscribe to %s" % mapTopic)
+		self.create_subscription(FeatureInfo, mapTopic, self.mapUpdate, 10)
 		return
 
 	def __render(self):

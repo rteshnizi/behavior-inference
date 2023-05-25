@@ -1,8 +1,7 @@
-from shapely.geometry import LineString, Point, Polygon
 from typing import Dict, List, Set, Union
 from skimage import transform
-from sa_bil.renderer import Renderer
-from sa_bil.core.utils.geometry import Geometry, MultiPolygon
+from rt_bi_utils.Renderer import RViz
+from rt_bi_utils.Geometry import Geometry, LineString, Point, Polygon, MultiPolygon
 
 class PolygonalRegion:
 	"""
@@ -20,6 +19,7 @@ class PolygonalRegion:
 		self.polygon = Polygon(self._coordsList) if polygon is None else polygon
 		self.BOUNDARY_COLOR = boundaryColor
 		self.BACKGROUND_COLOR = backgroundColor
+		self.TEXT_COLOR = "White" if self.BACKGROUND_COLOR.upper() == "BLACK" else "Black"
 		self.edges = self._buildEdges()
 		self.canvasId = None
 		self.textId = None
@@ -92,15 +92,12 @@ class PolygonalRegion:
 		return None
 
 	def render(self, renderText=False, hashFill=False, hashDensity=25):
-		if self.canvasId is not None: self.clearRender()
-		if hashDensity not in [75, 50, 25, 12]: raise AssertionError("Density should be one of 75, 50, 25, or 12.")
-		self.canvasId = Renderer.CreatePolygon(self._coordsList, outline=self.BOUNDARY_COLOR, fill=self.BACKGROUND_COLOR, width=self._renderLineWidth, tag=self.name, hashFill=hashFill, hashDensity=hashDensity)
-		if renderText: self.textId = Renderer.CreateText([self.polygon.centroid.x, self.polygon.centroid.y], self.name, tag=self.name, color="White" if self.BACKGROUND_COLOR.upper() == "BLACK" else "Black")
+		pass
 
 	def clearRender(self):
 		if self.canvasId is not None:
-			Renderer.RemoveShape(self.canvasId)
+			pass
 			self.canvasId = None
 		if self.textId is not None:
-			Renderer.RemoveShape(self.textId)
+			pass
 			self.textId = None
