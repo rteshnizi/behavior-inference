@@ -1,9 +1,8 @@
 import random
 import time
-from typing import Union
 from rclpy.node import Node
 from visualization_msgs.msg import Marker
-from shapely.geometry import Point
+from rt_bi_utils.Geometry import Geometry, Point
 
 class RViz(Node):
 	"""
@@ -17,14 +16,15 @@ class RViz(Node):
 		self.TRANSLATION_X = 0
 		self.TRANSLATION_Y = 0
 		self.SCALE = 1
+		self.__publisher = self.create_publisher(Marker, "visualization_marker", 10)
 
-	def _translateCoords(self, coord):
+	def _translateCoords(self, coord: Geometry.Coords) -> Geometry.Coords:
 		self.get_logger().info("Translate Coord %s" % repr(coord))
-		return
+		return coord
 		c = [self.SCALE * (coord[0] + self.TRANSLATION_X), self.SCALE * ((coord[1]) + self.TRANSLATION_Y)]
 		return c
 
-	def RandomColorString(self):
+	def RandomColorString(self) -> str:
 		return "#"+''.join([random.choice('0123456789ABCDEF') for j in range(6)])
 
 	def CreateCircle(self, canvas, centerX, centerY, radius, outline, tag, fill="", width=1):
