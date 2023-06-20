@@ -1,8 +1,8 @@
 from typing import Dict
 
-from sa_bil.core.observation.fov import Fov
-from sa_bil.core.observation.track import Tracks
-from sa_bil.core.model.trajectory import Trajectory
+from bil.observation.fov import Fov
+from bil.observation.track import Tracks
+from bil.model.trajectory import Trajectory
 
 class Observation:
 	def __init__(self, time, fov, tracks):

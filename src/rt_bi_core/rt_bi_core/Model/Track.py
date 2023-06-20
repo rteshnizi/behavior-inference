@@ -1,7 +1,7 @@
-# from sa_bil.core.model.trajectory import Trajectory
+# from bil.model.trajectory import Trajectory
 from typing import Dict, Tuple
-from sa_bil.renderer import Renderer
-from sa_bil.core.observation.pose import Pose
+from bil.gui.drawing import Drawing
+from bil.observation.pose import Pose
 
 class Track:
 	def __init__(self, idNum: int, time: float, x: float, y: float, psi: float, isInterpolated=False):
@@ -23,12 +23,12 @@ class Track:
 		tag = "track%d-%.1f" % (self.id, self.pose.time)
 		color = "GREEN" if self.isInterpolated else "PURPLE"
 		width = 1 if self.isInterpolated else 3
-		self.canvasId = Renderer.CreateCircle(canvas, self.pose.x, self.pose.y, radius=5, fill=fill, outline=color, tag=tag, width=width)
+		self.canvasId = Drawing.CreateCircle(canvas, self.pose.x, self.pose.y, radius=5, fill=fill, outline=color, tag=tag, width=width)
 
 
 	def clearRender(self, canvas):
 		if self.canvasId is not None:
-			Renderer.RemoveShape(canvas, self.canvasId)
+			Drawing.RemoveShape(canvas, self.canvasId)
 			self.canvasId = None
 
 Tracks = Dict[Tuple[float, int], Track]

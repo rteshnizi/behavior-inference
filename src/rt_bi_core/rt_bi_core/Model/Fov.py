@@ -1,6 +1,6 @@
+from bil.observation.sensor import Sensor
+from bil.utils.geometry import Geometry, Polygon, MultiPolygon, LineString
 from typing import Dict, List, Set, Union, Tuple
-from sa_bil.core.observation.sensor import Sensor
-from sa_bil.core.utils.geometry import Geometry, Polygon, MultiPolygon, LineString
 
 Events = Tuple[Polygon, float, str, LineString]
 """
@@ -80,7 +80,7 @@ class Fov:
 				intervals.append((sensorEdge, mapEdge, 0, 1))
 		return intervals
 
-	def __estimateLocationWithSlirp(self, past: "Fov", ratio: float) -> Union[Polygon, MultiPolygon]:
+	def __estimateLocationWithSlerp(self, past: "Fov", ratio: float) -> Union[Polygon, MultiPolygon]:
 		"""
 			#### Input
 

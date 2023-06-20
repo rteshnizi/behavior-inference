@@ -8,7 +8,6 @@ from sa_bil.core.utils.geometry import Geometry
 class Trajectory:
 	def __init__(self, name: str, poses: List[Pose]):
 		# [#time, #x, #y, #angleWithXAxis]
-		# self._color = Drawing.RandomColorString()
 		self.name = name
 		self._color = "CornflowerBlue"
 		self.poses = poses

@@ -504,6 +504,10 @@
 		"reza",
 		"rviz",
 		"scikit",
+		"scipy",
+		"skimage",
+		"Slerp",
+		"traj",
 		"traversability",
 		"Traversibility"
 	],

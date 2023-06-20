@@ -3,14 +3,15 @@ from jsoncomment import JsonComment
 from rclpy.impl.rcutils_logger import RcutilsLogger
 import os
 
-from sa_bil.core.observation.observations import Observations, Observation
-from sa_bil.core.observation.fov import Fov
-from sa_bil.core.observation.sensor import Sensor
-from sa_bil.core.observation.track import Track
+from rt_bi_core.Model.Observations import Observations, Observation
+from rt_bi_core.Model.Fov import Fov
+from rt_bi_core.Model.Sensor import Sensor
+from rt_bi_core.Model.Track import Track
 from rt_bi_core.Model.FeatureMap import FeatureMap
-from rt_bi_core.Model.agent import Agent
+from rt_bi_core.Model.Agent import Agent
 from rt_bi_core.Model.observationOld import ObservationOld
-from rt_bi_core.Model.teamMember import TeamMember
+from rt_bi_core.Model.TeamMember import TeamMember
+from rt_bi_core.Specs.Specification import Specification
 
 JsonParser = JsonComment()
 

@@ -1,16 +1,18 @@
-from shapely.geometry import LineString, MultiLineString, Point, Polygon, MultiPolygon
+import operator
+from functools import reduce
+from math import atan2, cos, degrees, inf
+from math import pi as PI
+from math import sin, sqrt
+from typing import Dict, List, Tuple, Union
+
+import numpy as np
+from scipy.spatial.transform import Rotation, Slerp
+from shapely.geometry import (LineString, MultiLineString, MultiPolygon, Point, Polygon)
 from shapely.geometry.polygon import LinearRing
 from shapely.ops import unary_union
-from shapely.prepared import prep
 from shapely.validation import make_valid
-from typing import List, Union, Tuple, Dict, Callable
-from math import pi as PI
-from math import sqrt, cos, sin, atan2, degrees, inf
-from functools import reduce
 from skimage import transform
-from scipy.spatial.transform import Rotation, Slerp
-import operator
-import numpy as np
+
 
 class Geometry:
 	"""

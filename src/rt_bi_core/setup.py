@@ -18,7 +18,6 @@ setup(
 		"jsoncomment~=0.4.2",
 		"numpy~=1.24.2",
 		"pillow>=8.3.2",
-		"sa_bil",
 		"scikit-image~=0.19.3",
 		"setuptools",
 		"shapely~=2.0.1",

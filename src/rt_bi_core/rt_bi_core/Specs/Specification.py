@@ -1,11 +1,11 @@
-from sa_bil.core.spec.validator import Validator
-from sa_bil.core.spec.nfa import NFA
+from rt_bi_core.Specs.Validator import Validator
+from rt_bi_core.Specs.Nfa import NFA
 
-class Specification(object):
-	def __init__(self, name, specificationDict):
-		self.name = name
-		self._specificationDict = specificationDict
-		self._shapeIds = None
+class Specification:
+	def __init__(self, name: str, specificationDict: str):
+		self.name: str = name
+		self._specificationDict: str = specificationDict
+		self._shapeIds: str = None
 		self._regionSymbols = []
 		self.validators = self._buildSymbolMap()
 		self.nfa = NFA(self.name, self.states, self.transitions, self.validators)
@@ -32,12 +32,12 @@ class Specification(object):
 			if symbols[symName].isRegion: self._regionSymbols.append(symName)
 		return symbols
 
-	def render(self, canvas):
+	def render(self):
 		for symName in self._regionSymbols:
 			region = self.validators[symName].value
-			region.render(canvas, renderText=True)
+			region.render(renderText=True)
 
-	def clearRender(self, canvas):
+	def clearRender(self):
 		for symName in self._regionSymbols:
 			region = self.validators[symName].value
-			region.clearRender(canvas)
+			region.clearRender()

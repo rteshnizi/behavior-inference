@@ -1,14 +1,19 @@
 from typing import Dict, List, Set, Union
+
 from skimage import transform
-from rt_bi_utils.Renderer import RViz
-from rt_bi_utils.Geometry import Geometry, LineString, Point, Polygon, MultiPolygon
+from visualization_msgs.msg import Marker
+
+from rt_bi_utils.Geometry import (Geometry, LineString, MultiPolygon, Point, Polygon)
+from rt_bi_utils.RViz import Color, KnownColors, RViz
+from rt_bi_utils.Ros import RosUtils
+
 
 class PolygonalRegion:
 	"""
 		coords will be used to create the polygon.
 		If polygon is given, coords arg will be ignored.
 	"""
-	def __init__(self, name: str, coords: Geometry.CoordsList, boundaryColor="RED", backgroundColor="", polygon: Polygon = None):
+	def __init__(self, name: str, coords: Geometry.CoordsList, boundaryColor: Color, backgroundColor: Color = KnownColors.WHITE, polygon: Polygon = None):
 		self.name = name
 		self._renderLineWidth = 1
 		try:
@@ -19,7 +24,7 @@ class PolygonalRegion:
 		self.polygon = Polygon(self._coordsList) if polygon is None else polygon
 		self.BOUNDARY_COLOR = boundaryColor
 		self.BACKGROUND_COLOR = backgroundColor
-		self.TEXT_COLOR = "White" if self.BACKGROUND_COLOR.upper() == "BLACK" else "Black"
+		self.TEXT_COLOR = KnownColors.BLACK if RViz.isLightColor(backgroundColor) else KnownColors.WHITE
 		self.edges = self._buildEdges()
 		self.canvasId = None
 		self.textId = None
@@ -42,13 +47,13 @@ class PolygonalRegion:
 			d[Geometry.coordListStringId(edgeCoords)] = edge
 		return d
 
-	def _hasEdgeByXy(self, x1, y1, x2, y2):
+	def _hasEdgeByXy(self, x1: float, y1: float, x2: float, y2: float) -> bool:
 		return Geometry.coordListStringId(x1, y1, x2, y2) in self.edges
 
-	def _hasEdgeByName(self, name):
+	def _hasEdgeByName(self, name: str) -> bool:
 		return name in self.edges
 
-	def isInsideRegion(self, x, y):
+	def isInsideRegion(self, x: float, y: float) -> bool:
 		return Geometry.isXyInsidePolygon(x, y, self.polygon)
 
 	def getEquivalentEdge(self, finalConfig: LineString, transformation: transform.AffineTransform, centerOfRotation: Geometry.Coords) -> LineString:
@@ -80,7 +85,7 @@ class PolygonalRegion:
 			collisionData[edgeId] = Geometry.getAllIntersectingEdgesWithLine(self.edges[edgeId], targetPolygon)
 		return collisionData
 
-	def intersectsRegion(self, other: "PolygonalRegion"):
+	def intersectsRegion(self, other: "PolygonalRegion") -> bool:
 		return Geometry.polygonAndPolygonIntersect(self.polygon, other.polygon)
 
 	def union(self, others: List["PolygonalRegion"]) -> Polygon:
@@ -91,10 +96,15 @@ class PolygonalRegion:
 			if other._hasEdgeByName(e): return self.edges[e]
 		return None
 
-	def render(self, renderText=False, hashFill=False, hashDensity=25):
-		pass
+	def render(self, renderText = False, fill = False) -> List[Marker]:
+		msg = []
+		if fill:
+			RosUtils.Logger.warn("Cannot fill polygons yet...")
+		msg.append(RViz.CreatePolygon(self._coordsList, self.BOUNDARY_COLOR, 1, self.name))
+		if renderText:
+			msg.append(RViz.CreateText(self.polygon.centroid.xy, self.name, self.TEXT_COLOR))
 
-	def clearRender(self):
+	def clearRender(self) -> None:
 		if self.canvasId is not None:
 			pass
 			self.canvasId = None

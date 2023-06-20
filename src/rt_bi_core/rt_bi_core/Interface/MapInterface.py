@@ -1,10 +1,13 @@
 from typing import Dict, Union
+
+from rclpy.node import Node
+
 from rt_bi_core.Model.FeatureMap import Feature
 from rt_bi_core.Model.MapRegion import MapRegion
-# from rt_bi_utils.Ros import CreateSubscriber
 from rt_bi_utils.Geometry import Geometry, Polygon
+from rt_bi_utils.Ros import RosUtils
 from sa_msgs.msg import FeatureInfo
-from rclpy.node import Node
+
 
 class MapInterface(Node):
 	"""The Viewer ROS Node"""
@@ -12,6 +15,7 @@ class MapInterface(Node):
 		"""Create a Viewer ROS node."""
 		super().__init__("rt_bi_core_mi")
 		self.get_logger().info("Map Interface...")
+		RosUtils.LOGGER = self.get_logger()
 		self.__regions: Union[Dict[str, MapRegion], None] = None
 		self.__regionDefs: Union[FeatureInfo, None] = None
 		self.__polygon: Union[Polygon, None] = None
