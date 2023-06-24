@@ -1,10 +1,12 @@
 from typing import Dict, Set, Union
+
 from skimage import transform
-from bil.model.featureMap import FeatureMap
-from bil.model.map import Map
-from bil.model.sensingRegion import SensingRegion
-from bil.observation.pose import Pose
-from bil.utils.geometry import Geometry, LineString, Polygon, MultiPolygon
+
+from rt_bi_core.Model.FeatureMap import FeatureMap
+from rt_bi_core.Model.Pose import Pose
+from rt_bi_core.Model.SensingRegion import SensingRegion
+from rt_bi_utils.Geometry import Geometry, LineString, MultiPolygon, Polygon
+
 
 class Sensor:
 	def __init__(self, idNum: int, time: float, x: float, y: float, psi: float, coords: Geometry.CoordsList, envMap: Map, featureMap: FeatureMap):

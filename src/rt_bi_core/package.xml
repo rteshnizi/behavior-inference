@@ -4,8 +4,8 @@
   <name>rt_bi_core</name>
   <version>0.0.0</version>
   <description>The core package of the Behavior Inference project.</description>
-  <maintainer email="rht1369@gmail.com">Reza Teshnizi</maintainer>
-  <license>UNLINCESED</license>
+  <maintainer email="reza.teshnizi@gmail.com">Reza Teshnizi</maintainer>
+  <license>UNLICENSED</license>
 
   <depend>rclcpp</depend>
   <depend>std_msgs</depend>
@@ -13,9 +13,9 @@
   <depend>visualization_msgs</depend>
 
   <depend>rt_bi_utils</depend>
-  <depend>rt_bi_eventifier</depend>
+  <depend>rt_bi_emulator</depend>
   <depend>sa_msgs</depend>
-  <depend>sa_semantic_map</depend>
+  <!-- <depend>sa_semantic_map</depend> -->
 
   <export>
     <build_type>ament_python</build_type>

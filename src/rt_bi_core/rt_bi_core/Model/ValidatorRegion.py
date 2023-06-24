@@ -1,6 +1,5 @@
-from shapely.geometry import Polygon
-from sa_bil.core.model.PolygonalRegion import PolygonalRegion
-from sa_bil.core.utils.geometry import Geometry
+from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
+from rt_bi_utils.Geometry import Geometry
 
 class ValidatorRegion(PolygonalRegion):
 	"""

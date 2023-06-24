@@ -1,9 +1,11 @@
-from shapely.geometry import LineString
 from typing import List
 
-from sa_bil.core.observation.pose import Pose
-from sa_bil.renderer import Renderer
-from sa_bil.core.utils.geometry import Geometry
+from shapely.geometry import LineString
+
+from rt_bi_core.Model.Pose import Pose
+from rt_bi_utils.Geometry import Geometry
+from rt_bi_utils.RViz import RViz
+
 
 class Trajectory:
 	def __init__(self, name: str, poses: List[Pose]):
@@ -31,25 +33,25 @@ class Trajectory:
 				fillColor = spawnColor
 			elif p.vanished:
 				fillColor = vanishedColor
-				self._lineIds.append(Renderer.CreateLine(canvas, [[p.pt.x, p.pt.y] for p in linePoses], color=self._color, tag=self.name, width=3))
+				self._lineIds.append(RViz.CreateLine(canvas, [[p.pt.x, p.pt.y] for p in linePoses], color=self._color, tag=self.name, width=3))
 				linePoses = []
 			else:
 				fillColor = ""
 			poseIsActive = p.time == time
 			if time is None or poseIsActive:
-				self._circleIds.append(Renderer.CreateCircle(canvas, p.x, p.y, radius=5, outline=self.MARKING_COLOR, tag="%s-%.1f" % (self.name, p.time), fill=fillColor))
+				self._circleIds.append(RViz.CreateCircle(canvas, p.x, p.y, radius=5, outline=self.MARKING_COLOR, tag="%s-%.1f" % (self.name, p.time), fill=fillColor))
 			if not self.renderArrows: continue
 			(dx, dy) = Geometry.getUnitVectorFromAngle(p.angleFromX)
 			dx = dx * self.HEADING_ARROW_LENGTH
 			dy = dy * self.HEADING_ARROW_LENGTH
-			self._arrowIds.append(Renderer.CreateLine(canvas, [[p.pt.x, p.pt.y], [p.pt.x + dx, p.pt.y + dy]], color=self.MARKING_COLOR, tag=self.name, arrow=True))
+			self._arrowIds.append(RViz.CreateLine(canvas, [[p.pt.x, p.pt.y], [p.pt.x + dx, p.pt.y + dy]], color=self.MARKING_COLOR, tag=self.name, arrow=True))
 
 	def clear(self, canvas):
 		if self._lineIds is None: return
 		for lineId in self._lineIds:
-			Renderer.RemoveShape(canvas, lineId)
+			RViz.RemoveShape(canvas, lineId)
 		for shapeId in self._circleIds + self._arrowIds:
-			Renderer.RemoveShape(canvas, shapeId)
+			RViz.RemoveShape(canvas, shapeId)
 		self._lineIds = None
 		self._circleIds = []
 		self._arrowIds = []

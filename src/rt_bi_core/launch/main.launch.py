@@ -12,7 +12,7 @@ def generate_launch_description():
 		Node(
 			package=packageName,
 			namespace=packageName,
-			executable="main",
+			executable="MapInterface",
 			name="main"
 		),
 		Node(

@@ -1,4 +1,4 @@
-from sa_bil.core.model.agent import Agent
+from rt_bi_core.Model.Agent import Agent
 
 class TeamMember(Agent):
 	def __init__(self, agentId):

@@ -1,6 +1,7 @@
-from bil.observation.sensor import Sensor
-from bil.utils.geometry import Geometry, Polygon, MultiPolygon, LineString
-from typing import Dict, List, Set, Union, Tuple
+from typing import Dict, List, Set, Tuple, Union
+
+from rt_bi_core.Model.Sensor import Sensor
+from rt_bi_utils.Geometry import Geometry, LineString, MultiPolygon, Polygon
 
 Events = Tuple[Polygon, float, str, LineString]
 """

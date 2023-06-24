@@ -1,7 +1,8 @@
-from typing import Dict, List, Union
+from typing import Dict, Union
 
-from rclpy.node import Node, Publisher
-from visualization_msgs.msg import MarkerArray
+import rclpy
+from bs4 import FeatureNotFound
+from rclpy.node import Node
 
 import rt_bi_utils.Ros as RosUtils
 from rt_bi_core.Model.FeatureMap import Feature
@@ -10,22 +11,19 @@ from rt_bi_utils.Geometry import Geometry, Polygon
 from sa_msgs.msg import FeatureInfo
 
 
-class MapInterface(Node):
+class ShadowTreeInterface(Node):
 	""" The Viewer ROS Node """
 	def __init__(self):
 		""" Create a Viewer ROS node. """
-		super().__init__("rt_bi_core_mi")
-		self.get_logger().info("Map Interface...")
-		self.__rvizPublisher: Publisher
+		super().__init__("rt_bi_core_shadow_tree")
+		self.get_logger().info("Shadow Tree Interface is starting...")
 		self.__MAP_UPDATE_TOPIC = "/sa_map/FeatureMap_BIL"
-		self.__RVIZ_TOPIC = RosUtils.CreateTopicName("rbc_markers")
-		""" https://wiki.ros.org/rviz/DisplayTypes/Marker#line-8 """
 		self.__regions: Union[Dict[str, MapRegion], None] = None
-		self.__regionDefs: Union[FeatureInfo, None] = None
+		self.__regionDefs: Union[FeatureNotFound, None] = None
 		self.__polygon: Union[Polygon, None] = None
-		""" This variable holds all the markers until they are published via `MapInterface.publishMarkers """
 		self.__createTopicPublishers()
 		self.__subscribeToTopics()
+
 
 	@property
 	def regions(self) -> Dict[str, MapRegion]:
@@ -39,13 +37,10 @@ class MapInterface(Node):
 			self.__polygon = Geometry.union(polygons)
 		return self.__polygon
 
-	def updateRegions(self, update: Union[FeatureInfo, None] = None) -> bool:
+	def __updateRegions(self, update: Union[FeatureInfo, None] = None) -> bool:
 		# Edge cases
 		if update is None:
 			self.get_logger().warn("Received empty update!")
-			return False
-		if not self.__isRVizReady():
-			self.get_logger().warn("Skipping map update... RViz is not ready yet.")
 			return False
 		if (self.__regionDefs is not None and hash(repr(update)) == hash(repr(self.__regionDefs))):
 			return False
@@ -73,41 +68,28 @@ class MapInterface(Node):
 		self.__regions = regions
 		return True
 
-	def __subscribeToTopics(self) -> None:
-		RosUtils.CreateSubscriber(self, FeatureInfo, self.__MAP_UPDATE_TOPIC, self.__mapUpdate)
-
-	def __createTopicPublishers(self) -> None:
-		(self.__rvizPublisher, _) = RosUtils.CreatePublisher(self, MarkerArray, self.__RVIZ_TOPIC)
-
-	def __isRVizReady(self) -> bool:
-		if any(n for n in self.executor.get_nodes() if n.get_name().lower().find("rviz") > -1):
-			self.get_logger().warn("No node containing the name RViz was found.")
-			return False
-		if self.__rvizPublisher.get_subscription_count() == 0:
-			self.get_logger().warn("0 subscribers to visualization messages.")
-			return False
-		return True
-
-	def __render(self):
-		self.get_logger().info("Rendering map...")
-		message = MarkerArray()
-		for region in self.regions.values():
-			message.markers += region.render()
-		RosUtils.Logger().info("MarkerArray about to be sent with %d markers." % len(message.markers))
-		self.__rvizPublisher.publish(message)
-		return
-
-	def __mapUpdate(self, msg: FeatureInfo) -> None:
+	def __createShadowTree(self, msg: FeatureInfo) -> None:
 		"""
 		Callback function for the reception of map messages.
 		"""
-		updated = self.updateRegions(update=msg)
+		updated = self.__updateRegions(update=msg)
 		if updated:
 			self.__render()
 		return
 
-	def __clearRender(self):
-		self.get_logger().warn("__clearRender is not implemented.")
-		return
-		for region in self.regions.values():
-			region.clearRender()
+	def __subscribeToTopics(self) -> None:
+		RosUtils.CreateSubscriber(self, FeatureInfo, self.__MAP_UPDATE_TOPIC, self.__createShadowTree)
+
+def main(args=None):
+	"""
+	Start the Behavior Inference Run-time.
+	"""
+	rclpy.init(args=args)
+	shadowTreeNode = ShadowTreeInterface()
+	rclpy.spin(shadowTreeNode)
+	shadowTreeNode.destroy_node()
+	rclpy.shutdown()
+	return
+
+if __name__ == "__main__":
+	main()
