@@ -6,7 +6,6 @@
 				"limitSymbolsToIncludedHeaders": false
 			},
 			"includePath": [
-				"${workspaceFolder}/install/sa_msgs/include/**",
 				"~/ros2_humble/install/rosbag2_compression_zstd/include/**",
 				"~/ros2_humble/install/mcap_vendor/include/**",
 				"~/ros2_humble/install/zstd_vendor/include/**",
@@ -115,6 +114,7 @@
 				"~/ros2_humble/install/keyboard_handler/include/**",
 				"~/ros2_humble/install/console_bridge_vendor/include/**",
 				"~/ros2_humble/install/ament_index_cpp/include/**",
+				"${workspaceFolder}/install/sa_msgs/include/**",
 				"${workspaceFolder}/src/sa_semantic_map/include/**",
 				"/usr/include/**"
 			],

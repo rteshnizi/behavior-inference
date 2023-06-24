@@ -1,28 +1,28 @@
 import random
-import time
+from ctypes import c_int32
 from math import cos, sin, sqrt
 from typing import Tuple
-from uuid import uuid4
+from zlib import adler32
 
 from geometry_msgs.msg import Point as PointMsg
 from visualization_msgs.msg import Marker
 
+import rt_bi_utils.Ros as RosUtils
 from rt_bi_utils.Geometry import Geometry
-from rt_bi_utils.Ros import RosUtils
 
 Color = Tuple[float, float, float, float]
 """ A tuple that represents an RGBA value. Values between [0-1]. """
 
 class KnownColors:
-	TRANSPARENT: Color = [0, 0, 0, 0]
-	WHITE: Color = [1, 1, 1, 1]
-	LIGHT_GREY: Color = [0.75, 0.75, 0.75, 1]
-	GREY: Color = [0.5, 0.5, 0.5, 1]
-	DARK_GREY: Color = [0.25, 0.25, 0.25, 1]
-	BLACK: Color = [0, 0, 0, 1]
-	RED: Color = [1, 0, 0, 1]
-	GREEN: Color = [0, 1, 0 , 1]
-	BLUE: Color = [0, 0, 1, 1]
+	TRANSPARENT: Color = 	[0, 0, 0, 0]
+	WHITE: Color = 			[1, 1, 1, 1]
+	LIGHT_GREY: Color = 	[0.75, 0.75, 0.75, 1]
+	GREY: Color = 			[0.5, 0.5, 0.5, 1]
+	DARK_GREY: Color = 		[0.25, 0.25, 0.25, 1]
+	BLACK: Color = 			[0, 0, 0, 1]
+	RED: Color = 			[1, 0, 0, 1]
+	GREEN: Color = 			[0, 1, 0 , 1]
+	BLUE: Color = 			[0, 0, 1, 1]
 
 class RViz:
 	"""
@@ -36,13 +36,13 @@ class RViz:
 	TRANSLATION_X = 0
 	TRANSLATION_Y = 0
 	SCALE = 1
-	NAMESPACE = "bil"
-	FRAME_ID = "/bil_frame"
+	NAMESPACE = "rt_bi_core"
+	FRAME_ID = "map"
 
 	@staticmethod
 	def __translateCoords(coord: Geometry.Coords) -> Geometry.Coords:
-		RosUtils.Logger.info("Translate Coord %s" % repr(coord))
-		RosUtils.Logger.warn("No translation done.")
+		RosUtils.Logger().info("Translate Coord %s" % repr(coord))
+		RosUtils.Logger().warn("No translation done.")
 		return coord
 		c = [RViz.SCALE * (coord[0] + RViz.TRANSLATION_X), RViz.SCALE * ((coord[1]) + RViz.TRANSLATION_Y)]
 		return c
@@ -70,10 +70,25 @@ class RViz:
 
 	@staticmethod
 	def __setMarkerColor(marker: Marker, color: Color) -> Marker:
-		marker.color.r = color[0]
-		marker.color.g = color[1]
-		marker.color.b = color[2]
-		marker.color.a = color[3]
+		marker.color.r = float(color[0])
+		marker.color.g = float(color[1])
+		marker.color.b = float(color[2])
+		marker.color.a = float(color[3])
+		return marker
+
+	@staticmethod
+	def __setMarkerId(marker: Marker, strId: str) -> Marker:
+		uInt = adler32(strId.encode("utf-8"))
+		marker.id = c_int32(uInt).value
+		return marker
+
+	@staticmethod
+	def __setMarkerHeader(marker: Marker) -> Marker:
+		marker.ns = RViz.NAMESPACE
+		marker.action = Marker.ADD
+		marker.pose.orientation.w = 1.0
+		marker.header.frame_id = RViz.FRAME_ID
+		marker.header.stamp = RosUtils.RosTimeStamp()
 		return marker
 
 	@staticmethod
@@ -101,13 +116,11 @@ class RViz:
 		"""
 		[r, g, b, a] = rgbColor
 		hsp = sqrt(0.299 * (r * r) + 0.587 * (g * g) + 0.114 * (b * b))
-		if (hsp > 0.5):
-			return True
-		else:
-			return False
+		if (hsp > 0.5): return True
+		else: return False
 
 	@staticmethod
-	def CreateCircle(centerX: float, centerY: float, radius: float, outline: Color, txt: str, width = 1.0) -> Marker:
+	def CreateCircle(strId: str, centerX: float, centerY: float, radius: float, outline: Color, width = 1.0) -> Marker:
 		"""
 		Returns shape id
 
@@ -123,25 +136,23 @@ class RViz:
 
 		tag: a unique identifier (use entity name)
 		"""
-		RosUtils.Logger.info("Render Circle @ %f, %f" % (centerX, centerY))
+		RosUtils.Logger().info("Render circle ID %s" % strId)
 		circle = Marker()
-		circle.header.frame_id = RViz.FRAME_ID
-		circle.ns = RViz.NAMESPACE
-		circle.id = uuid4().int
-		circle.header.stamp = time.time()
+		circle = RViz.__setMarkerHeader(circle)
+		circle = RViz.__setMarkerId(circle, strId)
 		circle.type = Marker.LINE_STRIP
 		circle = RViz.__setMarkerColor(circle, outline)
 		# LINE_STRIP markers use only the x component of scale, for the line width
 		circle.scale.x = width
 		for i in range(32):
 			p = RViz.__createPointMessage(centerX + (radius * cos(i)), centerY + (radius * sin(i)))
-			circle.points.push_back(p)
+			circle.points.append(p)
 		p = RViz.__createPointMessage(centerX + (radius * cos(0)), centerY + (radius * sin(0)))
-		circle.points.push_back(p)
+		circle.points.append(p)
 		return circle
 
 	@staticmethod
-	def CreatePolygon(coords: Geometry.CoordsList, outline: Color, width: float, tag: str) -> Marker:
+	def CreatePolygon(strId: str, coords: Geometry.CoordsList, outline: Color, width: float) -> Marker:
 		"""
 		Returns shape id
 
@@ -155,23 +166,22 @@ class RViz:
 
 		tag: a unique identifier (use entity name)
 		"""
-		RosUtils.Logger.info("Render Poly %s" % repr(coords))
+		RosUtils.Logger().info("Render polygon ID %s with coords %s" % (strId, repr(coords)))
 		polygon = Marker()
-		polygon.header.frame_id = RViz.FRAME_ID
-		polygon.ns = RViz.NAMESPACE
-		polygon.id = uuid4().int
-		polygon.header.stamp = time.time()
+		polygon = RViz.__setMarkerHeader(polygon)
+		polygon = RViz.__setMarkerId(polygon, strId)
 		polygon.type = Marker.LINE_STRIP
 		polygon = RViz.__setMarkerColor(polygon, outline)
 		# LINE_STRIP markers use only the x component of scale, for the line width
-		polygon.scale.x = width
+		polygon.scale.x = float(width)
 		for (x, y) in coords:
-			polygon.points.push_back(RViz.__createPointMessage(x, y))
-		polygon.points.push_back(RViz.__createPointMessage(coords[-1].x, coords[-1].y))
+			polygon.points.append(RViz.__createPointMessage(x, y))
+
+		polygon.points.append(RViz.__createPointMessage(*coords[-1]))
 		return polygon
 
 	@staticmethod
-	def CreateLine(coords: Geometry.CoordsList, outline: Color, tag: str, width = 1.0, arrow = False) -> Marker:
+	def CreateLine(strId: str, coords: Geometry.CoordsList, outline: Color, tag: str, width = 1.0, arrow = False) -> Marker:
 		"""
 		Returns shape id, or None if there are no points.
 
@@ -185,22 +195,20 @@ class RViz:
 
 		tag: a unique identifier (use entity name)
 		"""
-		RosUtils.Logger.info("Render Line %s" % repr(coords))
+		RosUtils.Logger().info("Render line strip ID %s" % strId)
 		lineSeg = Marker()
-		lineSeg.header.frame_id = RViz.FRAME_ID
-		lineSeg.ns = RViz.NAMESPACE
-		lineSeg.id = uuid4().int
-		lineSeg.header.stamp = time.time()
+		lineSeg = RViz.__setMarkerHeader(lineSeg)
+		lineSeg = RViz.__setMarkerId(lineSeg, strId)
 		lineSeg.type = Marker.LINE_STRIP
 		lineSeg = RViz.__setMarkerColor(lineSeg, outline)
 		# LINE_STRIP markers use only the x component of scale, for the line width
 		lineSeg.scale.x = width
 		for (x, y) in coords:
-			lineSeg.points.push_back(RViz.__createPointMessage(x, y))
+			lineSeg.points.append(RViz.__createPointMessage(x, y))
 		return lineSeg
 
 	@staticmethod
-	def CreateText(coords: Geometry.Coords, text: str, color: Color, fontSize = 10) -> Marker:
+	def CreateText(strId: str, coords: Geometry.Coords, text: str, color: Color, fontSize = 10) -> Marker:
 		"""
 		Returns shape id
 
@@ -212,16 +220,18 @@ class RViz:
 
 		fontSize: number; default is 10
 		"""
-		RosUtils.Logger.info("Render %s" % text)
-		RosUtils.Logger.warn("Render of text is not implemented.")
+		RosUtils.Logger().info("Render text ID %s with content \"%s\"" % (strId, text))
+		RosUtils.Logger().error("Render of text is not implemented.")
 		text = Marker()
+		text = RViz.__setMarkerHeader(text)
+		text = RViz.__setMarkerId(text, strId)
 		return text
 
 	@staticmethod
-	def RemoveShape(self) -> None:
+	def RemoveShape() -> None:
 		"""
 		Remove a shape from canvas
 		"""
-		RosUtils.Logger.info("Clear shape...")
-		RosUtils.Logger.warn("Maybe deprecated function?")
+		RosUtils.Logger().info("Clear shape...")
+		RosUtils.Logger().warn("Maybe deprecated function?")
 		return

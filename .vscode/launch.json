@@ -19,8 +19,8 @@
 				"${workspaceFolder}/install/sa_bil/lib/python3.8/site-packages/": "${workspaceFolder}/src/sa_bil/",
 				"${workspaceFolder}/install/sa_msgs/lib/python3.8/site-packages/": "${workspaceFolder}/src/sa_msgs/",
 			},
-			"target": "${workspaceFolder}/install/rt_bi_core/share/rt_bi_core/launch/main.launch.py",
-			"preLaunchTask": "ros: local_setup",
+			"target": "${workspaceFolder}/install/rt_bi_core/share/rt_bi_core/launch/rbc_debug.launch.py",
+			"preLaunchTask": "ros: launch-tools",
 			"launch": [],
 		}
 	]

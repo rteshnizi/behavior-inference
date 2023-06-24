@@ -1,3 +1,4 @@
+from typing import List
 from rt_bi_utils.RViz import KnownColors
 from visualization_msgs.msg import Marker
 
@@ -16,5 +17,5 @@ class MapRegion(PolygonalRegion):
 		super().__init__(name, coordList, KnownColors.GREY, KnownColors.BLACK if self.isObstacle else KnownColors.TRANSPARENT)
 		self.type = typeStr
 
-	def render(self, renderText=False) -> Marker:
-		super().render(renderText)
+	def render(self, renderText = False) -> List[Marker]:
+		return super().render(renderText, fill=True)

@@ -14,28 +14,31 @@
 			},
 		},
 		{
-			"label": "colcon: build-bi",
+			"label": "ros: launch-tools",
+			"isBackground": true,
 			"type": "shell",
-			"command": "colcon",
+			"command": "sh",
 			"args": [
-				"build",
-				"--packages-up-to",
-				"rt_bi_core",
+				"${workspaceFolder}/scripts/others_debug.launch.sh"
 			],
-			"group": {
-				"kind": "build",
-				"isDefault": true
-			},
-		},
-		{
-			"label": "ros: local_setup",
-			"type": "shell",
-			"command": "source",
-			"args": [
-				"${workspaceFolder}/install/local_setup.sh"
-			],
-			"dependsOn": [
-				"colcon: build"
+			// https://stackoverflow.com/a/54017304/750567
+			// This task is run before the debugger is launed.
+			"problemMatcher": [
+				{
+					"pattern": [
+						{
+							"regexp": ".",
+							"file": 1,
+							"location": 2,
+							"message": 3
+						}
+					],
+					"background": {
+						"activeOnStart": true,
+						"beginsPattern": ".",
+						"endsPattern": ".",
+					}
+				}
 			]
 		},
 	]

@@ -91,7 +91,7 @@ class MapPolygonPublisher : public rclcpp::Node
     MapPolygonPublisher()
     : Node("sml_mapPolygon_Publisher"), count_(0)
     {
-      publisher_1 = this->create_publisher<visualization_msgs::msg::Marker>("FeatureMap_Viz", 10);
+    //   publisher_1 = this->create_publisher<visualization_msgs::msg::Marker>("FeatureMap_Viz", 10);
       //publisher_2 = this->create_publisher<geometry_msgs::msg::PolygonStamped>("FeatureMap_p", 10);
       publisher_3 = this->create_publisher<sa_msgs::msg::FeatureInfo>("FeatureMap_BIL", 10);
 
@@ -104,8 +104,9 @@ class MapPolygonPublisher : public rclcpp::Node
   private:
     void timer_callback( )
     {
-      RCLCPP_INFO(this->get_logger(), "Publishing map ");
+      RCLCPP_INFO(this->get_logger(), "Publishing map");
 
+        /* REZA COMMENTED OUT
       auto points = visualization_msgs::msg::Marker();
       auto line_strip = visualization_msgs::msg::Marker();
       //auto line_list = visualization_msgs::msg::Marker();
@@ -149,6 +150,7 @@ class MapPolygonPublisher : public rclcpp::Node
             //publisher_1->publish(points);
             //publisher_1->publish(line_strip);
             publisher_1->publish(line_list);
+        */
             publisher_3->publish(feture_defination_msg);
     }
 
@@ -156,7 +158,7 @@ class MapPolygonPublisher : public rclcpp::Node
     rclcpp::TimerBase::SharedPtr timer_;
 
     rclcpp::Publisher<sa_msgs::msg::FeatureInfo>::SharedPtr publisher_3;
-    rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr publisher_1;
+    // rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr publisher_1; // REZA COMMENTED OUT
     size_t count_;
 };
 
