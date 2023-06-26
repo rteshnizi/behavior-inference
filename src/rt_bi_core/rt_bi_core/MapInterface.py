@@ -84,7 +84,7 @@ class MapInterface(Node):
 			self.get_logger().warn("No node containing the name RViz was found.")
 			return False
 		if self.__rvizPublisher.get_subscription_count() == 0:
-			self.get_logger().warn("0 subscribers to visualization messages.")
+			self.get_logger().warn("No subscribers to visualization messages.")
 			return False
 		return True
 

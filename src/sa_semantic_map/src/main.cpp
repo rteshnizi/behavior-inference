@@ -2,20 +2,22 @@
 #include <functional>
 #include <memory>
 #include <string>
-
+#include <filesystem>
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
 
 #include "sa_msgs/msg/pose.hpp"
 #include "sa_msgs/msg/feature_info.hpp"
+#include "sa_msgs/msg/feature_info_individual.hpp"
 #include "sa_msgs/msg/pose_array.hpp"
 #include "sa_msgs/srv/query_visibility.hpp"
+#include "sa_msgs/srv/query_feature.hpp"
 #include "sa_msgs/msg/visibility_array.hpp"
 
 #include "geometry_msgs/msg/point32.hpp"
-#include "geometry_msgs/msg/polygon.hpp"
-#include "geometry_msgs/msg/polygon_stamped.hpp"
+#include "geometry_msgs/msg/polygon.hpp" 
+#include "geometry_msgs/msg/polygon_stamped.hpp" 
 #include "visualization_msgs/msg/marker.hpp"
 
 using namespace std::chrono_literals;
@@ -28,7 +30,7 @@ using namespace std::chrono_literals;
 #include <cstdlib>
 #include <limits>
 #include <algorithm>
-#include <iomanip>
+#include <iomanip> 
 
 //#include "../include/SemanticMap.h"
 //#include "../include/CDT_update.h"
@@ -43,7 +45,7 @@ using namespace std::chrono_literals;
 #include "../include/sa_semantic_map/rapidjson/writer.h"
 #include "../include/sa_semantic_map/rapidjson/reader.h"
 #include "../include/sa_semantic_map/rapidjson/stringbuffer.h"
-#include "../include/sa_semantic_map/rapidjson/document.h"
+#include "../include/sa_semantic_map/rapidjson/document.h" 
 #include "../include/sa_semantic_map/rapidjson/istreamwrapper.h"
 #include "../include/sa_semantic_map/rapidjson/ostreamwrapper.h"
 
@@ -63,13 +65,32 @@ boost::random::uniform_int_distribution<> color(10, 255);
 
 SemMap SM;
 point_type origin;
+
 auto feture_defination_msg = sa_msgs::msg::FeatureInfo();
 auto line_list = visualization_msgs::msg::Marker();
+
 
 class MyNode : public rclcpp::Node
 {
     public:
-        MyNode() : Node("sml_VisibilityQuery_Service")
+        MyNode() : Node("sml_FeatureQuery_Service") 
+        {
+            timer_ = this->create_wall_timer(
+            std::chrono::milliseconds(200),
+            std::bind(&MyNode::timerCallback, this));
+        }
+    private:
+        void timerCallback()
+        {
+            //RCLCPP_INFO(this->get_logger(), "Hello from ROS2");
+        }
+        rclcpp::TimerBase::SharedPtr timer_;
+};
+
+/*class MyNode : public rclcpp::Node
+{
+    public:
+        MyNode() : Node("sml_VisibilityQuery_Service") 
         {
             timer_ = this->create_wall_timer(
             std::chrono::milliseconds(200),
@@ -81,9 +102,9 @@ class MyNode : public rclcpp::Node
             //RCLCPP_INFO(this->get_logger(), "Hello from ROS2");
         }
 
-
+        
         rclcpp::TimerBase::SharedPtr timer_;
-};
+};*/
 
 class MapPolygonPublisher : public rclcpp::Node
 {
@@ -91,7 +112,7 @@ class MapPolygonPublisher : public rclcpp::Node
     MapPolygonPublisher()
     : Node("sml_mapPolygon_Publisher"), count_(0)
     {
-    //   publisher_1 = this->create_publisher<visualization_msgs::msg::Marker>("FeatureMap_Viz", 10);
+      publisher_1 = this->create_publisher<visualization_msgs::msg::Marker>("FeatureMap_Viz", 10);
       //publisher_2 = this->create_publisher<geometry_msgs::msg::PolygonStamped>("FeatureMap_p", 10);
       publisher_3 = this->create_publisher<sa_msgs::msg::FeatureInfo>("FeatureMap_BIL", 10);
 
@@ -104,12 +125,11 @@ class MapPolygonPublisher : public rclcpp::Node
   private:
     void timer_callback( )
     {
-      RCLCPP_INFO(this->get_logger(), "Publishing map");
+      RCLCPP_INFO(this->get_logger(), "Publishing map "); 
 
-        /* REZA COMMENTED OUT
       auto points = visualization_msgs::msg::Marker();
       auto line_strip = visualization_msgs::msg::Marker();
-      //auto line_list = visualization_msgs::msg::Marker();
+      //auto line_list = visualization_msgs::msg::Marker(); 
       points.header.frame_id = "map";
       points.header.stamp = rclcpp::Node::now() ;
       line_strip.header.frame_id = "map";
@@ -150,23 +170,22 @@ class MapPolygonPublisher : public rclcpp::Node
             //publisher_1->publish(points);
             //publisher_1->publish(line_strip);
             publisher_1->publish(line_list);
-        */
             publisher_3->publish(feture_defination_msg);
     }
 
-
+    
     rclcpp::TimerBase::SharedPtr timer_;
-
+    
     rclcpp::Publisher<sa_msgs::msg::FeatureInfo>::SharedPtr publisher_3;
-    // rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr publisher_1; // REZA COMMENTED OUT
+    rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr publisher_1;
     size_t count_;
 };
 
 void visibility_query(const std::shared_ptr<sa_msgs::srv::QueryVisibility::Request> request,
-    std::shared_ptr<sa_msgs::srv::QueryVisibility::Response> response)
+    std::shared_ptr<sa_msgs::srv::QueryVisibility::Response> response) 
     {
-        int sz_rq = request->traj_array.size();
-
+        int sz_rq = request->traj_array.size(); 
+        
         for(int i =0; i<sz_rq; i++)
         {
             auto traj_i  = request->traj_array[i];
@@ -180,44 +199,84 @@ void visibility_query(const std::shared_ptr<sa_msgs::srv::QueryVisibility::Reque
                 auto pose_x = pose_pt.x;
                 auto pose_y = pose_pt.y;
                 auto pose_th = pose_pt.yaw;
-                RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "pose: %f, %f, %f ", pose_x, pose_y, pose_th);
-                //cout << pose_x << " " << pose_y << " " << pose_th  << " " << endl;
-
+                RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "pose: %f, %f, %f ", pose_x, pose_y, pose_th); 
+                //cout << pose_x << " " << pose_y << " " << pose_th  << " " << endl;  
+                
                 point_type point(pose_x, pose_y);
-                bool visi = SM.VisibilityQuery(point);
-                op.visibilities.push_back(visi);
+                bool visi = SM.VisibilityQuery(point); 
+                op.visibilities.push_back(visi);          
             }
-            response->visibility_array.push_back(op);
+            response->visibility_array.push_back(op);   
         }
     }
 
 
+void feature_query(const std::shared_ptr<sa_msgs::srv::QueryFeature::Request> request,
+    std::shared_ptr<sa_msgs::srv::QueryFeature::Response> response) 
+    {
+        string f_name = request->name; 
+        cout << "got_name = " << f_name << endl;
+        auto feture_defination_service = sa_msgs::msg::FeatureInfoIndividual();
+
+        if (f_name == "map")
+        {
+            cout << "size = " << feture_defination_msg.feature_name.size() << endl;
+            for (int i = 0 ; i < feture_defination_msg.feature_name.size(); i++)
+            {
+                feture_defination_service.feature_name = (feture_defination_msg.feature_name[i]);
+                feture_defination_service.type = (feture_defination_msg.type[i]); 
+                feture_defination_service.polygon_shape_list = (feture_defination_msg.polygon_shape_list[i]);
+                response->feature_info_individual.push_back(feture_defination_service);
+            } 
+            
+        }
+        else
+        {
+            for (int i = 0 ; i < feture_defination_msg.feature_name.size(); i++)
+            {
+                string name_f = feture_defination_msg.feature_name[i];
+                if(name_f == f_name) 
+                {
+                    feture_defination_service.traversability_gv_car = feture_defination_msg.traversability_gv_car[i];
+                    feture_defination_service.traversability_gv_tank = feture_defination_msg.traversability_gv_tank[i]; 
+                    feture_defination_service.visibility_av = feture_defination_msg.visibility_av[i];
+        
+                } 
+            }
+            response->feature_info_individual.push_back(feture_defination_service);
+        }
+        cout << "OP size = " << response->feature_info_individual.size() << endl;
+    }
+
 
 int main(int argc, char* argv[])
-{
+{    
 
   rclcpp::init(argc, argv);
 
   stringstream ss;
-
+  
 //  string file_name_json = "/home/anant/sa_ros2_ws/src/situational_awareness/sa_semantic_map/data/Features_quarry_V6.json";
-//   string file_name_json = "/home/anant/sa_ros2_ws/src/situational_awareness/sa_semantic_map/data/map_v1.json";
-  string file_name_json = "/home/reza/git/behavior-inference/src/sa_semantic_map/data/map_v1.json";
+//  string file_name_json = "/home/anant/sa_ros2_ws/src/situational_awareness/sa_semantic_map/data/map_v1.json";
+  
+  std::filesystem::path cwd = std::filesystem::current_path() / "src/situational_awareness/sa_semantic_map/data/map_v1.json";
+  cout << cwd << endl;
+  string file_name_json = cwd.string();
 
-  ifstream file(file_name_json);
-  if (file)
+  ifstream file(file_name_json); 
+  if (file) 
   {
       ss << file.rdbuf();
       file.close();
-  }
-  else
+  } 
+  else 
   {
       throw std::runtime_error("!! Unable to open json file");
   }
   Document doc;
   if (doc.Parse<0>(ss.str().c_str()).HasParseError())
       throw std::invalid_argument("json parse error");
-
+   
   std::string type = doc["type"].GetString();
   std::string generator = doc["generator"].GetString();
   cout << type << endl;
@@ -229,23 +288,23 @@ int main(int argc, char* argv[])
   vector<point_type> boundary_ballpark;
 
   int idx_counter = 0;
-  map<int, string> idx2name;
-  map<string, int> name2idx;
+  map<int, string> idx2name; 
+  map<string, int> name2idx; 
 
-
-
+  
+  
   vector<string> feature_name_list;
 
 cout << "No of features " << array.Size() << endl;
 
-for (rapidjson::SizeType i = 0; i < array.Size(); i++)
+for (rapidjson::SizeType i = 0; i < array.Size(); i++) 
     {
         //cout << feature.key() << "\n";
         cout << i << "\n";
         auto pose_array = sa_msgs::msg::PoseArray();
 
         auto& val = array[i];
-
+        
         Feature ip;
         ip.index = idx_counter;
 
@@ -262,7 +321,7 @@ for (rapidjson::SizeType i = 0; i < array.Size(); i++)
         ip.traversability.gv = stoi(val_temp);
         val_temp = prop["traversability_ped"].GetString();
         ip.traversability.pedestrian = stoi(val_temp);
-
+        
         val_temp = prop["traversability_tank"].GetString();
         int temp_tank = stoi(val_temp);
 
@@ -273,13 +332,13 @@ for (rapidjson::SizeType i = 0; i < array.Size(); i++)
         if (ip.featureName == "Ballpark") {
             float x;
             float y;
-            float lon = geo_cord[0][0].GetFloat();
+            float lon = geo_cord[0][0].GetFloat();   
             float lat = geo_cord[0][1].GetFloat();
-
+            
             //int zone = LatLonToUTMXY(lat, lon, 14, x, y);
             x = lon;
             y = lat;
-
+            
             //cout << zone << endl;
             origin.set<0>(x);
             origin.set<1>(y);
@@ -287,7 +346,7 @@ for (rapidjson::SizeType i = 0; i < array.Size(); i++)
             SM.env.origin.set<0>(y);
         }
 
-        for (unsigned int i = 0; i < geo_cord.Size(); i++)
+        for (unsigned int i = 0; i < geo_cord.Size(); i++) 
         {
             auto pose = sa_msgs::msg::Pose();
             auto p = geometry_msgs::msg::Point();
@@ -305,19 +364,19 @@ for (rapidjson::SizeType i = 0; i < array.Size(); i++)
             y = y ;//- origin.get<1>();
             pose.x = x;
             pose.y = y;
-
+            
             p.x = x;
             p.y = y;
 
             pose.yaw = 0.0;
             cout << pose.x  << "    " << pose.y << endl;
-            ip.shapeParams.boundary.push_back(point_type(x,y));
-            pose_array.traj.push_back(pose);
+            ip.shapeParams.boundary.push_back(point_type(x,y)); 
+            pose_array.traj.push_back(pose); 
             line_list.points.push_back(p);
             if(i>0){
                 line_list.points.push_back(p);
             }
-        }
+        }  
 
         auto p = geometry_msgs::msg::Point();
         float x;
@@ -328,7 +387,7 @@ for (rapidjson::SizeType i = 0; i < array.Size(); i++)
         y = lat;
         p.x = x;
         p.y = y;
-        line_list.points.push_back(p);
+        line_list.points.push_back(p);   
 
         if (ip.featureName == "Ballpark")
             boundary_ballpark = ip.shapeParams.boundary;
@@ -339,70 +398,69 @@ for (rapidjson::SizeType i = 0; i < array.Size(); i++)
         }
         append(ip.shapeParams.Polygon, ip.shapeParams.boundary);
         correct(ip.shapeParams.Polygon);
-
-        string temp_str = "gv_untraversable";
-        if (ip.traversability.gv < 15) {
+        
+        string temp_str = "gv_untraversable"; 
+        if (ip.traversability.gv < 15) { 
             if (name2idx.find(temp_str) == name2idx.end()) {
-                name2idx.insert(pair<string, int>(temp_str, idx_counter));
+                name2idx.insert(pair<string, int>(temp_str, idx_counter)); 
                 idx2name.insert(pair<int, string>(idx_counter, temp_str));
                 idx_counter++;
-            }
-            else {
-                int idx_temp = name2idx[temp_str];
+            } 
+            else { 
+                int idx_temp = name2idx[temp_str]; 
                 //name2idx.insert(pair<string, int>(temp_str, idx_temp));
-                //idx2name.insert(pair<int, string>(idx_temp, temp_str));
+                //idx2name.insert(pair<int, string>(idx_temp, temp_str)); 
                 ip.index = idx_temp;
-            }
+            } 
         }
         else {
-            string name_temp;
-            size_t pos = ip.featureName.find("_");
+            string name_temp; 
+            size_t pos = ip.featureName.find("_"); 
             string str3 = ip.featureName.substr(0, pos+1);
-            name_temp = str3 + std::to_string(ip.traversability.gv);
-            if (name2idx.find(name_temp) == name2idx.end()) {
+            name_temp = str3 + std::to_string(ip.traversability.gv); 
+            if (name2idx.find(name_temp) == name2idx.end()) { 
                 name2idx.insert(pair<string, int>(name_temp, idx_counter));
                 idx2name.insert(pair<int, string>(idx_counter, name_temp));
                 idx_counter++;
-            }
-            else {
+            } 
+            else { 
                 int idx_temp = name2idx[name_temp];
-                //name2idx.insert(pair<string, int>(temp_str, idx_temp));
-                //idx2name.insert(pair<int, string>(idx_temp, temp_str));
-                ip.index = idx_temp;
-            }
+                //name2idx.insert(pair<string, int>(temp_str, idx_temp)); 
+                //idx2name.insert(pair<int, string>(idx_temp, temp_str)); 
+                ip.index = idx_temp; 
+            } 
         }
 
         feture_defination_msg.feature_name.push_back(ip.featureName);
         feture_defination_msg.polygon_shape_list.push_back(pose_array);
         feture_defination_msg.traversability_gv_car.push_back(ip.traversability.gv);
-        feture_defination_msg.traversability_gv_tank.push_back(temp_tank);
+        feture_defination_msg.traversability_gv_tank.push_back(temp_tank); 
         feture_defination_msg.visibility_av.push_back(ip.sensorVisibility.fromAbove);
-        feture_defination_msg.visibility_av.push_back(prop["terrain"].GetString());
-
-
+        feture_defination_msg.type.push_back(prop["terrain"].GetString());
+        
         inputs.push_back(ip);
     }
 
     for (std::pair<string, int> element : name2idx)
     {
         // cout << (element.first) << "     "  << element.second << endl;
-
+        
     }
     for (std::pair<int, string> element : idx2name)
     {
         // cout << (element.first) << "     "  << element.second << endl;
-
+        
     }
 
 FeatureBase FB;
 //    SemMap SM;
 
     // Defining Ballpark in the map
-
+    
     FB.currentFeature = inputs[0];
     SM.AddFeature(FB.currentFeature);
     FB.ResetFeature();
-
+ 
     for (int i = 1; i < inputs.size(); i++)
     {
         //cout << "val of i = "<< i << "       "<< inputs[i].featureName << "    Parent is   ";
@@ -437,20 +495,20 @@ FeatureBase FB;
         FB.currentFeature.parent = parent;
         FB.currentFeature.zoomLevel = zoom_parent+1;
         SM.AddFeature(FB.currentFeature);
-        FB.ResetFeature();
+        FB.ResetFeature(); 
         if ((zoom_parent) == SM.maxZoomLevel && SM.maxZoomLevel!=0)
         {
         // cout << zoom_parent << "    " << SM.maxZoomLevel << endl;
-        //SM.CreateRestObjects();
+        //SM.CreateRestObjects(); 
         }
     }
     SM.CalMaxZoomLevel();
-
+ 
     // std::ofstream svg("my_map.svg");
     // boost::geometry::svg_mapper<point_type> mapper(svg, 200, 200);
-
+    
     int count = 0;
-
+    
     if(SM.fm_dirty == 1)
     {
         SM.CreateMesh();
@@ -459,32 +517,38 @@ FeatureBase FB;
 
     cout << SM.fm["Road 3"].nodeType->currentFeature.sensorVisibility.fromAbove << endl;
     //cout << SM.fm["Water 1"].nodeType->currentFeature.shapeParams.Polygon.outer << endl;
-
+    
     cout << "350" << endl;
 
-    auto node = std::make_shared<MyNode>();
+    // service for tianqi visibility
+    /*auto node = std::make_shared<MyNode>();
     rclcpp::Service<sa_msgs::srv::QueryVisibility>::SharedPtr service =                 // CHANGE
     node->create_service<sa_msgs::srv::QueryVisibility>("uav1/visibility_query",  &visibility_query);     // CHANGE
-
+    */
+    // service for reza feature info
+    auto node = std::make_shared<MyNode>();
+    rclcpp::Service<sa_msgs::srv::QueryFeature>::SharedPtr service =                 // CHANGE
+    node->create_service<sa_msgs::srv::QueryFeature>("feature_query",  &feature_query);     // CHANGE
+    
 
     // std::shared_ptr<rclcpp::Node> node = rclcpp::Node::make_shared("sml_server");  // CHANGE
     // rclcpp::Service<sa_msgs::srv::QueryVisibility>::SharedPtr service =                 // CHANGE
     // node->create_service<sa_msgs::srv::QueryVisibility>("uav1/visibility_query",  &visibility_query);     // CHANGE
 
     //RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Ready to add three ints.");      // CHANGE
-    //rclcpp::spin(node);
-
+    //rclcpp::spin(node); 
+	
     //auto node2 = std::make_shared<MyNode>();
     //rclcpp::spin(std::make_shared<MinimalPublisher>());
-
-    auto node3 = std::make_shared<MyNode>();
-    rclcpp::spin(std::make_shared<MapPolygonPublisher>());
-
-
+    
+    //auto node3 = std::make_shared<MyNode>();
+    //rclcpp::spin(std::make_shared<MapPolygonPublisher>());
+    
+    rclcpp::spin(node);
     rclcpp::shutdown();
-
-
-
+  
+  
+  
 
     /*auto x_max = *std::max_element(boundary_ballpark.begin(), boundary_ballpark.end(),
         [](point_type a1, point_type a2) {
@@ -563,7 +627,7 @@ FeatureBase FB;
     //     cout<<endl;
 
     // }
-
+    
     /*
     string path;
     //n.getParam("/samap_/path",path);
@@ -573,7 +637,7 @@ FeatureBase FB;
     if(use_ogmap == 0)
     {
         pgmimg = createPGM(reso, &SM, max_min, idx2name, path);
-        cout << "PGM_Done" << endl;
+        cout << "PGM_Done" << endl;		
     }
 
     else
@@ -593,27 +657,27 @@ FeatureBase FB;
             //cout << "rows" << subs << endl;
             numrows = stoi(subs);
             iss >> subs;
-            //cout << "cols" << subs << endl;
+            //cout << "cols" << subs << endl; 
             numcols = stoi(subs);
-
+        
             pgmimg.a.push_back(numrows);
             pgmimg.a.push_back(numcols);
 
             pgmimg.ori[0] = x_min.get<0>();
-            pgmimg.ori[1] = y_min.get<1>();
+            pgmimg.ori[1] = y_min.get<1>(); 
             //cout << "step1" << endl;
             getline(file_ogmap,line);
 
             while(getline(file_ogmap,line))
             {
                 pgmimg.a.push_back(stoi(line));
-               // cout<<line<<endl;
+               // cout<<line<<endl;    
             }
             //cout << "step1" << endl;
             file_ogmap.close();
         }
     }
-
+    
     //cout <<pgmimg.a.size() << endl;
     //cout <<pgmimg.b.size() << endl;
 
@@ -621,7 +685,7 @@ FeatureBase FB;
     float y =  y_min.get<1>() + origin.get<1>();
     nav_msgs::OccupancyGrid myMap;
     //cout << x << "  " << y << endl;
-    // Map data
+    // Map data 
     myMap.info.map_load_time = ros::Time(0);
     myMap.info.resolution = reso;
     myMap.info.width = pgmimg.a[0];
@@ -633,19 +697,20 @@ FeatureBase FB;
     myMap.info.origin.orientation.y = 0;
     myMap.info.origin.orientation.z = 0;
     myMap.info.origin.orientation.w = 1;
-
+    
     for(int i = 2; i < pgmimg.a.size() ; i++)
     {
         myMap.data.push_back(pgmimg.a[i]);
     }
-
+    
     myMap.header.frame_id = "world";
     map_pub.publish(myMap);
     cout << "published cost map image" << endl;
     */
-
+   
 
   return 0;
 
-
+    
 }
+

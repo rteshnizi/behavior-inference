@@ -30,7 +30,9 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/PoseArray.msg"
   "msg/VisibilityArray.msg"
   "msg/FeatureInfo.msg"
+  "msg/FeatureInfoIndividual.msg"
   "srv/QueryVisibility.srv"
+  "srv/QueryFeature.srv"
  )
 
 if(BUILD_TESTING)

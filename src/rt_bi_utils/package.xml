@@ -3,9 +3,9 @@
 <package format="3">
   <name>rt_bi_utils</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
-  <maintainer email="rht1369@gmail.com">reza</maintainer>
-  <license>TODO: License declaration</license>
+  <description>Utility classes, objects, and functions not specific to the BI project.</description>
+  <maintainer email="reza.teshnizi@gmail.com">Reza Teshnizi</maintainer>
+  <license>UNLICENSED</license>
 
   <depend>rclcpp</depend>
   <depend>std_msgs</depend>

@@ -499,6 +499,7 @@
 		"Datap",
 		"jsoncomment",
 		"loadf",
+		"networkx",
 		"rclpy",
 		"Rcutils",
 		"reza",
@@ -507,9 +508,11 @@
 		"scipy",
 		"skimage",
 		"Slerp",
+		"TAMU",
 		"traj",
 		"traversability",
-		"Traversibility"
+		"Traversibility",
+		"verts"
 	],
 	"colcon.provideTasks": true,
 	"colcon.outputLog": true,

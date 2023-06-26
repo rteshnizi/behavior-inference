@@ -11,7 +11,7 @@ def generate_launch_description():
 			package="rviz2",
 			namespace="rviz2",
 			executable="rviz2",
-			name="rviz2",
+			name="main",
 			arguments=[
 				"-d",
 				[os.path.join(shareDir, "config", "rt_bi_core.rviz")],

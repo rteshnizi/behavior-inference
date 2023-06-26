@@ -5,11 +5,11 @@ from visualization_msgs.msg import Marker
 from rt_bi_core.Model.FeatureMap import Feature
 from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
 from rt_bi_utils.Geometry import Geometry
-from sa_msgs.msg import PoseArray
+from sa_msgs.msg import PoseArray as SaPoseArray
 
 
 class MapRegion(PolygonalRegion):
-	def __init__(self, name: str, coords: PoseArray, typeStr: str, featureDefinition: Feature):
+	def __init__(self, name: str, coords: SaPoseArray, typeStr: str, featureDefinition: Feature):
 		self.isObstacle: bool = featureDefinition.traversability.car < 100
 		coordList: Geometry.CoordsList = []
 		for i in range(len(coords.traj)):

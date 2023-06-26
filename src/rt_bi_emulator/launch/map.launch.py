@@ -9,7 +9,7 @@ def generate_launch_description():
 		Node(
 			package=packageName,
 			namespace=packageName,
-			executable="MapInterface",
+			executable="MapEmulator",
 			name="main"
 		),
 	])

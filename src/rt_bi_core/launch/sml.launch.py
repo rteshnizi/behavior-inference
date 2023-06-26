@@ -10,7 +10,7 @@ def generate_launch_description():
 			package = "sa_semantic_map",
 			namespace="sa_map",
 			executable="sa_map",
-			name= "sa_map",
+			name= "main",
 			output="both",
 		),
 	])
