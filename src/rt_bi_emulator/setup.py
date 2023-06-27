@@ -6,7 +6,7 @@ package_name = "rt_bi_emulator"
 
 setup(
 	name=package_name,
-	version="0.0.0",
+	version="0.0.1",
 	packages = find_packages(exclude=["test"]),
 	data_files=[
 		("share/ament_index/resource_index/packages", ["resource/" + package_name]),
@@ -14,11 +14,7 @@ setup(
 		(os.path.join("share", package_name, "launch"), glob("launch/*")),
 	],
 	install_requires= [
-		"numpy~=1.24.2",
-		"pillow>=8.3.2",
-		"scikit-image~=0.19.3",
 		"setuptools",
-		"shapely~=2.0.1",
 	],
 	zip_safe=True,
 	maintainer="Reza Teshnizi",

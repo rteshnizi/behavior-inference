@@ -182,7 +182,7 @@ class RViz:
 
 		tag: a unique identifier (use entity name)
 		"""
-		RosUtils.Logger().info("Render polygon ID %s with coords %s" % (strId, repr(coords)))
+		RosUtils.Logger().info("Render polygon ID %s" % strId)
 		polygon = Marker()
 		polygon = RViz.__setMarkerHeader(polygon)
 		polygon = RViz.__setMarkerId(polygon, strId)
@@ -193,7 +193,7 @@ class RViz:
 		for (x, y) in coords:
 			polygon.points.append(RViz.__createPointMessage(x, y))
 
-		polygon.points.append(RViz.__createPointMessage(*coords[-1]))
+		polygon.points.append(RViz.__createPointMessage(*coords[0]))
 		return polygon
 
 	@staticmethod

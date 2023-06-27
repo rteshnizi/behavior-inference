@@ -98,7 +98,7 @@ class PolygonalRegion:
 	def render(self, renderText = False, fill = False) -> List[Marker]:
 		msgs = []
 		if fill:
-			RosUtils.Logger().warn("Cannot fill polygons yet...")
+			RosUtils.Logger().info("Cannot fill polygons yet...")
 		msgs.append(RViz.CreatePolygon(self.name, self._coordsList, self.BOUNDARY_COLOR, self.__RENDER_LINE_WIDTH))
 		if renderText:
 			msgs.append(RViz.CreateText("%s_txt" % self.name, self.polygon.centroid.xy, self.name, self.TEXT_COLOR))

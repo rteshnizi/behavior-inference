@@ -1,16 +1,17 @@
+from functools import partial
 from typing import Dict, List, Union
 
 import rclpy
-from rclpy.node import Node
 from rclpy.clock import Duration
-from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
-from rt_bi_utils.RViz import RViz
+from rclpy.node import Node
 from visualization_msgs.msg import MarkerArray
 
 import rt_bi_utils.Ros as RosUtils
 from rt_bi_core.Model.FeatureMap import Feature
 from rt_bi_core.Model.MapRegion import MapRegion
+from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
 from rt_bi_utils.Geometry import Geometry, Polygon
+from rt_bi_utils.RViz import RViz
 from rt_bi_utils.SaMsgs import SaMsgs
 from sa_msgs.msg import FeatureInfoIndividual
 from sa_msgs.srv import QueryFeature
@@ -48,7 +49,7 @@ class MapServiceInterface(Node):
 			self.__parsePolygonShapeList(response)
 			self.__render()
 		else:
-			self.__parseFeatureDefinition(response)
+			self.__parseFeatureDefinition(request.name, response)
 		return
 
 	def __parsePolygonShapeList(self, response: QueryFeature.Response) -> None:
@@ -66,11 +67,10 @@ class MapServiceInterface(Node):
 		self.__regions = regions
 		return
 
-	def __parseFeatureDefinition(self, response: QueryFeature.Response) -> List[PolygonalRegion]:
+	def __parseFeatureDefinition(self, featureName: str, response: QueryFeature.Response) -> List[PolygonalRegion]:
 		individualFeature: FeatureInfoIndividual
-		regions: List[PolygonalRegion] = []
+		updatedRegions: List[PolygonalRegion] = []
 		for individualFeature in response.feature_info_individual:
-			featureName = individualFeature.feature_name
 			visibilityAv = individualFeature.visibility_av
 			traversabilityCar = individualFeature.traversability_gv_car
 			traversabilityTank = individualFeature.traversability_gv_tank
@@ -81,10 +81,10 @@ class MapServiceInterface(Node):
 			})
 			try:
 				self.regions[featureName].featureDefinition = feature
-				regions.append(self.__regions[featureName])
+				updatedRegions.append(self.__regions[featureName])
 			except KeyError as _:
 				self.get_logger().error("Region with name \"%s\" not found in existing regions" % featureName)
-		return regions
+		return updatedRegions
 
 	def __render(self, regions: List[PolygonalRegion] = None):
 		if not RViz.isRVizReady(self, self.__rvizPublisher):
@@ -96,6 +96,9 @@ class MapServiceInterface(Node):
 		else:
 			self.get_logger().info("Rendering regions %s..." % repr([r.name for r in regions]))
 			regionList = regions
+		if len(regionList) == 0:
+			self.get_logger().warn("Skipping render... no regions to update.")
+			return
 		message = MarkerArray()
 		for region in regionList:
 			message.markers += region.render()
@@ -120,8 +123,12 @@ class MapServiceInterface(Node):
 
 	def queryFeatureDefinitions(self) -> None:
 		for name in self.__regionNames:
+			if name == "":
+				self.get_logger().warn("Region with empty name noticed in region names!")
+				continue
 			request = QueryFeature.Request()
 			request.name = name
+			self.get_logger().info("Sending QueryFeature for \"%s\"..." % name)
 			RosUtils.SendClientRequest(self, self.__mapClient, request, self.__parseFeatureQueryResponse)
 		self.__render()
 		return
