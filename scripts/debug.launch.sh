@@ -41,9 +41,10 @@ fi
 
 cd "$(dirname "$fileName")" # change to the directory of the script
 cd .. # now we are in the workspace directory
-concurrently --kill-others --names "Emulator,RViz,Core"\
-	--prefix "[{time}]"\
-	-c "bgYellow.bold,bgGray.bold,bgBlue.bold"\
-	--hide "1" --timestamp-format "HH:mm:ss.SSS"\
+export RCUTILS_CONSOLE_OUTPUT_FORMAT="[{severity}]: {message}"
+concurrently --kill-others --names "Emu,RVZ,RTC"\
+	--prefix "[{name}-{time}]"\
+	-c "bgYellow.black,bgGray.black,bgBlue.black"\
+	--hide "1" --timestamp-format "HH:mm:ss"\
 	"ros2 launch rt_bi_emulator map.launch.py" "ros2 launch rt_bi_core rviz.launch.py" "ros2 launch rt_bi_core rbc.launch.py"
 exit 0

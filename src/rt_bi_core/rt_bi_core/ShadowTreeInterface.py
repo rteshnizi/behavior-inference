@@ -17,6 +17,7 @@ class ShadowTreeInterface(Node):
 		""" Create a Viewer ROS node. """
 		super().__init__("rt_bi_core_shadow_tree")
 		self.get_logger().info("Shadow Tree Interface is starting...")
+		RosUtils.SetLogger(self.get_logger())
 		self.__MAP_UPDATE_TOPIC = "/sa_map/FeatureMap_BIL"
 		self.__regions: Union[Dict[str, MapRegion], None] = None
 		self.__regionDefs: Union[FeatureNotFound, None] = None

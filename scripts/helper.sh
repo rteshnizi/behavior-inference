@@ -23,15 +23,15 @@ parseArgs () {
 		case $1 in
 			-c|--clean)
 				echo "Clean build..."
-				scriptResult|=2
+				scriptResult=2
 				shift ;;
 			-s|--symlink)
 				echo "Symlink build..."
-				scriptResult|=4
+				scriptResult=4
 				shift ;;
 			-n|--no-build)
 				echo "No build..."
-				scriptResult|=8
+				scriptResult=8
 				shift ;;
 			*)
 				echo "Unknown arg: $1"

@@ -496,8 +496,10 @@
 		"~/ros2_humble/install/ament_clang_format/lib/python3.8/site-packages"
 	],
 	"cSpell.words": [
+		"Anant",
 		"Datap",
 		"jsoncomment",
+		"levelname",
 		"loadf",
 		"networkx",
 		"rclpy",

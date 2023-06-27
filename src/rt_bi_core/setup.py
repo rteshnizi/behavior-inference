@@ -28,7 +28,7 @@ setup(
 	license="UNLICENSED",
 	entry_points={
 		"console_scripts": [
-			"MapInterface = rt_bi_core.MapInterface:main",
+			"MapServiceInterface = rt_bi_core.MapServiceInterface:main",
 			"ShadowTreeInterface = rt_bi_core.ShadowTreeInterface:main",
 		],
 	},

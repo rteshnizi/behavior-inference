@@ -1,11 +1,12 @@
 import random
 from ctypes import c_int32
 from math import cos, sin, sqrt
-from typing import Tuple
+from typing import Tuple, Union
 from zlib import adler32
 
+from rclpy.node import Node, Publisher, Timer
 from geometry_msgs.msg import Point as PointMsg
-from visualization_msgs.msg import Marker
+from visualization_msgs.msg import Marker, MarkerArray
 
 import rt_bi_utils.Ros as RosUtils
 from rt_bi_utils.Geometry import Geometry
@@ -38,6 +39,21 @@ class RViz:
 	SCALE = 1
 	NAMESPACE = "rt_bi_core"
 	FRAME_ID = "map"
+	__RVIZ_TOPIC = RosUtils.CreateTopicName("rbc_markers")
+
+	@staticmethod
+	def isRVizReady(node: Node, publisher: Publisher) -> bool:
+		if any(n for n in node.executor.get_nodes() if n.get_name().lower().find("rviz") > -1):
+			node.get_logger().warn("No node containing the name RViz was found.")
+			return False
+		if publisher.get_subscription_count() == 0:
+			node.get_logger().warn("No subscribers to visualization messages.")
+			return False
+		return True
+
+	@staticmethod
+	def createRVizPublisher(node: Node) -> Tuple[Publisher, Union[Timer, None]]:
+		return RosUtils.CreatePublisher(node, MarkerArray, RViz.__RVIZ_TOPIC)
 
 	@staticmethod
 	def __translateCoords(coord: Geometry.Coords) -> Geometry.Coords:

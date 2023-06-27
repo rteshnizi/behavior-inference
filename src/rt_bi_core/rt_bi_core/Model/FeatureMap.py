@@ -1,4 +1,5 @@
-from typing import Dict
+from typing import Dict, Union
+
 
 class FeatureMap:
 	"""
@@ -8,7 +9,7 @@ class FeatureMap:
 		self.features: Dict[str, Feature] = {}
 
 class Feature:
-	def __init__(self, name, raw: dict):
+	def __init__(self, name, raw: dict = { "visibility_av": "yes", "traversability_gv_car": 1.0, "traversability_gv_tank": 1.0 }):
 		self._raw = raw
 		self.name = name
 		self.visibleFromAbove = raw["visibility_av"] == "yes"
@@ -18,7 +19,7 @@ class Feature:
 		return "{ %s - visibleAbv: %s, Trv: { %s } }" % repr(self.name, repr(self.visibleFromAbove), repr(self.traversability))
 
 class Traversability:
-	def __init__(self, car: int, tank: int) -> None:
+	def __init__(self, car: float, tank: float) -> None:
 		self.car = car
 		self.tank = tank
 

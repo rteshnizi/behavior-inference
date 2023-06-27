@@ -1,27 +1,40 @@
+import logging
 from math import isnan, nan
 from typing import Callable, Tuple, TypeVar, Union
 
 import rclpy
 from builtin_interfaces.msg import Time
 from rclpy.impl.rcutils_logger import RcutilsLogger
-from rclpy.node import Node, Publisher, Subscription, Timer
+from rclpy.node import Client, Node, Publisher, Subscription, Timer
 
 Topic = TypeVar("Topic")
+QueryRequest = TypeVar("QueryRequest")
+QueryResponse = TypeVar("QueryResponse")
 
 NAMESPACE = "rt_bi_core"
 __LOGGER: Union[RcutilsLogger, None] = None
+
+logging.basicConfig(filemode=None, format="[DL][%(levelname)s]: %(message)s", force=True)
+
+def SetLogger(logger: RcutilsLogger) -> None:
+	global __LOGGER
+	__LOGGER = logger
+	return
 
 def Logger() -> RcutilsLogger:
 	global __LOGGER
 	if __LOGGER is None:
 		context = rclpy.get_default_context()
 		if not context.ok():
-			raise RuntimeError("ROS context not OK!")
+			logging.error("ROS context not OK!")
+			return logging.getLogger()
 		if not context._logging_initialized:
-			raise RuntimeError("Logging not initialized!")
+			logging.error("Logging not initialized!")
+			return logging.getLogger()
 		rosNodes = rclpy.get_global_executor().get_nodes()
 		if len(rosNodes) == 0:
-			raise RuntimeError("No ROS nodes added to executor!")
+			logging.warn("No ROS nodes added to executor! Defaulting to python logger...")
+			return logging.getLogger()
 		__LOGGER = rosNodes[0].get_logger()
 	return __LOGGER
 
@@ -104,3 +117,18 @@ def CreateTopicName(shortTopicName: str) -> str:
 		For example, given `rviz` the returned topic would be `/namespace_prefix/rviz`.
 	"""
 	return "/%s/%s" % (NAMESPACE, shortTopicName)
+
+def SendClientRequest(node: Node, client: Client, request: QueryRequest, responseCallback: Callable[[QueryRequest, QueryResponse], None]) -> None:
+	future = client.call_async(request)
+	rclpy.spin_until_future_complete(node, future)
+	responseCallback(request, future.result())
+	# FIXME: Add try catch for error handling of service request and return true or false for indication
+	return None
+
+def WaitForServicesToStart(node: Node, client: Client = None) -> None:
+	clientList = node.clients if client is None else [client]
+	for client in clientList:
+		while not client.wait_for_service():
+			node.get_logger().info("Client %s is waiting for service %s" % (node.get_name(), client.srv_name))
+	node.get_logger().info("Client %s is ready"% node.get_name())
+	return

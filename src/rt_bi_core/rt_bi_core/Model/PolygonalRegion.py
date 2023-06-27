@@ -1,3 +1,4 @@
+import logging
 from typing import Dict, List, Set, Union
 
 from skimage import transform
@@ -19,7 +20,7 @@ class PolygonalRegion:
 		try:
 			self._coordsList = coords if polygon is None else list(polygon.exterior.coords)
 		except:
-			RosUtils.Logger().error("We are not sure what causes this case (if it ever happens)")
+			logging.error("We are not sure what causes this case (if it ever happens)")
 		self._coordsDict = self.__buildCoords(self._coordsList)
 		self.polygon = Polygon(self._coordsList) if polygon is None else polygon
 		self.BOUNDARY_COLOR = boundaryColor
