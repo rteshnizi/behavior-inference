@@ -40,8 +40,8 @@ else
 fi
 
 cd "$(dirname "$fileName")" # change to the directory of the script
+setEnvVars # set the necessary environment variables
 cd .. # now we are in the workspace directory
-export RCUTILS_CONSOLE_OUTPUT_FORMAT="[{severity}]: {message}"
 concurrently --kill-others --names "Emu,RVZ,RTC"\
 	--prefix "[{name}-{time}]"\
 	-c "bgYellow.black,bgGray.black,bgBlue.black"\

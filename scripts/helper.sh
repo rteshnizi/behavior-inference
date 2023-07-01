@@ -8,6 +8,10 @@ help () {
 	echo "\t -h | -? | --help   Display this message."
 }
 
+setEnvVars () {
+	export RCUTILS_CONSOLE_OUTPUT_FORMAT="[{severity}]: {message}"
+}
+
 parseArgs () {
 	##########################
 	### EXIT CODES ###########
