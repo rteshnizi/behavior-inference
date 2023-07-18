@@ -28,7 +28,8 @@ setup(
 	entry_points={
 		"console_scripts": [
 			"MapServiceInterface = rt_bi_core.MapServiceInterface:main",
-			"ShadowTreeInterface = rt_bi_core.ShadowTreeInterface:main",
+			"MapTopicInterface = rt_bi_core.MapTopicInterface:main",
+			# "ShadowTreeInterface = rt_bi_core.ShadowTreeInterface:main",
 		],
 	},
 )

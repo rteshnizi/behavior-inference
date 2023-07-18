@@ -2,7 +2,7 @@ from typing import List
 
 from shapely.geometry import LineString
 
-from rt_bi_core.Model.Pose import Pose
+from rt_bi_utils.Pose import Pose
 from rt_bi_utils.Geometry import Geometry
 from rt_bi_utils.RViz import RViz
 
@@ -37,9 +37,9 @@ class Trajectory:
 				linePoses = []
 			else:
 				fillColor = ""
-			poseIsActive = p.time == time
+			poseIsActive = p.timeNanoSecs == time
 			if time is None or poseIsActive:
-				self._circleIds.append(RViz.CreateCircle(canvas, p.x, p.y, radius=5, outline=self.MARKING_COLOR, tag="%s-%.1f" % (self.name, p.time), fill=fillColor))
+				self._circleIds.append(RViz.CreateCircle(canvas, p.x, p.y, radius=5, outline=self.MARKING_COLOR, tag="%s-%.1f" % (self.name, p.timeNanoSecs), fill=fillColor))
 			if not self.renderArrows: continue
 			(dx, dy) = Geometry.getUnitVectorFromAngle(p.angleFromX)
 			dx = dx * self.HEADING_ARROW_LENGTH

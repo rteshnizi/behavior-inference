@@ -9,13 +9,7 @@ def generate_launch_description():
 		Node(
 			package=packageName,
 			namespace=packageName,
-			executable="MapServiceInterface",
-			name="main"
-		),
-		Node(
-			package=packageName,
-			namespace=packageName,
-			executable="MapTopicInterface",
+			executable="AvEmulator",
 			name="main"
 		),
 	])

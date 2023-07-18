@@ -54,7 +54,7 @@ class Fov:
 	def time(self):
 		if len(self.sensors) == 0: return None
 		for sensorId in self.sensors:
-			return self.sensors[sensorId].pose.time
+			return self.sensors[sensorId].pose.timeNanoSecs
 
 	@property
 	def edges(self) -> Dict[str, LineString]:

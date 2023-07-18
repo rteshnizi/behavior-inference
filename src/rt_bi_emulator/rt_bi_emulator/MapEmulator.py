@@ -3,7 +3,7 @@ from rclpy.node import Node
 
 import rt_bi_utils.Ros as RosUtils
 from rt_bi_utils.SaMsgs import SaMsgs
-from rt_bi_emulator.Data.Case1 import Case1
+from rt_bi_emulator.Case1 import Case1
 from sa_msgs.msg import FeatureInfoIndividual
 from sa_msgs.srv import QueryFeature
 
@@ -12,10 +12,10 @@ class MapEmulator(Node):
 	""" The Viewer ROS Node """
 	def __init__(self):
 		""" Create a Viewer ROS node. """
-		super().__init__("rt_bi_emulator")
+		super().__init__("rt_bi_map_emulator")
 		self.get_logger().info("Map Emulator is starting...")
 		RosUtils.SetLogger(self.get_logger())
-		SaMsgs.createFeatureQueryService(self, self.__featureInfoQueryCallback)
+		SaMsgs.createSaFeatureQueryService(self, self.__featureInfoQueryCallback)
 
 	def __featureInfoQueryCallback(self, request: QueryFeature.Request, response: QueryFeature.Response) -> QueryFeature.Response:
 		RosUtils.Logger().info("Received QueryFeature \"%s\" request..." % request.name)

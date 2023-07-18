@@ -44,7 +44,7 @@ def RosTimeStamp() -> Time:
 		raise RuntimeError("ROS context not OK!")
 	return rclpy.get_global_executor()._clock.now().to_msg()
 
-def CreatePublisher(node: Node, topic: Topic, topicName: str, callbackFunc: Callable = lambda x: x, interval: float = nan) -> Tuple[Publisher, Union[Timer, None]]:
+def CreatePublisher(node: Node, topic: Topic, topicName: str, callbackFunc: Callable = lambda: None, interval: float = nan) -> Tuple[Publisher, Union[Timer, None]]:
 	"""
 	Create and return the tuple of `(Publisher, Timer | None)`.
 
@@ -72,7 +72,7 @@ def CreatePublisher(node: Node, topic: Topic, topicName: str, callbackFunc: Call
 		freq = " @ %.2fHz" % 1 / interval
 	except:
 		freq = ""
-	node.get_logger().info("Node %s publishes topic \"%s\"%s" % (node.get_name(), topicName, freq))
+	node.get_logger().info("%s publishes topic \"%s\"%s" % (node.get_fully_qualified_name(), topicName, freq))
 	return (publisher, timer)
 
 def CreateSubscriber(node: Node, topic: Topic, topicName: str, callbackFunc: Callable[[Topic], None]) -> Subscription:
@@ -95,7 +95,7 @@ def CreateSubscriber(node: Node, topic: Topic, topicName: str, callbackFunc: Cal
 	`Subscription`
 	"""
 	subscription = node.create_subscription(topic, topicName, callbackFunc, 10)
-	node.get_logger().info("Node %s subscribed to \"%s\"" % (node.get_name(), topicName))
+	node.get_logger().info("%s subscribed to \"%s\"" % (node.get_fully_qualified_name(), topicName))
 	return subscription
 
 def CreateTopicName(shortTopicName: str) -> str:

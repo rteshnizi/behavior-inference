@@ -505,6 +505,7 @@
 		"rclpy",
 		"Rcutils",
 		"reza",
+		"RTBI",
 		"rviz",
 		"scikit",
 		"scipy",
@@ -513,7 +514,6 @@
 		"TAMU",
 		"traj",
 		"traversability",
-		"Traversibility",
 		"verts"
 	],
 	"colcon.provideTasks": true,

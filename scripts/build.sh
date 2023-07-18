@@ -43,16 +43,9 @@ then
 		return $?
 	fi
 else
-	if [ -e ./install/local_setup.sh ]
-	then
-		echo "colcon build --packages-up-to rt_bi_core"
-		colcon build --packages-up-to rt_bi_core
-		return $?
-	else
-		echo "colcon build"
-		colcon build
-		return $?
-	fi
+	echo "colcon build"
+	colcon build
+	return $?
 fi
 
 echo "Ready to launch..."

@@ -3,7 +3,7 @@ from typing import Dict, Set, Union
 from skimage import transform
 
 from rt_bi_core.Model.FeatureMap import FeatureMap
-from rt_bi_core.Model.Pose import Pose
+from rt_bi_utils.Pose import Pose
 from rt_bi_core.Model.SensingRegion import SensingRegion
 from rt_bi_utils.Geometry import Geometry, LineString, MultiPolygon, Polygon
 

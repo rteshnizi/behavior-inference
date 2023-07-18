@@ -5,7 +5,7 @@ from skimage import transform
 from visualization_msgs.msg import Marker
 
 import rt_bi_utils.Ros as RosUtils
-from rt_bi_utils.Geometry import (Geometry, LineString, MultiPolygon, Point, Polygon)
+from rt_bi_utils.Geometry import Geometry, LineString, MultiPolygon, Point, Polygon
 from rt_bi_utils.RViz import Color, KnownColors, RViz
 
 
@@ -105,4 +105,5 @@ class PolygonalRegion:
 		return msgs
 
 	def clearRender(self) -> None:
-		pass
+		RosUtils.Logger().info("No implementation for %s" % PolygonalRegion.clearRender.__name__)
+		return

@@ -1,35 +1,36 @@
 # from bil.model.trajectory import Trajectory
-from typing import Dict, Tuple
-from bil.gui.drawing import Drawing
-from bil.observation.pose import Pose
+from typing import Dict, List, Tuple
+from rt_bi_utils.Pose import Pose
+
+from visualization_msgs.msg import Marker
+
+from rt_bi_utils.RViz import KnownColors, RViz
+
 
 class Track:
-	def __init__(self, idNum: int, time: float, x: float, y: float, psi: float, isInterpolated=False):
+	def __init__(self, idNum: int, timeNanoSecs: float, x: float, y: float, psi: float, isInterpolated=False):
 		self.id = idNum
 		self.isInterpolated = isInterpolated
-		self.pose = Pose(time, x, y, psi)
+		self.pose = Pose(timeNanoSecs, x, y, psi)
 		self.canvasId = None
 
 	def __repr__(self):
 		return "Trk-%d: %s" % (self.id, repr(self.pose))
 
-	def render(self, canvas):
-		if self.canvasId is not None: self.clearRender(canvas)
-		fill = ""
+	def render(self) -> List[Marker]:
+		msgs = []
+		color = KnownColors.GREEN
 		if self.pose.spawn:
-			fill = "GREEN"
+			color = KnownColors.GREEN
 		elif self.pose.vanished:
-			fill = "MAROON"
-		tag = "track%d-%.1f" % (self.id, self.pose.time)
-		color = "GREEN" if self.isInterpolated else "PURPLE"
+			color = KnownColors.MAROON
+		tag = "track%d-%.1f" % (self.id, self.pose.timeNanoSecs)
+		color = color if self.isInterpolated else KnownColors.PURPLE
 		width = 1 if self.isInterpolated else 3
-		self.canvasId = Drawing.CreateCircle(canvas, self.pose.x, self.pose.y, radius=5, fill=fill, outline=color, tag=tag, width=width)
+		msgs.append(RViz.CreateCircle(tag, self.pose.x, self.pose.y, color, width))
 
-
-	def clearRender(self, canvas):
-		if self.canvasId is not None:
-			Drawing.RemoveShape(canvas, self.canvasId)
-			self.canvasId = None
+	def clearRender(self):
+		return
 
 Tracks = Dict[Tuple[float, int], Track]
 """

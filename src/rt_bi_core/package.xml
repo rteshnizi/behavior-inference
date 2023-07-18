@@ -13,9 +13,9 @@
 	<depend>visualization_msgs</depend>
 
 	<depend version_gte="0.0.1">rt_bi_utils</depend>
-	<!-- <depend version_gte="0.0.1">rt_bi_emulator</depend> -->
+	<depend version_gte="0.0.1">rt_bi_emulator</depend>
 	<depend>sa_msgs</depend>
-	<depend>sa_semantic_map</depend>
+	<!-- <depend>sa_semantic_map</depend> -->
 
 	<export>
 		<build_type>ament_python</build_type>

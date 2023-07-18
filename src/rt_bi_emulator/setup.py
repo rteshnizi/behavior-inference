@@ -24,6 +24,8 @@ setup(
 	entry_points={
 		"console_scripts": [
 			"MapEmulator = rt_bi_emulator.MapEmulator:main",
+			"AvEmulator = rt_bi_emulator.AvEmulator:main",
+			# "GvEmulator = rt_bi_emulator.GvEmulator:main",
 		],
 	},
 )

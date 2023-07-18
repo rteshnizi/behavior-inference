@@ -351,7 +351,7 @@ class Geometry:
 			* A slerp method is used to obtain the rotation interpolation.
 		"""
 		if param > 1 or param < 0:
-			raise("Parameter should be in range [0, 1]")
+			raise ValueError("Parameter should be in range [0, 1]. Given param = %f" % param)
 		# Easy cases that do not need calculation
 		if param == 0: return transform.AffineTransform(np.identity(3))
 		if param == 1: return transform.AffineTransform(transformation.params)
@@ -437,6 +437,61 @@ class Geometry:
 		inverted  = transform.AffineTransform(matrix=transformation._inv_matrix)
 		return inverted
 
+def __pointNeg(self: Point) -> Point:
+	"""
+		#### No need to import this class to your files.
+
+		This class sets up a group of functions that help use shapely objects easier.
+
+		`-1 * Point`
+	"""
+	return Point(-1 * self.x, -1 * self.y)
+
+def __pointAdd(self: Point, other: Point) -> Point:
+	"""
+		#### No need to import this class to your files.
+
+		This class sets up a group of functions that help use shapely objects easier.
+
+		`Point + Point`
+	"""
+	return Point(self.x + other.x, self.y + other.y)
+
+def __pointSub(self: Point, other: Point) -> Point:
+	"""
+		#### No need to import this class to your files.
+
+		This class sets up a group of functions that help use shapely objects easier.
+
+		`Point - Point`
+	"""
+	return Point(self.x - other.x, self.y - other.y)
+
+def __pointDivScalar(self: Point, num: float) -> Point:
+	"""
+		#### No need to import this class to your files.
+
+		This class sets up a group of functions that help use shapely objects easier.
+
+		`Point / num`
+	"""
+	return Point(self.x / num, self.y / num)
+
+def __pointMulScalar(self: Point, num: float) -> Point:
+	"""
+		#### No need to import this class to your files.
+
+		This class sets up a group of functions that help use shapely objects easier.
+
+		`Point * num`
+	"""
+	return Point(self.x * num, self.y * num)
+
+Point.__neg__ = __pointNeg
+Point.__add__ = __pointAdd
+Point.__sub__ = __pointSub
+Point.__mul__ = __pointMulScalar
+Point.__truediv__ = __pointDivScalar
 Point.__repr__ = lambda p: "P%s" % repr((p.x, p.y))
 LinearRing.__repr__ = lambda l: "LR[#%d]" % len(l.coords)
 LineString.__repr__ = lambda l: "LS[#%d]" % len(l.coords) if len(l.coords) > 2 else "LS%s" % repr(l.bounds)
