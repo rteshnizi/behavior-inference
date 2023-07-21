@@ -49,9 +49,9 @@ concurrently\
 	-c "bgWhite.black,bgGray.black,bgBlue.black,bgYellow.black,bgMagentaBright.black"\
 	--hide "0"\
 	--timestamp-format "HH:mm:ss"\
-	"ros2 launch rt_bi_emulator map.launch.py"\
-	"ros2 launch rt_bi_emulator av1.launch.py"\
 	"ros2 launch rt_bi_core rviz.launch.py"\
+	"ros2 launch rt_bi_emulator map.launch.py"\
+	"ros2 launch rt_bi_emulator avs.launch.py"\
 	"ros2 launch rt_bi_core msi.launch.py"\
 	"ros2 launch rt_bi_core mti.launch.py"
 exit 0

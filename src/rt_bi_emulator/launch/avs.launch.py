@@ -1,6 +1,5 @@
 import os
 import pathlib
-from typing import List
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
@@ -9,9 +8,9 @@ from launch_ros.actions import Node
 packageName = pathlib.Path(__file__).parent.parent.name
 
 def generate_launch_description():
-	yamlPath = os.path.join(get_package_share_directory(packageName), "config", "case1.av1.yaml")
+	yamlPath = os.path.join(get_package_share_directory(packageName), "config", "case1.avs.yaml")
 
-	nodes: List[Node] = [
+	return LaunchDescription([
 		Node(
 			package=packageName,
 			namespace=packageName,
@@ -19,6 +18,11 @@ def generate_launch_description():
 			name="av1",
 			parameters=[yamlPath]
 		),
-	]
-
-	return LaunchDescription(nodes)
+		Node(
+			package=packageName,
+			namespace=packageName,
+			executable="AvEmulator",
+			name="av2",
+			parameters=[yamlPath]
+		),
+	])

@@ -22,7 +22,7 @@ class MapServiceInterface(Node):
 		""" Create a Viewer ROS node. """
 		super().__init__("rt_bi_core_map")
 		self.__MAP_QUERY_NAME = "map"
-		self.get_logger().info("Map SERVICE INTERFACE is starting...")
+		self.get_logger().info("%s is starting..." % self.get_fully_qualified_name())
 		RosUtils.SetLogger(self.get_logger())
 		self.__regions: Union[Dict[str, PolygonalRegion], None] = None
 		self.__regionNames: List[str] = []

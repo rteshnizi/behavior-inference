@@ -12,6 +12,7 @@ from shapely.geometry.polygon import LinearRing
 from shapely.ops import unary_union
 from shapely.validation import make_valid
 from skimage import transform
+from skimage.transform import AffineTransform
 
 
 class Geometry:
@@ -323,7 +324,7 @@ class Geometry:
 		return edges
 
 	@staticmethod
-	def getAffineTransformation(p: Polygon, pPrime: Polygon, centerOfRotation: Coords) -> transform.AffineTransform:
+	def getAffineTransformation(p: Polygon, pPrime: Polygon, centerOfRotation: Coords) -> AffineTransform:
 		"""
 		see: https://stackoverflow.com/a/47102206/750567
 		"""
@@ -338,7 +339,7 @@ class Geometry:
 		return matrix
 
 	@staticmethod
-	def getParameterizedAffineTransformation(transformation: transform.AffineTransform, param: float) -> transform.AffineTransform:
+	def getParameterizedAffineTransformation(transformation: AffineTransform, param: float) -> AffineTransform:
 		"""
 
 			Given an affine transformation and a parameter between 0 and 1, this method returns a linear interpolation transformation.
@@ -353,8 +354,8 @@ class Geometry:
 		if param > 1 or param < 0:
 			raise ValueError("Parameter should be in range [0, 1]. Given param = %f" % param)
 		# Easy cases that do not need calculation
-		if param == 0: return transform.AffineTransform(np.identity(3))
-		if param == 1: return transform.AffineTransform(transformation.params)
+		if param == 0: return AffineTransform(np.identity(3))
+		if param == 1: return AffineTransform(transformation.params)
 		# Other params
 		# scale = [((transformation.scale[0] - 1) * param) + 1, ((transformation.scale[1] - 1) * param) + 1]
 		scale = 1
@@ -376,11 +377,11 @@ class Geometry:
 		shear = 0
 		translation = [transformation.translation[0] * param, transformation.translation[1] * param]
 		# translation = [0, 0]
-		parameterizedMatrix = transform.AffineTransform(matrix=None, scale=scale, rotation=rotation, shear=shear, translation=translation)
+		parameterizedMatrix = AffineTransform(matrix=None, scale=scale, rotation=rotation, shear=shear, translation=translation)
 		return parameterizedMatrix
 
 	@staticmethod
-	def applyMatrixTransformToPolygon(transformation: transform.AffineTransform, polygon: Polygon, centerOfRotation: Coords) -> Polygon:
+	def applyMatrixTransformToPolygon(transformation: AffineTransform, polygon: Polygon, centerOfRotation: Coords) -> Polygon:
 		pCoords = list(polygon.exterior.coords)
 		pCoords = [(coords[0] - centerOfRotation[0], coords[1] - centerOfRotation[1]) for coords in pCoords]
 		pCoords = np.array(pCoords)
@@ -390,7 +391,7 @@ class Geometry:
 		return transformedPolygon
 
 	@staticmethod
-	def findTheLastTimeTheyAreColliding(movingEdge: LineString, staticEdge: LineString, transformation: transform.AffineTransform) -> float:
+	def findTheLastTimeTheyAreColliding(movingEdge: LineString, staticEdge: LineString, transformation: AffineTransform) -> float:
 		"""
 			### Remarks
 			This assumes the edges are in contact already.
@@ -411,7 +412,7 @@ class Geometry:
 		return latestTime
 
 	@staticmethod
-	def findTheEarliestTimeTheyAreColliding(movingEdge: LineString, staticEdge: LineString, transformation: transform.AffineTransform) -> float:
+	def findTheEarliestTimeTheyAreColliding(movingEdge: LineString, staticEdge: LineString, transformation: AffineTransform) -> float:
 		NUM_SAMPLES = 100
 		latestTime = inf
 		for x in range(0, NUM_SAMPLES, 1):
@@ -424,7 +425,7 @@ class Geometry:
 		return latestTime
 
 	@staticmethod
-	def applyMatrixTransformToLineString(transformation: transform.AffineTransform, line: LineString, centerOfRotation: Coords) -> LineString:
+	def applyMatrixTransformToLineString(transformation: AffineTransform, line: LineString, centerOfRotation: Coords) -> LineString:
 		pCoords = list(line.coords)
 		pCoords = [(coords[0] - centerOfRotation[0], coords[1] - centerOfRotation[1]) for coords in pCoords]
 		transformedCoords = transform.matrix_transform(pCoords, transformation.params)
@@ -433,8 +434,8 @@ class Geometry:
 		return transformedLineString
 
 	@staticmethod
-	def inverseTransformation(transformation: transform.AffineTransform) -> transform.AffineTransform:
-		inverted  = transform.AffineTransform(matrix=transformation._inv_matrix)
+	def inverseTransformation(transformation: AffineTransform) -> AffineTransform:
+		inverted  = AffineTransform(matrix=transformation._inv_matrix)
 		return inverted
 
 def __pointNeg(self: Point) -> Point:

@@ -10,6 +10,6 @@ def generate_launch_description():
 			package=packageName,
 			namespace=packageName,
 			executable="MapTopicInterface",
-			name="main"
+			name="mti"
 		),
 	])

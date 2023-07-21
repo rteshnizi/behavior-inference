@@ -2,10 +2,10 @@ import os
 from launch import LaunchDescription
 from launch_ros.actions import Node
 import pathlib
+from ament_index_python.packages import get_package_share_directory
 
-#                          py file < launch < pack < share
-shareDir = str(pathlib.Path(__file__).parent.parent.parent.resolve())
 packageName = pathlib.Path(__file__).parent.parent.name
+shareDir = get_package_share_directory(packageName, print_warning=True)
 
 def generate_launch_description():
 	return LaunchDescription([
@@ -13,11 +13,17 @@ def generate_launch_description():
 			package=packageName,
 			namespace=packageName,
 			executable="MapServiceInterface",
-			name="main"
+			name="msi"
+		),
+		Node(
+			package=packageName,
+			namespace=packageName,
+			executable="MapTopicInterface",
+			name="mti"
 		),
 		Node(
 			package="rviz2",
-			namespace="rt_bi_core",
+			namespace="rviz2",
 			executable="rviz2",
 			name="rviz2",
 			arguments=[

@@ -1,7 +1,5 @@
 from typing import List, Tuple
-from rt_bi_emulator.Av import Av
 from rt_bi_utils.SaMsgs import SaMsgs
-from rt_bi_utils.Pose import Pose
 
 def getPoses() -> List[Tuple[int, int]]:
 	pass
@@ -28,16 +26,7 @@ class FeatureInfoIndividual:
 		self.visibility_av = visibility_av
 		self.type = type
 
-NANO_CONVERSION_CONSTANT = 10 ** 9
-CENTER_OF_ROTATION = (120.148, 133.236)
-COORDS_1 = [(200.612, -24.140), (244.985, 008.992), (120.148, 133.236)]
-COORDS_2 = [(283.602, 065.354), (296.297, 119.257), (120.804, 134.190)]
 class Case1:
 	FeatureIndividuals = [
 		FeatureInfoIndividual(),
-	]
-	CENTER_OF_ROTATION = (120.148, 133.236)
-	Avs: List[Av] = [
-		Av(1, Pose(00 * NANO_CONVERSION_CONSTANT, *COORDS_1[-1], 60), COORDS_1),
-		Av(1, Pose(45 * NANO_CONVERSION_CONSTANT, *COORDS_2[-1], 60), COORDS_2),
 	]

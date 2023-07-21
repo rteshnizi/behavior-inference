@@ -19,7 +19,7 @@ class MapTopicInterface(Node):
 	def __init__(self):
 		""" Create a Viewer ROS node. """
 		super().__init__("rt_bi_core_map")
-		self.get_logger().info("Map TOPIC INTERFACE is starting...")
+		self.get_logger().info("%s is starting..." % self.get_fully_qualified_name())
 		self.__regions: Union[Dict[str, PolygonalRegion], None] = None
 		self.__sensors: Union[Dict[int, SensingRegion], None] = None
 		self.__regionDefs: Union[FeatureInfo, None] = None
