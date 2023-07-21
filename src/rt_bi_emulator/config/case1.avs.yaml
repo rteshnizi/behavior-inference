@@ -5,7 +5,6 @@ rt_bi_emulator:
       timeSecs:
         - 0.0
         - 45.0
-      angularVelocity: 0.889
       saPose:
         - "[120.804, 134.190, -13.91]"
         - "[120.148, 133.236, -53.94]"
@@ -18,7 +17,6 @@ rt_bi_emulator:
       timeSecs:
         - 0.0
         - 45.0
-      angularVelocity: 1.355
       saPose:
         - "[342.837, -48.842, -13.896]"
         - "[343.492, -47.888, -54.054]"

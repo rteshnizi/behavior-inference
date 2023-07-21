@@ -35,14 +35,12 @@ class AvEmulator(Node):
 		self.__initFovPoly = Polygon()
 		self.__totalTimeNanoSecs = 0.0
 		self.__transformationMatrix = AffineTransform()
-		self.__angularVelocity = 1.0
 		self.__parseConfigFileParameters()
-		(self.__fovPublisher, _) = SaMsgs.createSaRobotStatePublisher(self, self.__publishMyFov, (1 / self.__angularVelocity))
+		(self.__fovPublisher, _) = SaMsgs.createSaRobotStatePublisher(self, self.__publishMyFov, 0.3)
 
 	def __declareParameters(self) -> None:
 		self.get_logger().info("%s is setting node parameters..." % self.get_fully_qualified_name())
 		self.declare_parameter("robotId", Parameter.Type.INTEGER)
-		self.declare_parameter("angularVelocity", Parameter.Type.DOUBLE)
 		self.declare_parameter("timeSecs", Parameter.Type.DOUBLE_ARRAY),
 		self.declare_parameter("saPose", Parameter.Type.STRING_ARRAY),
 		self.declare_parameter("fov", Parameter.Type.STRING_ARRAY),
@@ -51,7 +49,6 @@ class AvEmulator(Node):
 	def __parseConfigFileParameters(self) -> None:
 		self.get_logger().info("%s is parsing parameters..." % self.get_fully_qualified_name())
 		self.__robotId = self.get_parameter("robotId").get_parameter_value().integer_value
-		self.__angularVelocity = self.get_parameter_or("angularVelocity").get_parameter_value().double_value
 		timePoints = self.get_parameter("timeSecs").get_parameter_value().double_array_value
 		saPoses = self.get_parameter("saPose").get_parameter_value().string_array_value
 		saPoses = [json.loads(pose) for pose in saPoses]
