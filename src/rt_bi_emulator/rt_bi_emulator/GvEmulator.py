@@ -17,9 +17,9 @@ def main(args=None):
 	Start the Behavior Inference Run-time.
 	"""
 	rclpy.init(args=args)
-	gvNode = GvEmulator()
-	rclpy.spin(gvNode)
-	gvNode.destroy_node()
+	node = GvEmulator()
+	rclpy.spin(node)
+	node.destroy_node()
 	rclpy.shutdown()
 	return
 

@@ -50,9 +50,9 @@ def main(args=None):
 	Start the Behavior Inference Run-time.
 	"""
 	rclpy.init(args=args)
-	mapNode = MapEmulator()
-	rclpy.spin(mapNode)
-	mapNode.destroy_node()
+	node = MapEmulator()
+	rclpy.spin(node)
+	node.destroy_node()
 	rclpy.shutdown()
 	return
 
