@@ -14,7 +14,7 @@ QueryResponse = TypeVar("QueryResponse")
 NAMESPACE = "rt_bi_core"
 __LOGGER: Union[RcutilsLogger, None] = None
 # In case of failure to obtain a ROS logger, the default Python logger will be used, which most likely will log to std stream.
-logging.basicConfig(filemode=None, format="[DL][%(levelname)s]: %(message)s", force=True)
+logging.basicConfig(filemode=None, format="[+][%(levelname)s]: %(message)s", force=True)
 
 def SetLogger(logger: RcutilsLogger) -> None:
 	global __LOGGER
