@@ -7,7 +7,7 @@ from typing import Dict, List, Tuple, Union
 
 import numpy as np
 from scipy.spatial.transform import Rotation, Slerp
-from shapely.geometry import (LineString, MultiLineString, MultiPolygon, Point, Polygon)
+from shapely.geometry import LineString, MultiLineString, MultiPolygon, Point, Polygon
 from shapely.geometry.polygon import LinearRing
 from shapely.ops import unary_union
 from shapely.validation import make_valid

@@ -3,6 +3,10 @@ Reusable utility classes and functions for Python
 """
 
 class ObjectLiteral:
+	"""
+	This class works like a JS class.
+	The parameters passed as key value will be accessible as key value.
+	"""
 	def __init__(self, **kwds):
 		self.__dict__.update(kwds)
 
