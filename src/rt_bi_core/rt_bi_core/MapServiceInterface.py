@@ -17,7 +17,7 @@ from sa_msgs.srv import QueryFeature
 
 
 class MapServiceInterface(Node):
-	""" The Viewer ROS Node """
+	""" This Node listens to all the messages published on the topics related to the map and renders them. """
 	def __init__(self):
 		""" Create a Viewer ROS node. """
 		super().__init__("rt_bi_core_map")
@@ -111,7 +111,7 @@ class MapServiceInterface(Node):
 		# 	# region.clearRender()
 		return
 
-	def initializeMapUsingService(self) -> None:
+	def initializeMap(self) -> None:
 		self.get_logger().info("Initializing map polygons...")
 		if not self.__mapClient.service_is_ready():
 			RosUtils.WaitForServicesToStart(self, self.__mapClient)
@@ -120,7 +120,7 @@ class MapServiceInterface(Node):
 		RosUtils.SendClientRequest(self, self.__mapClient, request, self.__parseFeatureQueryResponse)
 		return
 
-	def queryFeatureDefinitions(self) -> None:
+	def queryDefinitions(self) -> None:
 		for name in self.__regionNames:
 			if name == "":
 				self.get_logger().warn("Region with empty name noticed in region names!")
@@ -137,12 +137,12 @@ def main(args=None):
 	Start the Behavior Inference Run-time.
 	"""
 	rclpy.init(args=args)
-	mapNode = MapServiceInterface()
-	mapNode.initializeMapUsingService()
-	while mapNode.context.ok():
-		mapNode.get_clock().sleep_for(Duration(seconds=5, nanoseconds=0))
-		mapNode.queryFeatureDefinitions()
-	mapNode.destroy_node()
+	node = MapServiceInterface()
+	node.initializeMap()
+	while node.context.ok():
+		node.get_clock().sleep_for(Duration(seconds=5, nanoseconds=0))
+		node.queryDefinitions()
+	node.destroy_node()
 	rclpy.shutdown()
 	return
 

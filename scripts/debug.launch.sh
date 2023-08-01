@@ -44,14 +44,15 @@ setEnvVars # set the necessary environment variables
 cd .. # now we are in the workspace directory
 concurrently\
 	--kill-others\
-	--names "RVZ,MAP,AVE,MSI,MTI"\
+	--names "RVZ,MAP,AVE,MSI,STI,STR"\
 	--prefix "[{name}-{time}]"\
-	-c "bgWhite.black,bgGray.black,bgBlue.black,bgYellow.black,bgMagentaBright.black"\
+	-c "bgWhite.black,bgBlueBright.black,bgBlue.black,bgYellow.black,bgMagentaBright.black,bgGreenBright.black"\
 	--hide "0"\
 	--timestamp-format "HH:mm:ss"\
 	"ros2 launch rt_bi_core rviz.launch.py"\
 	"ros2 launch rt_bi_emulator map.launch.py"\
 	"ros2 launch rt_bi_emulator avs.launch.py"\
 	"ros2 launch rt_bi_core msi.launch.py"\
-	"ros2 launch rt_bi_core mti.launch.py"
+	"ros2 launch rt_bi_core sti.launch.py"\
+	"ros2 launch rt_bi_core str.launch.py"
 exit 0

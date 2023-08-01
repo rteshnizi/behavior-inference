@@ -1,36 +1,23 @@
-from typing import Dict, Set, Union
+from typing import Dict, List, Set, Union
 
 from skimage import transform
-
 from rt_bi_core.Model.FeatureMap import FeatureMap
+
+from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
 from rt_bi_utils.Pose import Pose
 from rt_bi_core.Model.SensingRegion import SensingRegion
 from rt_bi_utils.Geometry import Geometry, LineString, MultiPolygon, Polygon
 
 
 class Sensor:
-	def __init__(self, idNum: int, time: float, x: float, y: float, psi: float, coords: Geometry.CoordsList, envMap: Map, featureMap: FeatureMap):
+	def __init__(self, idNum: int, time: float, x: float, y: float, psi: float, coords: Geometry.CoordsList):
 		self.id = idNum
 		self.pose = Pose(time, x, y, psi)
-		self._originalCoords = [tuple(coord) for coord in coords]
-		poly = self._buildVisibilityPolygon(envMap, featureMap)
-		self.region = SensingRegion("SR%d" % idNum, [], time, idNum, polygon=poly)
+		self.__originalCoords = [tuple(coord) for coord in coords]
+		self.region = SensingRegion("SR%d" % idNum, [], time, idNum, polygon=Polygon(self.__originalCoords))
 
 	def __repr__(self):
 		return "Sensor%d" % self.id
-
-	def _buildVisibilityPolygon(self, envMap: Map, featureMap: FeatureMap) -> Geometry.CoordsList:
-		# sortedCoords = Geometry.sortCoordinatesClockwise(self._originalCoords)
-		sortedCoords = self._originalCoords
-		polygon = Polygon(sortedCoords)
-		for rKey in envMap.regions:
-			region = envMap.regions[rKey]
-			# FIXME: Currently, the type of sensor is missing.
-			# Once its available you should check the type and see which type of seeThrough I should look for
-			if featureMap.features[region.type].seeThrough.fromAbove: continue
-			nextPolygon = Geometry.subtract(polygon, region.polygon)
-			polygon = nextPolygon
-		return polygon
 
 	def __getLineSegmentExpandedBb(self, transformation: transform.AffineTransform, lineSeg: LineString, angle: float, centerOfRotation: Geometry.Coords) -> Polygon:
 		"""
@@ -48,6 +35,18 @@ class Sensor:
 		expandedObb = Geometry.union(polygons)
 		expandedObb = expandedObb.convex_hull
 		return expandedObb
+
+	def updateVisibilityPolygon(self, regions: List[PolygonalRegion], featureMap: FeatureMap) -> Geometry.CoordsList:
+		# sortedCoords = Geometry.sortCoordinatesClockwise(self._originalCoords)
+		sortedCoords = self.__originalCoords
+		polygon = Polygon(sortedCoords)
+		for region in regions:
+			# FIXME: Currently, the type of sensor is missing.
+			# Once its available you should check the type and see which type of seeThrough I should look for
+			if featureMap.features[region.type].visibleFromAbove: continue
+			nextPolygon = Geometry.subtract(polygon, region.polygon)
+			polygon = nextPolygon
+		return polygon
 
 	def findCollisionsWithExtendedBb(self, past: "Sensor", targetPolygon: Union[Polygon, MultiPolygon]) -> Dict[str, Set[LineString]]:
 		"""
