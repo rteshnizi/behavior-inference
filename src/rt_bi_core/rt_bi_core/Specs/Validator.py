@@ -1,7 +1,6 @@
-import sa_bil.core # If you remove this, this file will throw an error
-from sa_bil.core.model.PolygonalRegion import PolygonalRegion
-from sa_bil.core.observation.pose import Pose
-from sa_bil.core.spec.lambdas import NfaLambda, Prototypes, LambdaType
+# import rt_bi_core # If you remove this, this file will throw an error
+from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
+from rt_bi_core.Specs.Lambdas import NfaLambda, LambdaType
 class Validator(object):
 	def __init__(self, name, lambdaStr):
 		self.name = name

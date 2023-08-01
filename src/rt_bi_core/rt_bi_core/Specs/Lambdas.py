@@ -4,10 +4,9 @@ from math import inf
 from typing import Callable, Union
 from shapely.geometry import Polygon
 
-from sa_bil.core.spec.spaceTime import ProjectiveSpaceTimeSet
-from sa_bil.core.spec.timeRegion import TimeInterval
-from sa_bil.core.utils.geometry import Geometry
-from sa_bil.core.utils.python import ObjectLiteral
+from rt_bi_core.Specs.SpaceTime import ProjectiveSpaceTimeSet
+from rt_bi_core.Specs.TimeRegion import TimeInterval
+from rt_bi_utils.Python import ObjectLiteral
 
 class LambdaType(Enum):
 	Region = 1
