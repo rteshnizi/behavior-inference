@@ -6,10 +6,10 @@ from math import nan, isnan
 from queue import Queue
 from typing import Dict, List, Tuple, Union
 
-from sa_bil.core.model.shadowRegion import ShadowRegion
-from sa_bil.core.spec.lambdas import NfaLambda
-from sa_bil.core.spec.spaceTime import ProjectiveSpaceTimeSet
-from sa_bil.core.spec.timeRegion import TimeInterval
+from rt_bi_core.Model.ShadowRegion import ShadowRegion
+from rt_bi_core.Specs.Lambdas import NfaLambda
+from rt_bi_core.Specs.SpaceTime import ProjectiveSpaceTimeSet
+from rt_bi_core.Specs.TimeRegion import TimeInterval
 
 Queue.__repr__ = lambda q: repr(q.queue)
 
@@ -38,7 +38,7 @@ class GraphAlgorithms:
 		return None
 
 	@staticmethod
-	def isConnectedBfs(graph: nx.DiGraph, start, end, premittedBeams = []):
+	def isConnectedBfs(graph: nx.DiGraph, start, end, permittedBeams = []):
 		q = Queue()
 		visited = set()
 		q.put([start])
@@ -47,7 +47,7 @@ class GraphAlgorithms:
 			n = path[-1]
 			visited.add(n)
 			if n == end: return path
-			if (n != start) and (GraphAlgorithms.isBeamNode(n)) and (n not in premittedBeams): continue
+			if (n != start) and (GraphAlgorithms.isBeamNode(n)) and (n not in permittedBeams): continue
 			for child in graph.adj[n]:
 				if child in visited: continue
 				newPath = list(path)
