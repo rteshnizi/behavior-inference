@@ -8,7 +8,7 @@ from skimage import transform
 from rt_bi_core.Model.SensingRegion import SensingRegion
 from rt_bi_core.ShadowTree.ConnectivityGraph import ConnectivityGraph
 from rt_bi_utils.Geometry import Geometry
-from rt_bi_utils.Graph import GraphAlgorithms
+from rt_bi_core.ShadowTree.Graph import GraphAlgorithms
 
 
 class TimedGraph(nx.DiGraph):
