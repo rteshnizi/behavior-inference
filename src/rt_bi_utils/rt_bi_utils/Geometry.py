@@ -36,8 +36,8 @@ class Geometry:
 			return [polys]
 
 	@staticmethod
-	def vectorsAreEqual(vect1: Vector, vect2: Vector, withinEpsilon = True) -> bool:
-		d1 = Geometry.distanceFromVects(vect1, vect2)
+	def vectorsAreEqual(vec1: Vector, vec2: Vector, withinEpsilon = True) -> bool:
+		d1 = Geometry.distanceFromVects(vec1, vec2)
 		margin = Geometry.EPSILON if withinEpsilon else 0
 		return d1 <= margin
 
