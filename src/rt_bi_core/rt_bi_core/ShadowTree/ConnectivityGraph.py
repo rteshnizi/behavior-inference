@@ -11,11 +11,19 @@ from rt_bi_core.Model.Track import Tracks
 from rt_bi_core.Model.ValidatorRegion import ValidatorRegion
 from rt_bi_core.Specs.Validator import Validator
 from rt_bi_utils.Geometry import Geometry
-from rt_bi_utils.Graph import GraphAlgorithms
+from rt_bi_core.ShadowTree.Graph import GraphAlgorithms
 
 
 class ConnectivityGraph(nx.DiGraph):
-	def __init__(self, timeNanoSecs: float, regions: List[PolygonalRegion], fovUnion: Union[Polygon, MultiPolygon], tracks: Tracks, validators: Dict[str, Validator] = {}) -> None:
+	"""The implementation of a Connectivity Graph in python as described in the dissertation of Reza Teshnizi."""
+	def __init__(
+			self,
+			timeNanoSecs: float,
+			regions: List[PolygonalRegion],
+			fovUnion: Union[Polygon, MultiPolygon],
+			tracks: Tracks,
+			validators: Dict[str, Validator] = {},
+	) -> None:
 		"""
 		The implementation of a Connectivity Graph in python on ROS2 (Humble).
 

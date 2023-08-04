@@ -4,13 +4,11 @@ from typing import Dict, List, Set, Tuple, Union
 import networkx as nx
 from skimage import transform
 
-from rt_bi_core.Model.Fov import Fov
-from rt_bi_core.Model.MapRegion import MapRegion
-from rt_bi_core.Model.SensingRegion import SensingRegion
+from rt_bi_core.Model import Events, Fov, MapRegion, PolygonalRegion, SensingRegion, Tracks
 from rt_bi_core.ShadowTree.ConnectivityGraph import ConnectivityGraph
 from rt_bi_core.Specs.Validator import Validator
 from rt_bi_utils.Geometry import Geometry, LineString, Polygon, MultiPolygon
-from rt_bi_utils.Graph import GraphAlgorithms
+from rt_bi_core.ShadowTree.Graph import GraphAlgorithms
 from rt_bi_utils.PriorityQ import PriorityQ
 
 
@@ -44,21 +42,23 @@ class ShadowTree(nx.DiGraph):
 		""" Use this function to safely generate (typo-free and in uniform format) the names for the temporal edges. """
 		return "%s-%.2f" % (name, time)
 
-	def __getLowerAndUpperNode(self, n1, n2):
+	def __getLowerAndUpperNode(self, n1: str, n2: str) -> Tuple[str, str]:
 		upper = n1 if self.nodes[n1]["fromTime"] > self.nodes[n2]["fromTime"] else n2
 		lower = n1 if upper != n1 else n2
 		return (lower, upper)
 
-	def __addNode(self, n, time):
+	def __addNode(self, n: str, timeNanoSecs: float) -> None:
 		self.add_node(n)
-		self.nodes[n]["fromTime"] = time
-		self.nodes[n]["toTime"] = time # This will be updated accordingly when adding temporal edges
+		self.nodes[n]["fromTime"] = timeNanoSecs
+		self.nodes[n]["toTime"] = timeNanoSecs # This will be updated accordingly when adding temporal edges
+		return
 
-	def __addEdge(self, n1: str, n2: str, isTemporal: bool, fromTime = None, toTime = None):
+	def __addEdge(self, n1: str, n2: str, isTemporal: bool, fromTime = None, toTime = None) -> None:
 		(lower, upper) = self.__getLowerAndUpperNode(n1, n2)
 		self.add_edge(lower, upper, isTemporal=isTemporal, fromTime=fromTime, toTime=toTime)
+		return
 
-	def __shadowsAreConnectedTemporally(self, previousGraph: ConnectivityGraph, currentGraph: ConnectivityGraph, previousShadow: dict, currentShadow: dict, centerOfRotation: Geometry.Coords):
+	def __shadowsAreConnectedTemporally(self, previousGraph: ConnectivityGraph, currentGraph: ConnectivityGraph, previousShadow: dict, currentShadow: dict, centerOfRotation: Geometry.Coords) -> bool:
 		"""
 			With the assumption that previousNode and currentNode intersect,
 			 1. takes the intersection
@@ -129,7 +129,7 @@ class ShadowTree(nx.DiGraph):
 		if interval2[1] <= interval1[0]: return False
 		return True
 
-	def __edgesHaveACommonVertex(self, l1: LineString, l2: LineString):
+	def __edgesHaveACommonVertex(self, l1: LineString, l2: LineString) -> bool:
 		l1Verts = l1.coords
 		l2Verts = l2.coords
 		for v1 in l1Verts:
@@ -160,7 +160,7 @@ class ShadowTree(nx.DiGraph):
 				dontHaveOverlap.append(interval1)
 		return (haveOverlap, dontHaveOverlap)
 
-	def __expandVertObbWithAngularVelocity(self, coords: Geometry.Coords, angle: float, centerOfRotation: Geometry.Coords, expandAway = True):
+	def __expandVertObbWithAngularVelocity(self, coords: Geometry.Coords, angle: float, centerOfRotation: Geometry.Coords, expandAway = True) -> Tuple[float, float]:
 		displacement = (coords[0] - centerOfRotation[0], coords[1] - centerOfRotation[1])
 		vertExpansion = (angle * displacement[0], angle * displacement[1])
 		expanded = (coords[0] + vertExpansion[0], coords[1] + vertExpansion[1]) if expandAway else (coords[0] - vertExpansion[0], coords[1] - vertExpansion[1])
@@ -222,89 +222,86 @@ class ShadowTree(nx.DiGraph):
 					i += 1
 		return
 
-	def __findIntermediateCollisionsWithMap(self, previousFov: Fov, currentFov: Fov, envMap: Map) -> Events:
+	def __findIntermediateCollisionsWithMap(self, previousSensor: SensingRegion, currentSensor: SensingRegion, centerOfRotation: Geometry.Coords, mapPoly: Union[Polygon, MultiPolygon]) -> Events:
 		"""
-			Given the original configuration of the FOV and the final configuration of it,
-			find all the times when there is a shadow component event.
+			Given the original configuration of the FOV (`previousSensor`) and the final configuration (`currentSensor`)
+			find all the times where there is a shadow component event.
 
 			That is, as the FOV moves towards its final configuration save the intermediate configurations for which there is a topological change (FOV hitting a "gap").
 			#### Returns
 			A list of intervals in each of which there is at most one component event.
 		"""
-		for sensorId in previousFov.sensors:#
-			collisionData = collisionData | previousFov.sensors[sensorId].findCollisionsWithExtendedBb(envMap.polygon)#
-			collisionData = collisionData | currentFov.sensors[sensorId].findCollisionsWithExtendedBb(envMap.polygon)#
-			previousCollidingEdgesByEdge = self._getCollidingEdgesByEdge(previousSensor.region, envMap.polygon)
-			currentCollidingEdgesByEdge = self._getCollidingEdgesByEdge(currentSensor.region, envMap.polygon)
-			transformation = Geometry.getAffineTransformation(previousSensor.region.polygon, currentSensor.region.polygon, centerOfRotation)
-			intermediateCollisions = self._findCollisionsWithExtendedBb(previousSensor.region, transformation, centerOfRotation, envMap.polygon)
-			# Remove the edges that we are sure are intersecting
-			for id in previousCollidingEdgesByEdge:
-				for l in previousCollidingEdgesByEdge[id]:
-					if id in intermediateCollisions: intermediateCollisions[id].remove(l)
-			for id in currentCollidingEdgesByEdge:
-				for l in currentCollidingEdgesByEdge[id]:
-					if id in intermediateCollisions: intermediateCollisions[id].remove(l)
-			collisionIntervals = self.__initCollisionIntervals(previousSensor.region, intermediateCollisions)
-			# [self.lines.append(e[1]) for e in collisionIntervals]
+		transformation = Geometry.getAffineTransformation(previousSensor.polygon, currentSensor.polygon, centerOfRotation)
+		previousCollidingEdges = self._getCollidingEdgesByEdge(previousSensor, mapPoly)
+		currentCollidingEdges = self._getCollidingEdgesByEdge(currentSensor, mapPoly)
+		intermediateCollisions = self._findCollisionsWithExtendedBb(previousSensor, transformation, centerOfRotation, mapPoly)
+		# Remove the edges that we are sure are intersecting
+		for id in previousCollidingEdges:
+			for l in previousCollidingEdges[id]:
+				if id in intermediateCollisions: intermediateCollisions[id].remove(l)
+		for id in currentCollidingEdges:
+			for l in currentCollidingEdges[id]:
+				if id in intermediateCollisions: intermediateCollisions[id].remove(l)
+		collisionIntervals = self._initCollisionIntervals(previousSensor, intermediateCollisions)
+		# [self.lines.append(e[1]) for e in collisionIntervals]
 
-			(ingoingIntervals, outgoingIntervals) = ([], [])
-			while len(collisionIntervals) > 0:
-				self.__findEventIntervalsForCollisions(previousSensor.region, collisionIntervals, transformation, centerOfRotation, ingoingIntervals, outgoingIntervals)
-			# Each interval is represented as a tuple: (sensorEdge, mapEdge, float, float)
-			# The first float is the interval start and the second one is interval end times.
-			intervals = self.__initEdgeIntervals(previousSensor.region, transformation, centerOfRotation, previousCollidingEdgesByEdge, inverse=False)
-			haveOverlap = intervals + outgoingIntervals
-			dontHaveOverlap = []
-			eventCandidates = []
-			i = 0
-			while len(haveOverlap) > 0 and i < len(haveOverlap):
-				(sensorEdge, mapEdge, intervalStart, intervalEnd) = haveOverlap.pop(i)
-				intervalMid = (intervalStart + intervalEnd) / 2
-				collisionCheckResults = self.__checkEdgeIntervalForCollision(sensorEdge, mapEdge, transformation, centerOfRotation, intervalStart, intervalMid)
-				if collisionCheckResults[0] != collisionCheckResults[1]:
-					haveOverlap.insert(i, (sensorEdge, mapEdge, intervalStart, intervalMid))
-					i += 1
-				collisionCheckResults = self.__checkEdgeIntervalForCollision(sensorEdge, mapEdge, transformation, centerOfRotation, intervalMid, intervalEnd)
-				if collisionCheckResults[0] != collisionCheckResults[1]:
-					haveOverlap.insert(i, (sensorEdge, mapEdge, intervalMid, intervalEnd))
-					i += 1
-				(haveOverlap, dontHaveOverlap) = self.__splitIntervalsListForOverlap(haveOverlap)
-				for interval in dontHaveOverlap:
-					intermediateTransform = Geometry.getParameterizedAffineTransformation(transformation, interval[3])
-					p = Geometry.applyMatrixTransformToPolygon(intermediateTransform, previousSensor.region.polygon, centerOfRotation)
-					eventCandidates.append((p, interval[3], "outgoing", interval[1]))
-			intervals = self.__initEdgeIntervals(currentSensor.region, transformation, centerOfRotation, currentCollidingEdgesByEdge, inverse=True)
-			haveOverlap = intervals + ingoingIntervals
-			dontHaveOverlap = []
-			i = 0
-			while len(haveOverlap) > 0 and i < len(haveOverlap):
-				(sensorEdge, mapEdge, intervalStart, intervalEnd) = haveOverlap.pop(i)
-				intervalMid = (intervalStart + intervalEnd) / 2
-				collisionCheckResults = self.__checkEdgeIntervalForCollision(sensorEdge, mapEdge, transformation, centerOfRotation, intervalStart, intervalMid)
-				if collisionCheckResults[0] != collisionCheckResults[1]:
-					haveOverlap.insert(i, (sensorEdge, mapEdge, intervalStart, intervalMid))
-					i += 1
-				collisionCheckResults = self.__checkEdgeIntervalForCollision(sensorEdge, mapEdge, transformation, centerOfRotation, intervalMid, intervalEnd)
-				if collisionCheckResults[0] != collisionCheckResults[1]:
-					haveOverlap.insert(i, (sensorEdge, mapEdge, intervalMid, intervalEnd))
-					i += 1
-				(haveOverlap, dontHaveOverlap) = self.__splitIntervalsListForOverlap(haveOverlap)
-				for interval in dontHaveOverlap:
-					intermediateTransform = Geometry.getParameterizedAffineTransformation(transformation, interval[3])
-					p = Geometry.applyMatrixTransformToPolygon(intermediateTransform, previousSensor.region.polygon, centerOfRotation)
-					eventCandidates.append((p, interval[3], "ingoing", interval[1]))
-			# Sort events by time
-			eventCandidates.sort(key=lambda e: e[1])
-			# Remove duplicate times
-			times = set()
-			i = 0
-			while i < len(eventCandidates):
-				if eventCandidates[i][1] not in times:
-					times.add(eventCandidates[i][1])
-					i += 1
-				else:
-					eventCandidates.pop(i)
+		(ingoingIntervals, outgoingIntervals) = ([], [])
+		while len(collisionIntervals) > 0:
+			self._findEventIntervalsForCollisions(previousSensor, collisionIntervals, transformation, centerOfRotation, ingoingIntervals, outgoingIntervals)
+		# Each interval is represented as a tuple: (sensorEdge, mapEdge, float, float)
+		# The first float is the interval start and the second one is interval end times.
+		intervals = self._initEdgeIntervals(previousSensor, transformation, centerOfRotation, previousCollidingEdges, inverse=False)
+		haveOverlap = intervals + outgoingIntervals
+		dontHaveOverlap = []
+		eventCandidates = []
+		i = 0
+		while len(haveOverlap) > 0 and i < len(haveOverlap):
+			(sensorEdge, mapEdge, intervalStart, intervalEnd) = haveOverlap.pop(i)
+			intervalMid = (intervalStart + intervalEnd) / 2
+			collisionCheckResults = self._checkEdgeIntervalForCollision(sensorEdge, mapEdge, transformation, centerOfRotation, intervalStart, intervalMid)
+			if collisionCheckResults[0] != collisionCheckResults[1]:
+				haveOverlap.insert(i, (sensorEdge, mapEdge, intervalStart, intervalMid))
+				i += 1
+			collisionCheckResults = self._checkEdgeIntervalForCollision(sensorEdge, mapEdge, transformation, centerOfRotation, intervalMid, intervalEnd)
+			if collisionCheckResults[0] != collisionCheckResults[1]:
+				haveOverlap.insert(i, (sensorEdge, mapEdge, intervalMid, intervalEnd))
+				i += 1
+			(haveOverlap, dontHaveOverlap) = self._splitIntervalsListForOverlap(haveOverlap)
+			for interval in dontHaveOverlap:
+				intermediateTransform = Geometry.getParameterizedAffineTransformation(transformation, interval[3])
+				p = Geometry.applyMatrixTransformToPolygon(intermediateTransform, previousSensor.polygon, centerOfRotation)
+				eventCandidates.append((p, interval[3], "outgoing", interval[1]))
+		intervals = self._initEdgeIntervals(currentSensor, transformation, centerOfRotation, currentCollidingEdges, inverse=True)
+		haveOverlap = intervals + ingoingIntervals
+		dontHaveOverlap = []
+		i = 0
+		while len(haveOverlap) > 0 and i < len(haveOverlap):
+			(sensorEdge, mapEdge, intervalStart, intervalEnd) = haveOverlap.pop(i)
+			intervalMid = (intervalStart + intervalEnd) / 2
+			collisionCheckResults = self._checkEdgeIntervalForCollision(sensorEdge, mapEdge, transformation, centerOfRotation, intervalStart, intervalMid)
+			if collisionCheckResults[0] != collisionCheckResults[1]:
+				haveOverlap.insert(i, (sensorEdge, mapEdge, intervalStart, intervalMid))
+				i += 1
+			collisionCheckResults = self._checkEdgeIntervalForCollision(sensorEdge, mapEdge, transformation, centerOfRotation, intervalMid, intervalEnd)
+			if collisionCheckResults[0] != collisionCheckResults[1]:
+				haveOverlap.insert(i, (sensorEdge, mapEdge, intervalMid, intervalEnd))
+				i += 1
+			(haveOverlap, dontHaveOverlap) = self._splitIntervalsListForOverlap(haveOverlap)
+			for interval in dontHaveOverlap:
+				intermediateTransform = Geometry.getParameterizedAffineTransformation(transformation, interval[3])
+				p = Geometry.applyMatrixTransformToPolygon(intermediateTransform, previousSensor.polygon, centerOfRotation)
+				eventCandidates.append((p, interval[3], "ingoing", interval[1]))
+		# Sort events by time
+		eventCandidates.sort(key=lambda e: e[1])
+		# Remove duplicate times
+		times = set()
+		i = 0
+		while i < len(eventCandidates):
+			if eventCandidates[i][1] not in times:
+				times.add(eventCandidates[i][1])
+				i += 1
+			else:
+				eventCandidates.pop(i)
 		# (FOV polygon, timeOfEvent, "ingoing" | "outgoing", map edge relevant to the event)
 		return eventCandidates
 
@@ -326,17 +323,17 @@ class ShadowTree(nx.DiGraph):
 			interpolatedTracks[(eventTime, trackId)] = Track(trackId, eventTime, x, y, psi, isInterpolated=True)
 		return interpolatedTracks
 
-	def __appendConnectivityGraphPerEvent(self, envMap: Map, events: Events, previousTracks: Tracks, currentTracks: Tracks, validators: Dict[str, Validator], startTime: float, endTime: float):
+	def __appendConnectivityGraphPerEvent(self, regions: List[PolygonalRegion], events: Events, previousTracks: Tracks, currentTracks: Tracks, validators: Dict[str, Validator], startTime: float, endTime: float) -> List[ConnectivityGraph]:
 		graphs = []
 		for event in events:
 			eventTime = ((event[1] * (endTime - startTime)) + startTime)
 			interpolatedTracks = self.__interpolateTrack(previousTracks, currentTracks, eventTime, event[1])
 			filteredTracks = {(tTime, tId): interpolatedTracks[(tTime, tId)] for (tTime, tId) in interpolatedTracks if tTime == eventTime}
-			graph = ConnectivityGraph(envMap, event[0], filteredTracks, eventTime, validators)
+			graph = ConnectivityGraph(eventTime, regions, event[0], filteredTracks, validators)
 			graphs.append(graph)
 		return graphs
 
-	def __addTemporalEdges(self, eventGraphs: List[ConnectivityGraph], centerOfRotation: Geometry.Coords):
+	def __addTemporalEdges(self, eventGraphs: List[ConnectivityGraph], centerOfRotation: Geometry.Coords) -> None:
 		for graph in eventGraphs:
 			isInitialGraph = (len(self.__history) == 0)
 			self.__appendToHistory(graph)
@@ -367,7 +364,7 @@ class ShadowTree(nx.DiGraph):
 							self.__addEdge(shadowNodeInShadowTree, shadowNodeInCurrentGraph, isTemporal=True)
 		return
 
-	def __appendToHistory(self, graph: ConnectivityGraph):
+	def __appendToHistory(self, graph: ConnectivityGraph) -> None:
 		for node in graph.nodes:
 			temporalName = self.__generateTemporalName(node, graph.time)
 			self.__addNode(temporalName, graph.time)
@@ -386,7 +383,7 @@ class ShadowTree(nx.DiGraph):
 			self.__appendToHistory(currentConnectivityG)
 			previousFov = currentFov
 		else:
-			componentEvents = currentFov.estimateIntermediateCollisionsWithPolygon(previousFov, envMap.polygon)
+			componentEvents = currentFov.estimateIntermediateCollisionsWithPolygon(previousFov, mapPolygon)
 			graphs = self.__appendConnectivityGraphPerEvent(envMap, componentEvents, self.previousTracks, filteredTracks, validators, previousFov.time, currentFov.time)
 			i=0
 		self.previousTracks = filteredTracks
@@ -403,7 +400,7 @@ class ShadowTree(nx.DiGraph):
 			self.__appendToHistory(currentConnectivityG)
 			previousFov = currentFov
 		else:
-			componentEvents = currentFov.estimateIntermediateCollisionsWithPolygon(previousFov, envMap.polygon)
+			componentEvents = currentFov.estimateIntermediateCollisionsWithPolygon(previousFov, mapPolygon)
 			graphs = self.__appendConnectivityGraphPerEvent(envMap, componentEvents, self.previousTracks, filteredTracks, validators, previousFov.time, currentFov.time)
 			i=0
 		self.previousTracks = filteredTracks
@@ -420,7 +417,7 @@ class ShadowTree(nx.DiGraph):
 			self.__appendToHistory(currentConnectivityG)
 			previousFov = currentFov
 		else:
-			componentEvents = currentFov.estimateIntermediateCollisionsWithPolygon(previousFov, envMap.polygon)
+			componentEvents = currentFov.estimateIntermediateCollisionsWithPolygon(previousFov, mapPolygon)
 			graphs = self.__appendConnectivityGraphPerEvent(envMap, componentEvents, self.previousTracks, filteredTracks, validators, previousFov.time, currentFov.time)
 			i=0
 		self.previousTracks = filteredTracks
@@ -430,10 +427,10 @@ class ShadowTree(nx.DiGraph):
 		print("took %.2fms" % (time.time() - startTime))
 		return
 
-	def displayGraph(self, displayGeomGraph, displaySpringGraph):
+	def displayGraph(self, displayGeomGraph, displaySpringGraph) -> None:
 		self._fig = GraphAlgorithms.displayGraphAuto(self, displayGeomGraph, displaySpringGraph)
 
-	def killDisplayedGraph(self):
+	def killDisplayedGraph(self) -> None:
 		if self._fig:
 			GraphAlgorithms.killDisplayedGraph(self._fig)
 			self._fig = None

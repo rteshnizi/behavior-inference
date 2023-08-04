@@ -18,17 +18,24 @@ from sa_msgs.srv import QueryFeature
 
 class MapServiceInterface(Node):
 	""" This Node listens to all the messages published on the topics related to the map and renders them. """
-	def __init__(self):
+	def __init__(self, subClass=False, **kw):
 		""" Create a Viewer ROS node. """
-		super().__init__("rt_bi_core_map")
+		newKw = { "node_name": "rt_bi_core_map", **kw}
+		super().__init__(**newKw)
 		self.__MAP_QUERY_NAME = "map"
-		self.get_logger().info("%s is starting..." % self.get_fully_qualified_name())
-		RosUtils.SetLogger(self.get_logger())
+		if subClass:
+			self.get_logger().info("%s in map service init..." % self.get_fully_qualified_name())
+		else:
+			self.get_logger().info("%s is starting..." % self.get_fully_qualified_name())
+			RosUtils.SetLogger(self.get_logger())
 		self.__regions: Union[Dict[str, PolygonalRegion], None] = None
 		self.__regionNames: List[str] = []
 		self.__polygon: Union[Polygon, None] = None
-		(self.__rvizPublisher, _) = RViz.createRVizPublisher(self)
 		self.__mapClient = SaMsgs.createSaFeatureQueryClient(self)
+		if subClass:
+			self.get_logger().info("%s skipping creating publishers..." % self.get_fully_qualified_name())
+		else:
+			(self.__rvizPublisher, _) = RViz.createRVizPublisher(self)
 
 	@property
 	def regions(self) -> Dict[str, PolygonalRegion]:
@@ -46,7 +53,6 @@ class MapServiceInterface(Node):
 		self.get_logger().info("Parsing response to %s query..." % request.name)
 		if request.name == self.__MAP_QUERY_NAME:
 			self.__parsePolygonShapeList(response)
-			self.__render()
 		else:
 			self.__parseFeatureDefinition(request.name, response)
 		return
@@ -85,7 +91,7 @@ class MapServiceInterface(Node):
 				self.get_logger().error("Region with name \"%s\" not found in existing regions" % featureName)
 		return updatedRegions
 
-	def __render(self, regions: List[PolygonalRegion] = None):
+	def render(self, regions: List[PolygonalRegion] = None) -> None:
 		if not RViz.isRVizReady(self, self.__rvizPublisher):
 			self.get_logger().warn("Skipping map render... RViz is not ready yet to receive messages.")
 			return
@@ -103,12 +109,6 @@ class MapServiceInterface(Node):
 			message.markers += region.render()
 		self.get_logger().info("MarkerArray about to be sent with %d markers." % len(message.markers))
 		self.__rvizPublisher.publish(message)
-		return
-
-	def __clearRender(self):
-		self.get_logger().warn("__clearRender is not implemented.")
-		# for region in self.regions.values():
-		# 	# region.clearRender()
 		return
 
 	def initializeMap(self) -> None:
@@ -129,7 +129,6 @@ class MapServiceInterface(Node):
 			request.name = name
 			self.get_logger().info("Sending QueryFeature for \"%s\"..." % name)
 			RosUtils.SendClientRequest(self, self.__mapClient, request, self.__parseFeatureQueryResponse)
-		self.__render()
 		return
 
 def main(args=None):
@@ -142,6 +141,7 @@ def main(args=None):
 	while node.context.ok():
 		node.get_clock().sleep_for(Duration(seconds=5, nanoseconds=0))
 		node.queryDefinitions()
+		node.render()
 	node.destroy_node()
 	rclpy.shutdown()
 	return
