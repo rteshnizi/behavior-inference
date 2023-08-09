@@ -8,6 +8,7 @@
 		"ms-python.python",
 		"ms-iot.vscode-ros",
 		"irongeek.vscode-env",
-		"streetsidesoftware.code-spell-checker"
+		"streetsidesoftware.code-spell-checker",
+		"cstrap.python-snippets"
 	]
 }

@@ -1,10 +1,8 @@
 {
 	"python.autoComplete.extraPaths": [
 		"${workspaceFolder}/src/rt_bi_core",
-		"${workspaceFolder}/src/rt_bi_eventifier",
+		"${workspaceFolder}/src/rt_bi_emulator",
 		"${workspaceFolder}/src/rt_bi_utils",
-		"${workspaceFolder}/src/sa_bil",
-		"${workspaceFolder}/install/rt_bi_msgs/lib/python3.8/site-packages",
 		"${workspaceFolder}/install/sa_msgs/lib/python3.8/site-packages",
 		"~/ros2_humble/build/rqt_bag_plugins/src",
 		"~/ros2_humble/install/rqt_bag_plugins/lib/python3.8/site-packages",
@@ -249,10 +247,8 @@
 	],
 	"python.analysis.extraPaths": [
 		"${workspaceFolder}/src/rt_bi_core",
-		"${workspaceFolder}/src/rt_bi_eventifier",
+		"${workspaceFolder}/src/rt_bi_emulator",
 		"${workspaceFolder}/src/rt_bi_utils",
-		"${workspaceFolder}/src/sa_bil",
-		"${workspaceFolder}/install/rt_bi_msgs/lib/python3.8/site-packages",
 		"${workspaceFolder}/install/sa_msgs/lib/python3.8/site-packages",
 		"~/ros2_humble/build/rqt_bag_plugins/src",
 		"~/ros2_humble/install/rqt_bag_plugins/lib/python3.8/site-packages",
@@ -501,7 +497,9 @@
 		"jsoncomment",
 		"levelname",
 		"loadf",
+		"matplotlib",
 		"networkx",
+		"pyplot",
 		"rclpy",
 		"Rcutils",
 		"reza",
@@ -595,5 +593,14 @@
 		"typeinfo": "cpp",
 		"variant": "cpp"
 	},
-	"python.analysis.typeCheckingMode": "off"
+	"python.analysis.typeCheckingMode": "off",
+	"[python]": {
+		"editor.codeActionsOnSave": {
+			"source.organizeImports": true
+		},
+	},
+	"isort.args": [
+		"--settings-path",
+		"/home/reza/git/behavior-inference/src/.isort.cfg"
+	]
 }
