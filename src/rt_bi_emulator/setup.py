@@ -1,5 +1,6 @@
 import os
 from glob import glob
+
 from setuptools import find_packages, setup
 
 package_name = "rt_bi_emulator"
@@ -24,8 +25,8 @@ setup(
 	license="UNLICENSED",
 	entry_points={
 		"console_scripts": [
-			"MapEmulator = rt_bi_emulator.MapEmulator:main",
-			"AvEmulator = rt_bi_emulator.AvEmulator:main",
+			"MP = rt_bi_emulator.MapEmulator:main",
+			"AV = rt_bi_emulator.AvEmulator:main",
 			# "GvEmulator = rt_bi_emulator.GvEmulator:main",
 		],
 	},

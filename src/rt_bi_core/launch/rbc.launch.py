@@ -1,6 +1,8 @@
-from launch import LaunchDescription
-from launch_ros.actions import Node
 import pathlib
+
+from launch_ros.actions import Node
+
+from launch import LaunchDescription
 
 packageName = pathlib.Path(__file__).parent.parent.name
 
@@ -9,13 +11,13 @@ def generate_launch_description():
 		Node(
 			package=packageName,
 			namespace=packageName,
-			executable="MapServiceInterface",
-			name="msi"
+			executable="MI",
+			name="MI"
 		),
 		Node(
 			package=packageName,
 			namespace=packageName,
-			executable="SensorTopicInterface",
-			name="sti"
+			executable="SI",
+			name="SI"
 		),
 	])

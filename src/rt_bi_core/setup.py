@@ -27,8 +27,8 @@ setup(
 	license="UNLICENSED",
 	entry_points={
 		"console_scripts": [
-			"MapInterface = rt_bi_core.MapServiceInterface:main",
-			"SensorInterface = rt_bi_core.SensorTopicInterface:main",
+			"MI = rt_bi_core.MapServiceInterface:main",
+			"SI = rt_bi_core.SensorTopicInterface:main",
 			"BA = rt_bi_core.BehaviorAutomatonInterface:main",
 		],
 	},
