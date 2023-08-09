@@ -1,6 +1,8 @@
 # import rt_bi_core # If you remove this, this file will throw an error
+from rt_bi_core.BehaviorAutomaton.Lambda import LambdaType, NfaLambda
 from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
-from rt_bi_core.Specs.Lambdas import NfaLambda, LambdaType
+
+
 class Validator(object):
 	def __init__(self, name, lambdaStr):
 		self.name = name

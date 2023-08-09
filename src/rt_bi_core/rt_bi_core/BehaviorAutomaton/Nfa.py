@@ -1,27 +1,32 @@
-import networkx as nx
-import matplotlib.pyplot as plt
-import re as RegEx
 import json
-from typing import Dict, List, Set, Union
+import re as RegEx
+from typing import Dict, List, Literal, Set, Union
 
-from sa_bil.core.model.connectivityGraph import ConnectivityGraph
-from sa_bil.core.model.map import Map
-from sa_bil.core.model.shadowTreeV2 import ShadowTreeV2
-from sa_bil.core.observation.observations import Observation, Observations
-from sa_bil.core.spec.spaceTime import ProjectiveSpaceTimeSet
-from sa_bil.core.spec.validator import Validator
-from sa_bil.core.utils.graph import GraphAlgorithms
-from sa_bil.core.utils.geometry import Geometry
+import matplotlib.pyplot as plt
+import networkx as nx
+
+from rt_bi_core.BehaviorAutomaton import Validator
+from rt_bi_core.Model import Observations, PolygonalRegion
+from rt_bi_core.ShadowTree import ConnectivityGraph, ShadowTree, GraphAlgorithms
 
 
 class Penny:
 	"""
 		This is the weirdest name I could use.
-		This represents a penny in what Dr. Shell referred to as a stack of pennies that will track a possible pose and its state
-		`state`: str -> the name of the state in the nfa graph
-		`path`: List[str] -> the path in the shadow graph that has so far carried this penny over the transitions
+		This represents a penny in what Dr. Shell referred to as a stack of pennies that will track a possible pose and its state.
+		A penny represents an active hypothesis about the placement of a hidden target.
 	"""
 	def __init__(self, state: str, path: List[str]):
+		"""
+		Create a penny.
+
+		Parameters
+		----------
+		state : str
+			The name of the state in the NFA graph.
+		path : List[str]
+			The path in the shadow graph that has so far carried this penny over the transitions.
+		"""
 		self.state = state
 		self.path = path
 
@@ -46,7 +51,7 @@ class Transition:
 	def __repr__(self):
 		return repr(self.specifier)
 
-	def execute(self, penny: Penny, shadowTree: ShadowTreeV2) -> Union[List[str], None]:
+	def execute(self, penny: Penny, shadowTree: ShadowTree) -> Union[List[str], None]:
 		"""
 			Here we check whether any node in the shadow tree satisfy the validator for this node
 			#### Returns
@@ -54,8 +59,11 @@ class Transition:
 		"""
 		path = GraphAlgorithms.bfs(shadowTree, penny.path[-1], self.validator.lambdaObj.func)
 		return None if path is None else path
+
+SpecName = Literal["TET1", "TWIST"]
+
 class NFA(nx.DiGraph):
-	def __init__(self, specName, states, transitions, validators):
+	def __init__(self, specName: SpecName, states, transitions, validators):
 		super().__init__()
 		self._specName = specName
 		self.states = states
@@ -82,12 +90,12 @@ class NFA(nx.DiGraph):
 				toState = matches.group(2)
 				self.add_edge(fromState, toState, transition=transition)
 
-	def readAll(self, envMap: Map, observations: Observations) -> Union[List[str], None]:
+	def readAll(self, regions: List[PolygonalRegion], observations: Observations) -> Union[List[str], None]:
 		if len(observations.getObservationByIndex(0).fov.sensors) == 0:
 			print("Don't know how to handle no sensor yet")
 			return
 		fovs = [observations[o].fov for o in observations]
-		shadowTree = ShadowTree(envMap, fovs, self.validators, observations.tracks)
+		shadowTree = ShadowTree(regions, fovs, self.validators, observations.tracks)
 		# TODO: test with a trajectory
 		for s in shadowTree.graphs[0].shadowNodes:
 			self.activeStates.add(Penny(self.START_SYMBOL, [shadowTree._generateTemporalName(s, shadowTree.graphs[0].time)]))
@@ -116,7 +124,7 @@ class NFA(nx.DiGraph):
 					# 	self.activeStates.add(Penny(nextState, nextShadowNode))
 		return None
 
-	def read(self, envMap, observation: Observation, prevObservation):
+	def read(self, regions: List[PolygonalRegion], observations: Observations):
 		raise "Not Implemented"
 
 	def displayGraph(self):

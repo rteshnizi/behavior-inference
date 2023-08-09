@@ -43,8 +43,8 @@ then
 		return $?
 	fi
 else
-	echo "colcon build"
-	colcon build
+	echo "colcon build --packages-up-to rt_bi_core"
+	colcon build --packages-up-to rt_bi_core
 	return $?
 fi
 

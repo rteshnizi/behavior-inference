@@ -18,7 +18,7 @@ setup(
 		"networkx~=3.0",
 		"scikit-image~=0.19.3",
 		"setuptools",
-		"shapely~=2.0.1",
+		"isort"
 	],
 	zip_safe=True,
 	maintainer="Reza Teshnizi",
@@ -27,9 +27,9 @@ setup(
 	license="UNLICENSED",
 	entry_points={
 		"console_scripts": [
-			"MapServiceInterface = rt_bi_core.MapServiceInterface:main",
-			"SensorTopicInterface = rt_bi_core.SensorTopicInterface:main",
-			"ShadowTreeInterface = rt_bi_core.ShadowTreeInterface:main",
+			"MapInterface = rt_bi_core.MapServiceInterface:main",
+			"SensorInterface = rt_bi_core.SensorTopicInterface:main",
+			"BA = rt_bi_core.BehaviorAutomatonInterface:main",
 		],
 	},
 )

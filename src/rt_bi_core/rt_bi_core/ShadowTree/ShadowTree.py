@@ -6,10 +6,10 @@ from skimage import transform
 
 from rt_bi_core.Model import Events, Fov, MapRegion, PolygonalRegion, SensingRegion, Tracks
 from rt_bi_core.ShadowTree.ConnectivityGraph import ConnectivityGraph
-from rt_bi_core.Specs.Validator import Validator
+from rt_bi_core.BehaviorAutomaton.Validator import Validator
 from rt_bi_utils.Geometry import Geometry, LineString, Polygon, MultiPolygon
 from rt_bi_core.ShadowTree.Graph import GraphAlgorithms
-from rt_bi_utils.PriorityQ import PriorityQ
+from rt_bi_utils.MinQueue import MinQueue
 
 
 class ShadowTree(nx.DiGraph):
@@ -19,7 +19,8 @@ class ShadowTree(nx.DiGraph):
 		super().__init__()
 		# The reason this is a list of lists is that the time of event is relative to the time between
 		self.componentEvents: List[List[Polygon]] = []
-		self.__history: PriorityQ = PriorityQ(key=lambda g: g.timeNanoSecs)
+		__data: List[ConnectivityGraph] = []
+		self.__history: MinQueue = MinQueue(key=lambda g: -1 * g.timeNanoSecs, initial=__data)
 		self.__mapRegions: List[MapRegion] = []
 		self.__sensingRegions: List[SensingRegion] = []
 		# Used for debugging
@@ -370,10 +371,10 @@ class ShadowTree(nx.DiGraph):
 			self.__addNode(temporalName, graph.time)
 			GraphAlgorithms.cloneNodeProps(graph.nodes[node], self.nodes[temporalName])
 		for edge in graph.edges:
-			frm = self.__generateTemporalName(edge[0], graph.time)
-			to = self.__generateTemporalName(edge[1], graph.time)
+			frm = self.__generateTemporalName(edge[0], graph.timeNanoSecs)
+			to = self.__generateTemporalName(edge[1], graph.timeNanoSecs)
 			self.__addEdge(frm, to, False)
-		self.__history.append(graph)
+		self.__history.enqueue(graph)
 		return
 
 	def updateNamedRegions(self, timeNanoSecs: float, regions: List[SensingRegion]) -> None:
@@ -394,12 +395,11 @@ class ShadowTree(nx.DiGraph):
 		return
 
 	def updateSensingRegions(self, timeNanoSecs: float, regions: List[SensingRegion]) -> None:
-		return
 		if self.__history.isEmpty:
-			currentConnectivityG = ConnectivityGraph(timeNanoSecs, regions, Polygon(), dict(), validators)
+			currentConnectivityG = ConnectivityGraph(timeNanoSecs=timeNanoSecs, regions=regions, fovUnion=Polygon(), tracks=dict(), validators=dict())
 			self.__appendToHistory(currentConnectivityG)
-			previousFov = currentFov
 		else:
+			currentFov = self.__history
 			componentEvents = currentFov.estimateIntermediateCollisionsWithPolygon(previousFov, mapPolygon)
 			graphs = self.__appendConnectivityGraphPerEvent(envMap, componentEvents, self.previousTracks, filteredTracks, validators, previousFov.time, currentFov.time)
 			i=0

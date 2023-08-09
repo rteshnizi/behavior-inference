@@ -1,5 +1,5 @@
-from rt_bi_core.Specs.Validator import Validator
-from rt_bi_core.Specs.Nfa import NFA
+from rt_bi_core.BehaviorAutomaton.Validator import Validator
+from rt_bi_core.BehaviorAutomaton.Nfa import NFA
 
 class Specification:
 	def __init__(self, name: str, specificationDict: str):

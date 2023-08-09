@@ -1,17 +1,11 @@
 from typing import Dict, List, Union
 
 import networkx as nx
-from shapely.geometry import LineString, MultiPolygon, Polygon
-from rt_bi_core.Model.Fov import Fov
 
-from rt_bi_core.Model.MapRegion import PolygonalRegion
-from rt_bi_core.Model.SensingRegion import SensingRegion
-from rt_bi_core.Model.ShadowRegion import ShadowRegion
-from rt_bi_core.Model.Track import Tracks
-from rt_bi_core.Model.ValidatorRegion import ValidatorRegion
-from rt_bi_core.Specs.Validator import Validator
-from rt_bi_utils.Geometry import Geometry
-from rt_bi_core.ShadowTree.Graph import GraphAlgorithms
+from rt_bi_core.BehaviorAutomaton import Validator
+from rt_bi_core.Model import Fov, PolygonalRegion, SensingRegion, ShadowRegion, Tracks, ValidatorRegion
+from rt_bi_core.ShadowTree import GraphAlgorithms
+from rt_bi_utils import Geometry, LineString, MultiPolygon, Polygon
 
 
 class ConnectivityGraph(nx.DiGraph):
@@ -21,11 +15,11 @@ class ConnectivityGraph(nx.DiGraph):
 			timeNanoSecs: float,
 			regions: List[PolygonalRegion],
 			fovUnion: Union[Polygon, MultiPolygon],
-			tracks: Tracks,
+			tracks: Tracks = {},
 			validators: Dict[str, Validator] = {},
 	) -> None:
 		"""
-		The implementation of a Connectivity Graph in python on ROS2 (Humble).
+		Creates a connectivity graph using the initial information.
 
 		Parameters
 		----------
@@ -33,6 +27,10 @@ class ConnectivityGraph(nx.DiGraph):
 			The timestamp of this connectivity graph.
 		regions : List[PolygonalRegion]
 			All the regions represented in this graph.
+		fovUnion : Union[Polygon, MultiPolygon]
+			The geometric description of the field of view.
+		tracks : Dict[Tuple[float, int], Track], optional
+			Information about any observed tracks at that time instant. Tracks is a dictionary of (time, trackId) to Track, by default {}.
 		validators : Dict[str, Validator], optional
 			The dictionary of validators used in the specifications, if they are known, otherwise by default {}.
 		"""

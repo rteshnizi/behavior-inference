@@ -31,7 +31,7 @@ class SensorTopicInterface(Node):
 		if subClass:
 			self.get_logger().info("%s skipping creating publishers and subscribers..." % self.get_fully_qualified_name())
 		else:
-			SaMsgs.subscribeToSaRobotStateTopic(self, self.__onFovUpdate)
+			SaMsgs.subscribeToSaRobotStateTopic(self, self.__onRobotStateUpdate)
 			(self.__rvizPublisher, _) = RViz.createRVizPublisher(self)
 
 	@property
@@ -46,7 +46,7 @@ class SensorTopicInterface(Node):
 			self.__polygon = Geometry.union(polygons)
 		return self.__polygon
 
-	def __onFovUpdate(self, update: RobotState) -> None:
+	def __onRobotStateUpdate(self, update: RobotState) -> None:
 		if update is None:
 			self.get_logger().warn("Received empty RobotState!")
 			return False
@@ -63,7 +63,7 @@ class SensorTopicInterface(Node):
 		coords = SaMsgs.convertSaPoseListToCoordsList(update.fov.corners)
 		sensor = SensingRegion("S-%d" % update.robot_id, coords, self.get_clock().now().nanoseconds, update.robot_id)
 		self.__sensors[update.robot_id] = sensor
-		self.__render([sensor])
+		self.render([sensor])
 		return
 
 	def render(self, regions: List[PolygonalRegion] = None):

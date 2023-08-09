@@ -1,6 +1,6 @@
 from typing import Union
 
-from rt_bi_core.Specs.TimeRegion import TimeInterval
+from rt_bi_core.BehaviorAutomaton.TimeRegion import TimeInterval
 from rt_bi_utils.Geometry import Geometry, Polygon
 
 

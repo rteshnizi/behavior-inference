@@ -7,9 +7,9 @@ from queue import Queue
 from typing import Dict, List, Tuple, Union
 
 from rt_bi_core.Model.ShadowRegion import ShadowRegion
-from rt_bi_core.Specs.Lambdas import NfaLambda
-from rt_bi_core.Specs.SpaceTime import ProjectiveSpaceTimeSet
-from rt_bi_core.Specs.TimeRegion import TimeInterval
+from rt_bi_core.BehaviorAutomaton.Lambda import NfaLambda
+from rt_bi_core.BehaviorAutomaton.SpaceTime import ProjectiveSpaceTimeSet
+from rt_bi_core.BehaviorAutomaton.TimeRegion import TimeInterval
 
 Queue.__repr__ = lambda q: repr(q.queue)
 

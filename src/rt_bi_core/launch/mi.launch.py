@@ -9,7 +9,7 @@ def generate_launch_description():
 		Node(
 			package=packageName,
 			namespace=packageName,
-			executable="ShadowTreeInterface",
-			name="str"
+			executable="MapInterface",
+			name="mi"
 		),
 	])
