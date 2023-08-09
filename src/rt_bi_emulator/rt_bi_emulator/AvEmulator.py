@@ -1,13 +1,11 @@
 import json
-from typing import Dict, List, Literal, Tuple, Union
+from typing import List
 
 import rclpy
-from rcl_interfaces.msg import SetParametersResult
+import rt_bi_utils.Ros as RosUtils
 from rclpy.node import Node
 from rclpy.parameter import Parameter
-
-import rt_bi_utils.Ros as RosUtils
-from rt_bi_utils.Geometry import Geometry, Polygon, AffineTransform
+from rt_bi_utils.Geometry import AffineTransform, Geometry, Polygon
 from rt_bi_utils.Pose import Pose
 from rt_bi_utils.SaMsgs import SaMsgs
 from sa_msgs.msg import RobotState

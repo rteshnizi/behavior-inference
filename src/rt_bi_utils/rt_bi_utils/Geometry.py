@@ -1,8 +1,6 @@
 import operator
 from functools import reduce
-from math import atan2, cos, degrees, inf
-from math import pi as PI
-from math import sin, sqrt
+from math import atan2, cos, degrees, inf, pi as PI, sin, sqrt
 from typing import Dict, List, Tuple, Union
 
 import numpy as np
@@ -12,7 +10,7 @@ from shapely.geometry.polygon import LinearRing
 from shapely.ops import unary_union
 from shapely.validation import make_valid
 from skimage import transform
-from skimage.transform import AffineTransform
+from skimage.transform import AffineTransform as AffineTransform
 
 
 class Geometry:

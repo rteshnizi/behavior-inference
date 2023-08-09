@@ -1,5 +1,6 @@
 import os
 from glob import glob
+
 from setuptools import find_packages, setup
 
 package_name = "rt_bi_core"
@@ -16,7 +17,6 @@ setup(
 	],
 	install_requires= [
 		"networkx~=3.0",
-		"scikit-image~=0.19.3",
 		"setuptools",
 		"isort"
 	],
