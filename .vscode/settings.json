@@ -493,11 +493,9 @@
 	],
 	"cSpell.words": [
 		"Anant",
-		"Datap",
-		"jsoncomment",
 		"levelname",
-		"loadf",
 		"matplotlib",
+		"mplot",
 		"networkx",
 		"pyplot",
 		"rclpy",
@@ -512,7 +510,7 @@
 		"TAMU",
 		"traj",
 		"traversability",
-		"verts"
+		"verts",
 	],
 	"colcon.provideTasks": true,
 	"colcon.outputLog": true,
@@ -601,6 +599,6 @@
 	},
 	"isort.args": [
 		"--settings-path",
-		"/home/reza/git/behavior-inference/src/.isort.cfg"
+		"/home/reza/git/behavior-inference/.isort.cfg"
 	]
 }
