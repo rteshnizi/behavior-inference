@@ -1,4 +1,3 @@
-import logging
 from typing import Dict, List, Set, Union
 
 from skimage import transform
@@ -14,13 +13,10 @@ class PolygonalRegion:
 		coords will be used to create the polygon.
 		If polygon is given, coords arg will be ignored.
 	"""
-	def __init__(self, name: str, coords: Geometry.CoordsList, boundaryColor: Color, backgroundColor: Color = KnownColors.WHITE, polygon: Polygon = None):
+	def __init__(self, name: str, coords: Geometry.CoordsList, boundaryColor: Color, backgroundColor: Color = KnownColors.WHITE, polygon: Union[Polygon, None] = None):
 		self.name = name
 		self.__RENDER_LINE_WIDTH = 1
-		try:
-			self._coordsList = coords if polygon is None else list(polygon.exterior.coords)
-		except:
-			logging.error("We are not sure what causes this case (if it ever happens)")
+		self._coordsList = coords if polygon is None else list(polygon.exterior.coords)
 		self._coordsDict = self.__buildCoords(self._coordsList)
 		self.polygon = Polygon(self._coordsList) if polygon is None else polygon
 		self.BOUNDARY_COLOR = boundaryColor
@@ -46,16 +42,13 @@ class PolygonalRegion:
 			d[Geometry.coordListStringId(edgeCoords)] = edge
 		return d
 
-	def __hasEdgeByXy(self, x1: float, y1: float, x2: float, y2: float) -> bool:
-		return Geometry.coordListStringId(x1, y1, x2, y2) in self.edges
-
 	def __hasEdgeByName(self, name: str) -> bool:
 		return name in self.edges
 
 	def isInsideRegion(self, x: float, y: float) -> bool:
 		return Geometry.isXyInsidePolygon(x, y, self.polygon)
 
-	def getEquivalentEdge(self, finalConfig: LineString, transformation: transform.AffineTransform, centerOfRotation: Geometry.Coords) -> LineString:
+	def getEquivalentEdge(self, finalConfig: LineString, transformation: transform.AffineTransform, centerOfRotation: Geometry.Coords) -> Union[LineString, None]:
 		"""
 			Given an affine transformation, and the final configuration of an edge after the transformation,
 			find the edge that will be in that final configuration after the transformation, and `None` otherwise. Boy didn't I repeat myself?!
@@ -88,9 +81,11 @@ class PolygonalRegion:
 		return Geometry.polygonAndPolygonIntersect(self.polygon, other.polygon)
 
 	def union(self, others: List["PolygonalRegion"]) -> Polygon:
-		return Geometry.union([r.polygon for r in others].append(self.polygon))
+		allPolygons = [r.polygon for r in others]
+		allPolygons.append(self.polygon)
+		return Geometry.union(allPolygons)
 
-	def getCommonEdge(self, other) -> LineString:
+	def getCommonEdge(self, other) -> Union[LineString, None]:
 		for e in self.edges:
 			if other._hasEdgeByName(e): return self.edges[e]
 		return None
