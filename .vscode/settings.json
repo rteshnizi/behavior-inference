@@ -508,9 +508,11 @@
 		"skimage",
 		"Slerp",
 		"TAMU",
+		"tracklet",
+		"tracklets",
 		"traj",
 		"traversability",
-		"verts",
+		"verts"
 	],
 	"colcon.provideTasks": true,
 	"colcon.outputLog": true,
