@@ -11,13 +11,7 @@ def generate_launch_description():
 		Node(
 			package=packageName,
 			namespace=packageName,
-			executable="MI",
-			name="MI"
-		),
-		Node(
-			package=packageName,
-			namespace=packageName,
-			executable="SI",
-			name="SI"
+			executable="ST",
+			name="st"
 		),
 	])
