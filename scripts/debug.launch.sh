@@ -41,10 +41,11 @@ fi
 
 cd "$(dirname "$fileName")" # change to the directory of the script
 setEnvVars # set the necessary environment variables
+
 cd .. # now we are in the workspace directory
 concurrently\
 	--kill-others\
-	--names "RVZ,MAP,AV ,MI ,SI ,BA "\
+	--names "RVZ,MAP,AV ,MI ,SI ,ST "\
 	--prefix "[{name}-{time}]"\
 	-c "bgWhite.black,bgBlueBright.black,bgBlue.black,bgYellow.black,bgMagentaBright.black,bgGreenBright.black"\
 	--hide "0"\
@@ -54,5 +55,5 @@ concurrently\
 	"ros2 launch rt_bi_emulator avs.launch.py"\
 	"ros2 launch rt_bi_core mi.launch.py"\
 	"ros2 launch rt_bi_core si.launch.py"\
-	"ros2 launch rt_bi_core ba.launch.py"
+	"ros2 launch rt_bi_core st.launch.py"
 exit 0
