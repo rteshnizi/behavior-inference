@@ -9,7 +9,7 @@ class GvEmulator(Node):
 	def __init__(self):
 		""" Create a Viewer ROS node. """
 		super().__init__("rt_bi_gv_emulator")
-		self.get_logger().info("GV Emulator is starting...")
+		self.get_logger().info("GV Emulator is starting.")
 		RosUtils.SetLogger(self.get_logger())
 
 def main(args=None):

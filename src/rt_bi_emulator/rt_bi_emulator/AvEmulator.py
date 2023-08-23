@@ -2,13 +2,14 @@ import json
 from typing import List
 
 import rclpy
-import rt_bi_utils.Ros as RosUtils
 from rclpy.node import Node
 from rclpy.parameter import Parameter
+from sa_msgs.msg import RobotState
+
+import rt_bi_utils.Ros as RosUtils
 from rt_bi_utils.Geometry import AffineTransform, Geometry, Polygon
 from rt_bi_utils.Pose import Pose
 from rt_bi_utils.SaMsgs import SaMsgs
-from sa_msgs.msg import RobotState
 
 
 class Av:
@@ -23,7 +24,7 @@ class AvEmulator(Node):
 	def __init__(self):
 		""" Create a Viewer ROS node. """
 		super().__init__("rt_bi_av_emulator")
-		self.get_logger().info("%s is starting..." % self.get_fully_qualified_name())
+		self.get_logger().info("%s is starting." % self.get_fully_qualified_name())
 		self.__declareParameters()
 		RosUtils.SetLogger(self.get_logger())
 		self.__centerOfRotation = (0.0, 0.0)
@@ -37,7 +38,7 @@ class AvEmulator(Node):
 		(self.__fovPublisher, _) = SaMsgs.createSaRobotStatePublisher(self, self.__publishMyFov, 0.3)
 
 	def __declareParameters(self) -> None:
-		self.get_logger().info("%s is setting node parameters..." % self.get_fully_qualified_name())
+		self.get_logger().info("%s is setting node parameters." % self.get_fully_qualified_name())
 		self.declare_parameter("robotId", Parameter.Type.INTEGER)
 		self.declare_parameter("timeSecs", Parameter.Type.DOUBLE_ARRAY),
 		self.declare_parameter("saPose", Parameter.Type.STRING_ARRAY),
@@ -45,7 +46,7 @@ class AvEmulator(Node):
 		return
 
 	def __parseConfigFileParameters(self) -> None:
-		self.get_logger().info("%s is parsing parameters..." % self.get_fully_qualified_name())
+		self.get_logger().info("%s is parsing parameters." % self.get_fully_qualified_name())
 		self.__robotId = self.get_parameter("robotId").get_parameter_value().integer_value
 		timePoints = self.get_parameter("timeSecs").get_parameter_value().double_array_value
 		saPoses = self.get_parameter("saPose").get_parameter_value().string_array_value

@@ -1,11 +1,11 @@
 import rclpy
 from rclpy.node import Node
-
-import rt_bi_utils.Ros as RosUtils
-from rt_bi_utils.SaMsgs import SaMsgs
-from rt_bi_emulator.Case1 import Case1
 from sa_msgs.msg import FeatureInfoIndividual
 from sa_msgs.srv import QueryFeature
+
+import rt_bi_utils.Ros as RosUtils
+from rt_bi_emulator.Case1 import Case1
+from rt_bi_utils.SaMsgs import SaMsgs
 
 
 class MapEmulator(Node):
@@ -13,12 +13,12 @@ class MapEmulator(Node):
 	def __init__(self):
 		""" Create a Viewer ROS node. """
 		super().__init__("rt_bi_map_emulator")
-		self.get_logger().info("%s is starting..." % self.get_fully_qualified_name())
+		self.get_logger().info("%s is starting." % self.get_fully_qualified_name())
 		RosUtils.SetLogger(self.get_logger())
 		SaMsgs.createSaFeatureQueryService(self, self.__featureInfoQueryCallback)
 
 	def __featureInfoQueryCallback(self, request: QueryFeature.Request, response: QueryFeature.Response) -> QueryFeature.Response:
-		RosUtils.Logger().info("Received QueryFeature \"%s\" request..." % request.name)
+		RosUtils.Logger().info("Received QueryFeature \"%s\" request." % request.name)
 		if request.name == "map":
 			# The response to this query is all the map regions without their feature definitions
 			for feature in Case1.FeatureIndividuals:
