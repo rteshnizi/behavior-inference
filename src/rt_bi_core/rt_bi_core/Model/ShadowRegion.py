@@ -1,21 +1,45 @@
-from typing import List
+from math import nan
+from typing import List, Set
 
-from shapely.geometry import Polygon
+from visualization_msgs.msg import Marker
 
 from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
+from rt_bi_utils.Geometry import Geometry
+from rt_bi_utils.RViz import KnownColors
 
 
 class ShadowRegion(PolygonalRegion):
-	def __init__(self, name, coords, polygon: Polygon = None):
-		super().__init__(name, coords, boundaryColor="BLACK", backgroundColor="GRAY", polygon=polygon)
-		self._neighboringSensors: List[str] = []
+	def __init__(
+		self,
+		idNum: int,
+		envelop: Geometry.CoordsList,
+		**kwArgs
+	):
+		"""
+		Initialize an polygonal region.
 
-	@property
-	def neighboringSensors(self):
-		return self._neighboringSensors
+		Parameters
+		----------
+		idNum : int
+			Id of the sensor region.
+		envelop : Geometry.CoordsList
+			The list of the coordinates of the vertices of the envelop of the polygonal region.
+		"""
 
-	def addNeighboringSensors(self, sensorName):
-		self._neighboringSensors.append(sensorName)
+		super().__init__(
+			idNum=idNum,
+			envelop=envelop,
+			envelopColor=KnownColors.BLACK,
+			regionType=PolygonalRegion.RegionType.SHADOW,
+			**kwArgs
+		)
+		self.__neighboringSensors: Set[str] = set()
 
-	def render(self, canvas, renderText=True):
-		super().render(canvas, renderText, hashFill=True, hashDensity=50)
+	def isNeighboringSensor(self, sensorRegionName: str) -> bool:
+		return sensorRegionName in self.__neighboringSensors
+
+	def addNeighboringSensors(self, sensorRegionName: str) -> None:
+		self.__neighboringSensors.add(sensorRegionName)
+
+	def render(self, renderText=True) -> List[Marker]:
+		return super().render(renderText=renderText, fill=True)

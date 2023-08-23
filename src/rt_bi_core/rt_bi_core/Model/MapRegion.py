@@ -1,21 +1,24 @@
 from typing import List, Union
-from rt_bi_utils.RViz import Color, KnownColors
+
 from visualization_msgs.msg import Marker
 
 from rt_bi_core.Model.FeatureMap import Feature
 from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
 from rt_bi_utils.Geometry import Geometry
-from sa_msgs.msg import PoseArray as SaPoseArray
+from rt_bi_utils.RViz import Color, KnownColors
 
 
 class MapRegion(PolygonalRegion):
-	def __init__(self, name: str, coords: SaPoseArray, typeStr: str):
+	def __init__(self, idNum: int, envelop: Geometry.CoordsList, **kwArgs) -> None:
 		self.__featureDefinition: Union[Feature, None] = None
-		coordList: Geometry.CoordsList = []
-		for i in range(len(coords.traj)):
-			coordList.append((coords.traj[i].x, coords.traj[i].y))
-		super().__init__(name, coordList, KnownColors.GREY, self.resolvedBgColor)
-		self.type = typeStr
+		super().__init__(
+			idNum=idNum,
+			envelop=envelop,
+			envelopColor=KnownColors.GREY,
+			interiorColor=self.resolvedBgColor,
+			regionType=PolygonalRegion.RegionType.MAP,
+			**kwArgs
+		)
 
 	@property
 	def resolvedBgColor(self) -> Color:
@@ -34,7 +37,6 @@ class MapRegion(PolygonalRegion):
 	@featureDefinition.setter
 	def featureDefinition(self, val: Feature) -> None:
 		self.__featureDefinition = val
-		_ = self.resolvedBgColor # This line is just here so that the background color is set accordingly.
 		return
 
 	def render(self, renderText = False) -> List[Marker]:
