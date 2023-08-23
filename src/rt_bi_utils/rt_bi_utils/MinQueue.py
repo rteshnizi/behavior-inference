@@ -1,9 +1,15 @@
+"""
+Custom Min Queue class implementation.
+© Reza Teshnizi 2018-2023
+"""
+
 import heapq
-from typing import List, TypeVar, Callable
+from typing import Callable, Generic, List, Tuple, TypeVar, Union
 
 DataType = TypeVar("DataType")
+QueueTuple = Tuple[float, int, DataType]
 
-class MinQueue(object):
+class MinQueue(Generic[DataType]):
 	"""
 	A wrapper for heapq to enable arbitrary objects in the data array.
 	The smallest element is always at index 0.
@@ -11,7 +17,7 @@ class MinQueue(object):
 	See https://stackoverflow.com/a/8875823/750567
 	"""
 
-	def __init__(self, key: Callable[[DataType], int], initial: List[DataType]=None) -> None:
+	def __init__(self,key: Callable[[DataType], float], initial: List[DataType]=[]) -> None:
 		"""
 		Create a priority queue, whose elements are sorted using the given key function.
 
@@ -33,15 +39,13 @@ class MinQueue(object):
 		Note that, in python there is no such thing as an integer overflow,
 		so you should not worry about this counter ever showing the wrong number.
 		"""
-		self.__key: Callable[[DataType], int] = key
+		self.__key: Callable[[DataType], float] = key
 		"""
 		A function to return the primary key (or the cost) associated with any given item.
 		"""
-		if initial:
-			self.__data = [self.__createTuple(item) for item in initial]
-			heapq.heapify(self.__data)
-		else:
-			self.__data = []
+		self.__data: List[QueueTuple] = [self.__createTuple(item) for item in initial]
+		"""The internal data structure to keep the items and maintain the heap invariant."""
+		heapq.heapify(self.__data)
 
 	def __repr__(self) -> str:
 		return 'Q(count = %d)' % len(self)
@@ -49,14 +53,9 @@ class MinQueue(object):
 	def __len__(self) -> int:
 		return len(self.__data)
 
-	def __delitem__(self, index: int) -> None:
-		raise SyntaxError("%s cannot be manipulated directly via its index to ensure the heap invariance is maintained. Use dequeue() instead." % __class__)
-
-	def __getitem__(self, index: int) -> DataType:
+	def __getitem__(self, index: int) -> Union[DataType, None]:
+		if self.isEmpty: return None
 		return self.__data[index][-1]
-
-	def __setitem__(self, index: int, value: DataType) -> None:
-		raise SyntaxError("%s cannot be manipulated directly via its index to ensure the heap invariance is maintained. Use enqueue(item) instead." % __class__)
 
 	@property
 	def isEmpty(self) -> bool:
@@ -70,7 +69,7 @@ class MinQueue(object):
 		"""
 		return len(self) == 0
 
-	def __createTuple(self, item: DataType):
+	def __createTuple(self, item: DataType) -> QueueTuple:
 		"""
 		### Remarks
 
@@ -80,6 +79,18 @@ class MinQueue(object):
 		"""
 		self.__counter += 1
 		return (self.__key(item), self.__counter, item)
+
+	def peek(self) -> Union[DataType, None]:
+		"""
+		Return but not remove the smallest item.
+
+		Returns
+		-------
+		Union[DataType, None]
+			Returns `None` if the list is empty otherwise the smallest element in the queue w.r.t. their keys.
+		"""
+		if self.isEmpty: return None
+		return self.__data[0][-1]
 
 	def enqueue(self, item: DataType) -> None:
 		"""
@@ -96,12 +107,18 @@ class MinQueue(object):
 
 	def dequeue(self) -> DataType:
 		"""
-		Pop the smallest item off the heap, maintaining the queue invariant in accordance to the key function.
+		Pops (removes) the smallest item off the heap, maintaining the queue invariant in accordance to the key function.
 
 		Returns
 		-------
 		DataType
 			The item stored in the queue.
+
+		Raises
+		------
+		IndexError
+			If the queue is empty.
 		"""
+		if self.isEmpty: raise IndexError("MinQueue is empty")
 		# Return the last item of the tuple
 		return heapq.heappop(self.__data)[-1]
