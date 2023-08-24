@@ -3,7 +3,7 @@ from rt_bi_core.BehaviorAutomaton.Lambda import LambdaType, NfaLambda
 from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
 
 
-class Validator(object):
+class Symbol:
 	def __init__(self, name, lambdaStr):
 		self.name = name
 		# for Time, value is a float
@@ -12,7 +12,7 @@ class Validator(object):
 		self._lambdaString = lambdaStr
 		# for Region, value is a polygonalRegion
 		if self.isRegion:
-			self.value = PolygonalRegion("sym-%s" % self.name, [], "BLUE", polygon=self.lambdaObj.spaceTimeSet.spaceRegion)
+			self.value = PolygonalRegion("sym-%s" % self.name, [], "BLUE", interior=self.lambdaObj.spaceTimeSet.spaceRegion)
 		else:
 			self.value = self.lambdaObj.spaceTimeSet.timeRegion
 
