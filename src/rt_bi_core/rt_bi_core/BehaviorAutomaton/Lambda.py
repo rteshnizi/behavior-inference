@@ -5,7 +5,7 @@ from typing import Callable, Union
 
 from rt_bi_core.BehaviorAutomaton.SpaceTime import ProjectiveSpaceTimeSet
 from rt_bi_core.BehaviorAutomaton.TimeRegion import TimeInterval
-from rt_bi_utils import Polygon
+from rt_bi_utils.Geometry import Polygon
 
 
 class LambdaType(Enum):

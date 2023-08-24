@@ -1,5 +1,6 @@
-from rt_bi_core.BehaviorAutomaton.Validator import Validator
-from rt_bi_core.BehaviorAutomaton.Nfa import NFA
+from rt_bi_core.BehaviorAutomaton.Nfa import Nfa
+from rt_bi_core.BehaviorAutomaton.Symbol import Symbol
+
 
 class Specification:
 	def __init__(self, name: str, specificationDict: str):
@@ -8,7 +9,7 @@ class Specification:
 		self._shapeIds: str = None
 		self._regionSymbols = []
 		self.validators = self._buildSymbolMap()
-		self.nfa = NFA(self.name, self.states, self.transitions, self.validators)
+		self.nfa = Nfa(self.name, self.states, self.transitions, self.validators)
 
 	@property
 	def states(self):
@@ -28,7 +29,7 @@ class Specification:
 	def _buildSymbolMap(self):
 		symbols = {}
 		for symName in self._validatorsDefs:
-			symbols[symName] = Validator(symName, self._validatorsDefs[symName])
+			symbols[symName] = Symbol(symName, self._validatorsDefs[symName])
 			if symbols[symName].isRegion: self._regionSymbols.append(symName)
 		return symbols
 
