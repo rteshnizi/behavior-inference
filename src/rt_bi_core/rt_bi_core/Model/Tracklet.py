@@ -1,14 +1,14 @@
 # from bil.model.trajectory import Trajectory
 from typing import Dict, List, Tuple
-from rt_bi_utils.Pose import Pose
 
 from visualization_msgs.msg import Marker
 
+from rt_bi_utils.Pose import Pose
 from rt_bi_utils.RViz import KnownColors, RViz
 
 
-class Track:
-	def __init__(self, idNum: int, timeNanoSecs: float, x: float, y: float, psi: float, isInterpolated=False):
+class Tracklet:
+	def __init__(self, idNum: int, timeNanoSecs: int, x: float, y: float, psi: float, isInterpolated=False):
 		self.id = idNum
 		self.isInterpolated = isInterpolated
 		self.pose = Pose(timeNanoSecs, x, y, psi)
@@ -32,7 +32,7 @@ class Track:
 	def clearRender(self):
 		return
 
-Tracks = Dict[Tuple[float, int], Track]
+Tracklets = Dict[Tuple[float, int], Tracklet]
 """
-Tracks is a dictionary of (time, trackId) to Track.
+Tracklets is a dictionary of (time, trackId) to Tracklet.
 """
