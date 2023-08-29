@@ -53,7 +53,7 @@ class RegularSpatialRegion:
 	def edges(self) -> Dict[str, LineString]:
 		return self.__edges
 
-	def addConnectedComponent(self, region: PolygonalRegion) -> None:
+	def addConnectedComponent(self, region: Type[PolygonalRegion]) -> None:
 		if self.timeNanoSec != region.timeNanoSecs:
 			raise RuntimeError("Cannot add Regular Regions at different times to the same object.")
 		if region.name in self.__regions:

@@ -13,8 +13,11 @@ class Shadows(RegularSpatialRegion):
 		"""
 		super().__init__(regions=regions)
 
+	def __getitem__(self, regionName: str) -> ShadowRegion:
+		return super().__getitem__(regionName)
+
 	def addConnectedComponent(self, region: ShadowRegion) -> None:
-		if region.regionType != ShadowRegion.RegionType.SENSING:
+		if region.regionType != ShadowRegion.RegionType.SHADOW:
 			return
 			RosUtils.Logger().info("Cannot add region %s to RegularSpatialRegion of type %s" % (repr(region.regionType), __class__.__name__))
 		return super().addConnectedComponent(region)

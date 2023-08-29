@@ -15,6 +15,9 @@ class FieldOfView(RegularSpatialRegion):
 		"""
 		super().__init__(regions=sensors)
 
+	def __getitem__(self, regionName: str) -> AffineSensorRegion:
+		return super().__getitem__(regionName)
+
 	@property
 	def fov(self) -> Union[Polygon, MultiPolygon]:
 		return self.interior
@@ -29,6 +32,6 @@ class FieldOfView(RegularSpatialRegion):
 
 	def addConnectedComponent(self, region: AffineSensorRegion) -> None:
 		if region.regionType != AffineSensorRegion.RegionType.SENSING:
-			RosUtils.Logger().info("Cannot add region %s to RegularSpatialRegion of type %s" % (repr(region.regionType), __class__.__name__))
 			return
+			RosUtils.Logger().info("Cannot add region %s to RegularSpatialRegion of type %s" % (repr(region.regionType), __class__.__name__))
 		return super().addConnectedComponent(region)

@@ -13,8 +13,11 @@ class RegularSymbol(RegularSpatialRegion):
 		"""
 		super().__init__(regions=regions)
 
+	def __getitem__(self, regionName: str) -> SymbolRegion:
+		return super().__getitem__(regionName)
+
 	def addConnectedComponent(self, region: SymbolRegion) -> None:
-		if region.regionType != SymbolRegion.RegionType.SENSING:
-			RosUtils.Logger().info("Cannot add region %s to RegularSpatialRegion of type %s" % (repr(region.regionType), __class__.__name__))
+		if region.regionType != SymbolRegion.RegionType.SYMBOL:
 			return
+			RosUtils.Logger().info("Cannot add region %s to RegularSpatialRegion of type %s" % (repr(region.regionType), __class__.__name__))
 		return super().addConnectedComponent(region)

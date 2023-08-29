@@ -13,8 +13,11 @@ class MapPerimeter(RegularSpatialRegion):
 		"""
 		super().__init__(regions=regions)
 
+	def __getitem__(self, regionName: str) -> MapRegion:
+		return super().__getitem__(regionName)
+
 	def addConnectedComponent(self, region: MapRegion) -> None:
-		if region.regionType != MapRegion.RegionType.SENSING:
-			RosUtils.Logger().info("Cannot add region %s to RegularSpatialRegion of type %s" % (repr(region.regionType), __class__.__name__))
+		if region.regionType != MapRegion.RegionType.MAP:
 			return
+			RosUtils.Logger().info("Cannot add region %s to RegularSpatialRegion of type %s" % (repr(region.regionType), __class__.__name__))
 		return super().addConnectedComponent(region)
