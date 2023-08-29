@@ -1,8 +1,8 @@
-from typing import Dict, Set, Union
+from typing import Union
 
 from rt_bi_core.Model.SensorRegion import SensorRegion
-from rt_bi_core.Model.Track import Tracks
-from rt_bi_utils.Geometry import AffineTransform, Geometry, LineString, MultiPolygon, Polygon
+from rt_bi_core.Model.Tracklet import Tracklets
+from rt_bi_utils.Geometry import Geometry, MultiPolygon, Polygon
 from rt_bi_utils.Pose import Pose
 
 
@@ -11,9 +11,9 @@ class AffineSensorRegion(SensorRegion):
 			self,
 			centerOfRotation: Pose,
 			idNum: int,
-			envelop: Geometry.CoordsList,
+			envelope: Geometry.CoordsList,
 			fov: Union[Polygon, MultiPolygon, None]=None,
-			tracks: Tracks={},
+			tracks: Tracklets={},
 			**kwArgs
 		) -> None:
 		"""
@@ -25,8 +25,8 @@ class AffineSensorRegion(SensorRegion):
 			This will be used to interpolate the rotation motion of the region.
 		idNum : int
 			Id of the sensor region.
-		envelop : Geometry.CoordsList
-			The list of the coordinates of the vertices of the envelop of the polygonal region.
+		envelope : Geometry.CoordsList
+			The list of the coordinates of the vertices of the envelope of the polygonal region.
 		fov: Union[Polygon, MultiPolygon, None], default `None`
 			The field-of-view, default forces construction using knowledge-base.
 		tracks : Tracks, default `{}`
@@ -35,7 +35,7 @@ class AffineSensorRegion(SensorRegion):
 		"""
 		super().__init__(
 			idNum=idNum,
-			envelop=envelop,
+			envelope=envelope,
 			tracks=tracks,
 			fov=fov,
 			**kwArgs
@@ -46,39 +46,3 @@ class AffineSensorRegion(SensorRegion):
 	def name(self) -> str:
 		"""Attaches: `AFF-` to super `super().name`."""
 		return "AFF-%s" % super().name
-
-	def __getLineSegmentExpandedBb(self, transformation: AffineTransform, lineSeg: LineString, angle: float, centerOfRotation: Geometry.Coords) -> Polygon:
-		""" Gets a tight bounding box for a line segment that is moving with a constant angular velocity. """
-		finalConfig = Geometry.applyMatrixTransformToLineString(transformation, lineSeg, centerOfRotation)
-		polygons = []
-		for j in range(16):
-			v1 = self._expandVertObbWithAngularVelocity(lineSeg.coords[0], angle, centerOfRotation, j & 1 != 0)
-			v2 = self._expandVertObbWithAngularVelocity(finalConfig.coords[0], angle, centerOfRotation, j & 2 != 0)
-			v3 = self._expandVertObbWithAngularVelocity(finalConfig.coords[1], angle, centerOfRotation, j & 4 != 0)
-			v4 = self._expandVertObbWithAngularVelocity(lineSeg.coords[1], angle, centerOfRotation, j & 8 != 0)
-			p = Polygon([v1, v2, v3, v4])
-			polygons.append(p)
-		expandedObb = Geometry.union(polygons)
-		expandedObb = expandedObb.convex_hull
-		return expandedObb
-
-	def findCollisionsWithExtendedBb(self, past: "AffineSensorRegion", targetPolygon: Union[Polygon, MultiPolygon]) -> Dict[str, Set[LineString]]:
-		"""
-			#### Returns
-				For each edge of the sensor,
-				it returns all the edges of the map that intersect the expanded bounding box of that edge.
-		"""
-		centerOfRotation = (self.centerOfRotation.x, self.centerOfRotation.y)
-		transformation = Geometry.getAffineTransformation(self.region.polygon, past.region.polygon, centerOfRotation)
-		collisionData = {}
-		angle = abs(transformation.rotation)
-		for sensorEdgeId in self.region.edges:
-			collisionData[sensorEdgeId] = []
-			edge = self.region.edges[sensorEdgeId]
-			boundingBox = self.__getLineSegmentExpandedBb(transformation, edge, angle, centerOfRotation)
-			mapBoundaryVerts = targetPolygon.exterior.coords
-			for v1, v2 in zip(mapBoundaryVerts, mapBoundaryVerts[1:]):
-				mapEdge = LineString([v1, v2])
-				if boundingBox.intersects(mapEdge):
-					collisionData[sensorEdgeId].append(mapEdge)
-		return collisionData

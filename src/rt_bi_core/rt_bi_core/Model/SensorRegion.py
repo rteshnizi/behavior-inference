@@ -4,7 +4,7 @@ from visualization_msgs.msg import Marker
 
 from rt_bi_core.Model.FeatureMap import FeatureMap
 from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
-from rt_bi_core.Model.Track import Tracks
+from rt_bi_core.Model.Tracklet import Tracklets
 from rt_bi_utils.Geometry import Geometry, MultiPolygon, Polygon
 from rt_bi_utils.RViz import KnownColors
 
@@ -19,9 +19,9 @@ class SensorRegion(PolygonalRegion):
 	def __init__(
 			self,
 			idNum: int,
-			envelop: Geometry.CoordsList,
+			envelope: Geometry.CoordsList,
 			fov: Union[Polygon, MultiPolygon, None] = None,
-			tracks: Tracks = {},
+			tracks: Tracklets = {},
 			**kwArgs
 		) -> None:
 		"""
@@ -33,8 +33,8 @@ class SensorRegion(PolygonalRegion):
 			This will be used to interpolate the rotation motion of the region.
 		idNum : int
 			Id of the sensor region.
-		envelop : Geometry.CoordsList
-			The list of the coordinates of the vertices of the envelop of the polygonal region.
+		envelope : Geometry.CoordsList
+			The list of the coordinates of the vertices of the envelope of the polygonal region.
 		fov: Union[Polygon, MultiPolygon, None], default `None`
 			The field-of-view, default forces construction using knowledge-base.
 		tracks : Tracks, default `{}`
@@ -43,8 +43,8 @@ class SensorRegion(PolygonalRegion):
 		"""
 		super().__init__(
 			idNum=idNum,
-			envelop=envelop,
-			envelopColor=KnownColors.GREEN,
+			envelope=envelope,
+			envelopeColor=KnownColors.GREEN,
 			interior=fov,
 			regionType=PolygonalRegion.RegionType.SENSING,
 			**kwArgs
@@ -60,13 +60,9 @@ class SensorRegion(PolygonalRegion):
 		return self.interior
 
 	@property
-	def tracks(self) -> Tracks:
+	def tracks(self) -> Tracklets:
 		"""The information about every tracklet, if any, within this sensing region."""
 		return self.__tracks
-
-	@tracks.setter
-	def tracks(self, _: Tracks) -> None:
-		raise NotImplementedError("No setter.")
 
 	@property
 	def hasTrack(self) -> bool:

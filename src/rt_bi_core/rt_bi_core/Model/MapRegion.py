@@ -9,12 +9,12 @@ from rt_bi_utils.RViz import Color, KnownColors
 
 
 class MapRegion(PolygonalRegion):
-	def __init__(self, idNum: int, envelop: Geometry.CoordsList, **kwArgs) -> None:
+	def __init__(self, idNum: int, envelope: Geometry.CoordsList, **kwArgs) -> None:
 		self.__featureDefinition: Union[Feature, None] = None
 		super().__init__(
 			idNum=idNum,
-			envelop=envelop,
-			envelopColor=KnownColors.GREY,
+			envelope=envelope,
+			envelopeColor=KnownColors.GREY,
 			interiorColor=self.resolvedBgColor,
 			regionType=PolygonalRegion.RegionType.MAP,
 			**kwArgs

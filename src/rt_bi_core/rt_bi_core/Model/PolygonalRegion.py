@@ -14,7 +14,11 @@ class PolygonalRegion:
 		The base class for all polygonal regions.
 		Provides much of the structure and functionality.
 	"""
-
+	Edges = Dict[str, LineString]
+	"""
+	A dictionary of edge identifier to `LineString`.
+	The edge identifier is a string.
+	"""
 	class RegionType:
 		"""All the types of `PolygonalRegion`."""
 		BASE = "B"
@@ -26,8 +30,8 @@ class PolygonalRegion:
 	def __init__(
 		self,
 		idNum: int,
-		envelop: Geometry.CoordsList,
-		envelopColor: Color,
+		envelope: Geometry.CoordsList,
+		envelopeColor: Color,
 		interiorColor: Color = KnownColors.WHITE,
 		interior: Union[Polygon, MultiPolygon, None] = None,
 		regionType: RegionType = RegionType.BASE,
@@ -42,14 +46,14 @@ class PolygonalRegion:
 		----------
 		idNum : int
 			Id of the sensor region.
-		envelop : Geometry.CoordsList
-			The list of the coordinates of the vertices of the envelop of the polygonal region.
-		envelopColor: Color
-			The color of the envelop when/if rendered.
+		envelope : Geometry.CoordsList
+			The list of the coordinates of the vertices of the envelope of the polygonal region.
+		envelopeColor: Color
+			The color of the envelope when/if rendered.
 		interiorColor: Color, default `White`
 			The color of the interior of the region when/if rendered.
 		interior: Union[Polygon, MultiPolygon, None], default `None`
-			The interior of the region, if it is separate from its envelop, default forces construction.
+			The interior of the region, if it is separate from its envelope, default forces construction.
 		regionType: RegionType, default `RegionType.BASE`
 			The type of this region.
 		renderLineWidth: int, default `1`
@@ -59,20 +63,16 @@ class PolygonalRegion:
 		"""
 		self.__name = "%s-%d" % (regionType, idNum)
 		self.__RENDER_LINE_WIDTH = renderLineWidth
-		self.__envelop = envelop
-		self.__coordsDict = self.__buildCoords(self.__envelop)
-		self.__interiorPolygon = Polygon(self.__envelop) if interior is None else interior
+		self.__envelope = envelope
+		self.__coordsDict = self.__buildCoords(self.__envelope)
+		self.__interiorPolygon = Polygon(self.__envelope) if interior is None else interior
 		self.__regionType = regionType
-		self.__ENVELOP_COLOR = envelopColor
+		self.__ENVELOPE_COLOR = envelopeColor
 		self.__INTERIOR_COLOR = interiorColor
 		self.__TEXT_COLOR = KnownColors.BLACK if RViz.isLightColor(interiorColor) else KnownColors.WHITE
 		self.__timeNanoSecs = timeNanoSecs
 		if len(kwArgs) > 0 : RosUtils.Logger().warn("Unassigned keyword args ignored: %s" % repr(kwArgs))
-		self.edges: Dict[str, LineString] = self.__buildEdges()
-		"""
-		A Dictionary of edge identifier to ObjectModel.
-		The edge identifier is the
-		"""
+		self.__edges: PolygonalRegion.Edges = self.__buildEdges()
 
 	def __repr__(self) -> str:
 		return self.name
@@ -83,7 +83,7 @@ class PolygonalRegion:
 			d[Geometry.pointStringId(c[0], c[1])] = Point(c[0], c[1])
 		return d
 
-	def __buildEdges(self) -> Dict[str, LineString]:
+	def __buildEdges(self) -> Edges:
 		d = {}
 		verts = list(self.interior.exterior.coords)
 		for v1, v2 in zip(verts, verts[1:]):
@@ -93,13 +93,9 @@ class PolygonalRegion:
 		return d
 
 	@property
-	def envelop(self) -> Geometry.CoordsList:
+	def envelope(self) -> Geometry.CoordsList:
 		"""The list of the coordinates of the vertices ."""
-		return self.__envelop
-
-	@envelop.setter
-	def envelop(self, _: Geometry.CoordsList) -> None:
-		raise NotImplementedError("No setter.")
+		return self.__envelope
 
 	@property
 	def name(self) -> str:
@@ -111,50 +107,38 @@ class PolygonalRegion:
 		"""If there is a timestamp associated, this returns the time, and `nan` otherwise."""
 		return self.__timeNanoSecs
 
-	@timeNanoSecs.setter
-	def timeNanoSecs(self, _: float) -> None:
-		raise NotImplementedError("No setter.")
-
 	@property
-	def envelopColor(self) -> Color:
+	def envelopeColor(self) -> Color:
 		"""The color used to render the boundary of this polygon."""
-		return self.__ENVELOP_COLOR
-
-	@envelopColor.setter
-	def envelopColor(self, _: Color) -> None:
-		raise NotImplementedError("No setter.")
+		return self.__ENVELOPE_COLOR
 
 	@property
 	def interiorColor(self) -> Color:
 		"""The color used for rendering the background of this polygon (to fill)."""
 		return self.__INTERIOR_COLOR
 
-	@interiorColor.setter
-	def interiorColor(self, _: Color) -> None:
-		raise NotImplementedError("No setter.")
-
 	@property
 	def regionType(self) -> RegionType:
 		"""A short string identifier for the type of the polygon."""
 		return self.__regionType
-
-	@regionType.setter
-	def regionType(self, _: RegionType) -> None:
-		raise NotImplementedError("No setter.")
 
 	@property
 	def interior(self) -> Polygon:
 		"""The Geometric description of the region."""
 		return self.__interiorPolygon
 
-	@interior.setter
-	def interior(self, _: Polygon) -> None:
-		raise NotImplementedError("Changing the polygon after __init__ has not been thought out yet.")
+	@property
+	def edges(self) -> Edges:
+		"""
+		A dictionary of edge identifier to `LineString`.
+		The edge identifier is a string.
+		"""
+		return self.__edges
 
 	def hasEdge(self, e: LineString) -> bool:
 		idCandidate1 = Geometry.lineStringId(e)
 		idCandidate2 = Geometry.lineStringId(e.reverse())
-		return idCandidate1 in self.edges or idCandidate2 in self.edges
+		return idCandidate1 in self.__edges or idCandidate2 in self.__edges
 
 	def isInsideRegion(self, x: float, y: float) -> bool:
 		return Geometry.isXyInsidePolygon(x, y, self.interior)
@@ -164,29 +148,10 @@ class PolygonalRegion:
 			Given an affine transformation, and the final configuration of an edge after the transformation,
 			find the edge that will be in that final configuration after the transformation, and `None` otherwise. Boy didn't I repeat myself?!
 		"""
-		for edge in self.edges.values():
+		for edge in self.__edges.values():
 			afterTransformation = Geometry.applyMatrixTransformToLineString(transformation, edge, centerOfRotation)
 			if Geometry.lineSegmentsAreAlmostEqual(finalConfig, afterTransformation): return edge
 		return None
-
-	def getCollidingEdgesByEdge(self, targetPolygon: Union[Polygon, MultiPolygon]) -> Dict[str, Set[LineString]]:
-		"""## Get Colliding Edges By Edge
-		Just like the name says.
-
-		Parameters
-		----------
-		targetPolygon : Union[Polygon, MultiPolygon]
-			The against whom we are checking collisions.
-
-		Returns
-		-------
-		Dict[str, Set[LineString]]
-			Map from the string of edge of the FOV to edge of the target polygon.
-		"""
-		collisionData = {}
-		for edgeId in self.edges:
-			collisionData[edgeId] = Geometry.getAllIntersectingEdgesWithLine(self.edges[edgeId], targetPolygon)
-		return collisionData
 
 	def intersectsRegion(self, other: "PolygonalRegion") -> bool:
 		return Geometry.polygonAndPolygonIntersect(self.interior, other.interior)
@@ -197,15 +162,15 @@ class PolygonalRegion:
 		return Geometry.union(allPolygons)
 
 	def getCommonEdge(self, other: "PolygonalRegion") -> Union[LineString, None]:
-		for e in self.edges:
-			if other.hasEdge(e): return self.edges[e]
+		for e in self.__edges:
+			if other.hasEdge(e): return self.__edges[e]
 		return None
 
 	def render(self, renderText = False, fill = False) -> List[Marker]:
 		msgs = []
 		if fill:
 			RosUtils.Logger().info("Cannot fill polygons yet.")
-		msgs.append(RViz.CreatePolygon(self.name, self.__envelop, self.__ENVELOP_COLOR, self.__RENDER_LINE_WIDTH))
+		msgs.append(RViz.CreatePolygon(self.name, self.__envelope, self.__ENVELOPE_COLOR, self.__RENDER_LINE_WIDTH))
 		if renderText:
 			msgs.append(RViz.CreateText("%s_txt" % self.name, self.interior.centroid.xy, self.name, self.__TEXT_COLOR))
 		return msgs

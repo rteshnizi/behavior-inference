@@ -12,7 +12,7 @@ class ShadowRegion(PolygonalRegion):
 	def __init__(
 		self,
 		idNum: int,
-		envelop: Geometry.CoordsList,
+		envelope: Geometry.CoordsList,
 		**kwArgs
 	):
 		"""
@@ -22,14 +22,14 @@ class ShadowRegion(PolygonalRegion):
 		----------
 		idNum : int
 			Id of the sensor region.
-		envelop : Geometry.CoordsList
-			The list of the coordinates of the vertices of the envelop of the polygonal region.
+		envelope : Geometry.CoordsList
+			The list of the coordinates of the vertices of the envelope of the polygonal region.
 		"""
 
 		super().__init__(
 			idNum=idNum,
-			envelop=envelop,
-			envelopColor=KnownColors.BLACK,
+			envelope=envelope,
+			envelopeColor=KnownColors.BLACK,
 			regionType=PolygonalRegion.RegionType.SHADOW,
 			**kwArgs
 		)

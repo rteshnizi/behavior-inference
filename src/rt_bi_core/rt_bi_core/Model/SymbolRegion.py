@@ -8,11 +8,11 @@ from rt_bi_utils.RViz import KnownColors
 
 
 class SymbolRegion(PolygonalRegion):
-	def __init__(self, name: str, coords: Geometry.CoordsList, inFov=False, **kwArgs):
+	def __init__(self, idNum: int, envelope: Geometry.CoordsList, inFov=False, **kwArgs):
 		super().__init__(
-			idNum=name,
-			boundary=coords,
-			envelopColor=KnownColors.RED if inFov else KnownColors.BLUE,
+			idNum=idNum,
+			envelope=envelope,
+			envelopeColor=KnownColors.RED if inFov else KnownColors.BLUE,
 			**kwArgs
 		)
 		self.__inFov = inFov
