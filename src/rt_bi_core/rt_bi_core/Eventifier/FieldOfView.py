@@ -1,5 +1,6 @@
 from typing import List, Union
 
+import rt_bi_utils.Ros as RosUtils
 from rt_bi_core.Model.AffineSensorRegion import AffineSensorRegion
 from rt_bi_core.Model.RegularRegion import RegularSpatialRegion
 from rt_bi_core.Model.Tracklet import Tracklets
@@ -25,3 +26,9 @@ class FieldOfView(RegularSpatialRegion):
 			sensor: AffineSensorRegion = sensor
 			tracks = { **tracks, **sensor.tracks }
 		return tracks
+
+	def addConnectedComponent(self, region: AffineSensorRegion) -> None:
+		if region.regionType != AffineSensorRegion.RegionType.SENSING:
+			RosUtils.Logger().info("Cannot add region %s to RegularSpatialRegion of type %s" % (repr(region.regionType), __class__.__name__))
+			return
+		return super().addConnectedComponent(region)
