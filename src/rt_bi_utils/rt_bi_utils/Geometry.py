@@ -1,7 +1,7 @@
 import operator
 from functools import reduce
 from math import atan2, cos, degrees, inf, pi as PI, sin, sqrt
-from typing import Dict, List, Tuple, Union
+from typing import Dict, Iterable, List, Tuple, Union
 
 import numpy as np
 from scipy.spatial.transform import Rotation, Slerp
@@ -15,6 +15,8 @@ from skimage.transform import AffineTransform as AffineTransform
 
 class Geometry:
 	"""
+	Custom Computational Geometry implementation.
+	© Reza Teshnizi 2018-2023
 	TODO: Make sure to use shapely.prepared.prep() to optimize
 	"""
 	EPSILON = 0.001
@@ -24,7 +26,7 @@ class Geometry:
 	CoordsMap = Dict[Coords, Coords]
 
 	@staticmethod
-	def convertToPolygonList(polys: Union[List[Polygon], MultiPolygon]) -> List[Polygon]:
+	def convertToPolygonList(polys: Union[List[Polygon], MultiPolygon]) -> Iterable[Polygon]:
 		try:
 			if len(polys.geoms) > 0:
 				return polys.geoms
@@ -57,7 +59,7 @@ class Geometry:
 		return sqrt((y * y) + (x * x))
 
 	@staticmethod
-	def sortCoordinatesClockwise(coords: list):
+	def sortCoordinatesClockwise(coords: CoordsList) -> List[Coords]:
 		"""
 		(x,y)
 
@@ -136,7 +138,7 @@ class Geometry:
 		return Point(pt.x + x, pt.y + y)
 
 	@staticmethod
-	def getDirectionXyFromLineSeg(l: LineString) -> tuple:
+	def getDirectionXyFromLineSeg(l: LineString) -> Vector:
 		"""
 		Returns (x, y) tuple
 		"""
@@ -167,15 +169,15 @@ class Geometry:
 		return "%.2f,%.2f" % (x, y)
 
 	@staticmethod
-	def lineSegStringId(line: LineString) -> frozenset:
-		return Geometry.coordListStringId(list(line.coords))
+	def lineStringId(line: LineString) -> Tuple[str, ...]:
+		return Geometry.coordListStringId(list(line.exterior.coords))
 
 	@staticmethod
-	def coordListStringId(coords: CoordsList) -> frozenset:
+	def coordListStringId(coords: CoordsList) -> Tuple[str, ...]:
 		return tuple(Geometry.pointStringId(coord[0], coord[1]) for coord in coords)
 
 	@staticmethod
-	def getPolygonCoords(p: Polygon) -> CoordsList:
+	def getPolygonCoords(p: Union[Polygon, MultiPolygon]) -> CoordsList:
 		return list(zip(*(p.exterior.coords.xy)))
 
 	@staticmethod
@@ -240,7 +242,22 @@ class Geometry:
 		return Geometry.convertToPolygonList(intersection)
 
 	@staticmethod
-	def shadows(mapRegionPoly: Polygon, fovPoly: Polygon) -> Union[List[Polygon], MultiPolygon]:
+	def shadows(mapRegionPoly: Polygon, fovPoly: Polygon) -> List[Polygon]:
+		"""
+		Given a map region and a FOV, produce the list of shadow polygons.
+
+		Parameters
+		----------
+		mapRegionPoly : Polygon
+			The polygon representing a region of the map.
+		fovPoly : Polygon
+			The polygon representing a single connected FOV component.
+
+		Returns
+		-------
+		List[Polygon]
+			The list of shadow polygons.
+		"""
 		nonoverlap = mapRegionPoly.difference(fovPoly)
 		# nonoverlap = mapRegionPoly.difference(mapRegionPoly.intersection(fovPoly)) # difference() is wrong because it excludes the boundaries of fov from the shadows
 		# nonoverlap = mapRegionPoly.symmetric_difference(fovPoly).difference(fovPoly)
@@ -322,18 +339,32 @@ class Geometry:
 		return edges
 
 	@staticmethod
-	def getAffineTransformation(p: Polygon, pPrime: Polygon, centerOfRotation: Coords) -> AffineTransform:
+	def getAffineTransformation(start: CoordsList, end: CoordsList, centerOfRotation: Coords) -> AffineTransform:
 		"""
-		see: https://stackoverflow.com/a/47102206/750567
+		Estimate the affine transformation matrix that would transform the given polygon from the start state to end state.
+
+		Parameters
+		----------
+		start : Polygon
+			The starting configuration of the polygon.
+		end : Polygon
+			The starting configuration of the polygon.
+		centerOfRotation : Coords
+			The center of rotation of the rotation motion.
+
+		Returns
+		-------
+		AffineTransform
+			An affine transformation matrix object.
 		"""
-		pCoords = np.array(p.exterior.coords)
-		pPrimeCoords = np.array(pPrime.exterior.coords)
-		pCoords = [(coords[0] - centerOfRotation[0], coords[1] - centerOfRotation[1]) for coords in pCoords]
-		pPrimeCoords = [(coords[0] - centerOfRotation[0], coords[1] - centerOfRotation[1]) for coords in pPrimeCoords]
-		pCoords = np.array(pCoords)
-		pPrimeCoords = np.array(pPrimeCoords)
-		matrix = transform.estimate_transform("affine", pCoords, pPrimeCoords)
-		# matrix = transform.estimate_transform("similarity", pCoords, pPrimeCoords)
+		startCoords = np.array(start)
+		endCoords = np.array(end)
+		startCoords = [(coords[0] - centerOfRotation[0], coords[1] - centerOfRotation[1]) for coords in startCoords]
+		endCoords = [(coords[0] - centerOfRotation[0], coords[1] - centerOfRotation[1]) for coords in endCoords]
+		startCoords = np.array(startCoords)
+		endCoords = np.array(endCoords)
+		matrix = transform.estimate_transform("affine", startCoords, endCoords)
+		# matrix = transform.estimate_transform("similarity", startCoords, endCoords)
 		return matrix
 
 	@staticmethod
@@ -491,8 +522,8 @@ Point.__add__ = __pointAdd
 Point.__sub__ = __pointSub
 Point.__mul__ = __pointMulScalar
 Point.__truediv__ = __pointDivScalar
-Point.__repr__ = lambda p: "P%s" % repr((p.x, p.y))
-LinearRing.__repr__ = lambda l: "LR[#%d]" % len(l.coords)
-LineString.__repr__ = lambda l: "LS[#%d]" % len(l.coords) if len(l.coords) > 2 else "LS%s" % repr(l.bounds)
-Polygon.__repr__ = lambda p: "Pl[%dv]" % (len(p.exterior.coords) - 1)
-MultiPolygon.__repr__ = lambda ps: "MP{%s}" % ", ".join([repr(p) for p in ps])
+Point.__repr__ = lambda p: "P%s" % repr((p.x, p.y)) # type: ignore
+LinearRing.__repr__ = lambda l: "LR[#%d]" % len(l.coords) # type: ignore
+LineString.__repr__ = lambda l: "LS[#%d]" % len(l.coords) if len(l.coords) > 2 else "LS%s" % repr(l.bounds) # type: ignore
+Polygon.__repr__ = lambda p: "Pl[%dv]" % (len(p.exterior.coords) - 1) # type: ignore
+MultiPolygon.__repr__ = lambda ps: "MP{%s}" % ", ".join([repr(p) for p in ps]) # type: ignore
