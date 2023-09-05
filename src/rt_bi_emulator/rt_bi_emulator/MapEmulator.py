@@ -13,7 +13,7 @@ class MapEmulator(Node):
 	def __init__(self):
 		""" Create a Viewer ROS node. """
 		super().__init__("rt_bi_map_emulator")
-		self.get_logger().info("%s is starting." % self.get_fully_qualified_name())
+		self.get_logger().info("%s is initializing." % self.get_fully_qualified_name())
 		RosUtils.SetLogger(self.get_logger())
 		SaMsgs.createSaFeatureQueryService(self, self.__featureInfoQueryCallback)
 

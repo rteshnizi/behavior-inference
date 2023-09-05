@@ -24,7 +24,7 @@ class AvEmulator(Node):
 	def __init__(self):
 		""" Create a Viewer ROS node. """
 		super().__init__("rt_bi_av_emulator")
-		self.get_logger().info("%s is starting." % self.get_fully_qualified_name())
+		self.get_logger().info("%s is initializing." % self.get_fully_qualified_name())
 		self.__declareParameters()
 		RosUtils.SetLogger(self.get_logger())
 		self.__centerOfRotation = (0.0, 0.0)
@@ -61,8 +61,7 @@ class AvEmulator(Node):
 		for i in range(len(timePoints)):
 			self.__avPositions.append(Av(self.__robotId, Pose(timePoints[i], *(saPoses[0])), parsedFov[i]))
 		self.__initFovPoly = Polygon(self.__avPositions[0].fov)
-		polygon1 = Polygon(self.__avPositions[-1].fov)
-		self.__transformationMatrix = Geometry.getAffineTransformation(self.__initFovPoly, polygon1, self.__centerOfRotation)
+		self.__transformationMatrix = Geometry.getAffineTransformation(self.__avPositions[0].fov, self.__avPositions[-1].fov, self.__centerOfRotation)
 		self.__totalTimeNanoSecs = timePoints[-1] * AvEmulator.NANO_CONVERSION_CONSTANT
 		return
 
