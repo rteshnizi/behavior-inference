@@ -1,5 +1,4 @@
 """
-Custom Min Queue class implementation.
 © Reza Teshnizi 2018-2023
 """
 
@@ -69,6 +68,19 @@ class MinQueue(Generic[DataType]):
 		"""
 		return len(self) == 0
 
+	@property
+	def smallest(self) -> Union[DataType, None]:
+		"""
+		Return but not remove the smallest item. The smallest item in a minPQ is the first item in the queue.
+
+		Returns
+		-------
+		Union[DataType, None]
+			Returns `None` if the list is empty otherwise the smallest element in the queue w.r.t. their keys.
+		"""
+		if self.isEmpty: return None
+		return self.__data[0][-1]
+
 	def __createTuple(self, item: DataType) -> QueueTuple:
 		"""
 		### Remarks
@@ -79,18 +91,6 @@ class MinQueue(Generic[DataType]):
 		"""
 		self.__counter += 1
 		return (self.__key(item), self.__counter, item)
-
-	def peek(self) -> Union[DataType, None]:
-		"""
-		Return but not remove the smallest item.
-
-		Returns
-		-------
-		Union[DataType, None]
-			Returns `None` if the list is empty otherwise the smallest element in the queue w.r.t. their keys.
-		"""
-		if self.isEmpty: return None
-		return self.__data[0][-1]
 
 	def enqueue(self, item: DataType) -> None:
 		"""
