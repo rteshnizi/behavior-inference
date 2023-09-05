@@ -1,5 +1,4 @@
-from rt_bi_utils import ObjectLiteral
-
+from rt_bi_utils.Python import ObjectLiteral
 
 specification1 = ObjectLiteral(
 	states=["START", "S-0", "S-1", "END"],

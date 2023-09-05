@@ -1,7 +1,7 @@
 from typing import Dict, List
 
 
-class BaseSpec(object):
+class BaseSpec:
 	__slots__ = ("states", "transitions", "validators")
 	def __init__(self, states: List[str], transitions: Dict[str, List[str]], validators: Dict[str, str]) -> None:
 		self.states: List[str] = states

@@ -1,6 +1,7 @@
 from rt_bi_core.BehaviorAutomaton import LambdaType, NfaLambda, ProjectiveSpaceTimeSet
 from rt_bi_utils import ObjectLiteral
 
+
 class Prototypes:
 	"""
 	Each object literal represents one spec's validators
