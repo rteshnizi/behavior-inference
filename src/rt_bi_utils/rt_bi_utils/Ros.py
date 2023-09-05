@@ -33,7 +33,7 @@ def Logger() -> RcutilsLogger:
 			return logging.getLogger()
 		rosNodes = rclpy.get_global_executor().get_nodes()
 		if len(rosNodes) == 0:
-			logging.warn("No ROS nodes added to executor! Defaulting to python logger...")
+			logging.warn("No ROS nodes added to executor! Defaulting to python logger.")
 			return logging.getLogger()
 		__LOGGER = rosNodes[0].get_logger()
 	return __LOGGER
