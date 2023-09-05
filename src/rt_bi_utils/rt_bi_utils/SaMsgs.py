@@ -1,16 +1,13 @@
 from math import nan
-from typing import Callable, Tuple, Union, Sequence
+from typing import Callable, Sequence, Tuple, Union
 
 from rclpy.node import Client, Node, Publisher, Service, Timer
+from sa_msgs.msg import EstimationMsg, FeatureInfo, Fov as SaFovMsg, Pose as SaPoseMsg, PoseArray as SaPoseArray, RobotState
+from sa_msgs.srv import QueryFeature
 
 import rt_bi_utils.Ros as RosUtils
 from rt_bi_utils.Geometry import Geometry
-from sa_msgs.msg import EstimationMsg, FeatureInfo
-from sa_msgs.msg import Fov as SaFovMsg
-from sa_msgs.msg import Pose as SaPoseMsg
-from sa_msgs.msg import PoseArray as SaPoseArray
-from sa_msgs.msg import RobotState
-from sa_msgs.srv import QueryFeature
+from rt_bi_utils.Pose import Pose
 
 
 class SaMsgs:
@@ -23,10 +20,18 @@ class SaMsgs:
 	__ROBOT_STATE_TOPIC = "/sa_world_model/true_objects_state"
 
 	@staticmethod
+	def convertSaPoseToPose(saPose: SaPoseMsg, timeNanoSecs: int = 0) -> Pose:
+		return Pose(timeNanoSecs, saPose.x, saPose.y, saPose.yaw)
+
+	@staticmethod
+	def convertSaPoseToCoords(saPose: SaPoseMsg) -> Geometry.Coords:
+		return (saPose.x, saPose.y)
+
+	@staticmethod
 	def convertSaPoseListToCoordsList(saPoseSeq: Sequence[SaPoseMsg]) -> Geometry.CoordsList:
 		coords: Geometry.CoordsList = []
 		for saPose in saPoseSeq:
-			coords.append((saPose.x, saPose.y))
+			coords.append(SaMsgs.convertSaPoseToCoords(saPose))
 		return coords
 
 	@staticmethod
