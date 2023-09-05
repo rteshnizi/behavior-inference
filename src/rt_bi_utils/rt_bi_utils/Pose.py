@@ -1,7 +1,8 @@
 from shapely.geometry import Point
 
+
 class Pose:
-	def __init__(self, timeNanoSecs: float, x: float, y: float, angleFromX: float):
+	def __init__(self, timeNanoSecs: int, x: float, y: float, angleFromX: float):
 		"""
 		Representation of a pose in RTBI implementation.
 
@@ -16,7 +17,7 @@ class Pose:
 		angleFromX : `float`
 
 		"""
-		self.timeNanoSecs: float = timeNanoSecs
+		self.timeNanoSecs: int = timeNanoSecs
 		self.x: float = float(x)
 		self.y: float = float(y)
 		self.angleFromX: float = float(angleFromX)
