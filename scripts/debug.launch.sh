@@ -48,12 +48,12 @@ concurrently\
 	--names "RVZ,MAP,AV ,MI ,SI ,ST "\
 	--prefix "[{name}-{time}]"\
 	-c "bgWhite.black,bgBlueBright.black,bgBlue.black,bgYellow.black,bgMagentaBright.black,bgGreenBright.black"\
-	--hide "0"\
 	--timestamp-format "HH:mm:ss"\
 	"ros2 launch rt_bi_core rviz.launch.py"\
 	"ros2 launch rt_bi_emulator map.launch.py"\
 	"ros2 launch rt_bi_emulator avs.launch.py"\
 	"ros2 launch rt_bi_core mi.launch.py"\
 	"ros2 launch rt_bi_core si.launch.py"\
-	"ros2 launch rt_bi_core st.launch.py"
+	"ros2 launch rt_bi_core st.launch.py"\
+	--hide "0,1,2,4"
 exit 0
