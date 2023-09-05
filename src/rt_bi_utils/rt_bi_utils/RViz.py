@@ -4,8 +4,8 @@ from math import cos, sin, sqrt
 from typing import Tuple, Union
 from zlib import adler32
 
-from rclpy.node import Node, Publisher, Timer
 from geometry_msgs.msg import Point as PointMsg
+from rclpy.node import Node, Publisher, Timer
 from visualization_msgs.msg import Marker, MarkerArray
 
 import rt_bi_utils.Ros as RosUtils
@@ -39,9 +39,7 @@ class RViz:
 	TRANSLATION_X = 0
 	TRANSLATION_Y = 0
 	SCALE = 1
-	NAMESPACE = "rt_bi_core"
 	FRAME_ID = "map"
-	__RVIZ_TOPIC = RosUtils.CreateTopicName("rbc_markers")
 
 	@staticmethod
 	def isRVizReady(node: Node, publisher: Publisher) -> bool:
@@ -54,8 +52,8 @@ class RViz:
 		return True
 
 	@staticmethod
-	def createRVizPublisher(node: Node) -> Tuple[Publisher, Union[Timer, None]]:
-		return RosUtils.CreatePublisher(node, MarkerArray, RViz.__RVIZ_TOPIC)
+	def createRVizPublisher(node: Node, topic: str) -> Tuple[Publisher, Union[Timer, None]]:
+		return RosUtils.CreatePublisher(node, MarkerArray, topic)
 
 	@staticmethod
 	def __translateCoords(coord: Geometry.Coords) -> Geometry.Coords:
@@ -102,7 +100,7 @@ class RViz:
 
 	@staticmethod
 	def __setMarkerHeader(marker: Marker) -> Marker:
-		marker.ns = RViz.NAMESPACE
+		marker.ns = RosUtils.NAMESPACE
 		marker.action = Marker.ADD
 		marker.pose.orientation.w = 1.0
 		marker.header.frame_id = RViz.FRAME_ID
@@ -250,6 +248,6 @@ class RViz:
 		"""
 		Remove a shape from canvas
 		"""
-		RosUtils.Logger().info("Clear shape...")
+		RosUtils.Logger().info("Clear shape.")
 		RosUtils.Logger().warn("Maybe deprecated function?")
 		return

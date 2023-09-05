@@ -2,49 +2,32 @@ from typing import Dict, List, Union
 
 import rclpy
 from rclpy.node import Node
+from sa_msgs.msg import RobotState
 from visualization_msgs.msg import MarkerArray
 
 import rt_bi_utils.Ros as RosUtils
-from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
-from rt_bi_core.Model.SensingRegion import SensingRegion
-from rt_bi_utils.Geometry import Geometry, Polygon
+from rt_bi_core.Model.SensorRegion import SensorRegion
 from rt_bi_utils.RViz import RViz
 from rt_bi_utils.SaMsgs import SaMsgs
-from sa_msgs.msg import FeatureInfo, RobotState
 
 
 class SensorTopicInterface(Node):
 	""" This Node listens to all the messages published on the topics related to sensors and renders them. """
-	def __init__(self, subClass=False, **kw):
+	def __init__(self, subClass=False, **kwArgs):
 		""" Create a Viewer ROS node. """
-		newKw = { "node_name": "rt_bi_core_sensor", **kw}
+		newKw = { "node_name": "rt_bi_core_sensor", **kwArgs}
 		super().__init__(**newKw)
 		if subClass:
-			self.get_logger().info("%s in sensor topic init..." % self.get_fully_qualified_name())
+			self.get_logger().info("%s in sensor topic init." % self.get_fully_qualified_name())
 		else:
-			self.get_logger().info("%s is starting..." % self.get_fully_qualified_name())
+			self.get_logger().info("%s is initializing." % self.get_fully_qualified_name())
 			RosUtils.SetLogger(self.get_logger())
-		self.__regions: Union[Dict[str, PolygonalRegion], None] = None
-		self.__sensors: Union[Dict[int, SensingRegion], None] = None
-		self.__regionDefs: Union[FeatureInfo, None] = None
-		self.__polygon: Union[Polygon, None] = None
+		self.__sensors: Union[Dict[int, SensorRegion], None] = None
 		if subClass:
-			self.get_logger().info("%s skipping creating publishers and subscribers..." % self.get_fully_qualified_name())
+			self.get_logger().info("%s skipping creating publishers and subscribers." % self.get_fully_qualified_name())
 		else:
 			SaMsgs.subscribeToSaRobotStateTopic(self, self.__onRobotStateUpdate)
-			(self.__rvizPublisher, _) = RViz.createRVizPublisher(self)
-
-	@property
-	def regions(self) -> Dict[str, PolygonalRegion]:
-		if self.__regions is not None: return self.__regions
-		return {}
-
-	@property
-	def polygon(self) -> Polygon:
-		if self.__polygon is None:
-			polygons = [self.regions[r].polygon for r in self.regions]
-			self.__polygon = Geometry.union(polygons)
-		return self.__polygon
+			(self.__rvizPublisher, _) = RViz.createRVizPublisher(self, RosUtils.CreateTopicName("map"))
 
 	def __onRobotStateUpdate(self, update: RobotState) -> None:
 		if update is None:
@@ -57,24 +40,24 @@ class SensorTopicInterface(Node):
 		):
 			return False
 
-		self.get_logger().info("Updating sensor %d definition..." % update.robot_id)
+		self.get_logger().info("Updating sensor %d definition." % update.robot_id)
 		if self.__sensors is None:
 			self.__sensors = {}
 		coords = SaMsgs.convertSaPoseListToCoordsList(update.fov.corners)
-		sensor = SensingRegion("S-%d" % update.robot_id, coords, self.get_clock().now().nanoseconds, update.robot_id)
+		sensor = SensorRegion(idNum=update.robot_id, envelope=coords)
 		self.__sensors[update.robot_id] = sensor
 		self.render([sensor])
 		return
 
-	def render(self, regions: List[PolygonalRegion] = None):
+	def render(self, regions: List[SensorRegion] = None):
 		if not RViz.isRVizReady(self, self.__rvizPublisher):
 			self.get_logger().warn("Skipping map render... RViz is not ready yet to receive messages.")
 			return
 		if regions is None:
-			self.get_logger().info("Rendering map...")
+			self.get_logger().info("Rendering map.")
 			regionList = self.regions.values()
 		else:
-			self.get_logger().info("Rendering regions %s..." % repr([r.name for r in regions]))
+			self.get_logger().info("Rendering regions %s." % repr([r.name for r in regions]))
 			regionList = regions
 		message = MarkerArray()
 		for region in regionList:
