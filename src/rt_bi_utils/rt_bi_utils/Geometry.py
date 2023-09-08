@@ -1,6 +1,6 @@
 import operator
 from functools import reduce
-from math import atan2, cos, degrees, inf, pi as PI, sin, sqrt
+from math import atan2, cos, degrees, inf, sin, sqrt
 from typing import Dict, Iterable, List, Tuple, Union
 
 import numpy as np
@@ -242,26 +242,26 @@ class Geometry:
 		return Geometry.convertToPolygonList(intersection)
 
 	@staticmethod
-	def shadows(mapRegionPoly: Polygon, fovPoly: Polygon) -> List[Polygon]:
+	def difference(p1: Polygon, p2: Polygon) -> Union[List[Polygon], MultiPolygon]:
 		"""
-		Given a map region and a FOV, produce the list of shadow polygons.
+		Given p1 and p2, produce the subtraction polygons.
 
 		Parameters
 		----------
-		mapRegionPoly : Polygon
-			The polygon representing a region of the map.
-		fovPoly : Polygon
-			The polygon representing a single connected FOV component.
+		p1 : `Polygon`
+			The polygon representing a base polygon.
+		p2 : `Polygon`
+			The polygon to be subtracted.
 
 		Returns
 		-------
-		List[Polygon]
-			The list of shadow polygons.
+		`Union[List[Polygon], MultiPolygon]`
+			The a polygon or multi-polygon of the subtraction result.
 		"""
-		nonoverlap = mapRegionPoly.difference(fovPoly)
-		# nonoverlap = mapRegionPoly.difference(mapRegionPoly.intersection(fovPoly)) # difference() is wrong because it excludes the boundaries of fov from the shadows
-		# nonoverlap = mapRegionPoly.symmetric_difference(fovPoly).difference(fovPoly)
-		return Geometry.convertToPolygonList(nonoverlap)
+		subtraction = p1.difference(p2) # FIXME: difference() is wrong because it excludes the boundaries of fov from the shadows
+		# subtraction = mapRegionPoly.difference(mapRegionPoly.intersection(fovPoly))
+		# subtraction = mapRegionPoly.symmetric_difference(fovPoly).difference(fovPoly)
+		return Geometry.convertToPolygonList(subtraction)
 
 	@staticmethod
 	def _haveOverlappingEdge(p1: Polygon, p2: Polygon) -> bool:
