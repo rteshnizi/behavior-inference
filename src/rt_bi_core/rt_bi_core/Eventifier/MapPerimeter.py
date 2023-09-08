@@ -23,7 +23,5 @@ class MapPerimeter(RegularSpatialRegion):
 		return super().__getitem__(regionName)
 
 	def addConnectedComponent(self, region: MapRegion) -> None:
-		if region.regionType != MapRegion.RegionType.MAP:
-			return
-			RosUtils.Logger().info("Cannot add region %s to RegularSpatialRegion of type %s" % (repr(region.regionType), __class__.__name__))
+		if region.regionType != MapRegion.RegionType.MAP: return
 		return super().addConnectedComponent(region)

@@ -1,13 +1,12 @@
-from typing import List, Union
+from typing import List, Set, Union
 
-import rt_bi_utils.Ros as RosUtils
 from rt_bi_core.Model.AffineSensorRegion import AffineSensorRegion
-from rt_bi_core.Model.RegularRegion import RegularSpatialRegion
+from rt_bi_core.Model.RegularDynamicRegion import RegularDynamicRegion
 from rt_bi_core.Model.Tracklet import Tracklets
 from rt_bi_utils.Geometry import MultiPolygon, Polygon
 
 
-class FieldOfView(RegularSpatialRegion):
+class FieldOfView(RegularDynamicRegion):
 	"""A Class to model Field-of-View."""
 	def __init__(self, sensors: List[AffineSensorRegion] = []):
 		"""
@@ -15,10 +14,13 @@ class FieldOfView(RegularSpatialRegion):
 		"""
 		super().__init__(regions=sensors)
 
-	def __add__(self, other: "FieldOfView") -> "FieldOfView":
+	def __and__(self, other: "FieldOfView") -> Set[str]:
+		return super().__and__(other)
+
+	def __add__(self, other: "FieldOfView") -> Set[str]:
 		return super().__add__(other)
 
-	def __sub__(self, other: "FieldOfView") -> "FieldOfView":
+	def __sub__(self, other: "FieldOfView") -> Set[str]:
 		return super().__sub__(other)
 
 	def __getitem__(self, regionName: str) -> AffineSensorRegion:
@@ -37,7 +39,14 @@ class FieldOfView(RegularSpatialRegion):
 		return tracks
 
 	def addConnectedComponent(self, region: AffineSensorRegion) -> None:
-		if region.regionType != AffineSensorRegion.RegionType.SENSING:
-			return
-			RosUtils.Logger().info("Cannot add region %s to RegularSpatialRegion of type %s" % (repr(region.regionType), __class__.__name__))
+		if region.regionType != AffineSensorRegion.RegionType.SENSING: return
 		return super().addConnectedComponent(region)
+
+	def intersection(self, other: "FieldOfView") -> Set[str]:
+		return super().intersection(other)
+
+	def union(self, other: "FieldOfView") -> Set[str]:
+		return super().union(other)
+
+	def difference(self, other: "FieldOfView") -> Set[str]:
+		return super().difference(other)
