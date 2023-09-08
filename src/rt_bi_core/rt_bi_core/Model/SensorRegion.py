@@ -2,6 +2,8 @@ from typing import List, Union
 
 from visualization_msgs.msg import Marker
 
+import rt_bi_utils.Ros as RosUtils
+from rt_bi_core.Model.DynamicRegion import DynamicRegion
 from rt_bi_core.Model.FeatureMap import FeatureMap
 from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
 from rt_bi_core.Model.Tracklet import Tracklets
@@ -11,7 +13,7 @@ from rt_bi_utils.RViz import KnownColors
 COLOR_PALETTE = ["Green", "Purple", "Gold"]
 NUM_COLORS = len(COLOR_PALETTE)
 
-class SensorRegion(PolygonalRegion):
+class SensorRegion(DynamicRegion):
 	"""
 	coords will be used to create the polygon.
 	If polygon is given, coords arg will be ignored.
@@ -51,9 +53,6 @@ class SensorRegion(PolygonalRegion):
 		)
 		self.__tracks = tracks
 
-	def __repr__(self):
-		return "%s@%.2f" % (super().__repr__(), self.timeNanoSecs)
-
 	@property
 	def fov(self) -> Union[Polygon, MultiPolygon]:
 		"""The FOV."""
@@ -76,17 +75,16 @@ class SensorRegion(PolygonalRegion):
 		"""
 		return len(self.__tracks) > 0
 
-	def updateVisibilityPolygon(self, regions: List[PolygonalRegion], featureMap: FeatureMap) -> Geometry.CoordsList:
-		# sortedCoords = Geometry.sortCoordinatesClockwise(self._originalCoords)
-		sortedCoords = self.__originalCoords
-		polygon = Polygon(sortedCoords)
+	def updateVisibilityPolygon(self, regions: List[PolygonalRegion], featureMap: FeatureMap) -> None:
+		RosUtils.Logger().info("Updating visibility")
+		polygon = Polygon(self.envelope)
 		for region in regions:
 			# FIXME: Currently, the type of sensor is missing.
 			# Once its available you should check the type and see which type of seeThrough I should look for
-			if featureMap.features[region.type].visibleFromAbove: continue
-			nextPolygon = Geometry.subtract(polygon, region.interior)
-			polygon = nextPolygon
-		return polygon
+			if featureMap.features[region.regionType].visibleFromAbove: continue
+			polygon = Geometry.subtract(polygon, region.interior)
+		self.forceUpdateInteriorPolygon(polygon)
+		return
 
 	def render(self) -> List[Marker]:
 		msg = super().render(False)

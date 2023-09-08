@@ -36,7 +36,6 @@ class PolygonalRegion:
 		interior: Union[Polygon, MultiPolygon, None] = None,
 		regionType: RegionType = RegionType.BASE,
 		renderLineWidth = 1,
-		timeNanoSecs = 0,
 		**kwArgs
 	):
 		"""
@@ -58,8 +57,6 @@ class PolygonalRegion:
 			The type of this region.
 		renderLineWidth: int, default `1`
 			The width of the rendered lines.
-		timeNanoSecs: int, default `0`
-			For regions that require a timestamp, this variable holds a float NanoSecond time.
 		"""
 		self.__name = "%s-%d" % (regionType, idNum)
 		self.__RENDER_LINE_WIDTH = renderLineWidth
@@ -70,7 +67,6 @@ class PolygonalRegion:
 		self.__ENVELOPE_COLOR = envelopeColor
 		self.__INTERIOR_COLOR = interiorColor
 		self.__TEXT_COLOR = KnownColors.BLACK if RViz.isLightColor(interiorColor) else KnownColors.WHITE
-		self.__timeNanoSecs = timeNanoSecs
 		if len(kwArgs) > 0 : RosUtils.Logger().warn("Unassigned keyword args ignored: %s" % repr(kwArgs))
 		self.__edges: PolygonalRegion.Edges = self.__buildEdges()
 
@@ -103,11 +99,6 @@ class PolygonalRegion:
 		return self.__name
 
 	@property
-	def timeNanoSecs(self) -> float:
-		"""If there is a timestamp associated, this returns the time, and `nan` otherwise."""
-		return self.__timeNanoSecs
-
-	@property
 	def envelopeColor(self) -> Color:
 		"""The color used to render the boundary of this polygon."""
 		return self.__ENVELOPE_COLOR
@@ -134,6 +125,11 @@ class PolygonalRegion:
 		The edge identifier is a string.
 		"""
 		return self.__edges
+
+	def forceUpdateInteriorPolygon(self, polygon: Polygon) -> None:
+		"""Deliberately did not use a setter to not casually just update the interior."""
+		self.__interiorPolygon = polygon
+		return
 
 	def hasEdge(self, e: LineString) -> bool:
 		idCandidate1 = Geometry.lineStringId(e)
