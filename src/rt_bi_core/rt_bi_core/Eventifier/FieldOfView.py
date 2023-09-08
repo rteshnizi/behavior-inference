@@ -15,6 +15,12 @@ class FieldOfView(RegularSpatialRegion):
 		"""
 		super().__init__(regions=sensors)
 
+	def __add__(self, other: "FieldOfView") -> "FieldOfView":
+		return super().__add__(other)
+
+	def __sub__(self, other: "FieldOfView") -> "FieldOfView":
+		return super().__sub__(other)
+
 	def __getitem__(self, regionName: str) -> AffineSensorRegion:
 		return super().__getitem__(regionName)
 

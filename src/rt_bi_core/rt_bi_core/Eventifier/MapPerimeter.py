@@ -13,6 +13,12 @@ class MapPerimeter(RegularSpatialRegion):
 		"""
 		super().__init__(regions=regions)
 
+	def __add__(self, other: "MapPerimeter") -> "MapPerimeter":
+		return super().__add__(other)
+
+	def __sub__(self, other: "MapPerimeter") -> "MapPerimeter":
+		return super().__sub__(other)
+
 	def __getitem__(self, regionName: str) -> MapRegion:
 		return super().__getitem__(regionName)
 

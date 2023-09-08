@@ -13,6 +13,12 @@ class RegularSymbol(RegularSpatialRegion):
 		"""
 		super().__init__(regions=regions)
 
+	def __add__(self, other: "RegularSymbol") -> "RegularSymbol":
+		return super().__add__(other)
+
+	def __sub__(self, other: "RegularSymbol") -> "RegularSymbol":
+		return super().__sub__(other)
+
 	def __getitem__(self, regionName: str) -> SymbolRegion:
 		return super().__getitem__(regionName)
 

@@ -1,5 +1,6 @@
 from typing import Dict, List, Type, Union
 
+import rt_bi_utils.Ros as RosUtils
 from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
 from rt_bi_utils.Geometry import Geometry, LineString, MultiPolygon, Polygon
 
@@ -14,6 +15,18 @@ class RegularSpatialRegion:
 		"""
 		for region in regions: self.addConnectedComponent(region)
 
+	def __sub__(self, other: "RegularSpatialRegion") -> "RegularSpatialRegion":
+		selfRegions = set(self.__regions.values())
+		otherRegions = set(other.__regions.values())
+		diff = selfRegions - otherRegions
+		return RegularSpatialRegion(list(diff))
+
+	def __add__(self, other: "RegularSpatialRegion") -> "RegularSpatialRegion":
+		selfRegions = set(self.__regions.values())
+		otherRegions = set(other.__regions.values())
+		diff = selfRegions + otherRegions
+		return RegularSpatialRegion(list(diff))
+
 	def __iter__(self):
 		return iter(self.__regions)
 
@@ -21,10 +34,16 @@ class RegularSpatialRegion:
 		return next(self.__regions)
 
 	def __getitem__(self, regionName: str) -> Type[PolygonalRegion]:
+		if isinstance(regionName, str):
+			RosUtils.Logger().error("Regular regions are dictionaries. index must be string. Given %s" % repr(regionName))
+			raise KeyError("Regular regions are dictionaries. index must be string. Given %s" % repr(regionName))
 		return self.__regions[regionName]
 
+	def __len__(self) -> int:
+		return len(self.__regions)
+
 	def __repr__(self):
-		return "%s" % repr([self.__regions.values()])
+		return "%s" % repr([i for i in self.__regions])
 
 	@property
 	def envelopePolygon(self) -> Union[Polygon, MultiPolygon]:
@@ -36,27 +55,32 @@ class RegularSpatialRegion:
 	@property
 	def regionNames(self) -> List[str]:
 		"""List of the names of the regions, which also happens to be the list of the nodes of the graph as well."""
-		return ["not", "implemented", "lol", "!"]
+		return list(self.__regions.keys())
 
 	@property
 	def interior(self) -> Union[Polygon, MultiPolygon]:
 		"""The geometrical representation of the FOV of the union of the regions."""
-		polygons = [self.__regions[name].fov for name in self.__regions]
+		polygons = [self.__regions[name].interior for name in self.__regions]
 		polygon = Geometry.union(polygons)
 		return polygon
 
 	@property
 	def timeNanoSec(self) -> int:
-		return 0
+		if self.isEmpty: return -1
+		else: return self[next(iter(self.__regions))].timeNanoSecs
+
+	@property
+	def isEmpty(self) -> bool:
+		return len(self) == 0
 
 	@property
 	def edges(self) -> Dict[str, LineString]:
 		return self.__edges
 
 	def addConnectedComponent(self, region: Type[PolygonalRegion]) -> None:
-		if self.timeNanoSec != region.timeNanoSecs:
-			raise RuntimeError("Cannot add Regular Regions at different times to the same object.")
+		if not self.isEmpty and self.timeNanoSec != region.timeNanoSecs:
+			raise RuntimeError("Cannot add Regular Regions at different times to the same object. self.t = %d and region.t = %d" % (self.timeNanoSec, region.timeNanoSecs))
 		if region.name in self.__regions:
-			raise RuntimeError("Region with name %s is already added to %s." % (region.name, self.__class__.__name__))
+			RosUtils.Logger().warn("Overriding region with name %s that is already added in %s." % (region.name, self.__class__.__name__))
 		self.__regions[region.name] = region
 		return
