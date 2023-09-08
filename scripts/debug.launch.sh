@@ -55,5 +55,5 @@ concurrently\
 	"ros2 launch rt_bi_core mi.launch.py"\
 	"ros2 launch rt_bi_core si.launch.py"\
 	"ros2 launch rt_bi_core st.launch.py"\
-	--hide "0,1,2,4"
+	--hide "0,1,2,3,4"
 exit 0
