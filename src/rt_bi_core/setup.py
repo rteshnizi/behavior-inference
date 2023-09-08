@@ -16,9 +16,9 @@ setup(
 		(os.path.join("share", package_name, "config"), glob("config/*")),
 	],
 	install_requires= [
+		"isort",
 		"networkx~=3.0",
 		"setuptools",
-		"isort"
 	],
 	zip_safe=True,
 	maintainer="Reza Teshnizi",
@@ -27,9 +27,10 @@ setup(
 	license="UNLICENSED",
 	entry_points={
 		"console_scripts": [
+			"BA = rt_bi_core.BehaviorAutomatonInterface:main",
 			"MI = rt_bi_core.MapServiceInterface:main",
 			"SI = rt_bi_core.SensorTopicInterface:main",
-			"BA = rt_bi_core.BehaviorAutomatonInterface:main",
+			"ST = rt_bi_core.ShadowTreeInterface:main",
 		],
 	},
 )
