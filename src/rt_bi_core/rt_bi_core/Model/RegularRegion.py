@@ -1,4 +1,4 @@
-from typing import Dict, List, Set, Type, Union
+from typing import Dict, Iterator, List, Set, Type, Union
 
 import rt_bi_utils.Ros as RosUtils
 from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
@@ -34,7 +34,7 @@ class RegularSpatialRegion:
 		union = selfRegions.union(otherRegions)
 		return union
 
-	def __iter__(self):
+	def __iter__(self) -> Iterator[str]:
 		return iter(self.__regions)
 
 	def __next__(self) -> str:
@@ -70,11 +70,6 @@ class RegularSpatialRegion:
 		polygons = [self.__regions[name].interior for name in self.__regions]
 		polygon = Geometry.union(polygons)
 		return polygon
-
-	@property
-	def timeNanoSec(self) -> int:
-		if self.isEmpty: return -1
-		else: return self[next(iter(self.__regions))].timeNanoSecs
 
 	@property
 	def isEmpty(self) -> bool:
