@@ -2,7 +2,7 @@ from typing import Union
 
 from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
 from rt_bi_utils.Geometry import Geometry, MultiPolygon, Polygon
-from rt_bi_utils.RViz import KnownColors
+from rt_bi_utils.RViz import Color, KnownColors
 
 
 class DynamicRegion(PolygonalRegion):
@@ -13,7 +13,9 @@ class DynamicRegion(PolygonalRegion):
 			self,
 			idNum: int,
 			envelope: Geometry.CoordsList,
-			fov: Union[Polygon, MultiPolygon, None] = None,
+			envelopeColor: Color,
+			regionType: PolygonalRegion.RegionType,
+			interior: Union[Polygon, MultiPolygon, None] = None,
 			timeNanoSecs = 0,
 			**kwArgs
 		) -> None:
@@ -36,9 +38,9 @@ class DynamicRegion(PolygonalRegion):
 		super().__init__(
 			idNum=idNum,
 			envelope=envelope,
-			envelopeColor=KnownColors.GREEN,
-			interior=fov,
-			regionType=PolygonalRegion.RegionType.SENSING,
+			envelopeColor=envelopeColor,
+			interior=interior,
+			regionType=regionType,
 			**kwArgs
 		)
 		self.__timeNanoSecs = timeNanoSecs

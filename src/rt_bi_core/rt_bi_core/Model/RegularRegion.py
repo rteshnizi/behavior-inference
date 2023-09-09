@@ -8,12 +8,6 @@ from rt_bi_utils.Geometry import Geometry, LineString, MultiPolygon, Polygon
 class RegularSpatialRegion:
 	"""The base class for all regular spatial regions."""
 
-	MAX_UPDATE_DELAY = 5 ** 8
-	"""
-	### Core assumption:
-	We allow at most a delay of 0.5s between updates from a certain sensor before we declare it off.
-	"""
-
 	def __init__(self, regions: List[Type[PolygonalRegion]] = []):
 		self.__regions: Dict[str, Type[PolygonalRegion]] = {}
 		"""
