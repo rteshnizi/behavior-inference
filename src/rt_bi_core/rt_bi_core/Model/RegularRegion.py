@@ -16,21 +16,21 @@ class RegularSpatialRegion:
 		"""
 		for region in regions: self.addConnectedComponent(region)
 
-	def __and__(self, other: "RegularSpatialRegion") -> Set[str]:
+	def __and__(self, others: "RegularSpatialRegion") -> Set[str]:
 		regions = set(self.__regions.keys())
-		otherRegions = set(other.__regions.keys())
+		otherRegions = set(others.__regions.keys())
 		intersection = regions & otherRegions
 		return intersection
 
-	def __sub__(self, other: "RegularSpatialRegion") -> Set[str]:
+	def __sub__(self, others: "RegularSpatialRegion") -> Set[str]:
 		selfRegions = set(self.__regions.keys())
-		otherRegions = set(other.__regions.keys())
+		otherRegions = set(others.__regions.keys())
 		diff = selfRegions - otherRegions
 		return diff
 
-	def __add__(self, other: "RegularSpatialRegion") -> Set[str]:
+	def __add__(self, others: "RegularSpatialRegion") -> Set[str]:
 		selfRegions = set(self.__regions.keys())
-		otherRegions = set(other.__regions.keys())
+		otherRegions = set(others.__regions.keys())
 		union = selfRegions.union(otherRegions)
 		return union
 
@@ -85,11 +85,11 @@ class RegularSpatialRegion:
 		self.__regions[region.name] = region
 		return
 
-	def intersection(self, other: "RegularSpatialRegion") -> Set[str]:
-		return self.__and__(other)
+	def intersection(self, others: "RegularSpatialRegion") -> Set[str]:
+		return self.__and__(others)
 
-	def union(self, other: "RegularSpatialRegion") -> Set[str]:
-		return self.__add__(other)
+	def union(self, others: "RegularSpatialRegion") -> Set[str]:
+		return self.__add__(others)
 
-	def difference(self, other: "RegularSpatialRegion") -> Set[str]:
-		return self.__sub__(other)
+	def difference(self, others: "RegularSpatialRegion") -> Set[str]:
+		return self.__sub__(others)

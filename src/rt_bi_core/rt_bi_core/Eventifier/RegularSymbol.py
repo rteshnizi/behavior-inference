@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Set
 
 from rt_bi_core.Model.RegularDynamicRegion import RegularDynamicRegion
 from rt_bi_core.Model.SymbolRegion import SymbolRegion
@@ -12,11 +12,14 @@ class RegularSymbol(RegularDynamicRegion):
 		"""
 		super().__init__(regions=regions)
 
-	def __add__(self, other: "RegularSymbol") -> "RegularSymbol":
-		return super().__add__(other)
+	def __and__(self, others: "RegularSymbol") -> Set[str]:
+		return super().__and__(others)
 
-	def __sub__(self, other: "RegularSymbol") -> "RegularSymbol":
-		return super().__sub__(other)
+	def __add__(self, others: "RegularSymbol") -> Set[str]:
+		return super().__add__(others)
+
+	def __sub__(self, others: "RegularSymbol") -> Set[str]:
+		return super().__sub__(others)
 
 	def __getitem__(self, regionName: str) -> SymbolRegion:
 		return super().__getitem__(regionName)
@@ -24,3 +27,12 @@ class RegularSymbol(RegularDynamicRegion):
 	def addConnectedComponent(self, region: SymbolRegion) -> None:
 		if region.regionType != SymbolRegion.RegionType.SYMBOL: return
 		return super().addConnectedComponent(region)
+
+	def intersection(self, others: "RegularSymbol") -> Set[str]:
+		return super().intersection(others)
+
+	def union(self, others: "RegularSymbol") -> Set[str]:
+		return super().union(others)
+
+	def difference(self, others: "RegularSymbol") -> Set[str]:
+		return super().difference(others)

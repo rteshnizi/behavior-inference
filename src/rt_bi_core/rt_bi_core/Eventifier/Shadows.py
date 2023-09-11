@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Set
 
 from rt_bi_core.Model.RegularDynamicRegion import RegularDynamicRegion
 from rt_bi_core.Model.ShadowRegion import ShadowRegion
@@ -12,11 +12,14 @@ class Shadows(RegularDynamicRegion):
 		"""
 		super().__init__(regions=regions)
 
-	def __add__(self, other: "Shadows") -> "Shadows":
-		return super().__add__(other)
+	def __and__(self, others: "Shadows") -> Set[str]:
+		return super().__and__(others)
 
-	def __sub__(self, other: "Shadows") -> "Shadows":
-		return super().__sub__(other)
+	def __add__(self, others: "Shadows") -> Set[str]:
+		return super().__add__(others)
+
+	def __sub__(self, others: "Shadows") -> Set[str]:
+		return super().__sub__(others)
 
 	def __getitem__(self, regionName: str) -> ShadowRegion:
 		return super().__getitem__(regionName)
@@ -24,3 +27,12 @@ class Shadows(RegularDynamicRegion):
 	def addConnectedComponent(self, region: ShadowRegion) -> None:
 		if region.regionType != ShadowRegion.RegionType.SHADOW: return
 		return super().addConnectedComponent(region)
+
+	def intersection(self, others: "Shadows") -> Set[str]:
+		return super().intersection(others)
+
+	def union(self, others: "Shadows") -> Set[str]:
+		return super().union(others)
+
+	def difference(self, others: "Shadows") -> Set[str]:
+		return super().difference(others)
