@@ -15,8 +15,8 @@ class DynamicRegion(PolygonalRegion):
 			envelope: Geometry.CoordsList,
 			envelopeColor: Color,
 			regionType: PolygonalRegion.RegionType,
+			timeNanoSecs: int,
 			interior: Union[Polygon, MultiPolygon, None] = None,
-			timeNanoSecs = 0,
 			**kwArgs
 		) -> None:
 		"""
@@ -24,16 +24,18 @@ class DynamicRegion(PolygonalRegion):
 
 		Parameters
 		----------
-		centerOfRotation : Pose
-			This will be used to interpolate the rotation motion of the region.
 		idNum : int
 			Id of the sensor region.
 		envelope : Geometry.CoordsList
 			The list of the coordinates of the vertices of the envelope of the polygonal region.
-		fov: Union[Polygon, MultiPolygon, None], default `None`
-			The field-of-view, default forces construction using knowledge-base.
-		timeNanoSecs: int, default `0`
+		envelopeColor: Color
+			The color of the envelope when/if rendered.
+		regionType: RegionType, default `RegionType.BASE`
+			The type of this region.
+		timeNanoSecs: int
 			A timestamp representing absolute value of time in nanosecond (ns).
+		interior: Union[Polygon, MultiPolygon, None], default `None`
+			The interior of the region, if it is separate from its envelope, default forces construction.
 		"""
 		super().__init__(
 			idNum=idNum,

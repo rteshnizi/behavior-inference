@@ -1,19 +1,21 @@
 from typing import Union
 
-from rt_bi_core.Model.SensorRegion import SensorRegion
-from rt_bi_core.Model.Tracklet import Tracklets
+from rt_bi_core.Model.DynamicRegion import DynamicRegion
 from rt_bi_utils.Geometry import Geometry, MultiPolygon, Polygon
 from rt_bi_utils.Pose import Pose
+from rt_bi_utils.RViz import Color
 
 
-class AffineSensorRegion(SensorRegion):
+class AffineRegion(DynamicRegion):
 	def __init__(
 			self,
 			centerOfRotation: Pose,
 			idNum: int,
 			envelope: Geometry.CoordsList,
-			fov: Union[Polygon, MultiPolygon, None]=None,
-			tracks: Tracklets={},
+			envelopeColor: Color,
+			regionType: DynamicRegion.RegionType,
+			timeNanoSecs: int,
+			interior: Union[Polygon, MultiPolygon, None]=None,
 			**kwArgs
 		) -> None:
 		"""
@@ -27,17 +29,22 @@ class AffineSensorRegion(SensorRegion):
 			Id of the sensor region.
 		envelope : Geometry.CoordsList
 			The list of the coordinates of the vertices of the envelope of the polygonal region.
-		fov: Union[Polygon, MultiPolygon, None], default `None`
-			The field-of-view, default forces construction using knowledge-base.
-		tracks : Tracks, default `{}`
-			The tracklets, as defined in the dissertation, observable in the fov,
-			default forces construction using knowledge-base.
+		envelopeColor: Color
+			The color of the envelope when/if rendered.
+		regionType: RegionType, default `RegionType.BASE`
+			The type of this region.
+		timeNanoSecs: int
+			A timestamp representing absolute value of time in nanosecond (ns).
+		interior: Union[Polygon, MultiPolygon, None], default `None`
+			The interior of the region, if it is separate from its envelope, default forces construction.
 		"""
 		super().__init__(
 			idNum=idNum,
 			envelope=envelope,
-			tracks=tracks,
-			fov=fov,
+			envelopeColor=envelopeColor,
+			regionType=regionType,
+			timeNanoSecs=timeNanoSecs,
+			interior=interior,
 			**kwArgs
 		)
 		self.centerOfRotation = centerOfRotation
