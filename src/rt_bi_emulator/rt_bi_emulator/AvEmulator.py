@@ -16,7 +16,7 @@ class Av:
 	def __init__(self, id: int, p: Pose, fov: Geometry.CoordsList) -> None:
 		self.robotId: int = id
 		self.pose = p
-		self.fov = fov
+		self.interior = fov
 
 class AvEmulator(Node):
 	""" The Viewer ROS Node """
@@ -27,7 +27,7 @@ class AvEmulator(Node):
 		self.get_logger().info("%s is initializing." % self.get_fully_qualified_name())
 		self.__declareParameters()
 		RosUtils.SetLogger(self.get_logger())
-		self.__centerOfRotation = (0.0, 0.0)
+		self.__centerOfRotation = Pose(0, 0.0, 0.0, 0.0)
 		self.__robotId = -1
 		self.__initTime = float(self.get_clock().now().nanoseconds)
 		self.__avPositions: List[Av] = []
@@ -52,7 +52,7 @@ class AvEmulator(Node):
 		saPoses = self.get_parameter("saPose").get_parameter_value().string_array_value
 		saPoses = [json.loads(pose) for pose in saPoses]
 		saPoses = tuple(saPoses)
-		self.__centerOfRotation = (saPoses[0][0], saPoses[0][1])
+		self.__centerOfRotation = Pose(timePoints[0], saPoses[0][0], saPoses[0][1], 0)
 		fov = self.get_parameter("fov").get_parameter_value().string_array_value
 		parsedFov = []
 		for f in fov:
@@ -60,8 +60,8 @@ class AvEmulator(Node):
 			parsedFov.append([tuple(p) for p in f])
 		for i in range(len(timePoints)):
 			self.__avPositions.append(Av(self.__robotId, Pose(timePoints[i], *(saPoses[0])), parsedFov[i]))
-		self.__initFovPoly = Polygon(self.__avPositions[0].fov)
-		self.__transformationMatrix = Geometry.getAffineTransformation(self.__avPositions[0].fov, self.__avPositions[-1].fov, self.__centerOfRotation)
+		self.__initFovPoly = Polygon(self.__avPositions[0].interior)
+		self.__transformationMatrix = Geometry.getAffineTransformation(self.__avPositions[0].interior, self.__avPositions[-1].interior, self.__centerOfRotation)
 		self.__totalTimeNanoSecs = timePoints[-1] * AvEmulator.NANO_CONVERSION_CONSTANT
 		return
 
@@ -73,7 +73,7 @@ class AvEmulator(Node):
 			matrix = Geometry.getParameterizedAffineTransformation(self.__transformationMatrix, param)
 			fov = Geometry.applyMatrixTransformToPolygon(matrix, self.__initFovPoly, self.__centerOfRotation)
 		else:
-			fov = Polygon(self.__avPositions[-1].fov)
+			fov = Polygon(self.__avPositions[-1].interior)
 		msg = RobotState()
 		msg.robot_id = self.__robotId
 		msg.pose = SaMsgs.createSaPoseMsg(self.__avPositions[0].pose.x, self.__avPositions[0].pose.y)
