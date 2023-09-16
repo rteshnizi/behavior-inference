@@ -5,7 +5,6 @@ from visualization_msgs.msg import Marker
 import rt_bi_utils.Ros as RosUtils
 from rt_bi_core.Model.AffineRegion import AffineRegion
 from rt_bi_core.Model.FeatureMap import FeatureMap
-from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
 from rt_bi_core.Model.Tracklet import Tracklets
 from rt_bi_utils.Geometry import Geometry, MultiPolygon, Polygon
 from rt_bi_utils.Pose import Pose
@@ -56,7 +55,7 @@ class SensorRegion(AffineRegion):
 			idNum=idNum,
 			envelope=envelope,
 			envelopeColor=KnownColors.GREEN,
-			regionType=PolygonalRegion.RegionType.SENSING,
+			regionType=AffineRegion.RegionType.SENSING,
 			timeNanoSecs=timeNanoSecs,
 			interior=interior,
 			**kwArgs
@@ -80,7 +79,7 @@ class SensorRegion(AffineRegion):
 		"""
 		return len(self.__tracks) > 0
 
-	def updateVisibilityPolygon(self, regions: List[PolygonalRegion], featureMap: FeatureMap) -> None:
+	def updateVisibilityPolygon(self, regions: List[AffineRegion], featureMap: FeatureMap) -> None:
 		RosUtils.Logger().info("Updating visibility")
 		polygon = Polygon(self.envelope)
 		for region in regions:
