@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Set
 
 import rt_bi_utils.Ros as RosUtils
 from rt_bi_core.Model.DynamicRegion import DynamicRegion
@@ -21,6 +21,15 @@ class RegularDynamicRegion(RegularSpatialRegion):
 	def __init__(self, regions: List[DynamicRegion] = []):
 		super().__init__(regions=regions)
 
+	def __and__(self, other: "RegularDynamicRegion") -> Set[str]:
+		return super().__and__(other)
+
+	def __add__(self, other: "RegularDynamicRegion") -> Set[str]:
+		return super().__add__(other)
+
+	def __sub__(self, other: "RegularDynamicRegion") -> Set[str]:
+		return super().__sub__(other)
+
 	def __getitem__(self, regionName: str) -> DynamicRegion:
 		return super().__getitem__(regionName)
 
@@ -36,3 +45,12 @@ class RegularDynamicRegion(RegularSpatialRegion):
 				(self.MAX_UPDATE_DELAY_NS / self.NANO_CONSTANT, self.__class__.__name__, self.timeNanoSec, region.timeNanoSecs)
 			)
 		return super().addConnectedComponent(region)
+
+	def intersection(self, other: "RegularDynamicRegion") -> Set[str]:
+		return super().intersection(other)
+
+	def union(self, other: "RegularDynamicRegion") -> Set[str]:
+		return super().union(other)
+
+	def difference(self, other: "RegularDynamicRegion") -> Set[str]:
+		return super().difference(other)
