@@ -1,4 +1,3 @@
-from math import nan
 from typing import List, Set
 
 from visualization_msgs.msg import Marker

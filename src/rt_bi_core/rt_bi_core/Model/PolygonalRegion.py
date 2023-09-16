@@ -1,5 +1,4 @@
-from math import nan
-from typing import Dict, List, Set, Union
+from typing import Dict, List, Union
 
 from skimage import transform
 from visualization_msgs.msg import Marker
