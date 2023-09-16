@@ -1,10 +1,10 @@
 from typing import List, Set
 
-from rt_bi_core.Model.RegularDynamicRegion import RegularDynamicRegion
+from rt_bi_core.Model.RegularAffineRegion import RegularAffineRegion
 from rt_bi_core.Model.SymbolRegion import SymbolRegion
 
 
-class RegularSymbol(RegularDynamicRegion):
+class RegularSymbol(RegularAffineRegion):
 	"""A Class to model Regular Symbols."""
 	def __init__(self, regions: List[SymbolRegion] = []):
 		"""

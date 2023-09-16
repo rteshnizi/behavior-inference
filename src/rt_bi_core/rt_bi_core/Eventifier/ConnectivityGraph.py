@@ -1,18 +1,21 @@
-from typing import Dict, List, Set, Type, Union
+from typing import Callable, Dict, List, Set, Tuple, Type, Union
 
 import networkx as nx
-from matplotlib.pyplot import Figure, axis, close, figure, pause
+from matplotlib.pyplot import Figure, close, figure, pause
 from mpl_toolkits.mplot3d import Axes3D  # cspell: disable-line, leave this here, otherwise fig.gca(projection="3d") won't work
 
 import rt_bi_utils.Ros as RosUtils
 from rt_bi_core.BehaviorAutomaton.Symbol import Symbol
 from rt_bi_core.Eventifier.FieldOfView import FieldOfView
+from rt_bi_core.Eventifier.MapPerimeter import MapPerimeter
+from rt_bi_core.Eventifier.RegularSymbol import RegularSymbol
+from rt_bi_core.Eventifier.Shadows import Shadows
 from rt_bi_core.Model.MapRegion import MapRegion
 from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
 from rt_bi_core.Model.SensorRegion import SensorRegion
 from rt_bi_core.Model.ShadowRegion import ShadowRegion
 from rt_bi_core.Model.SymbolRegion import SymbolRegion
-from rt_bi_utils.Geometry import Geometry, LineString, MultiPolygon, Polygon
+from rt_bi_utils.Geometry import Geometry, LineString, Polygon
 
 ___a = Axes3D # This is here to avoid a warning for unused import
 
@@ -21,7 +24,8 @@ class ConnectivityGraph(nx.DiGraph):
 	def __init__(
 			self,
 			timeNanoSecs: int,
-			regions: List[Type[PolygonalRegion]],
+			mapRegions: Union[List[MapRegion], MapPerimeter],
+			fovRegions: Union[List[SensorRegion], FieldOfView],
 			symbols: Dict[str, Symbol] = {},
 	) -> None:
 		"""
@@ -41,44 +45,38 @@ class ConnectivityGraph(nx.DiGraph):
 		super().__init__()
 		self.timeNanoSecs = timeNanoSecs
 		RosUtils.Logger().info("Constructing Connectivity Graph @ %d" % self.timeNanoSecs)
-		self.__symbols = symbols
-		self.__regions: List[PolygonalRegion] = regions
 		"""Geometric description of all the regions represented in this graph."""
-		self.__mapPerimeter: Union[Polygon, MultiPolygon]
-		self.__sensorNodes: Set[str] = set()
-		"""Name of all the sensor nodes."""
-		self.__shadowNodes: Set[str] = set()
-		"""Name of all the shadow nodes."""
-		self.__symbolNodes: Set[str] = set()
-		"""Name of all the named symbol (regions defined in the alphabet) nodes."""
 		self.__fieldOfView: FieldOfView = FieldOfView()
+		"""The RegularSpatialRegion representing the field-of-view."""
+		self.__shadows: Shadows = Shadows()
+		"""The RegularSpatialRegion representing the shadows."""
+		self.__symbols: RegularSymbol = RegularSymbol()
+		"""The RegularSpatialRegion representing the shadows."""
+		self.__mapPerimeter: MapPerimeter = MapPerimeter()
+		"""The RegularSpatialRegion representing the map's perimeter."""
 		self.__fig: Union[Figure, None] = None
-		RosUtils.Logger().info("Constructing Perimeter.")
-		self.__constructPerimeter()
-		RosUtils.Logger().info("Constructing FOV.")
-		self.__constructFov()
+		self.__constructRegularRegion(regionList=mapRegions, constructionCallback=self.__constructPerimeter, loggerString="Map Perimeter")
+		self.__constructRegularRegion(regionList=fovRegions, constructionCallback=self.__constructFov, loggerString="Field-of-View")
 		RosUtils.Logger().info("Constructing Shadows.")
 		self.__constructShadows()
 		RosUtils.Logger().warn("SKIPPING construction of Symbols.")
-		self.__constructSymbols()
+		self.__constructSymbols(symbols)
 
 	def __repr__(self):
 		return "cGraph-%.2f" % self.timeNanoSecs
 
 	def __addNode(self, region: Type[PolygonalRegion]) -> None:
+		if (
+			region.regionType != PolygonalRegion.RegionType.SENSING and
+			region.regionType != PolygonalRegion.RegionType.SHADOW and
+			region.regionType != PolygonalRegion.RegionType.SYMBOL
+		):
+			raise TypeError("Unknown node type %s" % region.regionType)
 		nodeName = region.name
 		self.add_node(nodeName)
 		self.nodes[nodeName]["region"] = region
 		self.nodes[nodeName]["centroid"] = region.interior.centroid
 		self.nodes[nodeName]["fromTime"] = self.timeNanoSecs
-		if region.regionType == PolygonalRegion.RegionType.SENSING:
-			self.__sensorNodes.add(nodeName)
-		elif region.regionType == PolygonalRegion.RegionType.SHADOW:
-			self.__shadowNodes.add(nodeName)
-		elif region.regionType == PolygonalRegion.RegionType.SYMBOL:
-			self.__symbolNodes.add(nodeName)
-		else:
-			raise TypeError("Unknown node type %s" % region.regionType)
 		return
 
 	def __addEdges(self, fromStr: Type[PolygonalRegion], toStr: Type[PolygonalRegion], directed=False):
@@ -86,60 +84,66 @@ class ConnectivityGraph(nx.DiGraph):
 		if directed: return
 		self.add_edge(toStr.name, fromStr.name)
 
-	def __constructPerimeter(self) -> None:
-		polygons = [r.interior for r in self.__regions]
-		self.__mapPerimeter = Geometry.union(polygons)
+	def __constructRegularRegion(self, regionList: List[Union[MapRegion, SensorRegion]], constructionCallback: Union[Callable[[List[MapRegion]], None], Callable[[List[SensorRegion]], None]], loggerString: str) -> None:
+		if isinstance(regionList, list):
+			RosUtils.Logger().info("Constructing %s." % loggerString)
+			constructionCallback(regionList)
+		else:
+			RosUtils.Logger().info("Making a shallow copy of %s from previous graph." % loggerString)
+			constructionCallback([regionList[n] for n in regionList])
 		return
 
-	def __constructFov(self) -> None:
-		for region in self.__regions:
+	def __constructPerimeter(self, regions: List[MapRegion]) -> None:
+		for region in regions:
+			self.__mapPerimeter.addConnectedComponent(region)
+		return
+
+	def __constructFov(self, regions: List[SensorRegion]) -> None:
+		for region in regions:
 			if region.regionType != PolygonalRegion.RegionType.SENSING: continue
-			self.fieldOfView.addSensor(region)
+			self.fieldOfView.addConnectedComponent(region)
 			self.__addNode(region)
 		return
 
 	def __addShadowNode(self, shadow: Polygon) -> None:
-		region = ShadowRegion(idNum=len(self.__shadowNodes), envelope=Geometry.getPolygonCoords(shadow))
+		region = ShadowRegion(idNum=len(self.__shadows), envelope=[], interior=shadow)
 		self.__addNode(region)
-		for sensorName in self.__sensorNodes:
-			fovComponent: SensorRegion = self.nodes[sensorName]["region"]
+		for fovName in self.fieldOfView:
+			fovComponent = self.fieldOfView[fovName]
 			if not fovComponent.hasTrack: continue
 			if Geometry.haveOverlappingEdge(fovComponent.interior, region.interior):
 				for trackId in fovComponent.__tracks:
 					track = fovComponent.__tracks[trackId]
 					if track.pose.spawn:
-						self.__addEdges(region.name, sensorName, directed=True)
+						self.__addEdges(region.name, fovName, directed=True)
 					if track.pose.vanished:
-						self.__addEdges(sensorName, region.name, directed=True)
+						self.__addEdges(fovName, region.name, directed=True)
 		return
 
 	def __constructShadows(self) -> None:
-		allShadowPolygons = []
-		for region in self.__regions:
-			if region.regionType == PolygonalRegion.RegionType.SENSING: continue
-			if Geometry.polygonAndPolygonIntersect(region.interior, self.fieldOfView.fov):
-				shadows = Geometry.shadows(region.interior, self.fieldOfView.fov)
-				shadows = [p for p in shadows if p.length > 0]
-				shadows = list(filter(lambda p: not isinstance(p, LineString), shadows))
-				allShadowPolygons = allShadowPolygons + shadows
-			else:
-				allShadowPolygons.append(region.interior)
-		if len(allShadowPolygons) == 0: return # Avoid dealing with empty unions
-		mergedPolys = Geometry.union(allShadowPolygons)
-		mergedPolys = Geometry.convertToPolygonList(mergedPolys)
-		for shadow in mergedPolys:
+		shadows = []
+		if Geometry.polygonAndPolygonIntersect(self.mapPerimeter.interior, self.fieldOfView.interior):
+			shadows = Geometry.difference(self.mapPerimeter.interior, self.fieldOfView.interior)
+			shadows = [p for p in shadows if p.length > 0]
+			shadows = list(filter(lambda p: not isinstance(p, LineString), shadows))
+			shadows = Geometry.union(shadows)
+			shadows = Geometry.convertToPolygonList(shadows)
+		else:
+			shadows.append(self.mapPerimeter.interior)
+		if len(shadows) == 0: return # Avoid dealing with empty unions
+		for shadow in shadows:
 			self.__addShadowNode(shadow)
 		return
 
-	def __constructSymbols(self):
-		for symbolName in self.__symbolNodes:
-			symbol: SymbolRegion = self.nodes[symbolName]["region"]
-			insidePolys = Geometry.intersect(symbol.interior, self.fieldOfView.fov)
+	def __constructSymbols(self, symbols: List[SymbolRegion]):
+		return
+		for symbol in symbols:
+			insidePolys = Geometry.intersect(symbol.interior, self.fieldOfView.interior)
 			insidePolys = [p for p in insidePolys if p.length > 0]
 			insidePolys = list(filter(lambda p: not isinstance(p, LineString), insidePolys))
 			for i in range(len(insidePolys)):
 				poly = insidePolys[i]
-				name = "%s-%d" % (symbolName, i)
+				name = "%s-%d" % (symbol.name, i)
 				region = SymbolRegion(name, Geometry.getPolygonCoords(poly), inFov=True)
 				self.__addNode(region)
 				broken = False
@@ -150,7 +154,7 @@ class ConnectivityGraph(nx.DiGraph):
 						broken = True
 						break
 				if broken: continue
-			shadows = Geometry.shadows(symbol.interior, self.fieldOfView.fov)
+			shadows = Geometry.difference(symbol.interior, self.fieldOfView.interior)
 			shadows = [p for p in shadows if p.length > 0]
 			shadows = list(filter(lambda p: not isinstance(p, LineString), shadows))
 			for i in range(len(shadows)):
@@ -168,13 +172,29 @@ class ConnectivityGraph(nx.DiGraph):
 		return
 
 	@property
-	def mapPerimeter(self) -> MapRegion:
+	def mapPerimeter(self) -> MapPerimeter:
 		"""The geometric description of the map."""
 		return self.__mapPerimeter
 
 	@property
 	def fieldOfView(self) -> FieldOfView:
 		return self.__fieldOfView
+
+	@property
+	def shadows(self) -> Shadows:
+		return self.__shadows
+
+	@property
+	def symbols(self) -> RegularSymbol:
+		return self.__symbols
+
+	@property
+	def allRegions(self) -> Set[str]:
+		"""Returns all of the regions in this connectivity graph."""
+		listOfRegions = set(self.shadows.regionNames) & set(self.fieldOfView.regionNames) & set(self.symbols.regionNames)
+		return listOfRegions
+
+	# def construct(self, regions)
 
 	def render(self):
 		if self.__fig is None:

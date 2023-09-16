@@ -1,16 +1,16 @@
 from typing import List, Set, Union
 
-from rt_bi_core.Model.AffineSensorRegion import AffineSensorRegion
-from rt_bi_core.Model.RegularDynamicRegion import RegularDynamicRegion
+from rt_bi_core.Model.RegularAffineRegion import RegularAffineRegion
+from rt_bi_core.Model.SensorRegion import SensorRegion
 from rt_bi_core.Model.Tracklet import Tracklets
 from rt_bi_utils.Geometry import MultiPolygon, Polygon
 
 
-class FieldOfView(RegularDynamicRegion):
+class FieldOfView(RegularAffineRegion):
 	"""A Class to model Field-of-View."""
-	def __init__(self, sensors: List[AffineSensorRegion] = []):
+	def __init__(self, sensors: List[SensorRegion] = []):
 		"""
-		A dictionary from `sensor.name` to the `AffineSensorRegion` object.
+		A dictionary from `sensor.name` to the `SensorRegion` object.
 		"""
 		super().__init__(regions=sensors)
 
@@ -23,7 +23,7 @@ class FieldOfView(RegularDynamicRegion):
 	def __sub__(self, other: "FieldOfView") -> Set[str]:
 		return super().__sub__(other)
 
-	def __getitem__(self, regionName: str) -> AffineSensorRegion:
+	def __getitem__(self, regionName: str) -> SensorRegion:
 		return super().__getitem__(regionName)
 
 	@property
@@ -34,12 +34,12 @@ class FieldOfView(RegularDynamicRegion):
 	def tracks(self) -> Tracklets:
 		tracks: Tracklets = {}
 		for sensor in self.__regions.values():
-			sensor: AffineSensorRegion = sensor
+			sensor: SensorRegion = sensor
 			tracks = { **tracks, **sensor.tracks }
 		return tracks
 
-	def addConnectedComponent(self, region: AffineSensorRegion) -> None:
-		if region.regionType != AffineSensorRegion.RegionType.SENSING: return
+	def addConnectedComponent(self, region: SensorRegion) -> None:
+		if region.regionType != SensorRegion.RegionType.SENSING: return
 		return super().addConnectedComponent(region)
 
 	def intersection(self, other: "FieldOfView") -> Set[str]:

@@ -1,10 +1,10 @@
 from typing import List, Set
 
-from rt_bi_core.Model.RegularDynamicRegion import RegularDynamicRegion
+from rt_bi_core.Model.RegularAffineRegion import RegularAffineRegion
 from rt_bi_core.Model.ShadowRegion import ShadowRegion
 
 
-class Shadows(RegularDynamicRegion):
+class Shadows(RegularAffineRegion):
 	"""A Class to model Shadows."""
 	def __init__(self, regions: List[ShadowRegion] = []):
 		"""
