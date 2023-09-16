@@ -12,6 +12,8 @@ from shapely.validation import make_valid
 from skimage import transform
 from skimage.transform import AffineTransform as AffineTransform
 
+from rt_bi_utils.Pose import Pose
+
 
 class Geometry:
 	"""
@@ -339,7 +341,7 @@ class Geometry:
 		return edges
 
 	@staticmethod
-	def getAffineTransformation(start: CoordsList, end: CoordsList, centerOfRotation: Coords) -> AffineTransform:
+	def getAffineTransformation(start: CoordsList, end: CoordsList, centerOfRotation: Pose) -> AffineTransform:
 		"""
 		Estimate the affine transformation matrix that would transform the given polygon from the start state to end state.
 
@@ -359,8 +361,8 @@ class Geometry:
 		"""
 		startCoords = np.array(start)
 		endCoords = np.array(end)
-		startCoords = [(coords[0] - centerOfRotation[0], coords[1] - centerOfRotation[1]) for coords in startCoords]
-		endCoords = [(coords[0] - centerOfRotation[0], coords[1] - centerOfRotation[1]) for coords in endCoords]
+		startCoords = [(coords[0] - centerOfRotation.x, coords[1] - centerOfRotation.y) for coords in startCoords]
+		endCoords = [(coords[0] - centerOfRotation.x, coords[1] - centerOfRotation.y) for coords in endCoords]
 		startCoords = np.array(startCoords)
 		endCoords = np.array(endCoords)
 		matrix = transform.estimate_transform("affine", startCoords, endCoords)
@@ -410,12 +412,12 @@ class Geometry:
 		return parameterizedMatrix
 
 	@staticmethod
-	def applyMatrixTransformToPolygon(transformation: AffineTransform, polygon: Polygon, centerOfRotation: Coords) -> Polygon:
+	def applyMatrixTransformToPolygon(transformation: AffineTransform, polygon: Polygon, centerOfRotation: Pose) -> Polygon:
 		pCoords = list(polygon.exterior.coords)
-		pCoords = [(coords[0] - centerOfRotation[0], coords[1] - centerOfRotation[1]) for coords in pCoords]
+		pCoords = [(coords[0] - centerOfRotation.x, coords[1] - centerOfRotation.y) for coords in pCoords]
 		pCoords = np.array(pCoords)
 		transformedCoords = transform.matrix_transform(pCoords, transformation.params)
-		transformedCoords = [(coords[0] + centerOfRotation[0], coords[1] + centerOfRotation[1]) for coords in transformedCoords]
+		transformedCoords = [(coords[0] + centerOfRotation.x, coords[1] + centerOfRotation.y) for coords in transformedCoords]
 		transformedPolygon = Polygon(transformedCoords)
 		return transformedPolygon
 
@@ -454,11 +456,11 @@ class Geometry:
 		return latestTime
 
 	@staticmethod
-	def applyMatrixTransformToLineString(transformation: AffineTransform, line: LineString, centerOfRotation: Coords) -> LineString:
+	def applyMatrixTransformToLineString(transformation: AffineTransform, line: LineString, centerOfRotation: Pose) -> LineString:
 		pCoords = list(line.coords)
-		pCoords = [(coords[0] - centerOfRotation[0], coords[1] - centerOfRotation[1]) for coords in pCoords]
+		pCoords = [(coords[0] - centerOfRotation.x, coords[1] - centerOfRotation.y) for coords in pCoords]
 		transformedCoords = transform.matrix_transform(pCoords, transformation.params)
-		transformedCoords = [(coords[0] + centerOfRotation[0], coords[1] + centerOfRotation[1]) for coords in transformedCoords]
+		transformedCoords = [(coords[0] + centerOfRotation.x, coords[1] + centerOfRotation.y) for coords in transformedCoords]
 		transformedLineString = LineString(transformedCoords)
 		return transformedLineString
 
