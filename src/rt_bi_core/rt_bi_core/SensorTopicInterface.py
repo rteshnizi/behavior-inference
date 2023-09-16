@@ -44,7 +44,8 @@ class SensorTopicInterface(Node):
 		if self.__sensors is None:
 			self.__sensors = {}
 		coords = SaMsgs.convertSaPoseListToCoordsList(update.fov.corners)
-		sensor = SensorRegion(idNum=update.robot_id, envelope=coords)
+		timeNanoSecs = self.get_clock().now().nanoseconds
+		sensor = SensorRegion(centerOfRotation=SaMsgs.convertSaPoseToPose(update.pose), idNum=update.robot_id, envelope=coords, timeNanoSecs=timeNanoSecs)
 		self.__sensors[update.robot_id] = sensor
 		self.render([sensor])
 		return
