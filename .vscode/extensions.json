@@ -13,6 +13,7 @@
 		"eamodio.gitlens",
 		"tyriar.sort-lines",
 		"redhat.vscode-yaml",
-		"daohong-emilio.yash"
+		"daohong-emilio.yash",
+		"redhat.vscode-xml"
 	]
 }
