@@ -210,22 +210,23 @@ class ShadowTree(nx.DiGraph):
 		else:
 			pastCGraph = self.history[-1]
 
-			# There are there possibilities for sensor names.
+			# There are there possibilities for sensor names. We have decided to require specific messages for S1.
 			# 1. S1 is in pastSensors but not in nowSensors ----> S1 has turned off -> the shadows around S1 have merged.
 			# 2. S2 is not in pastSensors but is in nowSensors -> S2 has turned on --> the shadows around S2 have splitted.
 			# 3. S3 is in pastSensors but not in nowSensors ----> S3 has moved ------> the shadows around S3 have evolved.
 
 			if len(pastCGraph.fieldOfView) > 0:
-				nowFov = FieldOfView(regions)
+				fovRegions = FieldOfView(regions)
 				for rName in pastCGraph.fieldOfView:
-					nowFov.addConnectedComponent(pastCGraph.fieldOfView[rName])
+					fovRegions.addConnectedComponent(pastCGraph.fieldOfView[rName])
+			else:
+				fovRegions = regions
 
 			nowCGraph = ConnectivityGraph(timeNanoSecs=timeNanoSecs, mapRegions=pastCGraph.mapPerimeter, fovRegions=fovRegions)
 			# 1. Sensors that have turned off -> the shadows around S1 have merged.
 			turnedOffSensors = pastCGraph.fieldOfView - nowCGraph.fieldOfView
 			if len(turnedOffSensors) > 0:
 				RosUtils.Logger().info("S1.1.1 -> Sensors turned off: %s" % repr(turnedOffSensors))
-
 			else:
 				RosUtils.Logger().info("S1.1.2 -> No recently turned off sensor.")
 

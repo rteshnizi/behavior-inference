@@ -307,7 +307,7 @@ class ContinuousTimeCollisionDetection:
 
 	@classmethod
 	def estimateIntermediateCollisionsWithPolygon(cls, pastSensors: FieldOfView, nowSensors: FieldOfView, polygon: Union[Polygon, MultiPolygon]) -> CollisionEvent:
-		"""## Estimate Intermediate Collisions With Polygon
+		"""## Estimate Intermediate Collisions With A Fixed Polygon
 
 			Given past and the current configuration of a sensors,
 			find all the times when there is a shadow component event.
@@ -328,11 +328,10 @@ class ContinuousTimeCollisionDetection:
 				A list of intervals in each of which there is at most one component event.
 			"""
 
-		RosUtils.Logger().info("Estimating intermediate collisions between %s and the moving region between %s and %s" % (repr(polygon), repr(pastSensors), repr(nowSensors)))
 		collisionData: cls.RegularRegionCollisions = {}
 		# Begin by collecting the edges are that are in contact at the beginning and at the end of the motion.
 		for sensorId in pastSensors:
-			RosUtils.Logger().info("Intermediate collisions for component %s" % (sensorId))
+			RosUtils.Logger().info("Estimating intermediate collisions between %s and the moving region between %s." % (repr(polygon), sensorId))
 			collisionData[sensorId] = cls.getCollidingEdgesWithExtendedBb(pastSensors[sensorId], nowSensors[sensorId], polygon)
 			pastCollidingEdges = cls.getCollidingEdges(pastSensors[sensorId], polygon)
 			RosUtils.Logger().info("Past colliding edges:\t%s" % repr(pastCollidingEdges))

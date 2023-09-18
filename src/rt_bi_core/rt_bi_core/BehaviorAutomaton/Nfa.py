@@ -6,9 +6,8 @@ import matplotlib.pyplot as plt
 import networkx as nx
 
 from rt_bi_core.BehaviorAutomaton.Symbol import Symbol
-from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
-from rt_bi_core.ShadowTree.ConnectivityGraph import ConnectivityGraph
-from rt_bi_core.ShadowTree.Graph import GraphAlgorithms
+from rt_bi_core.Eventifier.ConnectivityGraph import ConnectivityGraph
+from rt_bi_core.Eventifier.ShadowTree import ShadowTree
 
 
 class Penny:
@@ -58,7 +57,7 @@ class Transition:
 			#### Returns
 				The path that satisfied the validator function or `None`
 		"""
-		path = GraphAlgorithms.bfs(shadowTree, penny.path[-1], self.validator.lambdaObj.func)
+		path = shadowTree.bfs(penny.path[-1], self.validator.lambdaObj.func)
 		return None if path is None else path
 
 SpecName = Literal["TET1", "TWIST"]
