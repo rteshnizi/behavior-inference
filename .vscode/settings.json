@@ -493,7 +493,7 @@
 	],
 	"cSpell.words": [
 		"Anant",
-		"Eventifier",
+		"eventifier",
 		"levelname",
 		"matplotlib",
 		"mplot",
@@ -501,7 +501,6 @@
 		"pyplot",
 		"rclpy",
 		"Rcutils",
-		"RTBI",
 		"rviz",
 		"scikit",
 		"scipy",
@@ -595,14 +594,16 @@
 		"typeinfo": "cpp",
 		"variant": "cpp"
 	},
-	"python.analysis.typeCheckingMode": "off",
 	"[python]": {
 		"editor.codeActionsOnSave": {
 			"source.organizeImports": true
 		},
 	},
+	"python.analysis.typeCheckingMode": "off",
+	"python.envFile": "/home/reza/git/behavior-inference/.vscode/colcon.rt.env",
 	"isort.args": [
 		"--settings-path",
-		"/home/reza/git/behavior-inference/.isort.cfg"
-	]
+		"${workspaceFolder}/.isort.cfg"
+	],
+	"colcon.shellType": "bash"
 }

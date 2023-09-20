@@ -2,7 +2,7 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"label": "colcon: build",
+			"label": "rbc: build",
 			"type": "shell",
 			"command": "colcon",
 			"args": [
@@ -10,27 +10,31 @@
 			],
 			"group": {
 				"kind": "build",
-				"isDefault": true
+				"isDefault": true,
 			},
 		},
 		{
-			"label": "ros: launch-tools",
-			"isBackground": true,
+			"label": "rbc: source",
 			"type": "shell",
-			"command": "sh",
-			"args": [
-				"${workspaceFolder}/scripts/others_debug.launch.sh"
+			"command": "source ${workspaceFolder}/install/local_setup.sh; printenv > ${workspaceFolder}/.vscode/colcon.rt.env",
+			"dependsOn": [
+				"rbc: build"
 			],
+		},
+		{
+			"label": "rbc: launch",
+			"type": "shell",
+			"command": "source ${workspaceFolder}/install/local_setup.sh && sh ${workspaceFolder}/scripts/no_build.sh",
 			// https://stackoverflow.com/a/54017304/750567
-			// This task is run before the debugger is launed.
+			"isBackground": true,
 			"problemMatcher": [
 				{
 					"pattern": [
 						{
-							"regexp": ".",
+							"regexp": "",
 							"file": 1,
 							"location": 2,
-							"message": 3
+							"message": 3,
 						}
 					],
 					"background": {
@@ -39,7 +43,10 @@
 						"endsPattern": ".",
 					}
 				}
-			]
+			],
+			"dependsOn": [
+				"rbc: source"
+			],
 		},
 	]
 }

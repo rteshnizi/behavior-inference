@@ -4,24 +4,20 @@
 	// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
 	"version": "0.2.0",
 	"configurations": [
-
 		{
-			"name": "ROS: viewer",
+			"name": "RBC: ST",
 			"type": "ros",
 			"request": "launch",
-			"env": {
-				"DISPLAY": "localhost:10.0"
-			},
+			"envFile": "${workspaceFolder}/.vscode/colcon.rt.env",
+			"target": "${workspaceFolder}/install/rt_bi_core/share/rt_bi_core/launch/st.launch.py",
+			"preLaunchTask": "rbc: launch",
 			"sourceFileMap": {
-				"${workspaceFolder}/install/rt_bi_core/lib/python3.8/site-packages/": "${workspaceFolder}/src/rt_bi_core",
-				"${workspaceFolder}/install/rt_bi_emulator/lib/python3.8/site-packages/": "${workspaceFolder}/src/rt_bi_emulator/",
-				"${workspaceFolder}/install/rt_bi_eventifier/lib/python3.8/site-packages/": "${workspaceFolder}/src/rt_bi_eventifier/",
-				"${workspaceFolder}/install/rt_bi_utils/lib/python3.8/site-packages/": "${workspaceFolder}/src/rt_bi_utils/",
-				"${workspaceFolder}/install/sa_msgs/lib/python3.8/site-packages/": "${workspaceFolder}/src/sa_msgs/",
+				"${workspaceFolder}/install/rt_bi_core/lib/python3.10/site-packages/": "${workspaceFolder}/src/rt_bi_core",
+				"${workspaceFolder}/install/rt_bi_emulator/lib/python3.10/site-packages/": "${workspaceFolder}/src/rt_bi_emulator/",
+				"${workspaceFolder}/install/rt_bi_eventifier/lib/python3.10/site-packages/": "${workspaceFolder}/src/rt_bi_eventifier/",
+				"${workspaceFolder}/install/rt_bi_utils/lib/python3.10/site-packages/": "${workspaceFolder}/src/rt_bi_utils/",
+				"${workspaceFolder}/install/sa_msgs/lib/python3.10/site-packages/": "${workspaceFolder}/src/sa_msgs/",
 			},
-			"target": "${workspaceFolder}/install/rt_bi_core/share/rt_bi_core/launch/rbc_debug.launch.py",
-			"preLaunchTask": "ros: launch-tools",
-			"launch": [],
 		}
 	]
 }
