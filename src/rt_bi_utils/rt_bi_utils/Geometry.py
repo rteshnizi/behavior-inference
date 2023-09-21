@@ -238,7 +238,7 @@ class Geometry:
 	@staticmethod
 	def intersect(p1: Polygon, p2: Polygon) -> Union[List[Polygon], MultiPolygon]:
 		"""
-		Returns a List of the instersection polygon(s)
+		Returns a List of the intersection polygon(s)
 		"""
 		intersection = p1.intersection(p2)
 		return Geometry.convertToPolygonList(intersection)
