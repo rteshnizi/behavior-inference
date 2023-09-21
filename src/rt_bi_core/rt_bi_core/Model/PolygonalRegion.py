@@ -60,7 +60,6 @@ class PolygonalRegion:
 		self.__name = "%s-%d" % (regionType, idNum)
 		self.__RENDER_LINE_WIDTH = renderLineWidth
 		self.__envelope = envelope
-		self.__coordsDict = self.__buildCoords(self.__envelope)
 		self.__interiorPolygon = Polygon(self.__envelope) if interior is None else interior
 		self.__regionType = regionType
 		self.__ENVELOPE_COLOR = envelopeColor
@@ -71,12 +70,6 @@ class PolygonalRegion:
 
 	def __repr__(self) -> str:
 		return self.name
-
-	def __buildCoords(self, coords: Geometry.CoordsList) -> Dict[str, Point]:
-		d = {}
-		for c in coords:
-			d[Geometry.pointStringId(c[0], c[1])] = Point(c[0], c[1])
-		return d
 
 	def __buildEdges(self) -> Edges:
 		d = {}
@@ -165,7 +158,7 @@ class PolygonalRegion:
 		msgs = []
 		if fill:
 			RosUtils.Logger().info("Cannot fill polygons yet.")
-		msgs.append(RViz.CreatePolygon(self.name, self.__envelope, self.__ENVELOPE_COLOR, self.__RENDER_LINE_WIDTH))
+		msgs.append(RViz.CreatePolygon(self.name, Geometry.getPolygonCoords(self.interior), self.__ENVELOPE_COLOR, self.__RENDER_LINE_WIDTH))
 		if renderText:
 			msgs.append(RViz.CreateText("%s_txt" % self.name, self.interior.centroid.xy, self.name, self.__TEXT_COLOR))
 		return msgs

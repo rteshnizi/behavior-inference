@@ -1,11 +1,10 @@
-from typing import Dict, List, Set, Tuple, Union
+from typing import Dict, List, Literal, Tuple, Union
 
 import rt_bi_utils.Ros as RosUtils
 from rt_bi_core.Eventifier.FieldOfView import FieldOfView
 from rt_bi_core.Model.AffineRegion import AffineRegion
 from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
 from rt_bi_core.Model.RegularAffineRegion import RegularAffineRegion
-from rt_bi_core.Model.SensorRegion import SensorRegion
 from rt_bi_utils.Geometry import AffineTransform, Geometry, LineString, MultiPolygon, Polygon
 from rt_bi_utils.Pose import Pose
 
@@ -16,7 +15,7 @@ class ContinuousTimeCollisionDetection:
 		© Reza Teshnizi 2018-2023
 	"""
 
-	CollisionEvent = Tuple[Polygon, float, str, LineString]
+	CollisionEvent = Tuple[Polygon, float, Literal["ingoing", "outgoing"], LineString]
 	"""### Collision Event
 	```
 	(Polygon, timeOfEvent, "ingoing" | "outgoing", LineString)
@@ -137,21 +136,21 @@ class ContinuousTimeCollisionDetection:
 		return (movingEdgeStartConfiguration.intersects(staticEdge), movingEdgeEndConfiguration.intersects(staticEdge))
 
 	@classmethod
-	def __initEdgeIntervals(cls, movingRegion: AffineRegion, transformation: AffineTransform, collisionData: RegionCollisions, inverse: bool) -> List[CollisionInterval]:
+	def __initEdgeIntervals(cls, movingRegion: AffineRegion, transformation: AffineTransform, existingCollisions: RegionCollisions, inverse: bool) -> List[CollisionInterval]:
 		"""
 			Initialize intervals for edges that are currently collisions with the sensor.
 		"""
 		intervals: List[cls.CollisionInterval] = []
 		intStart = 1 if inverse else 0
 		intEnd = 0 if inverse else 1
-		for collidingEdgeId in collisionData:
-			collidingEdges = collisionData[collidingEdgeId]
-			if (len(collidingEdges) == 0): continue
-			movingEdge = movingRegion.edges[collidingEdgeId]
-			for collidingEdge in collidingEdges:
-				collisionCheckResults = cls.__checkEdgeIntervalForCollision(movingEdge, collidingEdge, transformation, movingRegion.centerOfRotation, intervalStart=intStart, intervalEnd=intEnd)
-				if collisionCheckResults[0] == collisionCheckResults[1]: continue
-				intervals.append((movingEdge, collidingEdge, 0, 1))
+		for movingEdgeId in existingCollisions:
+			staticEdges = existingCollisions[movingEdgeId]
+			if (len(staticEdges) == 0): continue
+			movingEdge = movingRegion.edges[movingEdgeId]
+			for staticEdge in staticEdges:
+				(collidingAtTheBeginning, collidingAtTheEnd) = cls.__checkEdgeIntervalForCollision(movingEdge, staticEdge, transformation, movingRegion.centerOfRotation, intervalStart=intStart, intervalEnd=intEnd)
+				if collidingAtTheBeginning == collidingAtTheEnd: continue
+				intervals.append((movingEdge, staticEdge, 0, 1))
 		return intervals
 
 	@classmethod
@@ -200,34 +199,53 @@ class ContinuousTimeCollisionDetection:
 		return ((isCollidingAtStart, isCollidingAtMid, isCollidingAtEnd), firstHalfBb, secondHalfBb)
 
 	@classmethod
-	def __estimateEventIntervalsForCollisions(cls, movingRegion: AffineRegion, collisionIntervals: List[CollisionInterval], transformation: AffineTransform, ingoingIntervals: List[CollisionInterval], outgoingIntervals: List[CollisionInterval]):
+	def __estimateCollisionIntervals(cls, movingRegion: AffineRegion, transformation: AffineTransform, collisionIntervals: List[CollisionInterval]) -> Tuple[List[CollisionInterval], List[CollisionInterval]]:
+		"""### Estimate Collision Intervals
+
+		Parameters
+		----------
+		movingRegion : `AffineRegion`
+			The moving region.
+		transformation : `AffineTransform`
+			The transformation matrix describing its movement.
+		collisionIntervals : `List[CollisionInterval]`
+			The list of existing collision intervals to further refine for estimation.
+
+		Returns
+		-------
+		`Tuple[List[CollisionInterval], List[CollisionInterval]]`
+			`(ingoingIntervals, outgoingIntervals)`
+			The collisions happening for the ingoing and outgoing transformation, respectively.
+		"""
+		ingoingIntervals: List[cls.CollisionInterval] = []
+		outgoingIntervals: List[cls.CollisionInterval] = []
 		i = 0
 		while i < len(collisionIntervals):
-			(sensorEdge, mapEdge, intervalStart, intervalEnd) = collisionIntervals.pop(i)
+			(movingEdge, staticEdge, intervalStart, intervalEnd) = collisionIntervals.pop(i)
 			# Epsilon for shard search
 			deltaT = intervalEnd - intervalStart
 			if deltaT <= cls.MIN_TIME_DELTA: continue # Minimum time interval assumption
 
-			((isCollidingAtStart, isCollidingAtMid, isCollidingAtEnd), firstHalfBb, secondHalfBb) = cls.__checkBoundingBoxIntervalForCollision(movingRegion, sensorEdge, mapEdge, transformation, movingRegion.centerOfRotation, intervalStart, intervalEnd)
+			((isCollidingAtStart, isCollidingAtMid, isCollidingAtEnd), firstHalfBb, secondHalfBb) = cls.__checkBoundingBoxIntervalForCollision(movingRegion, movingEdge, staticEdge, transformation, movingRegion.centerOfRotation, intervalStart, intervalEnd)
 			intervalMid = (intervalStart + intervalEnd) / 2
 			if isCollidingAtStart != isCollidingAtMid:
 				if isCollidingAtStart and not isCollidingAtMid:
-					outgoingIntervals.append((sensorEdge, mapEdge, intervalStart, intervalMid))
+					outgoingIntervals.append((movingEdge, staticEdge, intervalStart, intervalMid))
 				else:
-					ingoingIntervals.append((sensorEdge, mapEdge, intervalStart, intervalMid))
+					ingoingIntervals.append((movingEdge, staticEdge, intervalStart, intervalMid))
 			if isCollidingAtMid != isCollidingAtEnd:
 				if isCollidingAtMid and not isCollidingAtEnd:
-					outgoingIntervals.append((sensorEdge, mapEdge, intervalStart, intervalMid))
+					outgoingIntervals.append((movingEdge, staticEdge, intervalStart, intervalMid))
 				else:
-					ingoingIntervals.append((sensorEdge, mapEdge, intervalStart, intervalMid))
+					ingoingIntervals.append((movingEdge, staticEdge, intervalStart, intervalMid))
 			if isCollidingAtStart == isCollidingAtMid and isCollidingAtMid == isCollidingAtEnd:
-				if firstHalfBb.intersects(mapEdge):
-					collisionIntervals.insert(i, (sensorEdge, mapEdge, intervalStart, intervalMid))
+				if firstHalfBb.intersects(staticEdge):
+					collisionIntervals.insert(i, (movingEdge, staticEdge, intervalStart, intervalMid))
 					i += 1
-				if secondHalfBb.intersects(mapEdge):
-					collisionIntervals.insert(i, (sensorEdge, mapEdge, intervalMid, intervalEnd))
+				if secondHalfBb.intersects(staticEdge):
+					collisionIntervals.insert(i, (movingEdge, staticEdge, intervalMid, intervalEnd))
 					i += 1
-		return
+		return (ingoingIntervals, outgoingIntervals)
 
 	@classmethod
 	def __removeExistingCollisionsFromIntermediateCollisions(cls, existingCollisions: RegionCollisions, intermediateCollisions: RegionCollisions) -> RegionCollisions:
@@ -246,6 +264,33 @@ class ContinuousTimeCollisionDetection:
 				if movingEdgeId in intermediateCollisions and collidingEdge in intermediateCollisions[movingEdgeId]:
 					intermediateCollisions[movingEdgeId].remove(collidingEdge)
 		return intermediateCollisions
+
+	@classmethod
+	def __refineIntervals(cls, movingRegion: AffineRegion, transformation: AffineTransform, startingCollisions: RegionCollisions, estimatedCollision: List[CollisionInterval], eventCandidates: List[CollisionInterval], inverse: bool) -> None:
+		RosUtils.Logger().info("Refining Estimated Collision, %s pass:\t%s" % ("ingoing" if inverse else "outgoing", repr(estimatedCollision)))
+		# Each interval is represented as a tuple: (sensorEdge, mapEdge, float, float)
+		# The first float is the interval start and the second one is interval end times.
+		intervals = cls.__initEdgeIntervals(movingRegion, transformation, startingCollisions, inverse)
+		haveOverlap = intervals + estimatedCollision
+		dontHaveOverlap: List[cls.CollisionInterval] = []
+		i = 0
+		while len(haveOverlap) > 0 and i < len(haveOverlap):
+			(movingEdge, staticEdge, intervalStart, intervalEnd) = haveOverlap.pop(i)
+			intervalMid = (intervalStart + intervalEnd) / 2
+			collisionCheckResults = cls.__checkEdgeIntervalForCollision(movingEdge, staticEdge, transformation, movingRegion.centerOfRotation, intervalStart, intervalMid)
+			if collisionCheckResults[0] != collisionCheckResults[1]:
+				haveOverlap.insert(i, (movingEdge, staticEdge, intervalStart, intervalMid))
+				i += 1
+			collisionCheckResults = cls.__checkEdgeIntervalForCollision(movingEdge, staticEdge, transformation, movingRegion.centerOfRotation, intervalMid, intervalEnd)
+			if collisionCheckResults[0] != collisionCheckResults[1]:
+				haveOverlap.insert(i, (movingEdge, staticEdge, intervalMid, intervalEnd))
+				i += 1
+			(haveOverlap, dontHaveOverlap) = cls.__splitIntervalsListForOverlap(haveOverlap)
+			for interval in dontHaveOverlap:
+				intermediateTransform = Geometry.getParameterizedAffineTransformation(transformation, interval[3])
+				p = Geometry.applyMatrixTransformToPolygon(intermediateTransform, movingRegion.interior, movingRegion.centerOfRotation)
+				eventCandidates.append((p, interval[3], "ingoing" if inverse else "outgoing", interval[1]))
+		return
 
 	@classmethod
 	def getCollidingEdges(cls, region: PolygonalRegion, polygon: Union[Polygon, MultiPolygon]) -> RegionCollisions:
@@ -297,6 +342,7 @@ class ContinuousTimeCollisionDetection:
 			collisionData[sensorEdgeId] = []
 			edge = now.edges[sensorEdgeId]
 			boundingBox = cls.getLineSegmentExpandedBb(transformation, edge, angle, past.centerOfRotation)
+			if boundingBox.is_empty: continue
 			verts = polygon.exterior.coords
 			for v1, v2 in zip(verts, verts[1:]):
 				e = LineString([v1, v2])
@@ -331,67 +377,37 @@ class ContinuousTimeCollisionDetection:
 		collisionData: cls.RegularRegionCollisions = {}
 		# Begin by collecting the edges are that are in contact at the beginning and at the end of the motion.
 		for sensorId in pastSensors:
-			RosUtils.Logger().info("Estimating intermediate collisions between %s and the moving region between %s." % (repr(polygon), sensorId))
+			RosUtils.Logger().info("Estimating intermediate collisions between %s and the moving region %s." % (repr(polygon), sensorId))
+
 			collisionData[sensorId] = cls.getCollidingEdgesWithExtendedBb(pastSensors[sensorId], nowSensors[sensorId], polygon)
 			pastCollidingEdges = cls.getCollidingEdges(pastSensors[sensorId], polygon)
 			RosUtils.Logger().info("Past colliding edges:\t%s" % repr(pastCollidingEdges))
 			nowCollidingEdges = cls.getCollidingEdges(nowSensors[sensorId], polygon)
 			RosUtils.Logger().info("Now colliding edges:\t%s" % repr(nowCollidingEdges))
 			transformation = Geometry.getAffineTransformation(pastSensors[sensorId].envelope, nowSensors[sensorId].envelope, pastSensors[sensorId].centerOfRotation)
-			intermediateCollisions = cls.getCollidingEdgesWithExtendedBb(pastSensors[sensorId], nowSensors[sensorId], polygon)
-			intermediateCollisions = cls.__removeExistingCollisionsFromIntermediateCollisions(pastCollidingEdges, intermediateCollisions)
-			intermediateCollisions = cls.__removeExistingCollisionsFromIntermediateCollisions(nowCollidingEdges, intermediateCollisions)
-			RosUtils.Logger().info("IntermediateCollisions:\t%s" % repr(intermediateCollisions))
 
+			# Following two liners are optimization lines and not necessary.
+			# collisionData[sensorId] = cls.__removeExistingCollisionsFromIntermediateCollisions(pastCollidingEdges, collisionData[sensorId])
+			# collisionData[sensorId] = cls.__removeExistingCollisionsFromIntermediateCollisions(nowCollidingEdges, collisionData[sensorId])
+			RosUtils.Logger().info("IntermediateCollisions:\t%s" % repr(collisionData[sensorId]))
+			if len(collisionData[sensorId]) == 0:
+				RosUtils.Logger().info("Empty collision, skipping the refinement.")
+				continue
+
+			# Here we try to find the broadest set of collisions: any edge that collides with the OBB.
+			# We also divide the collisions into two subgroups of ingoing and outgoing: from past to now and vice versa.
 			ingoingIntervals: List[cls.CollisionInterval] = []
 			outgoingIntervals: List[cls.CollisionInterval] = []
 			collisionIntervals = cls.__initEdgeIntervals(pastSensors[sensorId], transformation, pastCollidingEdges, inverse=False)
+			RosUtils.Logger().info("Initial Intervals:\t%s" % repr(collisionIntervals))
 			while len(collisionIntervals) > 0:
-				RosUtils.Logger().info("Current Intervals:\t%s" % repr(collisionIntervals))
-				cls.__estimateEventIntervalsForCollisions(pastSensors[sensorId], collisionIntervals, transformation, ingoingIntervals, outgoingIntervals)
-			# Each interval is represented as a tuple: (sensorEdge, mapEdge, float, float)
-			# The first float is the interval start and the second one is interval end times.
-			intervals = cls.__initEdgeIntervals(pastSensors[sensorId], transformation, pastCollidingEdges, inverse=False)
-			haveOverlap = intervals + outgoingIntervals
-			dontHaveOverlap: List[cls.CollisionInterval] = []
+				(ingoingIntervals, outgoingIntervals) = cls.__estimateCollisionIntervals(pastSensors[sensorId], transformation, collisionIntervals)
+			RosUtils.Logger().info("Coarse Ingoing Intervals:\t%s" % repr(ingoingIntervals))
+			RosUtils.Logger().info("Coarse Outgoing Intervals:\t%s" % repr(outgoingIntervals))
 			eventCandidates: List[cls.CollisionInterval] = []
-			i = 0
-			while len(haveOverlap) > 0 and i < len(haveOverlap):
-				(sensorEdge, mapEdge, intervalStart, intervalEnd) = haveOverlap.pop(i)
-				intervalMid = (intervalStart + intervalEnd) / 2
-				collisionCheckResults = cls.__checkEdgeIntervalForCollision(sensorEdge, mapEdge, transformation, pastSensors[sensorId].centerOfRotation, intervalStart, intervalMid)
-				if collisionCheckResults[0] != collisionCheckResults[1]:
-					haveOverlap.insert(i, (sensorEdge, mapEdge, intervalStart, intervalMid))
-					i += 1
-				collisionCheckResults = cls.__checkEdgeIntervalForCollision(sensorEdge, mapEdge, transformation, pastSensors[sensorId].centerOfRotation, intervalMid, intervalEnd)
-				if collisionCheckResults[0] != collisionCheckResults[1]:
-					haveOverlap.insert(i, (sensorEdge, mapEdge, intervalMid, intervalEnd))
-					i += 1
-				(haveOverlap, dontHaveOverlap) = cls.__splitIntervalsListForOverlap(haveOverlap)
-				for interval in dontHaveOverlap:
-					intermediateTransform = Geometry.getParameterizedAffineTransformation(transformation, interval[3])
-					p = Geometry.applyMatrixTransformToPolygon(intermediateTransform, pastSensors[sensorId].interior, pastSensors[sensorId].centerOfRotation)
-					eventCandidates.append((p, interval[3], "outgoing", interval[1]))
-			intervals = cls.__initEdgeIntervals(nowSensors[sensorId], transformation, nowCollidingEdges, inverse=True)
-			haveOverlap = intervals + ingoingIntervals
-			dontHaveOverlap: List[cls.CollisionInterval] = []
-			i = 0
-			while len(haveOverlap) > 0 and i < len(haveOverlap):
-				(sensorEdge, mapEdge, intervalStart, intervalEnd) = haveOverlap.pop(i)
-				intervalMid = (intervalStart + intervalEnd) / 2
-				collisionCheckResults = cls.__checkEdgeIntervalForCollision(sensorEdge, mapEdge, transformation, pastSensors[sensorId].centerOfRotation, intervalStart, intervalMid)
-				if collisionCheckResults[0] != collisionCheckResults[1]:
-					haveOverlap.insert(i, (sensorEdge, mapEdge, intervalStart, intervalMid))
-					i += 1
-				collisionCheckResults = cls.__checkEdgeIntervalForCollision(sensorEdge, mapEdge, transformation, pastSensors[sensorId].centerOfRotation, intervalMid, intervalEnd)
-				if collisionCheckResults[0] != collisionCheckResults[1]:
-					haveOverlap.insert(i, (sensorEdge, mapEdge, intervalMid, intervalEnd))
-					i += 1
-				(haveOverlap, dontHaveOverlap) = cls._splitIntervalsListForOverlap(haveOverlap)
-				for interval in dontHaveOverlap:
-					intermediateTransform = Geometry.getParameterizedAffineTransformation(transformation, interval[3])
-					p = Geometry.applyMatrixTransformToPolygon(intermediateTransform, pastSensors[sensorId].interior, pastSensors[sensorId].centerOfRotation)
-					eventCandidates.append((p, interval[3], "ingoing", interval[1]))
+			cls.__refineIntervals(pastSensors[sensorId], transformation, pastCollidingEdges, outgoingIntervals, eventCandidates, inverse=False)
+			cls.__refineIntervals(nowSensors[sensorId], transformation, nowCollidingEdges, ingoingIntervals, eventCandidates, inverse=True)
+			RosUtils.Logger().info("Total Events:\t%s" % repr(eventCandidates))
 			# Sort events by time
 			eventCandidates.sort(key=lambda e: e[1])
 			# Remove duplicate times

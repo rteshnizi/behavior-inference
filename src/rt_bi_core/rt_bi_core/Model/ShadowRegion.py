@@ -12,7 +12,7 @@ class ShadowRegion(PolygonalRegion):
 		self,
 		idNum: int,
 		envelope: Geometry.CoordsList,
-		**kwArgs
+		**kwArgs,
 	):
 		"""
 		Initialize an polygonal region.
@@ -30,7 +30,8 @@ class ShadowRegion(PolygonalRegion):
 			envelope=envelope,
 			envelopeColor=KnownColors.BLACK,
 			regionType=PolygonalRegion.RegionType.SHADOW,
-			**kwArgs
+			renderLineWidth=2,
+			**kwArgs,
 		)
 		self.__neighboringSensors: Set[str] = set()
 
@@ -40,5 +41,5 @@ class ShadowRegion(PolygonalRegion):
 	def addNeighboringSensors(self, sensorRegionName: str) -> None:
 		self.__neighboringSensors.add(sensorRegionName)
 
-	def render(self, renderText=True) -> List[Marker]:
+	def render(self, renderText=False) -> List[Marker]:
 		return super().render(renderText=renderText, fill=True)

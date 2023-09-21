@@ -78,13 +78,23 @@ class ShadowTreeInterface(MapServiceInterface):
 		return regions
 
 	def render(self) -> None:
+		if len(self.__shadowTree.history) == 0: return
 		if not RViz.isRVizReady(self, self.__rvizPublisher):
 			self.get_logger().warn("Skipping ShadowTree render... RViz is not ready yet to receive messages.")
 			return
-		self.get_logger().info("Preparing to render ShadowTree.")
-		for cGraph in self.__shadowTree.history:
-			for name in cGraph.fieldOfView:
-				region = cGraph.fieldOfView[name]
+
+		mostRecentCGraph = self.__shadowTree.history[-1]
+		message = MarkerArray()
+		regions = \
+			[mostRecentCGraph.shadows[n] for n in mostRecentCGraph.shadows] + \
+			[mostRecentCGraph.symbols[n] for n in mostRecentCGraph.symbols] + \
+			[mostRecentCGraph.fieldOfView[n] for n in mostRecentCGraph.fieldOfView]
+
+		for region in regions:
+			message.markers += region.render()
+		self.get_logger().info("MarkerArray about to be sent with %d markers." % len(message.markers))
+		self.__rvizPublisher.publish(message)
+		return
 
 	def requestMap(self, mapClient: Client) -> None:
 		return super().requestMap(mapClient)

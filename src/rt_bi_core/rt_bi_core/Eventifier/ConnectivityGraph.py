@@ -59,8 +59,8 @@ class ConnectivityGraph(nx.DiGraph):
 		self.__constructRegularRegion(regionList=fovRegions, constructionCallback=self.__constructFov, loggerString="Field-of-View")
 		RosUtils.Logger().info("Constructing Shadows.")
 		self.__constructShadows()
-		RosUtils.Logger().warn("SKIPPING construction of Symbols.")
-		self.__constructSymbols(symbols)
+		# RosUtils.Logger().info("Constructing Symbols.")
+		# self.__constructSymbols(symbols)
 
 	def __repr__(self):
 		return "cGraph-%.2f" % self.timeNanoSecs
@@ -108,6 +108,7 @@ class ConnectivityGraph(nx.DiGraph):
 	def __addShadowNode(self, shadow: Polygon) -> None:
 		region = ShadowRegion(idNum=len(self.__shadows), envelope=[], interior=shadow)
 		self.__addNode(region)
+		self.__shadows.addConnectedComponent(region)
 		for fovName in self.fieldOfView:
 			fovComponent = self.fieldOfView[fovName]
 			if not fovComponent.hasTrack: continue
@@ -122,7 +123,7 @@ class ConnectivityGraph(nx.DiGraph):
 
 	def __constructShadows(self) -> None:
 		shadows = []
-		if Geometry.polygonAndPolygonIntersect(self.mapPerimeter.interior, self.fieldOfView.interior):
+		if (not self.fieldOfView.isEmpty) and Geometry.polygonAndPolygonIntersect(self.mapPerimeter.interior, self.fieldOfView.interior):
 			shadows = Geometry.difference(self.mapPerimeter.interior, self.fieldOfView.interior)
 			shadows = [p for p in shadows if p.length > 0]
 			shadows = list(filter(lambda p: not isinstance(p, LineString), shadows))
@@ -130,12 +131,14 @@ class ConnectivityGraph(nx.DiGraph):
 			shadows = Geometry.convertToPolygonList(shadows)
 		else:
 			shadows.append(self.mapPerimeter.interior)
-		if len(shadows) == 0: return # Avoid dealing with empty unions
+		if len(shadows) == 0:
+			RosUtils.Logger().warn("No Shadows.")
+			return # Avoid dealing with empty unions
 		for shadow in shadows:
 			self.__addShadowNode(shadow)
 		return
 
-	def __constructSymbols(self, symbols: List[SymbolRegion]):
+	def __constructSymbols(self, symbols: List[SymbolRegion]) -> None:
 		return
 		for symbol in symbols:
 			insidePolys = Geometry.intersect(symbol.interior, self.fieldOfView.interior)

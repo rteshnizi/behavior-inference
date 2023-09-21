@@ -1,8 +1,8 @@
 from queue import Queue
-from typing import Dict, List, Set, Tuple, Union
+from typing import Dict, List, Tuple, Union
 
 import networkx as nx
-from matplotlib.pyplot import Figure, axis, close, figure, pause
+from matplotlib.pyplot import Figure, axis, figure, pause
 from mpl_toolkits.mplot3d import Axes3D  # cspell: disable-line, leave this here, otherwise fig.gca(projection="3d") won't work
 
 import rt_bi_utils.Ros as RosUtils
@@ -17,8 +17,8 @@ from rt_bi_core.Model.AffineRegion import AffineRegion
 from rt_bi_core.Model.MapRegion import MapRegion
 from rt_bi_core.Model.SensorRegion import SensorRegion
 from rt_bi_core.Model.SymbolRegion import SymbolRegion
-from rt_bi_core.Model.Tracklet import Tracklets
-from rt_bi_utils.Geometry import AffineTransform, Geometry, LineString, MultiPolygon, Polygon
+from rt_bi_core.Model.Tracklet import Tracklet, Tracklets
+from rt_bi_utils.Geometry import AffineTransform, Geometry, LineString, Polygon
 
 Queue.__repr__ = lambda q: repr(q.queue)
 ___a = Axes3D # This is here to avoid a warning for unused import
@@ -108,7 +108,7 @@ class ShadowTree(nx.DiGraph):
 			x = ((eventFraction * (currentPose.x - previousPose.x)) + previousPose.x)
 			y = ((eventFraction * (currentPose.y - previousPose.y)) + previousPose.y)
 			psi = ((eventFraction * (currentPose.psi - previousPose.psi)) + previousPose.psi)
-			interpolatedTracks[(eventTime, trackId)] = Track(trackId, eventTime, x, y, psi, isInterpolated=True)
+			interpolatedTracks[(eventTime, trackId)] = Tracklet(trackId, eventTime, x, y, psi, isInterpolated=True)
 		return interpolatedTracks
 
 	def __appendConnectivityGraphPerEvent(self, regions: List[AffineRegion], events: CtCd.CollisionEvent, pastCGraph: ConnectivityGraph, nowSensors: Tracklets, symbols: Dict[str, Symbol], startTime: float, endTime: float) -> List[ConnectivityGraph]:
@@ -162,6 +162,7 @@ class ShadowTree(nx.DiGraph):
 			to = self.generateTemporalName(edge[1], graph.timeNanoSecs)
 			self.__addEdge(frm, to, False)
 		self.__history.append(graph)
+		RosUtils.Logger().info("ShadowTree history length %d." % len(self.__history))
 		return
 
 	def multiPartiteLayout(self) -> Dict[str, Tuple[float, float]]:
