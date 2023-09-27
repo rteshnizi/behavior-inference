@@ -12,6 +12,6 @@ def generate_launch_description():
 			package=packageName,
 			namespace=packageName,
 			executable="ST",
-			name="st"
+			name="st",
 		),
 	])
