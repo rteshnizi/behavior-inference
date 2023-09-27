@@ -520,7 +520,8 @@
 	"colcon.outputLevel": "info",
 	"colcon.refreshOnConfigurationChanged": true,
 	"cSpell.enableFiletypes": [
-		"ros.msg"
+		"ros.msg",
+		"shellscript"
 	],
 	"files.associations": {
 		"*.am": "makefile",

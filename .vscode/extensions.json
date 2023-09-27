@@ -2,7 +2,6 @@
 	"recommendations": [
 		"njpwerner.autodocstring",
 		"mgesbert.python-path",
-		"deitry.colcon-helper",
 		"ms-python.isort",
 		"ms-python.vscode-pylance",
 		"ms-iot.vscode-ros",
