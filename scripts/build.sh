@@ -1,12 +1,9 @@
 #!/bin/bash
-fileName=$0
-
-cd "$(dirname "$fileName")" # change to the directory of the script
-. $PWD/helper.sh
+. $(dirname "$0")/helper.sh
 parseArgs $@
 parsingResult=$?
 
-cd "$(dirname "$fileName")" # change to the directory of the script
+cdScriptsDir
 cd .. # now we are in the workspace directory
 cleanBuild=$(( $parsingResult & 2 ))
 symLink=$(( $parsingResult & 4 ))
