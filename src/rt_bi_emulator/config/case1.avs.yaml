@@ -2,6 +2,7 @@ rt_bi_emulator:
   av1:
     ros__parameters:
       robotId: 1
+      updateInterval: 0.5
       timeSecs:
         - 0.0
         - 100.0
@@ -14,6 +15,7 @@ rt_bi_emulator:
   av2:
     ros__parameters:
       robotId: 2
+      updateInterval: 0.5
       timeSecs:
         - 0.0
         - 100.0
