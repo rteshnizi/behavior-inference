@@ -93,11 +93,9 @@ class MapServiceInterface(Node):
 		if len(self.__regions) == 0:
 			self.get_logger().warn("Skipping map render... No regions to render.")
 			return
-		self.get_logger().info("Rendering regions %s." % repr([r.name for r in self.__regions]))
 		message = MarkerArray()
 		for region in self.__regions:
 			message.markers += region.render()
-		self.get_logger().info("MarkerArray about to be sent with %d markers." % len(message.markers))
 		self.__rvizPublisher.publish(message)
 		return
 

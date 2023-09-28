@@ -55,15 +55,12 @@ class SensorTopicInterface(Node):
 			self.get_logger().warn("Skipping map render... RViz is not ready yet to receive messages.")
 			return
 		if regions is None:
-			self.get_logger().info("Rendering map.")
 			regionList = self.regions.values()
 		else:
-			self.get_logger().info("Rendering regions %s." % repr([r.name for r in regions]))
 			regionList = regions
 		message = MarkerArray()
 		for region in regionList:
 			message.markers += region.render()
-		self.get_logger().info("MarkerArray about to be sent with %d markers." % len(message.markers))
 		self.__rvizPublisher.publish(message)
 		return
 
