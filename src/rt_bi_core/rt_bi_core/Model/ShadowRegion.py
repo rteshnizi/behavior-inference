@@ -2,16 +2,17 @@ from typing import List, Set
 
 from visualization_msgs.msg import Marker
 
-from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
+from rt_bi_core.Model.DynamicRegion import DynamicRegion
 from rt_bi_utils.Geometry import Geometry
 from rt_bi_utils.RViz import KnownColors
 
 
-class ShadowRegion(PolygonalRegion):
+class ShadowRegion(DynamicRegion):
 	def __init__(
 		self,
 		idNum: int,
 		envelope: Geometry.CoordsList,
+			timeNanoSecs: int,
 		**kwArgs,
 	):
 		"""
@@ -23,13 +24,16 @@ class ShadowRegion(PolygonalRegion):
 			Id of the sensor region.
 		envelope : Geometry.CoordsList
 			The list of the coordinates of the vertices of the envelope of the polygonal region.
+		timeNanoSecs: int
+			A timestamp representing absolute value of time in nanosecond (ns).
 		"""
 
 		super().__init__(
 			idNum=idNum,
 			envelope=envelope,
 			envelopeColor=KnownColors.BLACK,
-			regionType=PolygonalRegion.RegionType.SHADOW,
+			regionType=self.RegionType.SHADOW,
+			timeNanoSecs=timeNanoSecs,
 			renderLineWidth=2,
 			**kwArgs,
 		)

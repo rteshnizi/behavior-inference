@@ -33,8 +33,8 @@ class FieldOfView(RegularAffineRegion):
 	@property
 	def tracks(self) -> Tracklets:
 		tracks: Tracklets = {}
-		for sensor in self.__regions.values():
-			sensor: SensorRegion = sensor
+		for n in self:
+			sensor = self[n]
 			tracks = { **tracks, **sensor.tracks }
 		return tracks
 

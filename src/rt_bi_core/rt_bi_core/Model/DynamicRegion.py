@@ -9,6 +9,11 @@ class DynamicRegion(PolygonalRegion):
 	"""
 	Represents a dynamic polygonal region, that is, a time-dependant region.
 	"""
+
+	NANO_CONSTANT = 10 ** 9
+	"""### Constant
+	10 to the power of 9. Used in time conversion.
+	"""
 	def __init__(
 			self,
 			idNum: int,

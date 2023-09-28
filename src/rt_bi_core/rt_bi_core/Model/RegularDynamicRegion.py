@@ -2,7 +2,7 @@ from typing import List, Set
 
 import rt_bi_utils.Ros as RosUtils
 from rt_bi_core.Model.DynamicRegion import DynamicRegion
-from rt_bi_core.Model.RegularRegion import RegularSpatialRegion
+from rt_bi_core.Model.RegularSpatialRegion import RegularSpatialRegion
 
 
 class RegularDynamicRegion(RegularSpatialRegion):
@@ -11,11 +11,10 @@ class RegularDynamicRegion(RegularSpatialRegion):
 	Dynamic means, turns on, off, and/or undergoes an affine transformation.
 	"""
 
-	NANO_CONSTANT = 10 ** 9
-	MAX_UPDATE_DELAY_NS = 5 * NANO_CONSTANT
+	MAX_UPDATE_DELAY_NS = 15 * DynamicRegion.NANO_CONSTANT
 	"""
 	### Core assumption:
-	We allow at most a delay of 5s between updates from a certain sensor before we declare it off.
+	We allow at most a delay of some noticeable seconds between updates from a certain sensor before we declare it off.
 	"""
 
 	def __init__(self, regions: List[DynamicRegion] = []):
@@ -40,10 +39,17 @@ class RegularDynamicRegion(RegularSpatialRegion):
 
 	def addConnectedComponent(self, region: DynamicRegion) -> None:
 		if not self.isEmpty and self.timeNanoSec - region.timeNanoSecs > self.MAX_UPDATE_DELAY_NS:
-			RosUtils.Logger().warn(
-				"Discarded old region. Cannot add regions older than %.2fs to the same %s. self.t = %d and region.t = %d" %
-				(self.MAX_UPDATE_DELAY_NS / self.NANO_CONSTANT, self.__class__.__name__, self.timeNanoSec, region.timeNanoSecs)
+			RosUtils.Logger().info(
+				"Discarded old region. Given region is older than %.2fs. Time difference = %d ns." %
+				(self.MAX_UPDATE_DELAY_NS / DynamicRegion.NANO_CONSTANT, self.timeNanoSec - region.timeNanoSecs)
 			)
+			return
+		if region.name in self.regionNames and self.timeNanoSec > region.timeNanoSecs:
+			RosUtils.Logger().info(
+				"Region %s already exist and will not be replaced by older version. self.t = %d and region.t = %d" %
+				(region.name, self.timeNanoSec, region.timeNanoSecs)
+			)
+			return
 		return super().addConnectedComponent(region)
 
 	def intersection(self, other: "RegularDynamicRegion") -> Set[str]:

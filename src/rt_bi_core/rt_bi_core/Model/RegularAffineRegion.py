@@ -1,19 +1,12 @@
 from typing import List, Set
 
 from rt_bi_core.Model.AffineRegion import AffineRegion
-from rt_bi_core.Model.RegularRegion import RegularSpatialRegion
+from rt_bi_core.Model.RegularDynamicRegion import RegularDynamicRegion
 
 
-class RegularAffineRegion(RegularSpatialRegion):
+class RegularAffineRegion(RegularDynamicRegion):
 	"""
 	A Class to model a set of Regular Affine Region.
-	"""
-
-	NANO_CONSTANT = 10 ** 9
-	MAX_UPDATE_DELAY_NS = 5 * NANO_CONSTANT
-	"""
-	### Core assumption:
-	We allow at most a delay of 5s between updates from a certain sensor before we declare it off.
 	"""
 
 	def __init__(self, regions: List[AffineRegion] = []):

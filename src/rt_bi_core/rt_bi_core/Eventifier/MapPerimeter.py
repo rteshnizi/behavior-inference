@@ -2,7 +2,7 @@ from typing import List, Set
 
 import rt_bi_utils.Ros as RosUtils
 from rt_bi_core.Model.MapRegion import MapRegion
-from rt_bi_core.Model.RegularRegion import RegularSpatialRegion
+from rt_bi_core.Model.RegularSpatialRegion import RegularSpatialRegion
 
 
 class MapPerimeter(RegularSpatialRegion):

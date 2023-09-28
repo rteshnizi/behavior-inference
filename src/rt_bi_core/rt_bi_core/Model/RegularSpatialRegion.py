@@ -1,5 +1,7 @@
 from typing import Dict, Iterator, List, Set, Type, Union
 
+from visualization_msgs.msg import Marker
+
 import rt_bi_utils.Ros as RosUtils
 from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
 from rt_bi_utils.Geometry import Geometry, LineString, MultiPolygon, Polygon
@@ -93,3 +95,9 @@ class RegularSpatialRegion:
 
 	def difference(self, others: "RegularSpatialRegion") -> Set[str]:
 		return self.__sub__(others)
+
+	def render(self) -> List[Marker]:
+		markers = []
+		for region in self.__regions.values():
+			markers += region.render()
+		return markers
