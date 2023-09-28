@@ -7,7 +7,7 @@ package_name = "rt_bi_emulator"
 
 setup(
 	name=package_name,
-	version="0.0.3",
+	version="0.0.4",
 	packages = find_packages(exclude=["test"]),
 	data_files=[
 		("share/ament_index/resource_index/packages", ["resource/" + package_name]),
