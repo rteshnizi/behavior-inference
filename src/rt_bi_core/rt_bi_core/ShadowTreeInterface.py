@@ -1,10 +1,10 @@
-from typing import List
+from typing import Dict, List, Union
 
 import rclpy
-from rclpy.node import Client
+from rclpy.node import Client, Publisher
+from rclpy.parameter import Parameter
 from sa_msgs.msg import RobotState
 from sa_msgs.srv import QueryFeature
-from visualization_msgs.msg import MarkerArray
 
 import rt_bi_utils.Ros as RosUtils
 from rt_bi_core import MapServiceInterface
@@ -22,18 +22,47 @@ class ShadowTreeInterface(MapServiceInterface):
 	This node combines topic listeners and service clients.
 	"""
 
-	def __init__(self, liveRender=False) -> None:
-		""" Create a Shadow Tree Interface node. """
+	def __init__(self) -> None:
+		"""
+		Create a Shadow Tree Interface node.
+		"""
 		super().__init__(node_name="rt_bi_core_st")
 		self.get_logger().info("%s is initializing." % self.get_fully_qualified_name())
+		self.__declareParameters()
+		self.__liveRender: bool = False
+		self.__renderModules: List[ShadowTree.SUBMODULE_TYPES] = []
+		self.__parseConfigFileParameters()
 		RosUtils.SetLogger(self.get_logger())
-		self.__liveRender = liveRender
-		self.__shadowTree: ShadowTree = ShadowTree()
-		""" Dictionary of sensor id to region. """
-		(self.__rvizPublisher, _) = RViz.createRVizPublisher(self, RosUtils.CreateTopicName("shadow_tree"))
+		modulePublishers: Dict[ShadowTree.SUBMODULE_TYPES, Union[Publisher, None]] = {}
+		for module in ShadowTree.SUBMODULES:
+			if module in self.__renderModules: (publisher, _) = RViz.createRVizPublisher(self, RosUtils.CreateTopicName(module))
+			else: publisher = None
+			modulePublishers[module] = publisher
+		self.__shadowTree: ShadowTree = ShadowTree(modulePublishers)
+
+		(self.__rvizPublisher, _) = RViz.createRVizPublisher(self, RosUtils.CreateTopicName("shadow_tree_interface"))
 		self.__mapClient = SaMsgs.createSaFeatureQueryClient(self)
 		SaMsgs.subscribeToSaRobotStateTopic(self, self.__onRobotStateUpdate)
 		self.__shadowTreeColdStart()
+
+	def __declareParameters(self) -> None:
+		self.get_logger().info("%s is setting node parameters." % self.get_fully_qualified_name())
+		self.declare_parameter("liveRender", Parameter.Type.BOOL)
+		self.declare_parameter("renderModules", Parameter.Type.STRING_ARRAY)
+		return
+
+	def __parseConfigFileParameters(self) -> None:
+		self.get_logger().info("%s is parsing parameters." % self.get_fully_qualified_name())
+		self.__liveRender = self.get_parameter("liveRender").get_parameter_value().bool_value
+		yamlModules = self.get_parameter("renderModules").get_parameter_value().string_array_value
+		for module in yamlModules:
+			if module in ShadowTree.SUBMODULES:
+				self.__renderModules.append(module)
+			else:
+				self.get_logger().warn(
+					"Unknown module name in config file %s for node %s" % (module, self.get_fully_qualified_name())
+				)
+		return
 
 	def __shadowTreeColdStart(self) -> None:
 		self.requestMap(self.__mapClient)
@@ -78,22 +107,6 @@ class ShadowTreeInterface(MapServiceInterface):
 		return regions
 
 	def render(self) -> None:
-		if len(self.__shadowTree.history) == 0: return
-		if not RViz.isRVizReady(self, self.__rvizPublisher):
-			self.get_logger().warn("Skipping ShadowTree render... RViz is not ready yet to receive messages.")
-			return
-
-		mostRecentCGraph = self.__shadowTree.history[-1]
-		message = MarkerArray()
-		regions = \
-			[mostRecentCGraph.shadows[n] for n in mostRecentCGraph.shadows] + \
-			[mostRecentCGraph.symbols[n] for n in mostRecentCGraph.symbols] + \
-			[mostRecentCGraph.fieldOfView[n] for n in mostRecentCGraph.fieldOfView]
-
-		for region in regions:
-			message.markers += region.render()
-		self.get_logger().info("MarkerArray about to be sent with %d markers." % len(message.markers))
-		self.__rvizPublisher.publish(message)
 		return
 
 	def requestMap(self, mapClient: Client) -> None:
@@ -104,7 +117,7 @@ def main(args=None) -> None:
 	Start the Behavior Inference Run-time.
 	"""
 	rclpy.init(args=args)
-	node = ShadowTreeInterface(liveRender=True)
+	node = ShadowTreeInterface()
 	rclpy.spin(node)
 	node.destroy_node()
 	rclpy.shutdown()
