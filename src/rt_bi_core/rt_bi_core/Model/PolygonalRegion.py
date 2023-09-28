@@ -4,7 +4,7 @@ from skimage import transform
 from visualization_msgs.msg import Marker
 
 import rt_bi_utils.Ros as RosUtils
-from rt_bi_utils.Geometry import Geometry, LineString, MultiPolygon, Point, Polygon
+from rt_bi_utils.Geometry import Geometry, LineString, MultiPolygon, Polygon
 from rt_bi_utils.RViz import Color, KnownColors, RViz
 
 
@@ -57,6 +57,7 @@ class PolygonalRegion:
 		renderLineWidth: int, default `1`
 			The width of the rendered lines.
 		"""
+		self.__idNum = idNum
 		self.__name = "%s-%d" % (regionType, idNum)
 		self.__RENDER_LINE_WIDTH = renderLineWidth
 		self.__envelope = envelope
@@ -94,6 +95,11 @@ class PolygonalRegion:
 	def envelopeColor(self) -> Color:
 		"""The color used to render the boundary of this polygon."""
 		return self.__ENVELOPE_COLOR
+
+	@property
+	def idNum(self) -> int:
+		"""Id number of this polygonal region of this certain type."""
+		return self.__idNum
 
 	@property
 	def interiorColor(self) -> Color:
@@ -142,7 +148,7 @@ class PolygonalRegion:
 		return None
 
 	def intersectsRegion(self, other: "PolygonalRegion") -> bool:
-		return Geometry.polygonAndPolygonIntersect(self.interior, other.interior)
+		return Geometry.intersects(self.interior, other.interior)
 
 	def union(self, others: List["PolygonalRegion"]) -> Polygon:
 		allPolygons = [r.interior for r in others]

@@ -1,18 +1,21 @@
 import operator
+import warnings
 from functools import reduce
 from math import atan2, cos, degrees, inf, sin, sqrt
-from typing import Dict, Iterable, List, Tuple, Union
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
 from scipy.spatial.transform import Rotation, Slerp
-from shapely.geometry import LineString, MultiLineString, MultiPolygon, Point, Polygon
-from shapely.geometry.polygon import LinearRing
+from shapely.geometry import LineString, MultiLineString, MultiPolygon, Point
+from shapely.geometry.multipoint import MultiPoint
+from shapely.geometry.polygon import LinearRing, Polygon
 from shapely.ops import unary_union
 from shapely.validation import make_valid
 from skimage import transform
 from skimage.transform import AffineTransform as AffineTransform
 
 from rt_bi_utils.Pose import Pose
+from rt_bi_utils.Ros import Logger
 
 
 class Geometry:
@@ -26,16 +29,18 @@ class Geometry:
 	Coords = Tuple[float, float]
 	CoordsList = List[Coords]
 	CoordsMap = Dict[Coords, Coords]
+	ConnectedGeometry = Union[Polygon, LineString, Point]
+	MultiGeometry = Union[MultiPolygon, MultiLineString, MultiPoint]
+	GeometricObject = Union[Polygon, MultiPolygon, LineString, MultiLineString, Point, MultiPoint]
+	OneDGeomObjects = Union[LineString, Point]
 
 	@staticmethod
-	def convertToPolygonList(polys: Union[List[Polygon], MultiPolygon]) -> Iterable[Polygon]:
-		try:
-			if len(polys.geoms) > 0:
-				return polys.geoms
-			raise RuntimeError("`polys` should never be empty")
-		except:
-			# Assumption here is that if it throws because Polygon does not have a `geoms` property.
-			return [polys]
+	def addCoords(c1: Coords, c2: Coords) -> Coords:
+		return(c1[0] + c2[0], c1[1] + c2[1])
+
+	@staticmethod
+	def addScalar(c1: Coords, s: float) -> Coords:
+		return(c1[0] + s, c1[1] + s)
 
 	@staticmethod
 	def vectorsAreEqual(vec1: Vector, vec2: Vector, withinEpsilon = True) -> bool:
@@ -57,7 +62,7 @@ class Geometry:
 		return False
 
 	@staticmethod
-	def vectLength(x, y) -> float:
+	def vectLength(x: float, y: float) -> float:
 		return sqrt((y * y) + (x * x))
 
 	@staticmethod
@@ -76,23 +81,23 @@ class Geometry:
 		return isinstance(l, LineString) and len(l.coords) == 2
 
 	@staticmethod
-	def orthogonal(p1, p2) -> float:
-		return  (p2[1] - p1[1], -1 * (p2[0] - p1[0]))
+	def orthogonal(p1: Coords, p2: Coords) -> float:
+		return (p2[1] - p1[1], -1 * (p2[0] - p1[0]))
 
 	@staticmethod
-	def midpoint(p1, p2) -> float:
+	def midpoint(p1: Coords, p2: Coords) -> Coords:
 		return Geometry.midpointXy(p1[0], p1[1], p2[0], p2[1])
 
 	@staticmethod
-	def midpointXy(x1, y1, x2, y2) -> float:
+	def midpointXy(x1: float, y1: float, x2: float, y2: float) -> Coords:
 		return ((x1 + x2) / 2, (y1 + y2) / 2)
 
 	@staticmethod
-	def slope(x1, y1, x2, y2) -> float:
+	def slope(x1: float, y1: float, x2: float, y2: float) -> float:
 		return (y2 - y1) / (x2 - x1)
 
 	@staticmethod
-	def distance(x1, y1, x2, y2) -> float:
+	def distance(x1: float, y1: float, x2: float, y2: float) -> float:
 		vect = Geometry.distanceVect(x1, y1, x2, y2)
 		length = Geometry.vectLength(vect[0], vect[1])
 		return length
@@ -102,7 +107,7 @@ class Geometry:
 		return Geometry.distance(vect1[0], vect1[1], vect2[0], vect2[1])
 
 	@staticmethod
-	def distanceVect(x1, y1, x2, y2) -> Vector:
+	def distanceVect(x1: float, y1: float, x2: float, y2: float) -> Vector:
 		dx = x2 - x1
 		dy = y2 - y1
 		return (dx, dy)
@@ -112,7 +117,7 @@ class Geometry:
 		return Geometry.distanceVect(pt1.x, pt1.y, pt2.x, pt2.y)
 
 	@staticmethod
-	def getUnitVector(x, y) -> Vector:
+	def getUnitVector(x: float, y: float) -> Vector:
 		"""
 		Returns a tuple (x, y) of a vector.
 		"""
@@ -120,7 +125,7 @@ class Geometry:
 		return (x / length, y / length)
 
 	@staticmethod
-	def getUnitVectorFromAngle(theta) -> Vector:
+	def getUnitVectorFromAngle(theta: float) -> Vector:
 		"""
 		theta is the angle w.r.t X axis
 		Returns a tuple (x, y) of a vector.
@@ -156,6 +161,16 @@ class Geometry:
 		return l.distance(p) <= Geometry.EPSILON
 
 	@staticmethod
+	def toGeometryList(polys: MultiGeometry) -> List[ConnectedGeometry]:
+		try:
+			if len(polys.geoms) > 0:
+				return list(polys.geoms)
+			raise RuntimeError("`geoms` should never be empty in a multi-geometry.")
+		except:
+			# Assumption here is that if it throws because Polygon does not have a `geoms` property.
+			return [polys]
+
+	@staticmethod
 	def isXyInsidePolygon(ptX: float, ptY: float, polygon: Polygon) -> bool:
 		return Geometry.isPointInsidePolygon(Point(ptX, ptY), polygon)
 
@@ -183,18 +198,7 @@ class Geometry:
 		return list(zip(*(p.exterior.coords.xy)))
 
 	@staticmethod
-	def lineAndPolygonIntersect(l: LineString, p: Polygon) -> bool:
-		# TODO: A line seg might touch but not intersect
-		return l.intersects(p)
-
-	@staticmethod
-	def lineAndPolygonIntersectFromXy(xStart, yStart, xEnd, yEnd, p: Polygon) -> bool:
-		# TODO: A line seg might touch but not intersect
-		l = LineString([(xStart, yStart), (xEnd, yEnd)])
-		return Geometry.lineAndPolygonIntersect(l, p)
-
-	@staticmethod
-	def createLine(xStart, yStart, xEnd, yEnd) -> LineString:
+	def createLine(xStart: float, yStart: float, xEnd: float, yEnd: float) -> LineString:
 		# TODO: A line seg might touch but not intersect
 		return LineString([(xStart, yStart), (xEnd, yEnd)])
 
@@ -207,8 +211,55 @@ class Geometry:
 		return slope
 
 	@staticmethod
-	def polygonAndPolygonIntersect(p1: Polygon, p2: Polygon) -> bool:
-		return p1.intersects(p2)
+	def intersects(o1: GeometricObject, o2: GeometricObject) -> bool:
+		"""## Intersects
+		A function to safely test if two geometries intersect while handling shapely exceptions and warnings.
+
+		Parameters
+		----------
+		o1 : GeometricObject
+			A known Shapely geometry type.
+		o2 : GeometricObject
+			A known Shapely geometry type.
+
+		Returns
+		-------
+		bool
+			The result of the test.
+		"""
+		if (not o1.is_valid) or (not o2.is_valid): return False
+		if o1.is_empty or o2.is_empty: return False
+		try:
+			return o1.intersects(o2)
+		except Exception as e:
+			Logger().warn("Shapely exception caught in intersects(): %s, %s" % (e.__class__.__name__, repr(e)))
+			return False
+
+	@staticmethod
+	def intersection(o1: GeometricObject, o2: GeometricObject) -> GeometricObject:
+		"""## Intersects
+		A function to safely test obtain the intersection of two geometries while handling shapely exceptions and warnings.
+
+		Parameters
+		----------
+		o1 : GeometricObject
+			A known Shapely geometry type.
+		o2 : GeometricObject
+			A known Shapely geometry type.
+
+		Returns
+		-------
+		bool
+			A known Shapely geometry type of lower dimension.
+		"""
+		if (not o1.is_valid) or (not o2.is_valid): return type(o1)()
+		if o1.is_empty or o2.is_empty: return type(o1)()
+		try:
+			return o1.intersection(o2)
+		except Exception as e:
+			Logger().error("1. Shapely exception.. in intersection(): %s" % repr(e))
+			Logger().error("2. Shapely exception.. input args: %s, %s" % (repr(o1), repr(o2)))
+			return type(o1)()
 
 	@staticmethod
 	def union(polyList: List[Polygon]) -> Union[Polygon, MultiPolygon]:
@@ -223,28 +274,7 @@ class Geometry:
 		return poly1.difference(poly2)
 
 	@staticmethod
-	def intersectLineSegments(l1: LineString, l2: LineString):
-		"""
-			#### Returns
-			Returns intersection of two line segments (`LineString`), or `None` otherwise.
-		"""
-		if not (Geometry.isLineSegment(l1) and Geometry.isLineSegment(l2)):
-			raise RuntimeError("This method is only tested for line segments")
-		r = l1.intersection(l2)
-		if isinstance(r, LineString) and r.is_empty:
-			return None
-		return r
-
-	@staticmethod
-	def intersect(p1: Polygon, p2: Polygon) -> Union[List[Polygon], MultiPolygon]:
-		"""
-		Returns a List of the intersection polygon(s)
-		"""
-		intersection = p1.intersection(p2)
-		return Geometry.convertToPolygonList(intersection)
-
-	@staticmethod
-	def difference(p1: Polygon, p2: Polygon) -> Union[List[Polygon], MultiPolygon]:
+	def difference(p1: Polygon, p2: Polygon) -> List[Polygon]:
 		"""
 		Given p1 and p2, produce the subtraction polygons.
 
@@ -263,26 +293,26 @@ class Geometry:
 		subtraction = p1.difference(p2) # FIXME: difference() is wrong because it excludes the boundaries of fov from the shadows
 		# subtraction = mapRegionPoly.difference(mapRegionPoly.intersection(fovPoly))
 		# subtraction = mapRegionPoly.symmetric_difference(fovPoly).difference(fovPoly)
-		return Geometry.convertToPolygonList(subtraction)
+		return Geometry.toGeometryList(subtraction)
 
 	@staticmethod
-	def _haveOverlappingEdge(p1: Polygon, p2: Polygon) -> bool:
+	def __haveOverlappingEdge(p1: Polygon, p2: Polygon) -> bool:
 		"""
 		DEPRECATED: https://github.com/Toblerity/Shapely/issues/1101
 		"""
 		# if p1.touches(p2):
-		r = p1.intersection(p2)
+		r = Geometry.intersection(p1, p2)
 		if isinstance(r, LineString) or isinstance(r, MultiLineString):
-			return True if r.length > 0 else False
+			return True if r.is_valid and r.length > 0 else False
 		return False
 
 	@staticmethod
 	def haveOverlappingEdge(p1: Polygon, p2: Polygon) -> bool:
 		"""
-		Previous implementation used intersection operator. But it turn out to be VERY buggy (see _haveOverlappingEdge)
+		Previous implementation used intersection operator. But it turn out to be VERY buggy (see __haveOverlappingEdge)
 		This one will iterate over all of the boundary edges check if lines are parallel and sees if the distance is minimal.
 		"""
-		shapelyIntersectionCheck = Geometry._haveOverlappingEdge(p1, p2)
+		shapelyIntersectionCheck = Geometry.__haveOverlappingEdge(p1, p2)
 		if shapelyIntersectionCheck: return True
 		if p1.distance(p2) > Geometry.EPSILON: return False # This is an important optimization. The process below is time consuming
 		lineSegments1 = list(map(LineString, zip(p1.exterior.coords[:-1], p1.exterior.coords[1:])))
@@ -298,40 +328,18 @@ class Geometry:
 		return False
 
 	@staticmethod
-	def getAllIntersectingEdgesWithLine(line: LineString, polygon: Union[Polygon, MultiPolygon]) -> List[LineString]:
-		if isinstance(polygon, MultiPolygon):
-			raise "I haven't checked the API to see how to work with this yet."
+	def getIntersectingEdges(geom: Union[LineString, Polygon], polygon: Union[Polygon, MultiPolygon]) -> List[LineString]:
+		if isinstance(polygon, MultiPolygon): raise NotImplementedError("I haven't checked the API to see how to work with this yet. %s" % Geometry.getIntersectingEdges.__name__)
 		edges = []
 		hashes = set()
+
 		verts = list(polygon.exterior.coords)
-		points = polygon.exterior.intersection(line)
+		geom = geom if isinstance(geom, LineString) else geom.exterior
+		points = Geometry.intersection(polygon.exterior, geom)
 		if points.is_empty: return edges
-		points = [points] if isinstance(points, Point) else points.geoms
+		points = Geometry.toGeometryList(points)
 		for point in points:
 			for v1, v2 in zip(verts, verts[1:]):
-				edge = LineString([v1, v2])
-				if edge.wkb_hex in hashes: continue
-				if Geometry.isPointOnLine(point, edge):
-					edges.append(edge)
-					hashes.add(edge.wkb_hex)
-					break
-		return edges
-
-	@staticmethod
-	def getAllIntersectingEdgesWithPolygon(polygon1: Polygon, polygon2: Union[Polygon, MultiPolygon]) -> List[LineString]:
-		if isinstance(polygon2, MultiPolygon):
-			raise "I haven't checked the API to see how to work with this yet."
-		edges = []
-		hashes = set()
-		polygon1Verts = list(polygon1.exterior.coords)
-		polygon1Boundary = LineString(polygon1Verts)
-		polygon2Verts = list(polygon2.exterior.coords)
-		polygon2Boundary = LineString(polygon2Verts)
-		points = polygon2Boundary.intersection(polygon1Boundary)
-		if points.is_empty: return edges
-		points = [points] if isinstance(points, Point) else list(points)
-		for point in points:
-			for v1, v2 in zip(polygon2Verts, polygon2Verts[1:]):
 				edge = LineString([v1, v2])
 				if edge.wkb_hex in hashes: continue
 				if Geometry.isPointOnLine(point, edge):
@@ -412,14 +420,25 @@ class Geometry:
 		return parameterizedMatrix
 
 	@staticmethod
-	def applyMatrixTransformToPolygon(transformation: AffineTransform, polygon: Polygon, centerOfRotation: Pose) -> Polygon:
-		pCoords = list(polygon.exterior.coords)
-		pCoords = [(coords[0] - centerOfRotation.x, coords[1] - centerOfRotation.y) for coords in pCoords]
-		pCoords = np.array(pCoords)
-		transformedCoords = transform.matrix_transform(pCoords, transformation.params)
+	def applyMatrixTransformToCoordsList(transformation: AffineTransform, coordsList: CoordsList, centerOfRotation: Pose) -> CoordsList:
+		coordsList = [(coords[0] - centerOfRotation.x, coords[1] - centerOfRotation.y) for coords in coordsList]
+		transformedCoords = transform.matrix_transform(coordsList, transformation.params)
 		transformedCoords = [(coords[0] + centerOfRotation.x, coords[1] + centerOfRotation.y) for coords in transformedCoords]
+		return transformedCoords
+
+	@staticmethod
+	def applyMatrixTransformToPolygon(transformation: AffineTransform, polygon: Polygon, centerOfRotation: Pose) -> Polygon:
+		pCoords = Geometry.getPolygonCoords(polygon)
+		transformedCoords = Geometry.applyMatrixTransformToCoordsList(transformation, pCoords, centerOfRotation)
 		transformedPolygon = Polygon(transformedCoords)
 		return transformedPolygon
+
+	@staticmethod
+	def applyMatrixTransformToLineString(transformation: AffineTransform, line: LineString, centerOfRotation: Pose) -> LineString:
+		pCoords = list(line.coords)
+		transformedCoords = Geometry.applyMatrixTransformToCoordsList(transformation, pCoords, centerOfRotation)
+		transformedLineString = LineString(transformedCoords)
+		return transformedLineString
 
 	@staticmethod
 	def findTheLastTimeTheyAreColliding(movingEdge: LineString, staticEdge: LineString, transformation: AffineTransform) -> float:
@@ -430,13 +449,13 @@ class Geometry:
 		NUM_SAMPLES = 100
 		latestTime = inf
 		# If the edge is not intersecting currently, we don't need to check for the latest time
-		if Geometry.intersectLineSegments(movingEdge, staticEdge) is None:
+		if Geometry.intersects(movingEdge, staticEdge):
 			return latestTime
 		for x in range(1, NUM_SAMPLES, 1):
 			fraction = x / NUM_SAMPLES
 			newTransform = Geometry.getParameterizedAffineTransformation(transformation, fraction)
 			intermediateLine = Geometry.applyMatrixTransformToLineString(newTransform, movingEdge)
-			if Geometry.intersectLineSegments(intermediateLine, staticEdge) is not None:
+			if Geometry.intersects(intermediateLine, staticEdge):
 				latestTime = fraction
 			else:
 				break
@@ -450,24 +469,20 @@ class Geometry:
 			fraction = x / NUM_SAMPLES
 			newTransform = Geometry.getParameterizedAffineTransformation(transformation, fraction)
 			intermediateLine = Geometry.applyMatrixTransformToLineString(newTransform, movingEdge)
-			if Geometry.intersectLineSegments(intermediateLine, staticEdge):
+			if Geometry.intersects(intermediateLine, staticEdge):
 				latestTime = fraction
 				break
 		return latestTime
 
 	@staticmethod
-	def applyMatrixTransformToLineString(transformation: AffineTransform, line: LineString, centerOfRotation: Pose) -> LineString:
-		pCoords = list(line.coords)
-		pCoords = [(coords[0] - centerOfRotation.x, coords[1] - centerOfRotation.y) for coords in pCoords]
-		transformedCoords = transform.matrix_transform(pCoords, transformation.params)
-		transformedCoords = [(coords[0] + centerOfRotation.x, coords[1] + centerOfRotation.y) for coords in transformedCoords]
-		transformedLineString = LineString(transformedCoords)
-		return transformedLineString
-
-	@staticmethod
 	def inverseTransformation(transformation: AffineTransform) -> AffineTransform:
 		inverted  = AffineTransform(matrix=transformation._inv_matrix)
 		return inverted
+
+	@staticmethod
+	def findBottomLeft(poly: Polygon) -> Coords:
+		(minX, minY, maxX, maxY) = poly.bounds
+		return (minX, minY)
 
 def __pointNeg(self: Point) -> Point:
 	"""
@@ -519,13 +534,29 @@ def __pointMulScalar(self: Point, num: float) -> Point:
 	"""
 	return Point(self.x * num, self.y * num)
 
+def __connectedGeometryRepr(self: Geometry.ConnectedGeometry) -> str:
+	return "[#%d, v:%s, e:%s]" % (
+		len(self.coords) if isinstance(self, LineString) else len(self.exterior.coords),
+		"Y" if self.is_valid else "N",
+		"Y" if self.is_empty else "N",
+	)
+
+def __multiGeometryRepr(self: Geometry.MultiGeometry) -> str:
+	return "{%s}" % ", ".join([repr(o) for o in self])
+
 Point.__neg__ = __pointNeg
 Point.__add__ = __pointAdd
 Point.__sub__ = __pointSub
 Point.__mul__ = __pointMulScalar
 Point.__truediv__ = __pointDivScalar
-Point.__repr__ = lambda p: "P%s" % repr((p.x, p.y)) # type: ignore
-LinearRing.__repr__ = lambda l: "LR[#%d]" % len(l.coords) # type: ignore
-LineString.__repr__ = lambda l: "LS[#%d]" % len(l.coords) if len(l.coords) > 2 else "LS%s" % repr(l.bounds) # type: ignore
-Polygon.__repr__ = lambda p: "Pl[%dv]" % (len(p.exterior.coords) - 1) # type: ignore
-MultiPolygon.__repr__ = lambda ps: "MP{%s}" % ", ".join([repr(p) for p in ps]) # type: ignore
+
+Point.__repr__ = lambda p: "%s" % repr((p.x, p.y))
+LinearRing.__repr__ = lambda o: "R%s" % __connectedGeometryRepr(o)
+LineString.__repr__ = lambda o: "L%s" % __connectedGeometryRepr(o)
+Polygon.__repr__ = lambda o: "P%s" % __connectedGeometryRepr(o)
+
+MultiPoint.__repr__ = __multiGeometryRepr
+MultiLineString.__repr__ = __multiGeometryRepr
+MultiPolygon.__repr__ = __multiGeometryRepr
+
+# warnings.filterwarnings("error") # Turn shapely C++ errors into exceptions for better debugging.

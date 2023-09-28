@@ -23,7 +23,7 @@ class ProjectiveSpaceTimeSet:
 
 	def spaceIntersectionCheck(self, poly2) -> bool:
 		if self.spaceRegion == None: return True
-		intersection = Geometry.intersect(self.spaceRegion, poly2)
+		intersection = Geometry.intersection(self.spaceRegion, poly2)
 		try:
 			return intersection.area > 0
 		except:
