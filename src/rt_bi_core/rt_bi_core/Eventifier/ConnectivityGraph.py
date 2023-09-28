@@ -1,32 +1,42 @@
-from typing import Callable, Dict, List, Set, Tuple, Type, Union
+from typing import Callable, Dict, List, Literal, Set, Type, Union
 
 import networkx as nx
-from matplotlib.pyplot import Figure, close, figure, pause
-from mpl_toolkits.mplot3d import Axes3D  # cspell: disable-line, leave this here, otherwise fig.gca(projection="3d") won't work
+from visualization_msgs.msg import Marker, MarkerArray
 
-import rt_bi_utils.Ros as RosUtils
 from rt_bi_core.BehaviorAutomaton.Symbol import Symbol
 from rt_bi_core.Eventifier.FieldOfView import FieldOfView
 from rt_bi_core.Eventifier.MapPerimeter import MapPerimeter
 from rt_bi_core.Eventifier.RegularSymbol import RegularSymbol
 from rt_bi_core.Eventifier.Shadows import Shadows
+from rt_bi_core.Model.DynamicRegion import DynamicRegion
 from rt_bi_core.Model.MapRegion import MapRegion
 from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
 from rt_bi_core.Model.SensorRegion import SensorRegion
 from rt_bi_core.Model.ShadowRegion import ShadowRegion
 from rt_bi_core.Model.SymbolRegion import SymbolRegion
-from rt_bi_utils.Geometry import Geometry, LineString, Polygon
+from rt_bi_utils.Geometry import Geometry, LineString, Point, Polygon
+from rt_bi_utils.Ros import Logger
+from rt_bi_utils.RViz import KnownColors, Publisher, RViz
 
-___a = Axes3D # This is here to avoid a warning for unused import
 
 class ConnectivityGraph(nx.DiGraph):
-	"""The implementation of a Connectivity Graph in python as described in the dissertation of Reza Teshnizi."""
+	"""
+		The implementation of a Connectivity Graph in python as described in the dissertation.
+		© Reza Teshnizi 2018-2023
+	"""
+
+	NodeContent = Dict[Literal["region", "centroid", "fromTime"], Union[DynamicRegion, Point, int]]
+	"""### NodeContent
+		Data contents of a ConnectivityGraph node.
+	"""
+
 	def __init__(
 			self,
 			timeNanoSecs: int,
 			mapRegions: Union[List[MapRegion], MapPerimeter],
 			fovRegions: Union[List[SensorRegion], FieldOfView],
 			symbols: Dict[str, Symbol] = {},
+			rvizPublisher: Union[Publisher, None] = None,
 	) -> None:
 		"""
 		Creates a connectivity graph using the initial information.
@@ -44,7 +54,7 @@ class ConnectivityGraph(nx.DiGraph):
 		"""
 		super().__init__()
 		self.timeNanoSecs = timeNanoSecs
-		RosUtils.Logger().info("Constructing Connectivity Graph @ %d" % self.timeNanoSecs)
+		Logger().info("Constructing Connectivity Graph @ %d" % self.timeNanoSecs)
 		"""Geometric description of all the regions represented in this graph."""
 		self.__fieldOfView: FieldOfView = FieldOfView()
 		"""The RegularSpatialRegion representing the field-of-view."""
@@ -54,12 +64,12 @@ class ConnectivityGraph(nx.DiGraph):
 		"""The RegularSpatialRegion representing the shadows."""
 		self.__mapPerimeter: MapPerimeter = MapPerimeter()
 		"""The RegularSpatialRegion representing the map's perimeter."""
-		self.__fig: Union[Figure, None] = None
+		self.__rvizPublisher = rvizPublisher
 		self.__constructRegularRegion(regionList=mapRegions, constructionCallback=self.__constructPerimeter, loggerString="Map Perimeter")
 		self.__constructRegularRegion(regionList=fovRegions, constructionCallback=self.__constructFov, loggerString="Field-of-View")
-		RosUtils.Logger().info("Constructing Shadows.")
+		Logger().info("Constructing Shadows.")
 		self.__constructShadows()
-		# RosUtils.Logger().info("Constructing Symbols.")
+		# Logger().info("Constructing Symbols.")
 		# self.__constructSymbols(symbols)
 
 	def __repr__(self):
@@ -86,10 +96,10 @@ class ConnectivityGraph(nx.DiGraph):
 
 	def __constructRegularRegion(self, regionList: List[Union[MapRegion, SensorRegion]], constructionCallback: Union[Callable[[List[MapRegion]], None], Callable[[List[SensorRegion]], None]], loggerString: str) -> None:
 		if isinstance(regionList, list):
-			RosUtils.Logger().info("Constructing %s." % loggerString)
+			Logger().info("Constructing %s." % loggerString)
 			constructionCallback(regionList)
 		else:
-			RosUtils.Logger().info("Making a shallow copy of %s from previous graph." % loggerString)
+			Logger().info("Making a shallow copy of %s from previous graph." % loggerString)
 			constructionCallback([regionList[n] for n in regionList])
 		return
 
@@ -106,7 +116,7 @@ class ConnectivityGraph(nx.DiGraph):
 		return
 
 	def __addShadowNode(self, shadow: Polygon) -> None:
-		region = ShadowRegion(idNum=len(self.__shadows), envelope=[], interior=shadow)
+		region = ShadowRegion(idNum=len(self.__shadows), envelope=[], timeNanoSecs=self.timeNanoSecs, interior=shadow)
 		self.__addNode(region)
 		self.__shadows.addConnectedComponent(region)
 		for fovName in self.fieldOfView:
@@ -123,16 +133,16 @@ class ConnectivityGraph(nx.DiGraph):
 
 	def __constructShadows(self) -> None:
 		shadows = []
-		if (not self.fieldOfView.isEmpty) and Geometry.polygonAndPolygonIntersect(self.mapPerimeter.interior, self.fieldOfView.interior):
+		if (not self.fieldOfView.isEmpty) and Geometry.intersects(self.mapPerimeter.interior, self.fieldOfView.interior):
 			shadows = Geometry.difference(self.mapPerimeter.interior, self.fieldOfView.interior)
 			shadows = [p for p in shadows if p.length > 0]
 			shadows = list(filter(lambda p: not isinstance(p, LineString), shadows))
 			shadows = Geometry.union(shadows)
-			shadows = Geometry.convertToPolygonList(shadows)
+			shadows = Geometry.toGeometryList(shadows)
 		else:
 			shadows.append(self.mapPerimeter.interior)
 		if len(shadows) == 0:
-			RosUtils.Logger().warn("No Shadows.")
+			Logger().warn("No Shadows.")
 			return # Avoid dealing with empty unions
 		for shadow in shadows:
 			self.__addShadowNode(shadow)
@@ -141,7 +151,7 @@ class ConnectivityGraph(nx.DiGraph):
 	def __constructSymbols(self, symbols: List[SymbolRegion]) -> None:
 		return
 		for symbol in symbols:
-			insidePolys = Geometry.intersect(symbol.interior, self.fieldOfView.interior)
+			insidePolys = Geometry.intersection(symbol.interior, self.fieldOfView.interior)
 			insidePolys = [p for p in insidePolys if p.length > 0]
 			insidePolys = list(filter(lambda p: not isinstance(p, LineString), insidePolys))
 			for i in range(len(insidePolys)):
@@ -152,7 +162,7 @@ class ConnectivityGraph(nx.DiGraph):
 				broken = False
 				for fovNode in self.__sensorNodes:
 					fovRegion: SensorRegion = self.nodes[fovNode]["region"]
-					if fovRegion.interior.intersects(poly):
+					if Geometry.intersects(fovRegion.interior, poly):
 						self.__addEdges(fovNode, name)
 						broken = True
 						break
@@ -168,7 +178,7 @@ class ConnectivityGraph(nx.DiGraph):
 				broken = False
 				for shadowNode in self.__shadowNodes:
 					shadowRegion: SensorRegion = self.nodes[shadowNode]["region"]
-					if shadowRegion.interior.intersects(poly):
+					if Geometry.intersects(shadowRegion.interior, poly):
 						self.__addEdges(shadowNode, name)
 						break
 				if broken: continue
@@ -197,60 +207,16 @@ class ConnectivityGraph(nx.DiGraph):
 		listOfRegions = set(self.shadows.regionNames) & set(self.fieldOfView.regionNames) & set(self.symbols.regionNames)
 		return listOfRegions
 
-	# def construct(self, regions)
+	def render(self) -> None:
+		if self.__rvizPublisher is None: return
 
-	def render(self):
-		if self.__fig is None:
-			fig = figure(self.name)
-			ax = fig.add_subplot(projection="3d")
-		else:
-			fig = self.__fig
-		xFov = []
-		xpFov = None
-		yFov = []
-		ypFov = None
-		zFov = []
-		zpFov = None
-		xSymbol = []
-		ySymbol = []
-		zSymbol = []
-		xShadow = []
-		yShadow = []
-		zShadow = []
-		for node in self.nodes:
-			if "type" not in self.nodes[node]:
-				raise "Graph node needs a type"
-			elif self.nodes[node]["type"] == "sensor":
-				(xFov, yFov) = self.nodes[node]["region"].interior.exterior.coords.xy
-				zFov = [self.nodes[node]["fromTime"]] * len(xFov)
-				ax.plot(xFov, yFov, zFov, "g-")
-				# ax.text(self.nodes[node]["centroid"].x, self.nodes[node]["centroid"].y, self.nodes[node]["fromTime"], node, color="darkgreen")
-				if xpFov is not None:
-					for i in range(len(xFov) - 1):
-						ax.plot([xpFov[i], xFov[i]], [ypFov[i], yFov[i]], [zpFov[i], zFov[i]], "g-")
-				(xpFov, ypFov, zpFov) = (xFov, yFov, zFov)
-			elif self.nodes[node]["type"] == "symbol":
-				(xSymbol, ySymbol) = self.nodes[node]["region"].interior.exterior.coords.xy
-				zSymbol = [self.nodes[node]["fromTime"]] * len(xSymbol)
-				ax.plot(xSymbol, ySymbol, zSymbol, "b-")
-				# ax.text(self.nodes[node]["centroid"].x, self.nodes[node]["centroid"].y, self.nodes[node]["fromTime"], node, color="darkblue")
-			elif self.nodes[node]["type"] == "shadow":
-				(xShadow, yShadow) = self.nodes[node]["region"].interior.exterior.coords.xy
-				zShadow = [self.nodes[node]["fromTime"]] * len(xShadow)
-				ax.plot(xShadow, yShadow, zShadow, "k-")
-				# ax.text(self.nodes[node]["centroid"].x, self.nodes[node]["centroid"].y, self.nodes[node]["fromTime"], node, color="maroon")
-			else:
-				raise "Unknown node type: %s" % self.nodes[node]["type"]
-		ax.autoscale() # cspell: disable-line
-		fig.set_facecolor("grey") # cspell: disable-line
-		if self.__fig is None:
-			fig.show()
-			self.__fig = fig
-		else:
-			pause(0.05)
-		return
-
-	def killDisplayedGraph(self) -> None:
-		close(self.__fig)
-		self.fig = None
+		markers: List[Marker] = []
+		markers += self.shadows.render()
+		markers += self.symbols.render()
+		markers += self.fieldOfView.render()
+		message = MarkerArray()
+		for marker in markers:
+			message.markers.append(marker)
+		Logger().info("Rendering %d CGraph markers." % len(message.markers))
+		self.__rvizPublisher.publish(message)
 		return

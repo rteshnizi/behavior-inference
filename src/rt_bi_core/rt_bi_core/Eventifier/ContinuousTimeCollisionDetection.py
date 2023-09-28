@@ -1,26 +1,26 @@
 from typing import Dict, List, Literal, Tuple, Union
 
-import rt_bi_utils.Ros as RosUtils
 from rt_bi_core.Eventifier.FieldOfView import FieldOfView
 from rt_bi_core.Model.AffineRegion import AffineRegion
 from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
 from rt_bi_core.Model.RegularAffineRegion import RegularAffineRegion
 from rt_bi_utils.Geometry import AffineTransform, Geometry, LineString, MultiPolygon, Polygon
 from rt_bi_utils.Pose import Pose
+from rt_bi_utils.Ros import Logger, Publisher
 
 
 class ContinuousTimeCollisionDetection:
 	"""
-		This class Contains functions related to Continuous-time Collision Detection.
+		This class contains functions related to Continuous-time Collision Detection.
 		© Reza Teshnizi 2018-2023
 	"""
 
-	CollisionEvent = Tuple[Polygon, float, Literal["ingoing", "outgoing"], LineString]
+	CollisionEvent = Tuple[Polygon, int, Pose, float, Literal["ingoing", "outgoing"], LineString]
 	"""### Collision Event
 	```
-	(Polygon, timeOfEvent, "ingoing" | "outgoing", LineString)
+	(Polygon, idNum, centerOfRotation, timeOfEvent, "ingoing" | "outgoing", collidingEdge)
 	```
-	Wherein `LineString` is the edge of the is colliding with `Polygon` after timeOfEvent.
+	Wherein `collidingEdge` is the edge of the `Polygon` that is colliding at some point after `0 ≤ timeOfEvent≤ 1`.
 	"""
 
 	RegionCollisions = Dict[str, List[LineString]]
@@ -57,6 +57,8 @@ class ContinuousTimeCollisionDetection:
 	### A Core Assumption:
 	We expect the updates to be at least as fast as `MIN_TIME_DELTA` ns.
 	"""
+
+	__rvizPublisher: Union[Publisher, None] = None
 
 	@classmethod
 	def __estimateLocationWithSlerp(cls, past: RegularAffineRegion, now: RegularAffineRegion, ratio: float) -> Union[Polygon, MultiPolygon]:
@@ -133,7 +135,7 @@ class ContinuousTimeCollisionDetection:
 		endConfigTransformation = Geometry.getParameterizedAffineTransformation(transformation, intervalEnd)
 		movingEdgeStartConfiguration = Geometry.applyMatrixTransformToLineString(startConfigTransformation, movingEdge, centerOfRotation)
 		movingEdgeEndConfiguration = Geometry.applyMatrixTransformToLineString(endConfigTransformation, movingEdge, centerOfRotation)
-		return (movingEdgeStartConfiguration.intersects(staticEdge), movingEdgeEndConfiguration.intersects(staticEdge))
+		return (Geometry.intersects(movingEdgeStartConfiguration,staticEdge), Geometry.intersects(movingEdgeEndConfiguration, staticEdge))
 
 	@classmethod
 	def __initEdgeIntervals(cls, movingRegion: AffineRegion, transformation: AffineTransform, existingCollisions: RegionCollisions, inverse: bool) -> List[CollisionInterval]:
@@ -181,14 +183,14 @@ class ContinuousTimeCollisionDetection:
 		"""
 		startConfigTransformation = Geometry.getParameterizedAffineTransformation(transformation, intervalStart)
 		edgeAtStart = Geometry.applyMatrixTransformToLineString(startConfigTransformation, movingEdge, centerOfRotation)
-		isCollidingAtStart = Geometry.intersectLineSegments(edgeAtStart, staticEdge) is not None
+		isCollidingAtStart = Geometry.intersects(edgeAtStart, staticEdge) is not None
 		endConfigTransformation = Geometry.getParameterizedAffineTransformation(transformation, intervalEnd)
 		edgeAtEnd = Geometry.applyMatrixTransformToLineString(endConfigTransformation, movingEdge, centerOfRotation)
-		isCollidingAtEnd = Geometry.intersectLineSegments(edgeAtEnd, staticEdge) is not None
+		isCollidingAtEnd = Geometry.intersects(edgeAtEnd, staticEdge) is not None
 		intervalMid = (intervalStart + intervalEnd) / 2
 		midConfigTransformation = Geometry.getParameterizedAffineTransformation(transformation, intervalMid)
 		edgeAtMid = Geometry.applyMatrixTransformToLineString(midConfigTransformation, movingEdge, centerOfRotation)
-		isCollidingAtMid = Geometry.intersectLineSegments(edgeAtMid, staticEdge) is not None
+		isCollidingAtMid = Geometry.intersects(edgeAtMid, staticEdge) is not None
 		startSensor = Geometry.applyMatrixTransformToPolygon(startConfigTransformation, region.interior, centerOfRotation)
 		midSensor = Geometry.applyMatrixTransformToPolygon(midConfigTransformation, region.interior, centerOfRotation)
 		endSensor = Geometry.applyMatrixTransformToPolygon(endConfigTransformation, region.interior, centerOfRotation)
@@ -239,10 +241,10 @@ class ContinuousTimeCollisionDetection:
 				else:
 					ingoingIntervals.append((movingEdge, staticEdge, intervalStart, intervalMid))
 			if isCollidingAtStart == isCollidingAtMid and isCollidingAtMid == isCollidingAtEnd:
-				if firstHalfBb.intersects(staticEdge):
+				if Geometry.intersects(firstHalfBb, staticEdge):
 					collisionIntervals.insert(i, (movingEdge, staticEdge, intervalStart, intervalMid))
 					i += 1
-				if secondHalfBb.intersects(staticEdge):
+				if Geometry.intersects(secondHalfBb, staticEdge):
 					collisionIntervals.insert(i, (movingEdge, staticEdge, intervalMid, intervalEnd))
 					i += 1
 		return (ingoingIntervals, outgoingIntervals)
@@ -266,10 +268,32 @@ class ContinuousTimeCollisionDetection:
 		return intermediateCollisions
 
 	@classmethod
-	def __refineIntervals(cls, movingRegion: AffineRegion, transformation: AffineTransform, startingCollisions: RegionCollisions, estimatedCollision: List[CollisionInterval], eventCandidates: List[CollisionInterval], inverse: bool) -> None:
-		RosUtils.Logger().info("Refining Estimated Collision, %s pass:\t%s" % ("ingoing" if inverse else "outgoing", repr(estimatedCollision)))
-		# Each interval is represented as a tuple: (sensorEdge, mapEdge, float, float)
-		# The first float is the interval start and the second one is interval end times.
+	def __refineIntervals(cls, movingRegion: AffineRegion, transformation: AffineTransform, startingCollisions: RegionCollisions, estimatedCollision: List[CollisionInterval], eventCandidates: List[CollisionEvent], inverse: bool) -> List[CollisionEvent]:
+		"""## Refine Intervals
+		Performs a binary search until there are no more overlap among the intervals of time in which
+		a collision would occur between an edge of the movingRegion and the given `collidingEdge`
+
+		Parameters
+		----------
+		movingRegion : `AffineRegion`
+			_description_
+		transformation : `AffineTransform`
+			_description_
+		startingCollisions : `RegionCollisions`
+			_description_
+		estimatedCollision : `List[CollisionInterval]`
+			_description_
+		eventCandidates : `List[CollisionEvent]`
+			_description_
+		inverse : `bool`
+			_description_
+
+		Returns
+		-------
+		`List[CollisionEvent]`
+			_description_
+		"""
+		# Logger().info("Refining Collision, %s pass:\t%s" % ("ingoing" if inverse else "outgoing", repr(estimatedCollision)))
 		intervals = cls.__initEdgeIntervals(movingRegion, transformation, startingCollisions, inverse)
 		haveOverlap = intervals + estimatedCollision
 		dontHaveOverlap: List[cls.CollisionInterval] = []
@@ -289,11 +313,11 @@ class ContinuousTimeCollisionDetection:
 			for interval in dontHaveOverlap:
 				intermediateTransform = Geometry.getParameterizedAffineTransformation(transformation, interval[3])
 				p = Geometry.applyMatrixTransformToPolygon(intermediateTransform, movingRegion.interior, movingRegion.centerOfRotation)
-				eventCandidates.append((p, interval[3], "ingoing" if inverse else "outgoing", interval[1]))
-		return
+				eventCandidates.append((p, movingRegion.idNum, movingRegion.centerOfRotation, interval[3], "ingoing" if inverse else "outgoing", interval[1]))
+		return eventCandidates
 
 	@classmethod
-	def getCollidingEdges(cls, region: PolygonalRegion, polygon: Union[Polygon, MultiPolygon]) -> RegionCollisions:
+	def __getCollidingEdges(cls, region: PolygonalRegion, polygon: Union[Polygon, MultiPolygon]) -> RegionCollisions:
 		"""## Get Colliding Edges By Edge
 		Just like the name says.
 
@@ -309,7 +333,7 @@ class ContinuousTimeCollisionDetection:
 		"""
 		collisionData: cls.RegionCollisions = {}
 		for edgeName in region.edges:
-			collisionData[edgeName] = Geometry.getAllIntersectingEdgesWithLine(region.edges[edgeName], polygon)
+			collisionData[edgeName] = Geometry.getIntersectingEdges(region.edges[edgeName], polygon)
 		return collisionData
 
 	@classmethod
@@ -329,7 +353,7 @@ class ContinuousTimeCollisionDetection:
 		return expandedObb
 
 	@classmethod
-	def getCollidingEdgesWithExtendedBb(cls, past: AffineRegion, now: AffineRegion, polygon: Union[Polygon, MultiPolygon]) -> RegionCollisions:
+	def __getCollidingEdgesWithExtendedBb(cls, past: AffineRegion, now: AffineRegion, polygon: Union[Polygon, MultiPolygon]) -> RegionCollisions:
 		"""
 			#### Returns
 				For each edge of a moving region, given as `past` an `now`,
@@ -346,13 +370,13 @@ class ContinuousTimeCollisionDetection:
 			verts = polygon.exterior.coords
 			for v1, v2 in zip(verts, verts[1:]):
 				e = LineString([v1, v2])
-				if boundingBox.intersects(e):
+				if Geometry.intersects(boundingBox, e):
 					collisionData[sensorEdgeId].append(e)
 			# FIXME: Iterate over interior rings as well.
 		return collisionData
 
 	@classmethod
-	def estimateIntermediateCollisionsWithPolygon(cls, pastSensors: FieldOfView, nowSensors: FieldOfView, polygon: Union[Polygon, MultiPolygon]) -> CollisionEvent:
+	def estimateIntermediateCollisionsWithPolygon(cls, pastSensors: FieldOfView, nowSensors: FieldOfView, polygon: Union[Polygon, MultiPolygon], rvizPublisher: Union[Publisher, None]) -> List[CollisionEvent]:
 		"""## Estimate Intermediate Collisions With A Fixed Polygon
 
 			Given past and the current configuration of a sensors,
@@ -374,24 +398,24 @@ class ContinuousTimeCollisionDetection:
 				A list of intervals in each of which there is at most one component event.
 			"""
 
+		cls.__rvizPublisher = rvizPublisher
 		collisionData: cls.RegularRegionCollisions = {}
 		# Begin by collecting the edges are that are in contact at the beginning and at the end of the motion.
 		for sensorId in pastSensors:
-			RosUtils.Logger().info("Estimating intermediate collisions between %s and the moving region %s." % (repr(polygon), sensorId))
+			if sensorId not in nowSensors:
+				continue
+			Logger().info("Estimating intermediate collisions between %s and the moving region %s." % (repr(polygon), sensorId))
 
-			collisionData[sensorId] = cls.getCollidingEdgesWithExtendedBb(pastSensors[sensorId], nowSensors[sensorId], polygon)
-			pastCollidingEdges = cls.getCollidingEdges(pastSensors[sensorId], polygon)
-			RosUtils.Logger().info("Past colliding edges:\t%s" % repr(pastCollidingEdges))
-			nowCollidingEdges = cls.getCollidingEdges(nowSensors[sensorId], polygon)
-			RosUtils.Logger().info("Now colliding edges:\t%s" % repr(nowCollidingEdges))
+			collisionData[sensorId] = cls.__getCollidingEdgesWithExtendedBb(pastSensors[sensorId], nowSensors[sensorId], polygon)
+			pastCollidingEdges = cls.__getCollidingEdges(pastSensors[sensorId], polygon)
+			nowCollidingEdges = cls.__getCollidingEdges(nowSensors[sensorId], polygon)
 			transformation = Geometry.getAffineTransformation(pastSensors[sensorId].envelope, nowSensors[sensorId].envelope, pastSensors[sensorId].centerOfRotation)
 
 			# Following two liners are optimization lines and not necessary.
 			# collisionData[sensorId] = cls.__removeExistingCollisionsFromIntermediateCollisions(pastCollidingEdges, collisionData[sensorId])
 			# collisionData[sensorId] = cls.__removeExistingCollisionsFromIntermediateCollisions(nowCollidingEdges, collisionData[sensorId])
-			RosUtils.Logger().info("IntermediateCollisions:\t%s" % repr(collisionData[sensorId]))
 			if len(collisionData[sensorId]) == 0:
-				RosUtils.Logger().info("Empty collision, skipping the refinement.")
+				Logger().info("Empty collision, skipping the refinement.")
 				continue
 
 			# Here we try to find the broadest set of collisions: any edge that collides with the OBB.
@@ -399,25 +423,21 @@ class ContinuousTimeCollisionDetection:
 			ingoingIntervals: List[cls.CollisionInterval] = []
 			outgoingIntervals: List[cls.CollisionInterval] = []
 			collisionIntervals = cls.__initEdgeIntervals(pastSensors[sensorId], transformation, pastCollidingEdges, inverse=False)
-			RosUtils.Logger().info("Initial Intervals:\t%s" % repr(collisionIntervals))
+			Logger().info("Initial Intervals:\t%s" % repr(collisionIntervals))
 			while len(collisionIntervals) > 0:
 				(ingoingIntervals, outgoingIntervals) = cls.__estimateCollisionIntervals(pastSensors[sensorId], transformation, collisionIntervals)
-			RosUtils.Logger().info("Coarse Ingoing Intervals:\t%s" % repr(ingoingIntervals))
-			RosUtils.Logger().info("Coarse Outgoing Intervals:\t%s" % repr(outgoingIntervals))
-			eventCandidates: List[cls.CollisionInterval] = []
-			cls.__refineIntervals(pastSensors[sensorId], transformation, pastCollidingEdges, outgoingIntervals, eventCandidates, inverse=False)
-			cls.__refineIntervals(nowSensors[sensorId], transformation, nowCollidingEdges, ingoingIntervals, eventCandidates, inverse=True)
-			RosUtils.Logger().info("Total Events:\t%s" % repr(eventCandidates))
+			eventCandidates = cls.__refineIntervals(pastSensors[sensorId], transformation, pastCollidingEdges, outgoingIntervals, [], inverse=False)
+			eventCandidates = cls.__refineIntervals(nowSensors[sensorId], transformation, nowCollidingEdges, ingoingIntervals, eventCandidates, inverse=True)
+			Logger().info("Total Events:\t%s" % repr(eventCandidates))
 			# Sort events by time
-			eventCandidates.sort(key=lambda e: e[1])
+			eventCandidates.sort(key=lambda e: e[3])
 			# Remove duplicate times
 			times = set()
 			i = 0
 			while i < len(eventCandidates):
-				if eventCandidates[i][1] not in times:
+				if eventCandidates[i][3] not in times:
 					times.add(eventCandidates[i][1])
 					i += 1
 				else:
 					eventCandidates.pop(i)
-		# (FOV polygon, timeOfEvent, "ingoing" | "outgoing", map edge relevant to the event)
 		return eventCandidates
