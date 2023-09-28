@@ -16,17 +16,27 @@ def generate_launch_description():
 			name="rviz2_map",
 			arguments=[
 				"-d",
-				[os.path.join(shareDir, "config", "rbc_map.rviz")],
+				[os.path.join(shareDir, "config", "rviz.live.rviz")],
 			]
 		),
 		Node(
 			package="rviz2",
 			namespace="rviz2",
 			executable="rviz2",
-			name="rviz2_str",
+			name="rviz2_cg",
 			arguments=[
 				"-d",
-				[os.path.join(shareDir, "config", "rbc_str.rviz")],
+				[os.path.join(shareDir, "config", "rviz.cg.rviz")],
+			]
+		),
+		Node(
+			package="rviz2",
+			namespace="rviz2",
+			executable="rviz2",
+			name="rviz2_ctcd", # cspell: disable-line
+			arguments=[
+				"-d",
+				[os.path.join(shareDir, "config", "rviz.ctcd.rviz")], # cspell: disable-line
 			]
 		),
 	])
