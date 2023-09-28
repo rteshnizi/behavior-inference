@@ -100,8 +100,8 @@ class SaMsgs:
 		RosUtils.CreateSubscriber(node, FeatureInfo, SaMsgs.__MAP_UPDATE_TOPIC, callbackFunc)
 
 	@staticmethod
-	def createSaRobotStatePublisher(node: Node, callbackFunc: Callable = lambda: None, interval: float = nan) -> Tuple[Publisher, Union[Timer, None]]:
-		return RosUtils.CreatePublisher(node, RobotState, SaMsgs.__ROBOT_STATE_TOPIC, callbackFunc, interval)
+	def createSaRobotStatePublisher(node: Node, callbackFunc: Callable = lambda: None, intervalSecs: float = nan) -> Tuple[Publisher, Union[Timer, None]]:
+		return RosUtils.CreatePublisher(node, RobotState, SaMsgs.__ROBOT_STATE_TOPIC, callbackFunc, intervalSecs)
 
 	@staticmethod
 	def subscribeToSaRobotStateTopic(node: Node, callbackFunc: Callable[[RobotState], None]) -> None:
