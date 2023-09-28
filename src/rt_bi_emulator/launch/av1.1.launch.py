@@ -18,7 +18,7 @@ def generate_launch_description():
 			namespace=packageName,
 			executable="AV",
 			name="av1",
-			parameters=[yamlPath]
+			parameters=[yamlPath],
 		),
 	]
 
