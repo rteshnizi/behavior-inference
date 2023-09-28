@@ -1,0 +1,7 @@
+rt_bi_core:
+  st:
+    ros__parameters:
+      liveRender: False
+      renderModules:
+        - connectivity_graph
+        - continuous_time_collision_detection
