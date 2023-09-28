@@ -2,6 +2,7 @@ import logging
 from argparse import ArgumentParser, Namespace
 from json import loads
 from math import degrees, radians
+from typing import List
 
 from rt_bi_utils.Geometry import AffineTransform, Geometry
 from rt_bi_utils.Pose import Pose
@@ -80,13 +81,14 @@ def getAngle(coords1: str, coords2: str, center: str) -> str:
 	transformation = Geometry.getAffineTransformation(coords1, coords2, center)
 	return (transformation.rotation, degrees(transformation.rotation))
 
-def rotateCoords(coords: str, angleD: float, angleR: float, center: str) -> str:
+def rotateCoords(coords: str, angleD: float, angleR: float, center: str) -> List[List[float]]:
 	coords: Geometry.CoordsList = loads(coords)
 	center: Geometry.Coords = loads(center)
 	center: Pose = Pose(0, center[0], center[1], 0)
 	angleR = radians(angleD) if angleR is None else angleR
 	transformation = AffineTransform(rotation=angleR)
 	transformed = Geometry.applyMatrixTransformToCoordsList(transformation, coords, center)
+	transformed = [list(c) for c in transformed]
 	return transformed
 
 def main(args: Namespace) -> None:
