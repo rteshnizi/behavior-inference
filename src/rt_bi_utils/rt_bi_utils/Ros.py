@@ -44,7 +44,7 @@ def RosTimeStamp() -> Time:
 		raise RuntimeError("ROS context not OK!")
 	return rclpy.get_global_executor()._clock.now().to_msg()
 
-def CreatePublisher(node: Node, topic: Topic, topicName: str, callbackFunc: Callable = lambda: None, interval: float = nan) -> Tuple[Publisher, Union[Timer, None]]:
+def CreatePublisher(node: Node, topic: Topic, topicName: str, callbackFunc: Callable = lambda: None, intervalSecs: float = nan) -> Tuple[Publisher, Union[Timer, None]]:
 	"""
 	Create and return the tuple of `(Publisher, Timer | None)`.
 
@@ -67,9 +67,9 @@ def CreatePublisher(node: Node, topic: Topic, topicName: str, callbackFunc: Call
 	`Tuple[Publisher, Union[Timer, None]]`
 	"""
 	publisher = node.create_publisher(topic, topicName, 10)
-	timer = None if isnan(interval) else node.create_timer(interval, callbackFunc)
+	timer = None if isnan(intervalSecs) else node.create_timer(intervalSecs, callbackFunc)
 	try:
-		freq = " @ %.2fHz" % 1 / interval
+		freq = " @ %.2fHz" % 1 / intervalSecs
 	except:
 		freq = ""
 	node.get_logger().info("%s publishes topic \"%s\"%s" % (node.get_fully_qualified_name(), topicName, freq))
