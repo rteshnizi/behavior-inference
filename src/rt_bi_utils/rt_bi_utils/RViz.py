@@ -93,6 +93,12 @@ class RViz:
 		return marker
 
 	@staticmethod
+	def __setMarkerPose(marker: Marker, coords: Geometry.Coords) -> Marker:
+		marker.pose.position.x = float(coords[0])
+		marker.pose.position.y = float(coords[1])
+		return marker
+
+	@staticmethod
 	def __setMarkerId(marker: Marker, strId: str) -> Marker:
 		uInt = adler32(strId.encode("utf-8"))
 		marker.id = c_int32(uInt).value
@@ -152,7 +158,7 @@ class RViz:
 
 		tag: a unique identifier (use entity name)
 		"""
-		RosUtils.Logger().info("Render circle ID %s" % strId)
+		RosUtils.Logger().warn("Render circle ID %s" % strId)
 		circle = Marker()
 		circle = RViz.__setMarkerHeader(circle)
 		circle = RViz.__setMarkerId(circle, strId)
@@ -182,7 +188,7 @@ class RViz:
 
 		tag: a unique identifier (use entity name)
 		"""
-		RosUtils.Logger().info("Render polygon ID %s" % strId)
+		# RosUtils.Logger().info("Render polygon ID %s" % strId)
 		polygon = Marker()
 		polygon = RViz.__setMarkerHeader(polygon)
 		polygon = RViz.__setMarkerId(polygon, strId)
@@ -197,7 +203,7 @@ class RViz:
 		return polygon
 
 	@staticmethod
-	def CreateLine(strId: str, coords: Geometry.CoordsList, outline: Color, tag: str, width = 1.0, arrow = False) -> Marker:
+	def CreateLine(strId: str, coords: Geometry.CoordsList, outline: Color, width = 1.0, arrow = False) -> Marker:
 		"""
 		Returns shape id, or None if there are no points.
 
@@ -224,24 +230,37 @@ class RViz:
 		return lineSeg
 
 	@staticmethod
-	def CreateText(strId: str, coords: Geometry.Coords, text: str, color: Color, fontSize = 10) -> Marker:
+	def CreateText(strId: str, coords: Geometry.Coords, text: str, outline: Color = KnownColors.BLACK, fontSize = 10.0) -> Marker:
+		"""Create a text Marker message.
+
+		Parameters
+		----------
+		strId : str
+			Used for refreshing the same element over successive frames.
+		coords : Geometry.Coords
+			The placement.
+		text : str
+			The text.
+		outline : Color, optional
+			The color, by default KnownColors.BLACK
+		fontSize : float, optional
+			The font size, by default 10.0
+
+		Returns
+		-------
+		Marker
+			The marker message.
 		"""
-		Returns shape id
-
-		coords: [x, y]
-
-		text: to be rendered
-
-		color: color string (default black)
-
-		fontSize: number; default is 10
-		"""
-		RosUtils.Logger().info("Render text ID %s with content \"%s\"" % (strId, text))
-		RosUtils.Logger().error("Render of text is not implemented.")
-		text = Marker()
-		text = RViz.__setMarkerHeader(text)
-		text = RViz.__setMarkerId(text, strId)
-		return text
+		# RosUtils.Logger().info("Render text ID %s with content \"%s\"" % (strId, text))
+		textMarker = Marker()
+		textMarker = RViz.__setMarkerHeader(textMarker)
+		textMarker = RViz.__setMarkerId(textMarker, strId)
+		textMarker.type = Marker.TEXT_VIEW_FACING
+		textMarker.text = text
+		textMarker = RViz.__setMarkerPose(textMarker, coords)
+		textMarker = RViz.__setMarkerColor(textMarker, outline)
+		textMarker.scale.z = float(fontSize)
+		return textMarker
 
 	@staticmethod
 	def RemoveShape() -> None:
