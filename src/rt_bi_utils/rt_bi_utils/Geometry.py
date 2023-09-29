@@ -52,12 +52,12 @@ class Geometry:
 
 	@staticmethod
 	def pointStringId(x: float, y: float) -> str:
-		return "%.2f,%.2f" % (x, y)
+		return "%.5f,%.5f" % (x, y)
 
 	@staticmethod
 	def lineStringId(line: LineString) -> Tuple[str, ...]:
-		coords = Geometry.getGeometryCoords(line)
-		return tuple(Geometry.pointStringId(coord[0], coord[1]) for coord in coords)
+		coordsList = Geometry.getGeometryCoords(line)
+		return tuple(Geometry.pointStringId(coords[0], coords[1]) for coords in coordsList)
 
 	@staticmethod
 	def vectorsAreEqual(vec1: Vector, vec2: Vector, withinEpsilon = True) -> bool:
