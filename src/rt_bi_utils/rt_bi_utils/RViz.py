@@ -224,7 +224,7 @@ class RViz:
 		lineSeg.type = Marker.LINE_STRIP
 		lineSeg = RViz.__setMarkerColor(lineSeg, outline)
 		# LINE_STRIP markers use only the x component of scale, for the line width
-		lineSeg.scale.x = width
+		lineSeg.scale.x = float(width)
 		for (x, y) in coords:
 			lineSeg.points.append(RViz.__createPointMessage(x, y))
 		return lineSeg
