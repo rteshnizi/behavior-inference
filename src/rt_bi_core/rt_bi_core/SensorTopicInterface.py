@@ -18,13 +18,13 @@ class SensorTopicInterface(Node):
 		newKw = { "node_name": "rt_bi_core_sensor", **kwArgs}
 		super().__init__(**newKw)
 		if subClass:
-			self.get_logger().info("%s in sensor topic init." % self.get_fully_qualified_name())
+			self.get_logger().debug("%s in sensor topic init." % self.get_fully_qualified_name())
 		else:
-			self.get_logger().info("%s is initializing." % self.get_fully_qualified_name())
+			self.get_logger().debug("%s is initializing." % self.get_fully_qualified_name())
 			RosUtils.SetLogger(self.get_logger())
 		self.__sensors: Union[Dict[int, SensorRegion], None] = None
 		if subClass:
-			self.get_logger().info("%s skipping creating publishers and subscribers." % self.get_fully_qualified_name())
+			self.get_logger().debug("%s skipping creating publishers and subscribers." % self.get_fully_qualified_name())
 		else:
 			SaMsgs.subscribeToSaRobotStateTopic(self, self.__onRobotStateUpdate)
 			(self.__rvizPublisher, _) = RViz.createRVizPublisher(self, RosUtils.CreateTopicName("map"))
@@ -40,7 +40,7 @@ class SensorTopicInterface(Node):
 		):
 			return False
 
-		self.get_logger().info("Updating sensor %d definition." % update.robot_id)
+		self.get_logger().debug("Updating sensor %d definition." % update.robot_id)
 		if self.__sensors is None:
 			self.__sensors = {}
 		coords = SaMsgs.convertSaPoseListToCoordsList(update.fov.corners)
@@ -52,7 +52,7 @@ class SensorTopicInterface(Node):
 
 	def render(self, regions: List[SensorRegion] = None):
 		if not RViz.isRVizReady(self, self.__rvizPublisher):
-			self.get_logger().warn("Skipping map render... RViz is not ready yet to receive messages.")
+			self.get_logger().info("Skipping map render... RViz is not ready yet to receive messages.")
 			return
 		if regions is None:
 			regionList = self.regions.values()

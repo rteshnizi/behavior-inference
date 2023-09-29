@@ -115,7 +115,7 @@ class RViz:
 
 	@staticmethod
 	def randomColor(alpha = 1.0) -> Color:
-		return (random.uniform(0, 1), random.uniform(0, 1), random.uniform(0, 1), alpha)
+		return (random.uniform(0.1, 0.8), random.uniform(0.1, 0.8), random.uniform(0.1, 0.8), alpha)
 
 	@staticmethod
 	def inverseColor(color: Color, inverseAlpha = False) -> Color:
@@ -158,7 +158,7 @@ class RViz:
 
 		tag: a unique identifier (use entity name)
 		"""
-		RosUtils.Logger().warn("Render circle ID %s" % strId)
+		RosUtils.Logger().debug("Render circle id %s" % strId)
 		circle = Marker()
 		circle = RViz.__setMarkerHeader(circle)
 		circle = RViz.__setMarkerId(circle, strId)
@@ -188,7 +188,7 @@ class RViz:
 
 		tag: a unique identifier (use entity name)
 		"""
-		# RosUtils.Logger().info("Render polygon ID %s" % strId)
+		RosUtils.Logger().debug("Render polygon ID %s" % strId)
 		polygon = Marker()
 		polygon = RViz.__setMarkerHeader(polygon)
 		polygon = RViz.__setMarkerId(polygon, strId)
@@ -217,7 +217,7 @@ class RViz:
 
 		tag: a unique identifier (use entity name)
 		"""
-		RosUtils.Logger().info("Render line strip ID %s" % strId)
+		RosUtils.Logger().debug("Render line strip id %s" % strId)
 		lineSeg = Marker()
 		lineSeg = RViz.__setMarkerHeader(lineSeg)
 		lineSeg = RViz.__setMarkerId(lineSeg, strId)
@@ -252,6 +252,7 @@ class RViz:
 			The marker message.
 		"""
 		# RosUtils.Logger().info("Render text ID %s with content \"%s\"" % (strId, text))
+		RosUtils.Logger().debug("Render text id %s" % strId)
 		textMarker = Marker()
 		textMarker = RViz.__setMarkerHeader(textMarker)
 		textMarker = RViz.__setMarkerId(textMarker, strId)

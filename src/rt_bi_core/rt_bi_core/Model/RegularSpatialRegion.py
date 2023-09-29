@@ -83,7 +83,7 @@ class RegularSpatialRegion:
 
 	def addConnectedComponent(self, region: Type[PolygonalRegion]) -> None:
 		if region.name in self.__regions:
-			RosUtils.Logger().info("Overriding region with name %s that is already added in %s." % (region.name, self.__class__.__name__))
+			RosUtils.Logger().debug("Overriding region with name %s that is already added in %s." % (region.name, self.__class__.__name__))
 		self.__regions[region.name] = region
 		return
 

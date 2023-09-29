@@ -24,7 +24,7 @@ class AvEmulator(Node):
 	def __init__(self):
 		""" Create a Viewer ROS node. """
 		super().__init__("rt_bi_av_emulator")
-		self.get_logger().info("%s is initializing." % self.get_fully_qualified_name())
+		self.get_logger().debug("%s is initializing." % self.get_fully_qualified_name())
 		self.__declareParameters()
 		RosUtils.SetLogger(self.get_logger())
 		self.__centerOfRotation = Pose(0, 0.0, 0.0, 0.0)
@@ -39,7 +39,7 @@ class AvEmulator(Node):
 		(self.__fovPublisher, _) = SaMsgs.createSaRobotStatePublisher(self, self.__publishMyFov, self.__updateInterval)
 
 	def __declareParameters(self) -> None:
-		self.get_logger().info("%s is setting node parameters." % self.get_fully_qualified_name())
+		self.get_logger().debug("%s is setting node parameters." % self.get_fully_qualified_name())
 		self.declare_parameter("robotId", Parameter.Type.INTEGER)
 		self.declare_parameter("updateInterval", Parameter.Type.DOUBLE)
 		self.declare_parameter("timeSecs", Parameter.Type.DOUBLE_ARRAY)
@@ -48,7 +48,7 @@ class AvEmulator(Node):
 		return
 
 	def __parseConfigFileParameters(self) -> None:
-		self.get_logger().info("%s is parsing parameters." % self.get_fully_qualified_name())
+		self.get_logger().debug("%s is parsing parameters." % self.get_fully_qualified_name())
 		self.__robotId = self.get_parameter("robotId").get_parameter_value().integer_value
 		self.__updateInterval = self.get_parameter("updateInterval").get_parameter_value().double_value
 		timePoints = self.get_parameter("timeSecs").get_parameter_value().double_array_value
@@ -70,10 +70,10 @@ class AvEmulator(Node):
 
 	def __publishMyFov(self) -> None:
 		timeOfPublish = float(self.get_clock().now().nanoseconds)
-		param = (timeOfPublish - self.__initTime) / self.__totalTimeNanoSecs
-		param = 1 if param > 1 else param
-		if param < 1:
-			matrix = Geometry.getParameterizedAffineTransformation(self.__transformationMatrix, param)
+		elapsedTimeRatio = (timeOfPublish - self.__initTime) / self.__totalTimeNanoSecs
+		elapsedTimeRatio = 1 if elapsedTimeRatio > 1 else elapsedTimeRatio
+		if elapsedTimeRatio < 1:
+			matrix = Geometry.getParameterizedAffineTransformation(self.__transformationMatrix, elapsedTimeRatio)
 			fov = Geometry.applyMatrixTransformToPolygon(matrix, self.__initFovPoly, self.__centerOfRotation)
 		else:
 			fov = Polygon(self.__avPositions[-1].interior)
@@ -81,7 +81,7 @@ class AvEmulator(Node):
 		msg.robot_id = self.__robotId
 		msg.pose = SaMsgs.createSaPoseMsg(self.__avPositions[0].pose.x, self.__avPositions[0].pose.y)
 		msg.fov = SaMsgs.createSaFovMsg(list(fov.exterior.coords))
-		self.get_logger().info("Sending updated fov location for robot %d @ param = %.3f" % (self.__robotId, param))
+		self.get_logger().debug("Sending updated fov location for robot %d @ param = %.3f" % (self.__robotId, elapsedTimeRatio))
 		self.__fovPublisher.publish(msg)
 		return
 

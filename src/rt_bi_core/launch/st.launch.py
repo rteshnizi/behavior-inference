@@ -10,17 +10,16 @@ packageName = pathlib.Path(__file__).parent.parent.name
 
 def generate_launch_description():
 	yamlPath = os.path.join(get_package_share_directory(packageName), "config", "st.debug.yaml")
-	nodeName = "st"
 	return LaunchDescription([
 		Node(
 			package=packageName,
 			namespace=packageName,
 			executable="ST",
-			name=nodeName,
+			name="st",
 			arguments= [
 				"--ros-args",
 				"--log-level",
-				"%s:=debug" % nodeName,
+				"info",
 			],
 			parameters=[yamlPath],
 		),

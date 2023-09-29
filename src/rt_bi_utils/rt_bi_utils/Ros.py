@@ -72,7 +72,7 @@ def CreatePublisher(node: Node, topic: Topic, topicName: str, callbackFunc: Call
 		freq = " @ %.2fHz" % 1 / intervalSecs
 	except:
 		freq = ""
-	node.get_logger().info("%s publishes topic \"%s\"%s" % (node.get_fully_qualified_name(), topicName, freq))
+	node.get_logger().debug("%s publishes topic \"%s\"%s" % (node.get_fully_qualified_name(), topicName, freq))
 	return (publisher, timer)
 
 def CreateSubscriber(node: Node, topic: Topic, topicName: str, callbackFunc: Callable[[Topic], None]) -> Subscription:
@@ -95,7 +95,7 @@ def CreateSubscriber(node: Node, topic: Topic, topicName: str, callbackFunc: Cal
 	`Subscription`
 	"""
 	subscription = node.create_subscription(topic, topicName, callbackFunc, 10)
-	node.get_logger().info("%s subscribed to \"%s\"" % (node.get_fully_qualified_name(), topicName))
+	node.get_logger().debug("%s subscribed to \"%s\"" % (node.get_fully_qualified_name(), topicName))
 	return subscription
 
 def CreateTopicName(shortTopicName: str) -> str:
@@ -129,6 +129,6 @@ def WaitForServicesToStart(node: Node, client: Client = None) -> None:
 	clientList = node.clients if client is None else [client]
 	for client in clientList:
 		while not client.wait_for_service():
-			node.get_logger().info("Client %s is waiting for service %s" % (node.get_name(), client.srv_name))
-	node.get_logger().info("Client %s is ready"% node.get_name())
+			node.get_logger().debug("Client %s is waiting for service %s" % (node.get_name(), client.srv_name))
+	node.get_logger().debug("Client %s is ready"% node.get_name())
 	return

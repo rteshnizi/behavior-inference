@@ -25,13 +25,13 @@ class MapServiceInterface(Node):
 		self.__strNameToIdNum: Dict[str, int] = dict()
 		"""This map helps us assume nothing about the meaning of the names assigned to map regions."""
 		if self.__class__.__name__ == MapServiceInterface.__name__:
-			self.get_logger().info("%s is initializing." % self.get_fully_qualified_name())
+			self.get_logger().debug("%s is initializing." % self.get_fully_qualified_name())
 			RosUtils.SetLogger(self.get_logger())
 			self.__regions: List[MapRegion] = []
 			self.mapClient = SaMsgs.createSaFeatureQueryClient(self)
 			(self.__rvizPublisher, _) = RViz.createRVizPublisher(self, RosUtils.CreateTopicName("map"))
 		else:
-			self.get_logger().info("%s finished super class service init." % self.get_fully_qualified_name())
+			self.get_logger().debug("%s finished super class service init." % self.get_fully_qualified_name())
 
 	def __registerRegionId(self, featureName: str) -> int:
 		if featureName in self.__strNameToIdNum:
@@ -56,12 +56,12 @@ class MapServiceInterface(Node):
 				"traversability_gv_tank": traversabilityTank,
 		})
 		region.featureDefinition = feature
-		self.get_logger().info("Assigned feature definition \"%s\" to region %s." % (request.name, repr(region)))
+		self.get_logger().debug("Assigned feature definition \"%s\" to region %s." % (request.name, repr(region)))
 		parsedFeatures.append(feature)
 		return parsedFeatures
 
 	def parsePolygonShapeList(self, request: QueryFeature.Request, response: QueryFeature.Response, queryFeatures: bool = True) -> List[MapRegion]:
-		self.get_logger().info("Parsing response to \"%s\" query." % request.name)
+		self.get_logger().debug("Parsing response to \"%s\" query." % request.name)
 		if request.name != self.MAP_QUERY_NAME:
 			self.get_logger().error("Ignoring response to query %s. Cannot be parsed via %s" % (request.name, self.parsePolygonShapeList.__name__))
 			return
@@ -77,21 +77,21 @@ class MapServiceInterface(Node):
 			if queryFeatures:
 				subRequest = QueryFeature.Request()
 				subRequest.name = fName
-				self.get_logger().info("Querying feature definition for \"%s\"." % subRequest.name)
+				self.get_logger().debug("Querying feature definition for \"%s\"." % subRequest.name)
 				boundParser = partial(self.__parseFeatureDefinition, region)
 				RosUtils.SendClientRequest(self, self.mapClient, subRequest, boundParser)
 
-		self.get_logger().info("Parsed %d items." % len(regions))
+		self.get_logger().debug("Parsed %d items." % len(regions))
 		if isinstance(self, MapServiceInterface):
 			self.__regions= regions
 		return regions
 
 	def render(self) -> None:
 		if not RViz.isRVizReady(self, self.__rvizPublisher):
-			self.get_logger().warn("Skipping map render... RViz is not ready yet to receive messages.")
+			self.get_logger().info("Skipping map render... RViz is not ready yet to receive messages.")
 			return
 		if len(self.__regions) == 0:
-			self.get_logger().warn("Skipping map render... No regions to render.")
+			self.get_logger().info("Skipping map render... No regions to render.")
 			return
 		message = MarkerArray()
 		for region in self.__regions:
@@ -100,7 +100,7 @@ class MapServiceInterface(Node):
 		return
 
 	def requestMap(self, mapClient: Client) -> None:
-		self.get_logger().info("Initializing map polygons for %s." % self.get_fully_qualified_name())
+		self.get_logger().debug("Initializing map polygons for %s." % self.get_fully_qualified_name())
 		if not mapClient.service_is_ready():
 			RosUtils.WaitForServicesToStart(self, mapClient)
 		request = QueryFeature.Request()
