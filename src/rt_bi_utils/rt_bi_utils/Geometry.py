@@ -34,6 +34,16 @@ class Geometry:
 	GeometricObject = Union[Polygon, MultiPolygon, LineString, MultiLineString, Point, MultiPoint]
 
 	@staticmethod
+	def __reportShapelyException(functionName: str, exc: Exception, objs: List[GeometricObject]) -> None:
+		Logger().error("1. Shapely exception.. in %s(): %s" % (functionName, repr(exc)))
+		Logger().error("2. Shapely exception.. args: %s" % (", ".join([repr(o) for o in objs])))
+		i = 3
+		for o in objs:
+			Logger().error("%d. Shapely exception.. Verts of %s: %s" % (i, repr(o), repr(Geometry.getGeometryCoords(o))))
+			i += 1
+		return
+
+	@staticmethod
 	def addCoords(c1: Coords, c2: Coords) -> Coords:
 		return(c1[0] + c2[0], c1[1] + c2[1])
 
@@ -228,7 +238,7 @@ class Geometry:
 		try:
 			return o1.intersects(o2)
 		except Exception as e:
-			Logger().warn("Shapely exception caught in intersects(): %s, %s" % (e.__class__.__name__, repr(e)))
+			Geometry.__reportShapelyException(Geometry.intersects.__name__, e, [o1, o2])
 			return False
 
 	@staticmethod
@@ -253,8 +263,7 @@ class Geometry:
 		try:
 			return o1.intersection(o2)
 		except Exception as e:
-			Logger().error("1. Shapely exception.. in intersection(): %s" % repr(e))
-			Logger().error("2. Shapely exception.. input args: %s, %s" % (repr(o1), repr(o2)))
+			Geometry.__reportShapelyException(Geometry.intersection.__name__, e, [o1, o2])
 			return type(o1)()
 
 	@staticmethod
@@ -263,11 +272,19 @@ class Geometry:
 		for p in polyList:
 			parts = make_valid(p)
 			validPolyList.append(parts)
-		return unary_union(validPolyList)
+		try:
+			return unary_union(validPolyList)
+		except Exception as e:
+			Geometry.__reportShapelyException(Geometry.union.__name__, e, polyList)
+			return type(polyList[0])()
 
 	@staticmethod
-	def subtract(poly1: Polygon, poly2: Polygon) -> Polygon:
-		return poly1.difference(poly2)
+	def subtract(p1: Polygon, p2: Polygon) -> Polygon:
+		try:
+			return p1.difference(p2)
+		except Exception as e:
+			Geometry.__reportShapelyException(Geometry.subtract.__name__, e, [p1, p2])
+			return type(p1)()
 
 	@staticmethod
 	def difference(p1: Polygon, p2: Polygon) -> List[Polygon]:
@@ -286,10 +303,14 @@ class Geometry:
 		`Union[List[Polygon], MultiPolygon]`
 			The a polygon or multi-polygon of the subtraction result.
 		"""
-		subtraction = p1.difference(p2) # FIXME: difference() is wrong because it excludes the boundaries of fov from the shadows
-		# subtraction = mapRegionPoly.difference(mapRegionPoly.intersection(fovPoly))
-		# subtraction = mapRegionPoly.symmetric_difference(fovPoly).difference(fovPoly)
-		return Geometry.toGeometryList(subtraction)
+		try:
+			subtraction = p1.difference(p2) # FIXME: difference() is wrong because it excludes the boundaries of fov from the shadows
+			# subtraction = mapRegionPoly.difference(mapRegionPoly.intersection(fovPoly))
+			# subtraction = mapRegionPoly.symmetric_difference(fovPoly).difference(fovPoly)
+			return Geometry.toGeometryList(subtraction)
+		except Exception as e:
+			Geometry.__reportShapelyException(Geometry.difference.__name__, e, [p1, p2])
+			return type(p1)()
 
 	@staticmethod
 	def __haveOverlappingEdge(p1: Polygon, p2: Polygon) -> bool:
@@ -555,4 +576,4 @@ MultiPoint.__repr__ = __multiGeometryRepr
 MultiLineString.__repr__ = __multiGeometryRepr
 MultiPolygon.__repr__ = __multiGeometryRepr
 
-# warnings.filterwarnings("error") # Turn shapely C++ errors into exceptions for better debugging.
+warnings.filterwarnings("error") # Turn shapely C++ errors into exceptions for better debugging.
