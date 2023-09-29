@@ -85,8 +85,8 @@ class ShadowTree(nx.DiGraph):
 			pastSensorRegion: SensorRegion = pastGraph.nodes[fov]["region"]
 			if fov not in nowGraph.nodes: continue
 			nowSensorRegion: SensorRegion = nowGraph.nodes[fov]["region"]
-			pastCoords = Geometry.getPolygonCoords(pastSensorRegion.interior)
-			nowCoords = Geometry.getPolygonCoords(nowSensorRegion.interior)
+			pastCoords = Geometry.getGeometryCoords(pastSensorRegion.interior)
+			nowCoords = Geometry.getGeometryCoords(nowSensorRegion.interior)
 			transformation: AffineTransform = Geometry.getAffineTransformation(pastCoords, nowCoords, nowSensorRegion.centerOfRotation)
 			ps = []
 			for e in nowSensorRegion.edges:
