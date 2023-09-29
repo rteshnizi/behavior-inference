@@ -1,15 +1,12 @@
-from typing import List, Tuple
 from rt_bi_utils.SaMsgs import SaMsgs
-
-def getPoses() -> List[Tuple[int, int]]:
-	pass
 
 BOTTOM_LEFT = (0, 10)
 BOTTOM_RIGHT = (0, 100)
 TOP_RIGHT = (500, 100)
 TOP_LEFT = (500, 10)
 
-class FeatureInfoIndividual:
+class FeatureInfoIndividualPy:
+	"""This class represents the data model used in the TAMU SA Semantic Map."""
 	def __init__(
 		self,
 		polygon_shape_list = SaMsgs.createSaPoseArrayMsg([BOTTOM_LEFT, BOTTOM_RIGHT, TOP_RIGHT, TOP_LEFT]),
@@ -28,5 +25,5 @@ class FeatureInfoIndividual:
 
 class Case1:
 	FeatureIndividuals = [
-		FeatureInfoIndividual(),
+		FeatureInfoIndividualPy(),
 	]

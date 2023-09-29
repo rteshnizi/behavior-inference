@@ -4,7 +4,7 @@ from sa_msgs.msg import FeatureInfoIndividual
 from sa_msgs.srv import QueryFeature
 
 import rt_bi_utils.Ros as RosUtils
-from rt_bi_emulator.Case1 import Case1
+from rt_bi_emulator.Map.FeatureInfoIndividual import Case1
 from rt_bi_utils.SaMsgs import SaMsgs
 
 
