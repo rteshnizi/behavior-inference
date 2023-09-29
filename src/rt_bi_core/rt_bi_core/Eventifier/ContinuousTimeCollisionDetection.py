@@ -1,5 +1,7 @@
 from typing import Dict, List, Literal, Tuple, Union
 
+from visualization_msgs.msg import MarkerArray
+
 from rt_bi_core.Eventifier.FieldOfView import FieldOfView
 from rt_bi_core.Model.AffineRegion import AffineRegion
 from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
@@ -7,6 +9,7 @@ from rt_bi_core.Model.RegularAffineRegion import RegularAffineRegion
 from rt_bi_utils.Geometry import AffineTransform, Geometry, LineString, MultiPolygon, Polygon
 from rt_bi_utils.Pose import Pose
 from rt_bi_utils.Ros import Logger, Publisher
+from rt_bi_utils.RViz import Color, KnownColors, RViz
 
 
 class ContinuousTimeCollisionDetection:
@@ -300,6 +303,8 @@ class ContinuousTimeCollisionDetection:
 		i = 0
 		while len(haveOverlap) > 0 and i < len(haveOverlap):
 			(movingEdge, staticEdge, intervalStart, intervalEnd) = haveOverlap.pop(i)
+			cls.__renderLineString([movingEdge], KnownColors.PURPLE, 3)
+			cls.__renderLineString([staticEdge], KnownColors.GREEN, 3)
 			intervalMid = (intervalStart + intervalEnd) / 2
 			collisionCheckResults = cls.__checkEdgeIntervalForCollision(movingEdge, staticEdge, transformation, movingRegion.centerOfRotation, intervalStart, intervalMid)
 			if collisionCheckResults[0] != collisionCheckResults[1]:
@@ -376,6 +381,16 @@ class ContinuousTimeCollisionDetection:
 		return collisionData
 
 	@classmethod
+	def __renderLineString(cls, line: LineString, color: Color, renderWidth: float = 1.0) -> None:
+		if cls.__rvizPublisher is None: return
+		strId = repr(Geometry.lineStringId(line))
+		marker = RViz.CreateLine(strId, Geometry.getGeometryCoords(line), color, renderWidth)
+		msg = MarkerArray()
+		msg.markers.append(marker)
+		cls.__rvizPublisher.publish(msg)
+		return
+
+	@classmethod
 	def estimateIntermediateCollisionsWithPolygon(cls, pastSensors: FieldOfView, nowSensors: FieldOfView, polygon: Union[Polygon, MultiPolygon], rvizPublisher: Union[Publisher, None]) -> List[CollisionEvent]:
 		"""## Estimate Intermediate Collisions With A Fixed Polygon
 
@@ -400,7 +415,7 @@ class ContinuousTimeCollisionDetection:
 
 		cls.__rvizPublisher = rvizPublisher
 		collisionData: cls.RegularRegionCollisions = {}
-		# Begin by collecting the edges are that are in contact at the beginning and at the end of the motion.
+		cls.__renderLineString(polygon.exterior, KnownColors.BLUE, 2)
 		for sensorId in pastSensors:
 			if sensorId not in nowSensors:
 				continue
