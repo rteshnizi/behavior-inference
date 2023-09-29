@@ -157,7 +157,7 @@ class ConnectivityGraph(nx.DiGraph):
 			for i in range(len(insidePolys)):
 				poly = insidePolys[i]
 				name = "%s-%d" % (symbol.name, i)
-				region = SymbolRegion(name, Geometry.getPolygonCoords(poly), inFov=True)
+				region = SymbolRegion(name, Geometry.getGeometryCoords(poly), inFov=True)
 				self.__addNode(region)
 				broken = False
 				for fovNode in self.__sensorNodes:
@@ -173,7 +173,7 @@ class ConnectivityGraph(nx.DiGraph):
 			for i in range(len(shadows)):
 				poly = shadows[i]
 				name = "SYM-%s-%d" % (symbolName, (i + len(insidePolys)))
-				region = SymbolRegion(name, Geometry.getPolygonCoords(poly), inFov=False)
+				region = SymbolRegion(name, Geometry.getGeometryCoords(poly), inFov=False)
 				self.__addNode(region)
 				broken = False
 				for shadowNode in self.__shadowNodes:

@@ -32,7 +32,6 @@ class Geometry:
 	ConnectedGeometry = Union[Polygon, LineString, Point]
 	MultiGeometry = Union[MultiPolygon, MultiLineString, MultiPoint]
 	GeometricObject = Union[Polygon, MultiPolygon, LineString, MultiLineString, Point, MultiPoint]
-	OneDGeomObjects = Union[LineString, Point]
 
 	@staticmethod
 	def addCoords(c1: Coords, c2: Coords) -> Coords:
@@ -41,6 +40,24 @@ class Geometry:
 	@staticmethod
 	def addScalar(c1: Coords, s: float) -> Coords:
 		return(c1[0] + s, c1[1] + s)
+
+	@staticmethod
+	def getGeometryCoords(geom: ConnectedGeometry) -> CoordsList:
+		if not hasattr(geom, "exterior"):
+			if not hasattr(geom, "coords"):
+				Logger().error("Unknown geometry %s." % repr(geom))
+				return []
+			return list(geom.coords)
+		return list(geom.exterior.coords)
+
+	@staticmethod
+	def pointStringId(x: float, y: float) -> str:
+		return "%.2f,%.2f" % (x, y)
+
+	@staticmethod
+	def lineStringId(line: LineString) -> Tuple[str, ...]:
+		coords = Geometry.getGeometryCoords(line)
+		return tuple(Geometry.pointStringId(coord[0], coord[1]) for coord in coords)
 
 	@staticmethod
 	def vectorsAreEqual(vec1: Vector, vec2: Vector, withinEpsilon = True) -> bool:
@@ -55,8 +72,8 @@ class Geometry:
 
 	@staticmethod
 	def lineSegmentsAreAlmostEqual(l1: LineString, l2: LineString) -> bool:
-		l1Coords = list(l1.coords)
-		l2Coords = list(l2.coords)
+		l1Coords = Geometry.getGeometryCoords(l1)
+		l2Coords = Geometry.getGeometryCoords(l2)
 		if Geometry.coordsAreAlmostEqual(l1Coords[0], l2Coords[0]) and Geometry.coordsAreAlmostEqual(l1Coords[1], l2Coords[1]): return True
 		if Geometry.coordsAreAlmostEqual(l1Coords[0], l2Coords[1]) and Geometry.coordsAreAlmostEqual(l1Coords[1], l2Coords[0]): return True
 		return False
@@ -66,7 +83,7 @@ class Geometry:
 		return sqrt((y * y) + (x * x))
 
 	@staticmethod
-	def sortCoordinatesClockwise(coords: CoordsList) -> List[Coords]:
+	def sortCoordinatesClockwise(coords: CoordsList) -> CoordsList:
 		"""
 		(x,y)
 
@@ -151,7 +168,7 @@ class Geometry:
 		"""
 		if not Geometry.isLineSegment(l):
 			raise RuntimeError("This method is only tested for line segments")
-		coords = list(l.coords)
+		coords = Geometry.getGeometryCoords(l)
 		x = coords[1][0] - coords[0][0]
 		y = coords[1][1] - coords[0][1]
 		return (x, y)
@@ -180,27 +197,6 @@ class Geometry:
 		# So if the point is contained and the distance from exterior is minimal
 		# return polygon.contains(pt) and polygon.boundary.distance(pt) > Geometry.EPSILON
 		return polygon.contains(pt)
-
-	@staticmethod
-	def pointStringId(x: float, y: float) -> str:
-		return "%.2f,%.2f" % (x, y)
-
-	@staticmethod
-	def lineStringId(line: LineString) -> Tuple[str, ...]:
-		return Geometry.coordListStringId(list(line.exterior.coords))
-
-	@staticmethod
-	def coordListStringId(coords: CoordsList) -> Tuple[str, ...]:
-		return tuple(Geometry.pointStringId(coord[0], coord[1]) for coord in coords)
-
-	@staticmethod
-	def getPolygonCoords(p: Union[Polygon, MultiPolygon]) -> CoordsList:
-		return list(zip(*(p.exterior.coords.xy)))
-
-	@staticmethod
-	def createLine(xStart: float, yStart: float, xEnd: float, yEnd: float) -> LineString:
-		# TODO: A line seg might touch but not intersect
-		return LineString([(xStart, yStart), (xEnd, yEnd)])
 
 	@staticmethod
 	def lineSegmentSlope(segment: LineString) -> float:
@@ -428,14 +424,14 @@ class Geometry:
 
 	@staticmethod
 	def applyMatrixTransformToPolygon(transformation: AffineTransform, polygon: Polygon, centerOfRotation: Pose) -> Polygon:
-		pCoords = Geometry.getPolygonCoords(polygon)
+		pCoords = Geometry.getGeometryCoords(polygon)
 		transformedCoords = Geometry.applyMatrixTransformToCoordsList(transformation, pCoords, centerOfRotation)
 		transformedPolygon = Polygon(transformedCoords)
 		return transformedPolygon
 
 	@staticmethod
 	def applyMatrixTransformToLineString(transformation: AffineTransform, line: LineString, centerOfRotation: Pose) -> LineString:
-		pCoords = list(line.coords)
+		pCoords = Geometry.getGeometryCoords(line)
 		transformedCoords = Geometry.applyMatrixTransformToCoordsList(transformation, pCoords, centerOfRotation)
 		transformedLineString = LineString(transformedCoords)
 		return transformedLineString

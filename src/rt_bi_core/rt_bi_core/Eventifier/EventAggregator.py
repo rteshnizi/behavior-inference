@@ -61,7 +61,7 @@ class EventAggregator:
 			interpolatedTracks = cls.__interpolateTrack(pastCGraph.fieldOfView.tracks, nowCGraph.fieldOfView.tracks, eventTimeNs, event[1])
 			filteredTracks = {(tTime, tId): interpolatedTracks[(tTime, tId)] for (tTime, tId) in interpolatedTracks if tTime == eventTimeNs}
 			sensorPolys = Geometry.toGeometryList(intermediatePolygon)
-			fovRegions = [SensorRegion(centerOfRotation, idNum, envelope=Geometry.getPolygonCoords(poly), timeNanoSecs=eventTimeNs, tracks=filteredTracks) for poly in sensorPolys]
+			fovRegions = [SensorRegion(centerOfRotation, idNum, envelope=Geometry.getGeometryCoords(poly), timeNanoSecs=eventTimeNs, tracks=filteredTracks) for poly in sensorPolys]
 			graph = ConnectivityGraph(timeNanoSecs=eventTimeNs, mapRegions=nowCGraph.mapPerimeter, fovRegions=fovRegions)
 			if len(graphs) > 0 and cls.__isIsomorphic(graphs[-1], graph): continue
 			graphs.append(graph)
