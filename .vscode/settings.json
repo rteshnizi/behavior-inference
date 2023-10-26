@@ -602,7 +602,11 @@
 		"${workspaceFolder}/.isort.cfg"
 	],
 	"python.analysis.autoImportCompletions": true,
-	"mypy.targets": [
-		"./src"
+	"python.analysis.enablePytestSupport": false,
+	"python.analysis.typeCheckingMode": "basic",
+	"python.analysis.diagnosticMode": "workspace",
+	"python.analysis.exclude": [
+		"build",
+		"install"
 	]
 }
