@@ -1,8 +1,11 @@
-from typing import List, Set
+from typing import List, Sequence, Set, Union
+
+from visualization_msgs.msg import Marker
 
 import rt_bi_utils.Ros as RosUtils
 from rt_bi_core.Model.DynamicRegion import DynamicRegion
 from rt_bi_core.Model.RegularSpatialRegion import RegularSpatialRegion
+from rt_bi_utils.RViz import Color
 
 
 class RegularDynamicRegion(RegularSpatialRegion):
@@ -17,7 +20,7 @@ class RegularDynamicRegion(RegularSpatialRegion):
 	We allow at most a delay of some noticeable seconds between updates from a certain sensor before we declare it off.
 	"""
 
-	def __init__(self, regions: List[DynamicRegion] = []):
+	def __init__(self, regions: Sequence[DynamicRegion] = []):
 		super().__init__(regions=regions)
 
 	def __and__(self, other: "RegularDynamicRegion") -> Set[str]:
@@ -30,7 +33,9 @@ class RegularDynamicRegion(RegularSpatialRegion):
 		return super().__sub__(other)
 
 	def __getitem__(self, regionName: str) -> DynamicRegion:
-		return super().__getitem__(regionName)
+		region = super().__getitem__(regionName)
+		if not isinstance(region, DynamicRegion): raise TypeError("Unexpected region type")
+		return region
 
 	@property
 	def timeNanoSec(self) -> int:
@@ -39,13 +44,13 @@ class RegularDynamicRegion(RegularSpatialRegion):
 
 	def addConnectedComponent(self, region: DynamicRegion) -> None:
 		if not self.isEmpty and self.timeNanoSec - region.timeNanoSecs > self.MAX_UPDATE_DELAY_NS:
-			RosUtils.Logger().info(
+			RosUtils.Logger().debug(
 				"Discarded old region. Given region is older than %.2fs. Time difference = %d ns." %
 				(self.MAX_UPDATE_DELAY_NS / DynamicRegion.NANO_CONSTANT, self.timeNanoSec - region.timeNanoSecs)
 			)
 			return
 		if region.name in self.regionNames and self.timeNanoSec > region.timeNanoSecs:
-			RosUtils.Logger().info(
+			RosUtils.Logger().debug(
 				"Region %s already exist and will not be replaced by older version. self.t = %d and region.t = %d" %
 				(region.name, self.timeNanoSec, region.timeNanoSecs)
 			)
@@ -60,3 +65,6 @@ class RegularDynamicRegion(RegularSpatialRegion):
 
 	def difference(self, other: "RegularDynamicRegion") -> Set[str]:
 		return super().difference(other)
+
+	def render(self, envelopeColor: Union[Color, None] = None) -> List[Marker]:
+		return super().render(envelopeColor)
