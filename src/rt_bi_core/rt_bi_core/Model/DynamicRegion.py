@@ -53,6 +53,6 @@ class DynamicRegion(PolygonalRegion):
 		self.__timeNanoSecs = timeNanoSecs
 
 	@property
-	def timeNanoSecs(self) -> float:
-		"""If there is a timestamp associated, this returns the time, and `nan` otherwise."""
+	def timeNanoSecs(self) -> int:
+		"""The timestamp associated with the region in NanoSeconds."""
 		return self.__timeNanoSecs
