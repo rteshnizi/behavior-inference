@@ -7,7 +7,7 @@ from typing import List
 from rt_bi_utils.Geometry import AffineTransform, Geometry
 from rt_bi_utils.Pose import Pose
 
-logging.basicConfig(filemode=None, format="[%(levelname)s]: %(message)s", force=True, level=logging.INFO)
+logging.basicConfig(format="[%(levelname)s]: %(message)s", force=True, level=logging.INFO)
 
 #region Configuration of CLI Arguments
 argParser = ArgumentParser(
@@ -22,18 +22,12 @@ subParsers = argParser.add_subparsers(
 #region Rotation Parser
 rotationParser = subParsers.add_parser(
 	"rotation",
-	usage="%(prog)s \"[[283.602, 65.354], [296.297, 119.257], [120.804, 134.190]]\" -d 30 -c \"[120.804, 134.190]\"",
+	usage="%(prog)s \"[[283.602, 65.354], [296.297, 119.257], [120.804, 134.190]]\" -d 30",
 )
 rotationParser.add_argument(
 	"coordinates",
 	type=str,
 	help="The list of coordinates to be rotated."
-)
-rotationParser.add_argument(
-	"--center", "-c",
-	required=True,
-	type=str,
-	help="A coordinate to be used as the center of rotation.",
 )
 mxg = rotationParser.add_mutually_exclusive_group(required=True)
 mxg.add_argument(
@@ -51,7 +45,7 @@ mxg.add_argument(
 #region Get Angle Parser
 rotationParser = subParsers.add_parser(
 	"angle",
-	usage="%(prog)s \"[[283.602, 65.354], [296.297, 119.257], [120.804, 134.190]]\" \"[[200.612, -24.140], [244.985, 8.992], [120.148, 133.236]]\" -c \"[120.804, 134.190]\"",
+	usage="%(prog)s \"[[283.602, 65.354], [296.297, 119.257], [120.804, 134.190]]\" \"[[200.612, -24.140], [244.985, 8.992], [120.148, 133.236]]\"",
 )
 rotationParser.add_argument(
 	"coords1",
@@ -63,39 +57,29 @@ rotationParser.add_argument(
 	type=str,
 	help="Second list of coordinates."
 )
-rotationParser.add_argument(
-	"--center", "-c",
-	required=True,
-	type=str,
-	help="A coordinate to be used as the center of rotation.",
-)
 #endregion # cSpell: disable-line
 
 #endregion # cSpell: disable-line
 
-def getAngle(coords1: str, coords2: str, center: str) -> str:
-	coords1: Geometry.CoordsList = loads(coords1)
-	coords2: Geometry.CoordsList = loads(coords2)
-	center: Geometry.Coords = loads(center)
-	center: Pose = Pose(0, center[0], center[1], 0)
-	transformation = Geometry.getAffineTransformation(coords1, coords2, center)
+def getAngle(coords1: str, coords2: str) -> tuple:
+	__coords1: Geometry.CoordsList = loads(coords1)
+	__coords2: Geometry.CoordsList = loads(coords2)
+	transformation = Geometry.getAffineTransformation(__coords1, __coords2)
 	return (transformation.rotation, degrees(transformation.rotation))
 
-def rotateCoords(coords: str, angleD: float, angleR: float, center: str) -> List[List[float]]:
-	coords: Geometry.CoordsList = loads(coords)
-	center: Geometry.Coords = loads(center)
-	center: Pose = Pose(0, center[0], center[1], 0)
+def rotateCoords(coords: str, angleD: float, angleR: float) -> List[List[float]]:
+	__coords: Geometry.CoordsList = loads(coords)
 	angleR = radians(angleD) if angleR is None else angleR
 	transformation = AffineTransform(rotation=angleR)
-	transformed = Geometry.applyMatrixTransformToCoordsList(transformation, coords, center)
+	transformed = Geometry.applyMatrixTransformToCoordsList(transformation, __coords)
 	transformed = [list(c) for c in transformed]
 	return transformed
 
 def main(args: Namespace) -> None:
 	if args.command == "rotation":
-		logging.info(rotateCoords(args.coordinates, args.degrees, args.radians, args.center))
+		logging.info(rotateCoords(args.coordinates, args.degrees, args.radians))
 	elif args.command == "angle":
-		angles = getAngle(args.coords1, args.coords2, args.center)
+		angles = getAngle(args.coords1, args.coords2)
 		logging.info("%f rad = %f deg" % angles)
 	return
 
