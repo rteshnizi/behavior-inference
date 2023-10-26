@@ -13,6 +13,7 @@
 		"tyriar.sort-lines",
 		"redhat.vscode-yaml",
 		"daohong-emilio.yash",
-		"redhat.vscode-xml"
+		"redhat.vscode-xml",
+		"matangover.mypy"
 	]
 }

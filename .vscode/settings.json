@@ -492,7 +492,7 @@
 		"~/ros2_humble/install/ament_clang_format/lib/python3.8/site-packages"
 	],
 	"cSpell.words": [
-		"Anant",
+		"anant",
 		"eventifier",
 		"levelname",
 		"matplotlib",
@@ -506,7 +506,7 @@
 		"scipy",
 		"skimage",
 		"slerp",
-		"TAMU",
+		"tamu",
 		"tracklet",
 		"tracklets",
 		"traj",
@@ -515,10 +515,6 @@
 		"vects",
 		"verts"
 	],
-	"colcon.provideTasks": true,
-	"colcon.outputLog": true,
-	"colcon.outputLevel": "info",
-	"colcon.refreshOnConfigurationChanged": true,
 	"cSpell.enableFiletypes": [
 		"ros.msg",
 		"shellscript"
@@ -600,11 +596,13 @@
 			"source.organizeImports": true
 		},
 	},
-	"python.analysis.typeCheckingMode": "off",
 	"python.envFile": "/home/reza/git/behavior-inference/.vscode/colcon.rt.env",
 	"isort.args": [
 		"--settings-path",
 		"${workspaceFolder}/.isort.cfg"
 	],
-	"colcon.shellType": "bash"
+	"python.analysis.autoImportCompletions": true,
+	"mypy.targets": [
+		"./src"
+	]
 }
