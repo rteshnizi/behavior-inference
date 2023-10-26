@@ -1,6 +1,7 @@
 import logging
+from collections import UserList
 from math import isnan, nan
-from typing import Callable, Tuple, TypeVar, Union
+from typing import AbstractSet, Any, Callable, Sequence, Tuple, TypeVar, Union
 
 import rclpy
 from builtin_interfaces.msg import Time
@@ -9,19 +10,18 @@ from rclpy.node import Client, Node, Publisher, Subscription, Timer
 
 Topic = TypeVar("Topic")
 QueryRequest = TypeVar("QueryRequest")
-QueryResponse = TypeVar("QueryResponse")
 
 NAMESPACE = "rt_bi_core"
 __LOGGER: Union[RcutilsLogger, None] = None
 # In case of failure to obtain a ROS logger, the default Python logger will be used, which most likely will log to std stream.
-logging.basicConfig(filemode=None, format="[+][%(levelname)s]: %(message)s", force=True)
+logging.basicConfig(format="[+][%(levelname)s]: %(message)s", force=True)
 
 def SetLogger(logger: RcutilsLogger) -> None:
 	global __LOGGER
 	__LOGGER = logger
 	return
 
-def Logger() -> RcutilsLogger:
+def Logger() -> Union[RcutilsLogger, logging.Logger]:
 	global __LOGGER
 	if __LOGGER is None:
 		context = rclpy.get_default_context()
@@ -44,7 +44,7 @@ def RosTimeStamp() -> Time:
 		raise RuntimeError("ROS context not OK!")
 	return rclpy.get_global_executor()._clock.now().to_msg()
 
-def CreatePublisher(node: Node, topic: Topic, topicName: str, callbackFunc: Callable = lambda: None, intervalSecs: float = nan) -> Tuple[Publisher, Union[Timer, None]]:
+def CreatePublisher(node: Node, topic: Topic, topicName: str, callbackFunc: Callable[[Topic], None] = lambda _: None, intervalSecs: float = nan) -> Tuple[Publisher, Union[Timer, None]]:
 	"""
 	Create and return the tuple of `(Publisher, Timer | None)`.
 
@@ -69,7 +69,7 @@ def CreatePublisher(node: Node, topic: Topic, topicName: str, callbackFunc: Call
 	publisher = node.create_publisher(topic, topicName, 10)
 	timer = None if isnan(intervalSecs) else node.create_timer(intervalSecs, callbackFunc)
 	try:
-		freq = " @ %.2fHz" % 1 / intervalSecs
+		freq = " @ %.2fHz" % (1 / intervalSecs)
 	except:
 		freq = ""
 	node.get_logger().debug("%s publishes topic \"%s\"%s" % (node.get_fully_qualified_name(), topicName, freq))
@@ -118,17 +118,30 @@ def CreateTopicName(shortTopicName: str) -> str:
 	"""
 	return "/%s/%s" % (NAMESPACE, shortTopicName)
 
-def SendClientRequest(node: Node, client: Client, request: QueryRequest, responseCallback: Callable[[QueryRequest, QueryResponse], None]) -> None:
+def SendClientRequest(node: Node, client: Client, request: QueryRequest, responseCallback: Callable[[QueryRequest, Any], None]) -> None:
 	future = client.call_async(request)
 	rclpy.spin_until_future_complete(node, future)
 	responseCallback(request, future.result())
 	# FIXME: Add try catch for error handling of service request and return true or false for indication
 	return None
 
-def WaitForServicesToStart(node: Node, client: Client = None) -> None:
+def WaitForServicesToStart(node: Node, client: Union[Client, None] = None) -> None:
 	clientList = node.clients if client is None else [client]
 	for client in clientList:
 		while not client.wait_for_service():
 			node.get_logger().debug("Client %s is waiting for service %s" % (node.get_name(), client.srv_name))
 	node.get_logger().debug("Client %s is ready"% node.get_name())
 	return
+
+def AppendMessage(array: Union[Sequence, AbstractSet, UserList], msg: Any) -> None:
+	"""Appends a message to a message array
+
+	Parameters
+	----------
+	array : Union[Sequence, AbstractSet, UserList]
+		The array.
+	msg : Any
+		The message.
+	"""
+	if isinstance(array, UserList): array.append(msg)
+	else: Logger().error("Failed to add message to array.")
