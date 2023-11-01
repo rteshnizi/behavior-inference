@@ -606,7 +606,13 @@
 	"python.analysis.diagnosticMode": "workspace",
 	"python.analysis.typeCheckingMode": "basic",
 	"python.analysis.exclude": [
-		"build",
-		"install"
+		"**/build",
+		"**/install",
+		"**/ContinuousTimeCollisionDetection.v1.py",
+		"**/BehaviorAutomaton"
 	],
+	"window.autoDetectColorScheme": true,
+	"workbench.preferredLightColorTheme": "Quiet Light",
+	"workbench.preferredDarkColorTheme": "Solarized Dark",
+	"workbench.colorTheme": "Quiet Light",
 }
