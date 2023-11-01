@@ -11,21 +11,22 @@ from visualization_msgs.msg import Marker, MarkerArray
 import rt_bi_utils.Ros as RosUtils
 from rt_bi_utils.Geometry import Geometry
 
-Color = Tuple[float, float, float, float]
+numeric = Union[int, float]
+Color = Tuple[numeric, numeric, numeric, numeric]
 """ A tuple that represents an RGBA value. Values between [0-1]. """
 
 class KnownColors:
-	TRANSPARENT: Color = 	[0, 0, 0, 0]
-	WHITE: Color = 			[1, 1, 1, 1]
-	LIGHT_GREY: Color = 	[0.75, 0.75, 0.75, 1]
-	GREY: Color = 			[0.5, 0.5, 0.5, 1]
-	DARK_GREY: Color = 		[0.25, 0.25, 0.25, 1]
-	BLACK: Color = 			[0, 0, 0, 1]
-	RED: Color = 			[1, 0, 0, 1]
-	MAROON: Color = 		[0.502, 0, 0, 1]
-	GREEN: Color = 			[0, 1, 0 , 1]
-	BLUE: Color = 			[0, 0, 1, 1]
-	PURPLE: Color = 		[0.36, 0.25, 0.83, 1]
+	TRANSPARENT: Color = 	(0, 0, 0, 0)
+	WHITE: Color = 			(1, 1, 1, 1)
+	LIGHT_GREY: Color = 	(0.75, 0.75, 0.75, 1)
+	GREY: Color = 			(0.5, 0.5, 0.5, 1)
+	DARK_GREY: Color = 		(0.25, 0.25, 0.25, 1)
+	BLACK: Color = 			(0, 0, 0, 1)
+	RED: Color = 			(1, 0, 0, 1)
+	MAROON: Color = 		(0.502, 0, 0, 1)
+	GREEN: Color = 			(0, 1, 0, 1)
+	BLUE: Color = 			(0, 0, 1, 1)
+	PURPLE: Color = 		(0.36, 0.25, 0.83, 1)
 
 class RViz:
 	"""
@@ -43,6 +44,9 @@ class RViz:
 
 	@staticmethod
 	def isRVizReady(node: Node, publisher: Publisher) -> bool:
+		if node.executor is None:
+			node.get_logger().error("No Executor.")
+			return False
 		if any(n for n in node.executor.get_nodes() if n.get_name().lower().find("rviz") > -1):
 			node.get_logger().warn("No node containing the name RViz was found.")
 			return False
@@ -142,7 +146,7 @@ class RViz:
 		else: return False
 
 	@staticmethod
-	def CreateCircle(strId: str, centerX: float, centerY: float, radius: float, outline: Color, width = 1.0) -> Marker:
+	def createCircle(strId: str, centerX: float, centerY: float, radius: float, outline: Color, width = 1.0) -> Marker:
 		"""
 		Returns shape id
 
@@ -158,7 +162,7 @@ class RViz:
 
 		tag: a unique identifier (use entity name)
 		"""
-		RosUtils.Logger().debug("Render circle id %s" % strId)
+		RosUtils.Logger().debug("Render circle id %s." % strId)
 		circle = Marker()
 		circle = RViz.__setMarkerHeader(circle)
 		circle = RViz.__setMarkerId(circle, strId)
@@ -168,13 +172,13 @@ class RViz:
 		circle.scale.x = width
 		for i in range(32):
 			p = RViz.__createPointMessage(centerX + (radius * cos(i)), centerY + (radius * sin(i)))
-			circle.points.append(p)
+			RosUtils.AppendMessage(circle.points, p)
 		p = RViz.__createPointMessage(centerX + (radius * cos(0)), centerY + (radius * sin(0)))
-		circle.points.append(p)
+		RosUtils.AppendMessage(circle.points, p)
 		return circle
 
 	@staticmethod
-	def CreatePolygon(strId: str, coords: Geometry.CoordsList, outline: Color, width: float) -> Marker:
+	def createPolygon(strId: str, coords: Geometry.CoordsList, outline: Color, width: float) -> Marker:
 		"""
 		Returns shape id
 
@@ -188,7 +192,7 @@ class RViz:
 
 		tag: a unique identifier (use entity name)
 		"""
-		RosUtils.Logger().debug("Render polygon ID %s" % strId)
+		RosUtils.Logger().debug("Render polygon id %s." % strId)
 		polygon = Marker()
 		polygon = RViz.__setMarkerHeader(polygon)
 		polygon = RViz.__setMarkerId(polygon, strId)
@@ -197,13 +201,13 @@ class RViz:
 		# LINE_STRIP markers use only the x component of scale, for the line width
 		polygon.scale.x = float(width)
 		for (x, y) in coords:
-			polygon.points.append(RViz.__createPointMessage(x, y))
+			RosUtils.AppendMessage(polygon.points, RViz.__createPointMessage(x, y))
 
-		polygon.points.append(RViz.__createPointMessage(*coords[0]))
+		RosUtils.AppendMessage(polygon.points, RViz.__createPointMessage(*coords[0]))
 		return polygon
 
 	@staticmethod
-	def CreateLine(strId: str, coords: Geometry.CoordsList, outline: Color, width = 1.0, arrow = False) -> Marker:
+	def createLine(strId: str, coords: Geometry.CoordsList, outline: Color, width = 1.0, arrow = False) -> Marker:
 		"""
 		Returns shape id, or None if there are no points.
 
@@ -217,7 +221,7 @@ class RViz:
 
 		tag: a unique identifier (use entity name)
 		"""
-		RosUtils.Logger().debug("Render line strip id %s" % strId)
+		RosUtils.Logger().debug("Render line strip id %s." % strId)
 		lineSeg = Marker()
 		lineSeg = RViz.__setMarkerHeader(lineSeg)
 		lineSeg = RViz.__setMarkerId(lineSeg, strId)
@@ -226,11 +230,11 @@ class RViz:
 		# LINE_STRIP markers use only the x component of scale, for the line width
 		lineSeg.scale.x = float(width)
 		for (x, y) in coords:
-			lineSeg.points.append(RViz.__createPointMessage(x, y))
+			RosUtils.AppendMessage(lineSeg.points, RViz.__createPointMessage(x, y))
 		return lineSeg
 
 	@staticmethod
-	def CreateText(strId: str, coords: Geometry.Coords, text: str, outline: Color = KnownColors.BLACK, fontSize = 10.0) -> Marker:
+	def createText(strId: str, coords: Geometry.Coords, text: str, outline: Color = KnownColors.BLACK, fontSize = 10.0) -> Marker:
 		"""Create a text Marker message.
 
 		Parameters
@@ -252,7 +256,7 @@ class RViz:
 			The marker message.
 		"""
 		# RosUtils.Logger().info("Render text ID %s with content \"%s\"" % (strId, text))
-		RosUtils.Logger().debug("Render text id %s" % strId)
+		RosUtils.Logger().debug("Render text id %s." % strId)
 		textMarker = Marker()
 		textMarker = RViz.__setMarkerHeader(textMarker)
 		textMarker = RViz.__setMarkerId(textMarker, strId)
@@ -264,10 +268,24 @@ class RViz:
 		return textMarker
 
 	@staticmethod
-	def RemoveShape() -> None:
+	def removeShape(strId: str) -> None:
 		"""
-		Remove a shape from canvas
+		Remove a shape from RViz.
 		"""
-		RosUtils.Logger().info("Clear shape.")
-		RosUtils.Logger().warn("Maybe deprecated function?")
+		RosUtils.Logger().debug("Clear rendered RViz shape id %s." % strId)
+		marker = Marker()
+		marker = RViz.__setMarkerHeader(marker)
+		marker.action = Marker.DELETE # To remove shape
+		marker = RViz.__setMarkerId(marker, strId)
+		return
+
+	@staticmethod
+	def removeAllShapes() -> None:
+		"""
+		Remove all shapes from RViz
+		"""
+		RosUtils.Logger().debug("Clear all rendered shapes from RViz.")
+		marker = Marker()
+		marker = RViz.__setMarkerHeader(marker)
+		marker.action = Marker.DELETEALL # To remove shape # CSpell: disable-line
 		return

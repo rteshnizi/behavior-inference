@@ -31,7 +31,7 @@ class SaMsgs:
 	def convertSaPoseListToCoordsList(saPoseSeq: Sequence[SaPoseMsg]) -> Geometry.CoordsList:
 		coords: Geometry.CoordsList = []
 		for saPose in saPoseSeq:
-			coords.append(SaMsgs.convertSaPoseToCoords(saPose))
+			RosUtils.AppendMessage(coords, SaMsgs.convertSaPoseToCoords(saPose))
 		return coords
 
 	@staticmethod
@@ -72,7 +72,7 @@ class SaMsgs:
 		"""
 		message = SaPoseArray()
 		for coord in coords:
-			message.traj.append(SaMsgs.createSaPoseMsg(*coord))
+			RosUtils.AppendMessage(message.traj, SaMsgs.createSaPoseMsg(*coord))
 		return message
 
 	@staticmethod
@@ -92,11 +92,11 @@ class SaMsgs:
 		"""
 		message = SaFovMsg()
 		for coord in coords:
-			message.corners.append(SaMsgs.createSaPoseMsg(*coord))
+			RosUtils.AppendMessage(message.corners, SaMsgs.createSaPoseMsg(*coord))
 		return message
 
 	@staticmethod
-	def subscribeToMapUpdateTopic(node: Node, callbackFunc: Callable[[FeatureInfo], None]) -> None:
+	def subscribeToMapUpdateTopic(node: Node, callbackFunc: Callable[[type[FeatureInfo]], None]) -> None:
 		RosUtils.CreateSubscriber(node, FeatureInfo, SaMsgs.__MAP_UPDATE_TOPIC, callbackFunc)
 
 	@staticmethod
@@ -104,11 +104,11 @@ class SaMsgs:
 		return RosUtils.CreatePublisher(node, RobotState, SaMsgs.__ROBOT_STATE_TOPIC, callbackFunc, intervalSecs)
 
 	@staticmethod
-	def subscribeToSaRobotStateTopic(node: Node, callbackFunc: Callable[[RobotState], None]) -> None:
+	def subscribeToSaRobotStateTopic(node: Node, callbackFunc: Callable[[type[RobotState]], None]) -> None:
 		RosUtils.CreateSubscriber(node, RobotState, SaMsgs.__ROBOT_STATE_TOPIC, callbackFunc)
 
 	@staticmethod
-	def subscribeToSaEstimationTopic(node: Node, callbackFunc: Callable[[EstimationMsg], None]) -> None:
+	def subscribeToSaEstimationTopic(node: Node, callbackFunc: Callable[[type[EstimationMsg]], None]) -> None:
 		RosUtils.CreateSubscriber(node, EstimationMsg, SaMsgs.__ESTIMATION_TOPIC, callbackFunc)
 
 	@staticmethod

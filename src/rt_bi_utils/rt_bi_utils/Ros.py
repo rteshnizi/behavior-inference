@@ -8,7 +8,7 @@ from builtin_interfaces.msg import Time
 from rclpy.impl.rcutils_logger import RcutilsLogger
 from rclpy.node import Client, Node, Publisher, Subscription, Timer
 
-Topic = TypeVar("Topic")
+Topic = TypeVar("Topic", bound=type)
 QueryRequest = TypeVar("QueryRequest")
 
 NAMESPACE = "rt_bi_core"
@@ -134,7 +134,7 @@ def WaitForServicesToStart(node: Node, client: Union[Client, None] = None) -> No
 	return
 
 def AppendMessage(array: Union[Sequence, AbstractSet, UserList], msg: Any) -> None:
-	"""Appends a message to a message array
+	"""Appends a message to a message array.
 
 	Parameters
 	----------
@@ -143,5 +143,5 @@ def AppendMessage(array: Union[Sequence, AbstractSet, UserList], msg: Any) -> No
 	msg : Any
 		The message.
 	"""
-	if isinstance(array, UserList): array.append(msg)
-	else: Logger().error("Failed to add message to array.")
+	assert isinstance(array, UserList), "Failed to add message to array."
+	array.append(msg)

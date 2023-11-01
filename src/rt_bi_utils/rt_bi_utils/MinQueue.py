@@ -101,8 +101,8 @@ class MinQueue(Generic[DataType]):
 		item : DataType
 			The item to be added to the queue.
 		"""
-		item = self.__createTuple(item)
-		heapq.heappush(self.__data, item)
+		itemTuple = self.__createTuple(item)
+		heapq.heappush(self.__data, itemTuple)
 		return
 
 	def dequeue(self) -> DataType:

@@ -1,4 +1,5 @@
 import operator
+import traceback
 import warnings
 from functools import reduce
 from math import atan2, cos, degrees, inf, sin, sqrt
@@ -31,16 +32,21 @@ class Geometry:
 	CoordsMap = Dict[Coords, Coords]
 	ConnectedGeometry = Union[Polygon, LineString, Point]
 	MultiGeometry = Union[MultiPolygon, MultiLineString, MultiPoint]
-	GeometricObject = Union[Polygon, MultiPolygon, LineString, MultiLineString, Point, MultiPoint]
+	Geometry = Union[Polygon, MultiPolygon, LineString, MultiLineString, Point, MultiPoint]
 
 	@staticmethod
-	def __reportShapelyException(functionName: str, exc: Exception, objs: List[GeometricObject]) -> None:
+	def __reportShapelyException(functionName: str, exc: Exception, objs: List[Geometry]) -> None:
 		Logger().error("1. Shapely exception.. in %s(): %s" % (functionName, repr(exc)))
 		Logger().error("2. Shapely exception.. args: %s" % (", ".join([repr(o) for o in objs])))
 		i = 3
 		for o in objs:
-			Logger().error("%d. Shapely exception.. Verts of %s: %s" % (i, repr(o), repr(Geometry.getGeometryCoords(o))))
+			if hasattr(o, "geoms"):
+				verts = [Geometry.getGeometryCoords(g) for g in o.geoms]
+			else:
+				verts = Geometry.getGeometryCoords(o)
+			Logger().error("%d. Shapely exception.. Verts of %s: %s" % (i, repr(o), repr(verts)))
 			i += 1
+		Logger().info("%d. Shapely exception.. Stack trace:\n%s" % (i, traceback.format_exc()))
 		return
 
 	@staticmethod
@@ -57,7 +63,8 @@ class Geometry:
 			if not hasattr(geom, "coords"):
 				Logger().error("Unknown geometry %s." % repr(geom))
 				return []
-			return list(geom.coords)
+			return list(geom.coords) # type: ignore
+
 		return list(geom.exterior.coords)
 
 	@staticmethod
@@ -108,7 +115,7 @@ class Geometry:
 		return isinstance(l, LineString) and len(l.coords) == 2
 
 	@staticmethod
-	def orthogonal(p1: Coords, p2: Coords) -> float:
+	def orthogonal(p1: Coords, p2: Coords) -> Coords:
 		return (p2[1] - p1[1], -1 * (p2[0] - p1[0]))
 
 	@staticmethod
@@ -217,7 +224,7 @@ class Geometry:
 		return slope
 
 	@staticmethod
-	def intersects(o1: GeometricObject, o2: GeometricObject) -> bool:
+	def intersects(o1: Geometry, o2: Geometry) -> bool:
 		"""## Intersects
 		A function to safely test if two geometries intersect while handling shapely exceptions and warnings.
 
@@ -242,7 +249,7 @@ class Geometry:
 			return False
 
 	@staticmethod
-	def intersection(o1: GeometricObject, o2: GeometricObject) -> GeometricObject:
+	def intersection(o1: Geometry, o2: Geometry) -> Geometry:
 		"""## Intersects
 		A function to safely test obtain the intersection of two geometries while handling shapely exceptions and warnings.
 
@@ -261,7 +268,10 @@ class Geometry:
 		if (not o1.is_valid) or (not o2.is_valid): return type(o1)()
 		if o1.is_empty or o2.is_empty: return type(o1)()
 		try:
-			return o1.intersection(o2)
+			if Geometry.intersects(o1, o2):
+				return o1.intersection(o2)
+			else:
+				return type(o1)()
 		except Exception as e:
 			Geometry.__reportShapelyException(Geometry.intersection.__name__, e, [o1, o2])
 			return type(o1)()
@@ -275,16 +285,8 @@ class Geometry:
 		try:
 			return unary_union(validPolyList)
 		except Exception as e:
-			Geometry.__reportShapelyException(Geometry.union.__name__, e, polyList)
+			Geometry.__reportShapelyException(Geometry.union.__name__, e, validPolyList)
 			return type(polyList[0])()
-
-	@staticmethod
-	def subtract(p1: Polygon, p2: Polygon) -> Polygon:
-		try:
-			return p1.difference(p2)
-		except Exception as e:
-			Geometry.__reportShapelyException(Geometry.subtract.__name__, e, [p1, p2])
-			return type(p1)()
 
 	@staticmethod
 	def difference(p1: Polygon, p2: Polygon) -> List[Polygon]:
@@ -304,13 +306,16 @@ class Geometry:
 			The a polygon or multi-polygon of the subtraction result.
 		"""
 		try:
-			subtraction = p1.difference(p2) # FIXME: difference() is wrong because it excludes the boundaries of fov from the shadows
-			# subtraction = mapRegionPoly.difference(mapRegionPoly.intersection(fovPoly))
-			# subtraction = mapRegionPoly.symmetric_difference(fovPoly).difference(fovPoly)
-			return Geometry.toGeometryList(subtraction)
+			if Geometry.intersects(p1, p2):
+				subtraction = p1.difference(p2) # FIXME: difference() is wrong because it excludes the boundaries of fov from the shadows
+				# subtraction = mapRegionPoly.difference(mapRegionPoly.intersection(fovPoly))
+				# subtraction = mapRegionPoly.symmetric_difference(fovPoly).difference(fovPoly)
+				return Geometry.toGeometryList(subtraction)
+			else:
+				return [p1]
 		except Exception as e:
 			Geometry.__reportShapelyException(Geometry.difference.__name__, e, [p1, p2])
-			return type(p1)()
+			return [type(p1)()]
 
 	@staticmethod
 	def __haveOverlappingEdge(p1: Polygon, p2: Polygon) -> bool:
@@ -366,9 +371,39 @@ class Geometry:
 		return edges
 
 	@staticmethod
-	def getAffineTransformation(start: CoordsList, end: CoordsList, centerOfRotation: Pose) -> AffineTransform:
+	def getCenterOfRotation(transformation: AffineTransform) -> Coords:
+		"""
+		Estimate the center of rotation.
+
+		Parameters
+		----------
+		transformation : `AffineTransform`
+			The transformation.
+
+		Returns
+		-------
+		`Coords`
+			The center of rotation.
+		"""
+		matrix = transformation.params
+		"""
+		```py
+		[[a0  a1  a2]
+		 [b0  b1  b2]
+		 [0   0    1]]
+		```
+		"""
+		(a0, a1, a2) = (matrix[0][0], matrix[0][1], matrix[0][2])
+		(b0, b1, b2) = (matrix[1][0], matrix[1][1], matrix[1][2])
+		x: float = (a2 + ((a1 * b2) / (1 - b1))) / (1 - a0 - ((a1 * b0) / (1 - b1)))
+		y: float = (b0 * x + b2) / (1 - b1)
+		return (x, y)
+
+	@staticmethod
+	def getAffineTransformation(start: CoordsList, end: CoordsList) -> AffineTransform:
 		"""
 		Estimate the affine transformation matrix that would transform the given polygon from the start state to end state.
+		This method assumes that the vertices are ordered (labeled).
 
 		Parameters
 		----------
@@ -376,8 +411,6 @@ class Geometry:
 			The starting configuration of the polygon.
 		end : Polygon
 			The starting configuration of the polygon.
-		centerOfRotation : Coords
-			The center of rotation of the rotation motion.
 
 		Returns
 		-------
@@ -386,12 +419,8 @@ class Geometry:
 		"""
 		startCoords = np.array(start)
 		endCoords = np.array(end)
-		startCoords = [(coords[0] - centerOfRotation.x, coords[1] - centerOfRotation.y) for coords in startCoords]
-		endCoords = [(coords[0] - centerOfRotation.x, coords[1] - centerOfRotation.y) for coords in endCoords]
-		startCoords = np.array(startCoords)
-		endCoords = np.array(endCoords)
-		matrix = transform.estimate_transform("affine", startCoords, endCoords)
-		# matrix = transform.estimate_transform("similarity", startCoords, endCoords)
+		weights = np.ones(len(start))
+		matrix = transform.estimate_transform("affine", startCoords, endCoords, weights=weights)
 		return matrix
 
 	@staticmethod
@@ -407,14 +436,11 @@ class Geometry:
 			* The affine transformation at `param == 1` is the given transformation,
 			* A slerp method is used to obtain the rotation interpolation.
 		"""
-		if param > 1 or param < 0:
-			raise ValueError("Parameter should be in range [0, 1]. Given param = %f" % param)
+		if param > 1 or param < 0: raise ValueError("Parameter should be in range [0, 1]. Given param = %f" % param)
 		# Easy cases that do not need calculation
 		if param == 0: return AffineTransform(np.identity(3))
 		if param == 1: return AffineTransform(transformation.params)
-		# Other params
-		# scale = [((transformation.scale[0] - 1) * param) + 1, ((transformation.scale[1] - 1) * param) + 1]
-		scale = 1
+		scale = [((transformation.scale[0] - 1) * param) + 1, ((transformation.scale[1] - 1) * param) + 1]
 		rotations = Rotation.from_matrix([
 			[
 				[1, 0, 0],
@@ -428,32 +454,33 @@ class Geometry:
 			]
 		])
 		slerp = Slerp([0, 1], rotations)
-		rotation = slerp([0, param, 1])[1].as_euler('xyz')[2]
-		# shear = transformation.shear * param
-		shear = 0
+		# https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.transform.Rotation.as_euler.html#scipy-spatial-transform-rotation-as-euler
+		# Any orientation can be expressed as a composition of 3 elementary rotations.
+		# Once the axis sequence has been chosen, Euler angles define the angle of rotation around each respective axis
+		rotation = slerp([0, param, 1])[1].as_euler("xyz")[2]
+		shear = transformation.shear * param
+		# shear = 0
 		translation = [transformation.translation[0] * param, transformation.translation[1] * param]
 		# translation = [0, 0]
 		parameterizedMatrix = AffineTransform(matrix=None, scale=scale, rotation=rotation, shear=shear, translation=translation)
 		return parameterizedMatrix
 
 	@staticmethod
-	def applyMatrixTransformToCoordsList(transformation: AffineTransform, coordsList: CoordsList, centerOfRotation: Pose) -> CoordsList:
-		coordsList = [(coords[0] - centerOfRotation.x, coords[1] - centerOfRotation.y) for coords in coordsList]
+	def applyMatrixTransformToCoordsList(transformation: AffineTransform, coordsList: CoordsList) -> CoordsList:
 		transformedCoords = transform.matrix_transform(coordsList, transformation.params)
-		transformedCoords = [(coords[0] + centerOfRotation.x, coords[1] + centerOfRotation.y) for coords in transformedCoords]
 		return transformedCoords
 
 	@staticmethod
-	def applyMatrixTransformToPolygon(transformation: AffineTransform, polygon: Polygon, centerOfRotation: Pose) -> Polygon:
+	def applyMatrixTransformToPolygon(transformation: AffineTransform, polygon: Polygon) -> Polygon:
 		pCoords = Geometry.getGeometryCoords(polygon)
-		transformedCoords = Geometry.applyMatrixTransformToCoordsList(transformation, pCoords, centerOfRotation)
+		transformedCoords = Geometry.applyMatrixTransformToCoordsList(transformation, pCoords)
 		transformedPolygon = Polygon(transformedCoords)
 		return transformedPolygon
 
 	@staticmethod
-	def applyMatrixTransformToLineString(transformation: AffineTransform, line: LineString, centerOfRotation: Pose) -> LineString:
+	def applyMatrixTransformToLineString(transformation: AffineTransform, line: LineString) -> LineString:
 		pCoords = Geometry.getGeometryCoords(line)
-		transformedCoords = Geometry.applyMatrixTransformToCoordsList(transformation, pCoords, centerOfRotation)
+		transformedCoords = Geometry.applyMatrixTransformToCoordsList(transformation, pCoords)
 		transformedLineString = LineString(transformedCoords)
 		return transformedLineString
 
@@ -552,14 +579,13 @@ def __pointMulScalar(self: Point, num: float) -> Point:
 	return Point(self.x * num, self.y * num)
 
 def __connectedGeometryRepr(self: Geometry.ConnectedGeometry) -> str:
-	return "[#%d, v:%s, e:%s]" % (
-		len(self.coords) if isinstance(self, LineString) else len(self.exterior.coords),
-		"Y" if self.is_valid else "N",
-		"Y" if self.is_empty else "N",
-	)
+	coordsList = Geometry.getGeometryCoords(self)
+	if len(coordsList) > 0 and len(coordsList) < 4:
+		return "%s" % repr(coordsList)
+	return "[#%d, v:%s, e:%s]" % (len(coordsList), "Y" if self.is_valid else "N", "Y" if self.is_empty else "N")
 
 def __multiGeometryRepr(self: Geometry.MultiGeometry) -> str:
-	return "{%s}" % ", ".join([repr(o) for o in self])
+	return "{%s}" % ", ".join([repr(o) for o in self.geoms])
 
 Point.__neg__ = __pointNeg
 Point.__add__ = __pointAdd
@@ -567,10 +593,10 @@ Point.__sub__ = __pointSub
 Point.__mul__ = __pointMulScalar
 Point.__truediv__ = __pointDivScalar
 
-Point.__repr__ = lambda p: "%s" % repr((p.x, p.y))
-LinearRing.__repr__ = lambda o: "R%s" % __connectedGeometryRepr(o)
-LineString.__repr__ = lambda o: "L%s" % __connectedGeometryRepr(o)
-Polygon.__repr__ = lambda o: "P%s" % __connectedGeometryRepr(o)
+Point.__repr__ = lambda self: "%s" % repr((self.x, self.y))
+LinearRing.__repr__ = lambda self: "R%s" % __connectedGeometryRepr(self)
+LineString.__repr__ = lambda self: "L%s" % __connectedGeometryRepr(self)
+Polygon.__repr__ = lambda self: "P%s" % __connectedGeometryRepr(self)
 
 MultiPoint.__repr__ = __multiGeometryRepr
 MultiLineString.__repr__ = __multiGeometryRepr
