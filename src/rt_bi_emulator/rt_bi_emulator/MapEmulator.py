@@ -12,7 +12,7 @@ class MapEmulator(Node):
 	""" The Viewer ROS Node """
 	def __init__(self):
 		""" Create a Viewer ROS node. """
-		super().__init__("rt_bi_map_emulator")
+		super().__init__(node_name="rt_bi_map_emulator") # type: ignore - parameter_overrides: List[Parameter] = None
 		self.get_logger().info("%s is initializing." % self.get_fully_qualified_name())
 		RosUtils.SetLogger(self.get_logger())
 		SaMsgs.createSaFeatureQueryService(self, self.__featureInfoQueryCallback)
@@ -26,7 +26,7 @@ class MapEmulator(Node):
 				responseFeature.feature_name = feature.feature_name
 				responseFeature.type = feature.type
 				responseFeature.polygon_shape_list = feature.polygon_shape_list
-				response.feature_info_individual.append(responseFeature)
+				RosUtils.AppendMessage(response.feature_info_individual, responseFeature)
 		else:
 			# The response to this query is the feature definition of the given map feature
 			for individual in Case1.FeatureIndividuals:
@@ -36,11 +36,11 @@ class MapEmulator(Node):
 					responseFeature.traversability_gv_car = individual.traversability_gv_car
 					responseFeature.traversability_gv_tank = individual.traversability_gv_tank
 					responseFeature.visibility_av= individual.visibility_av
-					response.feature_info_individual.append(responseFeature)
+					RosUtils.AppendMessage(response.feature_info_individual, responseFeature)
 					break
 			if len(response.feature_info_individual) == 0:
 				self.get_logger().error("Feature name \"%s\" not in Map Dictionary. **Returning empty feature**" % request.name)
-				return FeatureInfoIndividual()
+				return response
 		self.get_logger().info("Response has %d features." % len(response.feature_info_individual))
 		return response
 
