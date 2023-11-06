@@ -1,4 +1,4 @@
-class TimeInterval:
+class TimeRegion:
 	def __init__(self, start: float, end: float, startIncluded: bool, endIncluded: bool):
 		self.start = start
 		self.end = end
@@ -16,7 +16,7 @@ class TimeInterval:
 		endSym = "]" if self.endIncluded else ")"
 		return "T%s%.2f, %.2f%s" % (startSym, self.start, self.end, endSym)
 
-	def intersect(self, other: "TimeInterval") -> bool:
+	def intersects(self, other: "TimeRegion") -> bool:
 		if self.startIncluded and other.startIncluded and self.start == other.start: return True
 		if self.endIncluded and other.endIncluded and self.end == other.end: return True
 		if self.endIncluded and other.startIncluded and self.end == other.start: return True
@@ -26,15 +26,3 @@ class TimeInterval:
 		if self.start < other.start and other.start < self.end: return True
 		if self.start < other.end and other.end < self.end: return True
 		return False
-
-class TemporalRegion:
-	"""
-		Temporal Region
-	"""
-	def __init__(self, endPoints: list, intervalFlags: list, endPointFlags: list):
-		self.endPoints = endPoints
-		self.intervalFlags = intervalFlags
-		self.endPointFlags = endPointFlags
-
-	def __contains__(self, time: float):
-		raise RuntimeError("Not implemented")
