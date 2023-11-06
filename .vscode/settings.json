@@ -609,7 +609,9 @@
 		"**/build",
 		"**/install",
 		"**/ContinuousTimeCollisionDetection.v1.py",
-		"**/BehaviorAutomaton"
+		"**/BehaviorAutomaton",
+		"**/Trajectory.py",
+		"**/EventAggregator.py"
 	],
 	"window.autoDetectColorScheme": true,
 	"workbench.preferredLightColorTheme": "Quiet Light",
