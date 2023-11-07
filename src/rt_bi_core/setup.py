@@ -19,6 +19,7 @@ setup(
 		"isort",
 		"networkx~=3.0",
 		"setuptools",
+		"numpy~=1.24"
 	],
 	zip_safe=True,
 	maintainer="Reza Teshnizi",
