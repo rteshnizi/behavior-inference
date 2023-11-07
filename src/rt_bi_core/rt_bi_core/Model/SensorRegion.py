@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Sequence, Union
 
 from visualization_msgs.msg import Marker
 
@@ -8,7 +8,7 @@ from rt_bi_core.Model.FeatureMap import FeatureMap
 from rt_bi_core.Model.Tracklet import Tracklets
 from rt_bi_utils.Geometry import Geometry, MultiPolygon, Polygon
 from rt_bi_utils.Pose import Pose
-from rt_bi_utils.RViz import KnownColors
+from rt_bi_utils.RViz import Color, KnownColors
 
 COLOR_PALETTE = ["Green", "Purple", "Gold"]
 NUM_COLORS = len(COLOR_PALETTE)
@@ -85,17 +85,17 @@ class SensorRegion(AffineRegion):
 		for region in regions:
 			# FIXME: Currently, the type of sensor is missing.
 			# Once its available you should check the type and see which type of seeThrough I should look for
-			if featureMap.features[region.regionType].visibleFromAbove: continue
-			polygon = Geometry.subtract(polygon, region.interior)
+			if featureMap.features[region.regionType.value].visibleFromAbove: continue
+			polygon = Geometry.difference(polygon, region.interior)
 		self.forceUpdateInteriorPolygon(polygon)
 		return
 
-	def render(self) -> List[Marker]:
-		msg = super().render(False)
+	def render(self, envelopeColor: Union[Color, None] = None) -> Sequence[Marker]:
+		msgs = super().render(renderText=False, envelopeColor=envelopeColor)
 		for trackId in self.__tracks:
 			track = self.__tracks[trackId]
-			msg += track.render()
-		return msg
+			RosUtils.ConcatMessageArray(msgs, track.render())
+		return msgs
 
 	def clearRender(self) -> None:
 		return super().clearRender()

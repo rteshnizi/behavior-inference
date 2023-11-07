@@ -1,4 +1,5 @@
-from typing import Dict, List, Union
+from enum import Enum
+from typing import Dict, List, Sequence, Union
 
 from skimage import transform
 from visualization_msgs.msg import Marker
@@ -18,7 +19,7 @@ class PolygonalRegion:
 	A dictionary of edge identifier to `LineString`.
 	The edge identifier is a string.
 	"""
-	class RegionType:
+	class RegionType(Enum):
 		"""All the types of `PolygonalRegion`."""
 		BASE = "B"
 		MAP = "M"
@@ -60,10 +61,10 @@ class PolygonalRegion:
 		self.__idNum = idNum
 		self.__name = "%s-%d" % (regionType, idNum)
 		self.__RENDER_LINE_WIDTH = renderLineWidth
-		self.__envelope = envelope
-		self.__interiorPolygon = Polygon(self.__envelope) if interior is None else interior
+		self.__interiorPolygon = Polygon(envelope) if interior is None else interior
+		self.__envelope = envelope if interior is None else Geometry.getGeometryCoords(self.__interiorPolygon)
 		self.__regionType = regionType
-		self.__ENVELOPE_COLOR = envelopeColor
+		self.__DEFAULT_ENVELOPE_COLOR = envelopeColor
 		self.__INTERIOR_COLOR = interiorColor
 		self.__TEXT_COLOR = KnownColors.BLACK if RViz.isLightColor(interiorColor) else KnownColors.WHITE
 		if len(kwArgs) > 0 : RosUtils.Logger().warn("Unassigned keyword args ignored: %s" % repr(kwArgs))
@@ -94,12 +95,17 @@ class PolygonalRegion:
 	@property
 	def envelopeColor(self) -> Color:
 		"""The color used to render the boundary of this polygon."""
-		return self.__ENVELOPE_COLOR
+		return self.__DEFAULT_ENVELOPE_COLOR
 
 	@property
 	def idNum(self) -> int:
 		"""Id number of this polygonal region of this certain type."""
 		return self.__idNum
+
+	@property
+	def interior(self) -> Polygon:
+		"""The Geometric description of the region."""
+		return self.__interiorPolygon
 
 	@property
 	def interiorColor(self) -> Color:
@@ -110,11 +116,6 @@ class PolygonalRegion:
 	def regionType(self) -> RegionType:
 		"""A short string identifier for the type of the polygon."""
 		return self.__regionType
-
-	@property
-	def interior(self) -> Polygon:
-		"""The Geometric description of the region."""
-		return self.__interiorPolygon
 
 	@property
 	def edges(self) -> Edges:
@@ -137,13 +138,13 @@ class PolygonalRegion:
 	def isInsideRegion(self, x: float, y: float) -> bool:
 		return Geometry.isXyInsidePolygon(x, y, self.interior)
 
-	def getEquivalentEdge(self, finalConfig: LineString, transformation: transform.AffineTransform, centerOfRotation: Geometry.Coords) -> Union[LineString, None]:
+	def getEquivalentEdge(self, finalConfig: LineString, transformation: transform.AffineTransform) -> Union[LineString, None]:
 		"""
 			Given an affine transformation, and the final configuration of an edge after the transformation,
 			find the edge that will be in that final configuration after the transformation, and `None` otherwise. Boy didn't I repeat myself?!
 		"""
 		for edge in self.__edges.values():
-			afterTransformation = Geometry.applyMatrixTransformToLineString(transformation, edge, centerOfRotation)
+			afterTransformation = Geometry.applyMatrixTransformToLineString(transformation, edge)
 			if Geometry.lineSegmentsAreAlmostEqual(finalConfig, afterTransformation): return edge
 		return None
 
@@ -157,16 +158,17 @@ class PolygonalRegion:
 
 	def getCommonEdge(self, other: "PolygonalRegion") -> Union[LineString, None]:
 		for e in self.__edges:
-			if other.hasEdge(e): return self.__edges[e]
+			if other.hasEdge(self.__edges[e]): return self.__edges[e]
 		return None
 
-	def render(self, renderText = False, fill = False) -> List[Marker]:
+	def render(self, renderText: bool = False, fill: bool = False, envelopeColor: Union[Color, None] = None) -> Sequence[Marker]:
 		msgs = []
 		if fill:
 			RosUtils.Logger().debug("Cannot fill polygons yet.")
-		msgs.append(RViz.CreatePolygon(self.name, Geometry.getGeometryCoords(self.interior), self.__ENVELOPE_COLOR, self.__RENDER_LINE_WIDTH))
+		envelopColor = envelopeColor if envelopeColor is not None else self.__DEFAULT_ENVELOPE_COLOR
+		msgs.append(RViz.createPolygon(self.name, Geometry.getGeometryCoords(self.interior), envelopColor, self.__RENDER_LINE_WIDTH))
 		if renderText:
-			msgs.append(RViz.CreateText("%s_txt" % self.name, self.interior.centroid.xy, self.name, self.__TEXT_COLOR))
+			msgs.append(RViz.createText("%s_txt" % self.name, self.interior.centroid.xy, self.name, self.__TEXT_COLOR))
 		return msgs
 
 	def clearRender(self) -> None:

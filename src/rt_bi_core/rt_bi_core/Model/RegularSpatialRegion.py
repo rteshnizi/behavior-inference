@@ -1,4 +1,4 @@
-from typing import Dict, Iterator, List, Sequence, Set, Type, Union
+from typing import Dict, Generic, Iterator, List, Sequence, Set, TypeVar, Union
 
 from visualization_msgs.msg import Marker
 
@@ -7,12 +7,14 @@ from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
 from rt_bi_utils.Geometry import Geometry, LineString, MultiPolygon, Polygon
 from rt_bi_utils.RViz import Color, RViz
 
+RegionType = TypeVar("RegionType", bound=PolygonalRegion)
 
-class RegularSpatialRegion:
+
+class RegularSpatialRegion(Generic[RegionType]):
 	"""The base class for all regular spatial regions."""
 
-	def __init__(self, regions: Sequence[PolygonalRegion] = []):
-		self.__regions: Dict[str, PolygonalRegion] = {}
+	def __init__(self, regions: Sequence[RegionType] = []):
+		self.__regions: Dict[str, RegionType] = {}
 		"""
 		A dictionary from `region.name` to the `PolygonalRegion` object.
 		For subclasses, the region types depend on the subclass.
@@ -40,10 +42,13 @@ class RegularSpatialRegion:
 	def __iter__(self) -> Iterator[str]:
 		return iter(self.__regions)
 
+	def __contains__(self, regionName: str) -> bool:
+		return regionName in self.__regions
+
 	def __next__(self) -> str:
 		return next(iter(self))
 
-	def __getitem__(self, regionName: str) -> PolygonalRegion:
+	def __getitem__(self, regionName: str) -> RegionType:
 		if not isinstance(regionName, str):
 			RosUtils.Logger().error("Regular regions are dictionaries. Index must be string. Given %s" % repr(regionName))
 			raise KeyError("Regular regions are dictionaries. Index must be string. Given %s" % repr(regionName))
@@ -82,7 +87,7 @@ class RegularSpatialRegion:
 	def edges(self) -> Dict[str, LineString]:
 		raise NotImplementedError()
 
-	def addConnectedComponent(self, region: PolygonalRegion) -> None:
+	def addConnectedComponent(self, region: RegionType) -> None:
 		if region.name in self.__regions:
 			RosUtils.Logger().debug("Overriding region with name %s that is already added in %s." % (region.name, self.__class__.__name__))
 		self.__regions[region.name] = region
@@ -97,8 +102,8 @@ class RegularSpatialRegion:
 	def difference(self, others: "RegularSpatialRegion") -> Set[str]:
 		return self.__sub__(others)
 
-	def render(self, envelopeColor: Union[Color, None] = None) -> List[Marker]:
+	def render(self, envelopeColor: Union[Color, None] = None) -> Sequence[Marker]:
 		markers = []
 		for region in self.__regions.values():
-			markers += region.render(envelopeColor=envelopeColor)
+			RosUtils.ConcatMessageArray(markers, region.render(envelopeColor=envelopeColor))
 		return markers

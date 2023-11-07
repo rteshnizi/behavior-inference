@@ -1,5 +1,5 @@
 # from bil.model.trajectory import Trajectory
-from typing import Dict, List, Tuple
+from typing import Dict, Sequence, Tuple
 
 from visualization_msgs.msg import Marker
 
@@ -17,7 +17,7 @@ class Tracklet:
 	def __repr__(self):
 		return "Trk-%d: %s" % (self.id, repr(self.pose))
 
-	def render(self) -> List[Marker]:
+	def render(self) -> Sequence[Marker]:
 		msgs = []
 		color = KnownColors.GREEN
 		if self.pose.spawn:
@@ -27,7 +27,8 @@ class Tracklet:
 		tag = "track%d-%.1f" % (self.id, self.pose.timeNanoSecs)
 		color = color if self.isInterpolated else KnownColors.PURPLE
 		width = 1 if self.isInterpolated else 3
-		msgs.append(RViz.CreateCircle(tag, self.pose.x, self.pose.y, color, width))
+		msgs.append(RViz.createCircle(tag, self.pose.x, self.pose.y, 2, color, width))
+		return msgs
 
 	def clearRender(self):
 		return

@@ -1,4 +1,4 @@
-from typing import Dict, Union
+from typing import Dict
 
 
 class FeatureMap:
@@ -16,7 +16,7 @@ class Feature:
 		self.traversability = Traversability(raw["traversability_gv_car"], raw["traversability_gv_tank"])
 
 	def __repr__(self) -> str:
-		return "{ %s - visibleAbv: %s, Trv: { %s } }" % repr(self.name, repr(self.visibleFromAbove), repr(self.traversability))
+		return "{ %s - visibleAbv: %s, Trv: { %s } }" % (self.name, repr(self.visibleFromAbove), repr(self.traversability))
 
 class Traversability:
 	def __init__(self, car: float, tank: float) -> None:

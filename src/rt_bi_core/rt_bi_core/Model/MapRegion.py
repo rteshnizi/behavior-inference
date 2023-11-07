@@ -1,24 +1,28 @@
-from typing import List, Union
+from typing import Sequence, Union
 
 from visualization_msgs.msg import Marker
 
+from rt_bi_core.Model.AffineRegion import AffineRegion
 from rt_bi_core.Model.FeatureMap import Feature
-from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
 from rt_bi_utils.Geometry import Geometry
+from rt_bi_utils.Pose import Pose
 from rt_bi_utils.RViz import Color, KnownColors
 
 
-class MapRegion(PolygonalRegion):
+class MapRegion(AffineRegion):
 	def __init__(self, idNum: int, envelope: Geometry.CoordsList, **kwArgs) -> None:
 		self.__featureDefinition: Union[Feature, None] = None
 		super().__init__(
+			centerOfRotation=Pose(0, 0, 0, 0),
 			idNum=idNum,
 			envelope=envelope,
-			envelopeColor=KnownColors.GREY,
-			interiorColor=self.resolvedBgColor,
-			regionType=PolygonalRegion.RegionType.MAP,
+			envelopeColor=kwArgs.pop("envelopeColor", KnownColors.GREY),
+			regionType=AffineRegion.RegionType.MAP,
+			timeNanoSecs=kwArgs.pop("timeNanoSecs", 0),
+			interiorColor=kwArgs.pop("interiorColor", self.resolvedBgColor),
 			**kwArgs
 		)
+		self.centerOfRotation = Geometry.toPose(self.interior.centroid, self.timeNanoSecs)
 
 	@property
 	def resolvedBgColor(self) -> Color:
@@ -39,6 +43,6 @@ class MapRegion(PolygonalRegion):
 		self.__featureDefinition = val
 		return
 
-	def render(self, renderText = False) -> List[Marker]:
+	def render(self, renderText = False) -> Sequence[Marker]:
 		self.BACKGROUND_COLOR = self.resolvedBgColor
 		return super().render(renderText, fill=True)

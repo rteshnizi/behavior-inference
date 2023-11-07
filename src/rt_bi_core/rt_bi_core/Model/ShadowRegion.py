@@ -1,10 +1,10 @@
-from typing import List, Set
+from typing import List, Sequence, Set, Union
 
 from visualization_msgs.msg import Marker
 
 from rt_bi_core.Model.DynamicRegion import DynamicRegion
 from rt_bi_utils.Geometry import Geometry
-from rt_bi_utils.RViz import KnownColors
+from rt_bi_utils.RViz import Color, KnownColors
 
 
 class ShadowRegion(DynamicRegion):
@@ -12,7 +12,7 @@ class ShadowRegion(DynamicRegion):
 		self,
 		idNum: int,
 		envelope: Geometry.CoordsList,
-			timeNanoSecs: int,
+		timeNanoSecs: int,
 		**kwArgs,
 	):
 		"""
@@ -45,5 +45,5 @@ class ShadowRegion(DynamicRegion):
 	def addNeighboringSensors(self, sensorRegionName: str) -> None:
 		self.__neighboringSensors.add(sensorRegionName)
 
-	def render(self, renderText=False) -> List[Marker]:
-		return super().render(renderText=renderText, fill=True)
+	def render(self, renderText = False, envelopeColor: Union[Color, None] = None) -> Sequence[Marker]:
+		return super().render(renderText=renderText, fill=True, envelopeColor=envelopeColor)

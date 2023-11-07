@@ -1,15 +1,16 @@
-from typing import List, Set
+from typing import List, Set, TypeVar
 
 from rt_bi_core.Model.AffineRegion import AffineRegion
 from rt_bi_core.Model.RegularDynamicRegion import RegularDynamicRegion
 
+RegionType = TypeVar("RegionType", bound=AffineRegion)
 
-class RegularAffineRegion(RegularDynamicRegion):
+class RegularAffineRegion(RegularDynamicRegion[RegionType]):
 	"""
 	A Class to model a set of Regular Affine Region.
 	"""
 
-	def __init__(self, regions: List[AffineRegion] = []):
+	def __init__(self, regions: List[RegionType] = []):
 		super().__init__(regions=regions)
 
 	def __and__(self, other: "RegularAffineRegion") -> Set[str]:
@@ -21,7 +22,7 @@ class RegularAffineRegion(RegularDynamicRegion):
 	def __sub__(self, other: "RegularAffineRegion") -> Set[str]:
 		return super().__sub__(other)
 
-	def __getitem__(self, regionName: str) -> AffineRegion:
+	def __getitem__(self, regionName: str) -> RegionType:
 		return super().__getitem__(regionName)
 
 	@property
@@ -29,7 +30,7 @@ class RegularAffineRegion(RegularDynamicRegion):
 		if self.isEmpty: return -1
 		else: return self[next(iter(self))].timeNanoSecs
 
-	def addConnectedComponent(self, region: AffineRegion) -> None:
+	def addConnectedComponent(self, region: RegionType) -> None:
 		return super().addConnectedComponent(region)
 
 	def intersection(self, other: "RegularAffineRegion") -> Set[str]:
