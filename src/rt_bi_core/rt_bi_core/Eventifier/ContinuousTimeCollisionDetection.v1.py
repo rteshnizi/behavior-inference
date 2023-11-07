@@ -18,7 +18,7 @@ class ContinuousTimeCollisionDetection_V1:
 	(Polygon, idNum, centerOfRotation, timeOfEvent, "made" | "released", collidingEdge)
 	```
 	Wherein:
-		* `idNum` is the id of the edge in the source moving region.
+		* `idNum` is the id of the source moving region.
 		* `collidingEdge` is the edge of the `Polygon` that is colliding at some point after `0 ≤ timeOfEvent≤ 1`.
 	"""
 
