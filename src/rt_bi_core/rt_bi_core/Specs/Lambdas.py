@@ -1,5 +1,6 @@
-from rt_bi_core.BehaviorAutomaton import LambdaType, NfaLambda, ProjectiveSpaceTimeSet
-from rt_bi_utils import ObjectLiteral
+from rt_bi_core.BehaviorAutomaton.Lambda import LambdaType, NfaLambda
+from rt_bi_core.BehaviorAutomaton.SpaceTime import ProjectiveSpaceTimeSet
+from rt_bi_utils.Python import ObjectLiteral
 
 
 class Prototypes:
@@ -37,16 +38,16 @@ class Prototypes:
 
 	@staticmethod
 	def funcP2A(mySpaceTime: ProjectiveSpaceTimeSet, spaceTimeOfQuery: ProjectiveSpaceTimeSet) -> bool:
-		return mySpaceTime.intersect(spaceTimeOfQuery)
+		return mySpaceTime.intersects(spaceTimeOfQuery)
 
 	@staticmethod
 	def funcP2B(mySpaceTime: ProjectiveSpaceTimeSet, spaceTimeOfQuery: ProjectiveSpaceTimeSet) -> bool:
-		return mySpaceTime.intersect(spaceTimeOfQuery)
+		return mySpaceTime.intersects(spaceTimeOfQuery)
 
 	@staticmethod
 	def funcP2C(mySpaceTime: ProjectiveSpaceTimeSet, spaceTimeOfQuery: ProjectiveSpaceTimeSet) -> bool:
-		return mySpaceTime.intersect(spaceTimeOfQuery)
+		return mySpaceTime.intersects(spaceTimeOfQuery)
 
 	@staticmethod
 	def funcP2T0(mySpaceTime: ProjectiveSpaceTimeSet, spaceTimeOfQuery: ProjectiveSpaceTimeSet) -> bool:
-		return mySpaceTime.intersect(spaceTimeOfQuery)
+		return mySpaceTime.intersects(spaceTimeOfQuery)
