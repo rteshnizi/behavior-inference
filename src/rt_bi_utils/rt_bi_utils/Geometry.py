@@ -2,7 +2,7 @@ import operator
 import traceback
 import warnings
 from functools import reduce
-from math import atan2, cos, degrees, inf, sin, sqrt
+from math import atan2, cos, degrees, inf, nan, sin, sqrt
 from typing import Dict, List, Tuple, Union
 
 import numpy as np
@@ -12,8 +12,7 @@ from shapely.geometry.multipoint import MultiPoint
 from shapely.geometry.polygon import LinearRing, Polygon
 from shapely.ops import unary_union
 from shapely.validation import make_valid
-from skimage import transform
-from skimage.transform import AffineTransform as AffineTransform
+from skimage.transform import AffineTransform as AffineTransform, matrix_transform
 
 from rt_bi_utils.Pose import Pose
 from rt_bi_utils.Ros import Logger
@@ -48,6 +47,10 @@ class Geometry:
 			i += 1
 		Logger().info("%d. Shapely exception.. Stack trace:\n%s" % (i, traceback.format_exc()))
 		return
+
+	@staticmethod
+	def toPose(pt: Point, timeNanoSecs: int = 0, angle: float = 0.0) -> Pose:
+		return Pose(timeNanoSecs, pt.x, pt.y, float(angle))
 
 	@staticmethod
 	def addCoords(c1: Coords, c2: Coords) -> Coords:
@@ -383,21 +386,40 @@ class Geometry:
 		Returns
 		-------
 		`Coords`
-			The center of rotation.
+			The center of rotation if there exists one, `(nan, nan)` otherwise.
 		"""
 		matrix = transformation.params
-		"""
-		```py
-		[[a0  a1  a2]
-		 [b0  b1  b2]
-		 [0   0    1]]
-		```
-		"""
+		# [[a0  a1  a2]
+		#  [b0  b1  b2]
+		#  [0   0    1]]
+		# If (almost) identity transformation, then there is no center of rotation.
+		if Geometry.isIdentityTransform(transformation): return (nan, nan)
 		(a0, a1, a2) = (matrix[0][0], matrix[0][1], matrix[0][2])
 		(b0, b1, b2) = (matrix[1][0], matrix[1][1], matrix[1][2])
+
 		x: float = (a2 + ((a1 * b2) / (1 - b1))) / (1 - a0 - ((a1 * b0) / (1 - b1)))
 		y: float = (b0 * x + b2) / (1 - b1)
 		return (x, y)
+
+
+	@staticmethod
+	def isIdentityTransform(transformation: AffineTransform) -> bool:
+		"""### Is Identity Transformation
+		Test whether the given transformation is (almost) identity transformation.
+
+
+		Parameters
+		----------
+		transformation : AffineTransform
+
+		Returns
+		-------
+		bool
+			True if the sum of element-wise diff between the matrix and identity matrix is almost zero.
+		"""
+		matrix = transformation.params
+		if ((matrix - np.identity(3)).sum()) < Geometry.EPSILON: return True
+		return False
 
 	@staticmethod
 	def getAffineTransformation(start: CoordsList, end: CoordsList) -> AffineTransform:
@@ -420,8 +442,9 @@ class Geometry:
 		startCoords = np.array(start)
 		endCoords = np.array(end)
 		weights = np.ones(len(start))
-		matrix = transform.estimate_transform("affine", startCoords, endCoords, weights=weights)
-		return matrix
+		matrix = AffineTransform()
+		if matrix.estimate(startCoords, endCoords, weights=weights): return matrix
+		raise RuntimeError("SciKit failed to estimate a transform")
 
 	@staticmethod
 	def getParameterizedAffineTransformation(transformation: AffineTransform, param: float) -> AffineTransform:
@@ -467,7 +490,7 @@ class Geometry:
 
 	@staticmethod
 	def applyMatrixTransformToCoordsList(transformation: AffineTransform, coordsList: CoordsList) -> CoordsList:
-		transformedCoords = transform.matrix_transform(coordsList, transformation.params)
+		transformedCoords = matrix_transform(coordsList, transformation.params)
 		return transformedCoords
 
 	@staticmethod

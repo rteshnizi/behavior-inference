@@ -1,5 +1,6 @@
+from collections import UserList
 from math import nan
-from typing import Callable, Sequence, Tuple, Union
+from typing import AbstractSet, Callable, Sequence, Tuple, Union
 
 from rclpy.node import Client, Node, Publisher, Service, Timer
 from sa_msgs.msg import EstimationMsg, FeatureInfo, Fov as SaFovMsg, Pose as SaPoseMsg, PoseArray as SaPoseArray, RobotState
@@ -16,7 +17,7 @@ class SaMsgs:
 	"""
 	__MAP_UPDATE_TOPIC = "/sa_map/FeatureMap_BIL"
 	__MAP_SERVICE_NAME = "/sa_map/feature_query"
-	__ESTIMATION_TOPIC = "/sa_tajectory_estimation/estimation" # typo is from Tianqi ＼（〇_ｏ）／
+	__ESTIMATION_TOPIC = "/sa_tajectory_estimation/estimation" # CSpell: disable-line -- typo is from Tianqi ＼（〇_ｏ）／
 	__ROBOT_STATE_TOPIC = "/sa_world_model/true_objects_state"
 
 	@staticmethod
@@ -28,7 +29,7 @@ class SaMsgs:
 		return (saPose.x, saPose.y)
 
 	@staticmethod
-	def convertSaPoseListToCoordsList(saPoseSeq: Sequence[SaPoseMsg]) -> Geometry.CoordsList:
+	def convertSaPoseListToCoordsList(saPoseSeq: Union[Sequence[SaPoseMsg], AbstractSet[SaPoseMsg], UserList[SaPoseMsg]]) -> Geometry.CoordsList:
 		coords: Geometry.CoordsList = []
 		for saPose in saPoseSeq:
 			RosUtils.AppendMessage(coords, SaMsgs.convertSaPoseToCoords(saPose))
@@ -96,20 +97,20 @@ class SaMsgs:
 		return message
 
 	@staticmethod
-	def subscribeToMapUpdateTopic(node: Node, callbackFunc: Callable[[type[FeatureInfo]], None]) -> None:
-		RosUtils.CreateSubscriber(node, FeatureInfo, SaMsgs.__MAP_UPDATE_TOPIC, callbackFunc)
+	def subscribeToMapUpdateTopic(node: Node, callbackFunc: Callable[[FeatureInfo], None]) -> None:
+		RosUtils.CreateSubscriber(node, FeatureInfo, SaMsgs.__MAP_UPDATE_TOPIC, callbackFunc) # type: ignore - "type[Metaclass_FeatureInfo]" is incompatible with "type[FeatureInfo]"
 
 	@staticmethod
 	def createSaRobotStatePublisher(node: Node, callbackFunc: Callable = lambda: None, intervalSecs: float = nan) -> Tuple[Publisher, Union[Timer, None]]:
 		return RosUtils.CreatePublisher(node, RobotState, SaMsgs.__ROBOT_STATE_TOPIC, callbackFunc, intervalSecs)
 
 	@staticmethod
-	def subscribeToSaRobotStateTopic(node: Node, callbackFunc: Callable[[type[RobotState]], None]) -> None:
-		RosUtils.CreateSubscriber(node, RobotState, SaMsgs.__ROBOT_STATE_TOPIC, callbackFunc)
+	def subscribeToSaRobotStateTopic(node: Node, callbackFunc: Callable[[RobotState], None]) -> None:
+		RosUtils.CreateSubscriber(node, RobotState, SaMsgs.__ROBOT_STATE_TOPIC, callbackFunc) # type: ignore - "type[Metaclass_RobotState]" is incompatible with "type[RobotState]"
 
 	@staticmethod
-	def subscribeToSaEstimationTopic(node: Node, callbackFunc: Callable[[type[EstimationMsg]], None]) -> None:
-		RosUtils.CreateSubscriber(node, EstimationMsg, SaMsgs.__ESTIMATION_TOPIC, callbackFunc)
+	def subscribeToSaEstimationTopic(node: Node, callbackFunc: Callable[[EstimationMsg], None]) -> None:
+		RosUtils.CreateSubscriber(node, EstimationMsg, SaMsgs.__ESTIMATION_TOPIC, callbackFunc) # type: ignore - "type[Metaclass_EstimationMsg]" is incompatible with "type[EstimationMsg]"
 
 	@staticmethod
 	def createSaFeatureQueryService(node: Node, callbackFunc: Callable[[QueryFeature.Request, QueryFeature.Response], QueryFeature.Response]) -> Service:

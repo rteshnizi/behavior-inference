@@ -4,7 +4,7 @@ from shapely.geometry import Point
 class Pose:
 	def __init__(self, timeNanoSecs: int, x: float, y: float, angleFromX: float):
 		"""
-		Representation of a pose in RTBI implementation.
+		Representation of a pose.
 
 		Parameters
 		----------
@@ -31,11 +31,11 @@ class Pose:
 		"""The same as `angleFromX`"""
 		return self.angleFromX
 
-	def _bareRepr(self) -> str:
+	def __bareRepr(self) -> str:
 		return "(%.2f, %.2f, %.2f)" % (self.timeNanoSecs, self.x, self.y)
 
 	def __repr__(self) -> str:
-		s = self._bareRepr()
+		s = self.__bareRepr()
 		if self.spawn and self.vanished: return "%s%s" % ("+/- ", s)
 		if self.spawn: return "%s%s" % ("+ ", s)
 		if self.vanished: return "%s%s" % ("- ", s)

@@ -1,14 +1,14 @@
 import logging
 from collections import UserList
 from math import isnan, nan
-from typing import AbstractSet, Any, Callable, Sequence, Tuple, TypeVar, Union
+from typing import AbstractSet, Any, Callable, List, MutableSequence, Sequence, Tuple, TypeVar, Union
 
 import rclpy
 from builtin_interfaces.msg import Time
 from rclpy.impl.rcutils_logger import RcutilsLogger
 from rclpy.node import Client, Node, Publisher, Subscription, Timer
 
-Topic = TypeVar("Topic", bound=type)
+Topic = TypeVar("Topic")
 QueryRequest = TypeVar("QueryRequest")
 
 NAMESPACE = "rt_bi_core"
@@ -118,7 +118,7 @@ def CreateTopicName(shortTopicName: str) -> str:
 	"""
 	return "/%s/%s" % (NAMESPACE, shortTopicName)
 
-def SendClientRequest(node: Node, client: Client, request: QueryRequest, responseCallback: Callable[[QueryRequest, Any], None]) -> None:
+def SendClientRequest(node: Node, client: Client, request: QueryRequest, responseCallback: Callable[[QueryRequest, Any], Any]) -> None:
 	future = client.call_async(request)
 	rclpy.spin_until_future_complete(node, future)
 	responseCallback(request, future.result())
@@ -133,7 +133,7 @@ def WaitForServicesToStart(node: Node, client: Union[Client, None] = None) -> No
 	node.get_logger().debug("Client %s is ready"% node.get_name())
 	return
 
-def AppendMessage(array: Union[Sequence, AbstractSet, UserList], msg: Any) -> None:
+def AppendMessage(array: Union[Sequence[Topic], AbstractSet[Topic], List[Topic]], msg: Topic) -> None:
 	"""Appends a message to a message array.
 
 	Parameters
@@ -143,5 +143,19 @@ def AppendMessage(array: Union[Sequence, AbstractSet, UserList], msg: Any) -> No
 	msg : Any
 		The message.
 	"""
-	assert isinstance(array, UserList), "Failed to add message to array."
+	assert isinstance(array, List), ("Failed to append messages to array. Array type: %s" % type(array))
 	array.append(msg)
+
+def ConcatMessageArray(array: Union[Sequence[Topic], AbstractSet[Topic], List[Topic]], toConcat: Sequence[Topic]) -> List[Topic]:
+	"""Concatenates an array of messages to another message array.
+
+	Parameters
+	----------
+	array : Union[Sequence, AbstractSet, UserList]
+		The array.
+	msg : Any
+		The message.
+	"""
+	assert isinstance(array, List), ("Failed to append messages to array. Array type: %s" % type(array))
+	array += toConcat
+	return array
