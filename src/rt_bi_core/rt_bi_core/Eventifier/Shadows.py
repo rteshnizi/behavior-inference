@@ -1,7 +1,10 @@
-from typing import List, Set
+from typing import List, Sequence, Set
+
+from visualization_msgs.msg import Marker
 
 from rt_bi_core.Model.RegularDynamicRegion import RegularDynamicRegion
 from rt_bi_core.Model.ShadowRegion import ShadowRegion
+from rt_bi_utils.RViz import RViz
 
 
 class Shadows(RegularDynamicRegion):
@@ -36,3 +39,6 @@ class Shadows(RegularDynamicRegion):
 
 	def difference(self, others: "Shadows") -> Set[str]:
 		return super().difference(others)
+
+	def render(self) -> Sequence[Marker]:
+		return super().render(envelopeColor=RViz.randomColor())

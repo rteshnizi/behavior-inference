@@ -1,11 +1,10 @@
 from typing import List, Set
 
-import rt_bi_utils.Ros as RosUtils
 from rt_bi_core.Model.MapRegion import MapRegion
 from rt_bi_core.Model.RegularSpatialRegion import RegularSpatialRegion
 
 
-class MapPerimeter(RegularSpatialRegion):
+class MapPerimeter(RegularSpatialRegion[MapRegion]):
 	"""A Class to model Shadows."""
 	def __init__(self, regions: List[MapRegion] = []):
 		"""

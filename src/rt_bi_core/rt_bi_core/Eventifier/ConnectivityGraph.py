@@ -1,4 +1,4 @@
-from typing import Callable, Dict, List, Literal, Set, Type, Union
+from typing import Callable, Dict, List, Literal, Sequence, Set, TypeVar, Union
 
 import networkx as nx
 from visualization_msgs.msg import Marker, MarkerArray
@@ -10,13 +10,12 @@ from rt_bi_core.Eventifier.RegularSymbol import RegularSymbol
 from rt_bi_core.Eventifier.Shadows import Shadows
 from rt_bi_core.Model.DynamicRegion import DynamicRegion
 from rt_bi_core.Model.MapRegion import MapRegion
-from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
 from rt_bi_core.Model.SensorRegion import SensorRegion
 from rt_bi_core.Model.ShadowRegion import ShadowRegion
 from rt_bi_core.Model.SymbolRegion import SymbolRegion
 from rt_bi_utils.Geometry import Geometry, LineString, Point, Polygon
-from rt_bi_utils.Ros import Logger
-from rt_bi_utils.RViz import KnownColors, Publisher, RViz
+from rt_bi_utils.Ros import AppendMessage, ConcatMessageArray, Logger
+from rt_bi_utils.RViz import Publisher
 
 
 class ConnectivityGraph(nx.DiGraph):
@@ -30,6 +29,8 @@ class ConnectivityGraph(nx.DiGraph):
 		Data contents of a ConnectivityGraph node.
 	"""
 
+	RegionType = TypeVar("RegionType", bound=DynamicRegion)
+
 	def __init__(
 			self,
 			timeNanoSecs: int,
@@ -38,20 +39,6 @@ class ConnectivityGraph(nx.DiGraph):
 			symbols: Dict[str, Symbol] = {},
 			rvizPublisher: Union[Publisher, None] = None,
 	) -> None:
-		"""
-		Creates a connectivity graph using the initial information.
-
-		Parameters
-		----------
-		timeNanoSecs : float
-			The timestamp of this connectivity graph.
-		regions : List[PolygonalRegion]
-			Geometric description of all the regions represented in this graph.
-		validators : Dict[str, Validator], optional
-			The dictionary of validators used in the specifications, if they are known, otherwise by default {}.
-		tracks : Dict[Tuple[float, int], Track], optional
-			Information about any observed tracks at that time instant. Tracks is a dictionary of (time, trackId) to Track, by default {}.
-		"""
 		super().__init__()
 		self.timeNanoSecs = timeNanoSecs
 		Logger().info("Constructing Connectivity Graph @ %d" % self.timeNanoSecs)
@@ -65,21 +52,22 @@ class ConnectivityGraph(nx.DiGraph):
 		self.__mapPerimeter: MapPerimeter = MapPerimeter()
 		"""The RegularSpatialRegion representing the map's perimeter."""
 		self.__rvizPublisher = rvizPublisher
+		self.__passed295 = False
 		self.__constructRegularRegion(regionList=mapRegions, constructionCallback=self.__constructPerimeter, loggerString="Map Perimeter")
 		self.__constructRegularRegion(regionList=fovRegions, constructionCallback=self.__constructFov, loggerString="Field-of-View")
-		Logger().info("Constructing Shadows.")
+		Logger().debug("Constructing Shadows.")
 		self.__constructShadows()
-		# Logger().info("Constructing Symbols.")
+		# Logger().debug("Constructing Symbols.")
 		# self.__constructSymbols(symbols)
 
 	def __repr__(self):
 		return "cGraph-%.2f" % self.timeNanoSecs
 
-	def __addNode(self, region: Type[PolygonalRegion]) -> None:
+	def __addNode(self, region: DynamicRegion) -> None:
 		if (
-			region.regionType != PolygonalRegion.RegionType.SENSING and
-			region.regionType != PolygonalRegion.RegionType.SHADOW and
-			region.regionType != PolygonalRegion.RegionType.SYMBOL
+			region.regionType != DynamicRegion.RegionType.SENSING and
+			region.regionType != DynamicRegion.RegionType.SHADOW and
+			region.regionType != DynamicRegion.RegionType.SYMBOL
 		):
 			raise TypeError("Unknown node type %s" % region.regionType)
 		nodeName = region.name
@@ -89,28 +77,32 @@ class ConnectivityGraph(nx.DiGraph):
 		self.nodes[nodeName]["fromTime"] = self.timeNanoSecs
 		return
 
-	def __addEdges(self, fromStr: Type[PolygonalRegion], toStr: Type[PolygonalRegion], directed=False):
+	def __addEdges(self, fromStr: DynamicRegion, toStr: DynamicRegion, directed=False):
 		self.add_edge(fromStr.name, toStr.name)
 		if directed: return
 		self.add_edge(toStr.name, fromStr.name)
 
-	def __constructRegularRegion(self, regionList: List[Union[MapRegion, SensorRegion]], constructionCallback: Union[Callable[[List[MapRegion]], None], Callable[[List[SensorRegion]], None]], loggerString: str) -> None:
-		if isinstance(regionList, list):
-			Logger().info("Constructing %s." % loggerString)
+	def __constructRegularRegion(self, regionList: Union[Sequence[RegionType], MapPerimeter, FieldOfView], constructionCallback: Callable[[Sequence[RegionType]], None], loggerString: str) -> None:
+		if isinstance(regionList, Sequence):
+			Logger().debug("Constructing %s." % loggerString)
 			constructionCallback(regionList)
 		else:
-			Logger().info("Making a shallow copy of %s from previous graph." % loggerString)
-			constructionCallback([regionList[n] for n in regionList])
+			Logger().debug("Making a shallow copy of %s from previous graph." % loggerString)
+			l = []
+			for n in regionList:
+				r = regionList[n]
+				if isinstance(r, DynamicRegion): l.append(r)
+			constructionCallback(l)
 		return
 
-	def __constructPerimeter(self, regions: List[MapRegion]) -> None:
+	def __constructPerimeter(self, regions: Sequence[MapRegion]) -> None:
 		for region in regions:
 			self.__mapPerimeter.addConnectedComponent(region)
 		return
 
-	def __constructFov(self, regions: List[SensorRegion]) -> None:
+	def __constructFov(self, regions: Sequence[SensorRegion]) -> None:
 		for region in regions:
-			if region.regionType != PolygonalRegion.RegionType.SENSING: continue
+			if region.regionType != DynamicRegion.RegionType.SENSING: continue
 			self.fieldOfView.addConnectedComponent(region)
 			self.__addNode(region)
 		return
@@ -126,9 +118,9 @@ class ConnectivityGraph(nx.DiGraph):
 				for trackId in fovComponent.__tracks:
 					track = fovComponent.__tracks[trackId]
 					if track.pose.spawn:
-						self.__addEdges(region.name, fovName, directed=True)
+						self.__addEdges(region, fovComponent, directed=True)
 					if track.pose.vanished:
-						self.__addEdges(fovName, region.name, directed=True)
+						self.__addEdges(fovComponent, region, directed=True)
 		return
 
 	def __constructShadows(self) -> None:
@@ -202,21 +194,27 @@ class ConnectivityGraph(nx.DiGraph):
 		return self.__symbols
 
 	@property
-	def allRegions(self) -> Set[str]:
+	def allRegionNames(self) -> Set[str]:
 		"""Returns all of the regions in this connectivity graph."""
 		listOfRegions = set(self.shadows.regionNames) & set(self.fieldOfView.regionNames) & set(self.symbols.regionNames)
 		return listOfRegions
 
-	def render(self) -> None:
-		if self.__rvizPublisher is None: return
+	def getRegion(self, region: RegionType) -> Union[RegionType, None]:
+		rName = region.name
+		if rName in self.fieldOfView: return self.fieldOfView[rName]
+		if rName in self.shadows: return self.shadows[rName]
+		if rName in self.symbols: return self.symbols[rName]
+		return None
 
+	def render(self, rvizPublisher: Publisher | None = None) -> None:
+		if rvizPublisher is not None: self.__rvizPublisher = rvizPublisher
+		if self.__rvizPublisher is None: return
 		markers: List[Marker] = []
-		markers += self.shadows.render()
-		markers += self.symbols.render()
-		markers += self.fieldOfView.render()
+		ConcatMessageArray(markers, self.shadows.render())
+		ConcatMessageArray(markers, self.symbols.render())
+		ConcatMessageArray(markers, self.fieldOfView.render())
 		message = MarkerArray()
-		for marker in markers:
-			message.markers.append(marker)
+		for marker in markers: AppendMessage(message.markers, marker)
 		Logger().info("Rendering %d CGraph markers." % len(message.markers))
 		self.__rvizPublisher.publish(message)
 		return

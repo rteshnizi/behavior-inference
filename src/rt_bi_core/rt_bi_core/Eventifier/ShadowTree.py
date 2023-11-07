@@ -1,6 +1,6 @@
 from math import inf
 from queue import Queue
-from typing import Dict, List, Literal, Tuple, Union
+from typing import Callable, Dict, List, Literal, Sequence, Set, Tuple, Union
 
 import networkx as nx
 from visualization_msgs.msg import Marker, MarkerArray
@@ -8,16 +8,18 @@ from visualization_msgs.msg import Marker, MarkerArray
 from rt_bi_core.BehaviorAutomaton.Lambda import NfaLambda
 from rt_bi_core.BehaviorAutomaton.SpaceTime import ProjectiveSpaceTimeSet
 from rt_bi_core.BehaviorAutomaton.Symbol import Symbol
-from rt_bi_core.BehaviorAutomaton.TimeRegion import TimeInterval
 from rt_bi_core.Eventifier.ConnectivityGraph import ConnectivityGraph
 from rt_bi_core.Eventifier.ContinuousTimeCollisionDetection import ContinuousTimeCollisionDetection as CtCd
+from rt_bi_core.Eventifier.ContinuousTimeRegion import ContinuousTimeRegion
 from rt_bi_core.Eventifier.EventAggregator import EventAggregator
 from rt_bi_core.Eventifier.FieldOfView import FieldOfView
 from rt_bi_core.Model.DynamicRegion import DynamicRegion
 from rt_bi_core.Model.MapRegion import MapRegion
+from rt_bi_core.Model.RegularDynamicRegion import RegularDynamicRegion
 from rt_bi_core.Model.SensorRegion import SensorRegion
 from rt_bi_core.Model.ShadowRegion import ShadowRegion
 from rt_bi_core.Model.SymbolRegion import SymbolRegion
+from rt_bi_core.Model.TimeRegion import TimeRegion
 from rt_bi_utils.Geometry import AffineTransform, Geometry, Polygon
 from rt_bi_utils.Ros import AppendMessage, Logger, Publisher
 from rt_bi_utils.RViz import KnownColors, RViz
@@ -123,8 +125,8 @@ class ShadowTree(nx.DiGraph):
 			self.__addEdge(fovNodeInShadowTree, fovNodeInCurrentGraph, isTemporal=True)
 		# Add temporal edges between symbols
 		for symNode in lastGraph.symbols:
-			symNodeInShadowTree = self.generateTemporalName(symNode.name, lastGraph.timeNanoSecs)
-			symNodeInCurrentGraph = self.generateTemporalName(symNode.name, newGraph.timeNanoSecs)
+			symNodeInShadowTree = self.generateTemporalName(symNode, lastGraph.timeNanoSecs)
+			symNodeInCurrentGraph = self.generateTemporalName(symNode, newGraph.timeNanoSecs)
 			self.__addEdge(symNodeInShadowTree, symNodeInCurrentGraph, isTemporal=True)
 		# Add temporal edges between shadows
 		for shadowNodeInPastGraph in lastGraph.shadows:
@@ -161,6 +163,19 @@ class ShadowTree(nx.DiGraph):
 		self.render()
 		return True
 
+	def __iterateRegularRegion(self, lastCGraph: ConnectivityGraph, regularRegion: RegularDynamicRegion[DynamicRegion], r1Past: DynamicRegion, r1Now: DynamicRegion, checked: Set[Tuple[str, str]]) -> List[CtCd.CollisionInterval]:
+		intervals: List[CtCd.CollisionInterval] = []
+		for rName in regularRegion:
+			if rName == r1Now.name: continue
+			r2Now = regularRegion[rName]
+			if (r1Now.name, r2Now.name) in checked: continue
+			checked.add((r1Now.name, r2Now.name))
+			checked.add((r2Now.name, r1Now.name))
+			r2Past = lastCGraph.getRegion(r2Now)
+			r2Past = r2Now if r2Past is None else r2Past
+			intervals += CtCd.estimateCollisionsIntervals((r1Past, r1Now), (r2Past, r2Now), self.__rvizPublishers["continuous_time_collision_detection"])
+		return intervals
+
 	def multiPartiteLayout(self) -> Dict[str, Tuple[float, float]]:
 		y = 0
 		pos: Dict[str, Tuple[float, float]] = {}
@@ -183,7 +198,7 @@ class ShadowTree(nx.DiGraph):
 			n = path[-1]
 			visited.add(n)
 			nodeData = self.nodes[n]
-			spaceTimeSetOfNode = ProjectiveSpaceTimeSet(nodeData["region"].interior, TimeInterval(nodeData["fromTime"], nodeData["toTime"], True, True))
+			spaceTimeSetOfNode = ProjectiveSpaceTimeSet(nodeData["region"].interior, TimeRegion(nodeData["fromTime"], nodeData["toTime"], True, True))
 			# if nodeData["type"] == "sensor": continue # FIXME: check if there is a track head here
 			if goalFunc(spaceTimeSetOfNode):
 				return path
@@ -218,31 +233,42 @@ class ShadowTree(nx.DiGraph):
 
 		nowCGraph = ConnectivityGraph(timeNanoSecs=timeNanoSecs, mapRegions=lastCGraph.mapPerimeter, fovRegions=fovRegions, rvizPublisher=self.__rvizPublishers["connectivity_graph"])
 		# 1. Sensors that have turned off -> the shadows around S1 have merged.
-		turnedOffSensors = lastCGraph.fieldOfView - nowCGraph.fieldOfView
-		if len(turnedOffSensors) > 0:
-			Logger().info("S1.1.1 -> Sensors turned off: %s" % repr(turnedOffSensors))
-		else:
-			Logger().info("S1.1.2 -> No recently turned off sensor.")
+		# turnedOffSensors = lastCGraph.fieldOfView - nowCGraph.fieldOfView
+		# if len(turnedOffSensors) > 0:
+		# 	Logger().info("S1.1.1 -> Sensors turned off: %s" % repr(turnedOffSensors))
+		# else:
+		# 	Logger().info("S1.1.2 -> No recently turned off sensor.")
 
 		# 2. Sensors that have turned on --> the shadows around S2 have splitted. No real algorithm needed, the code does it, on its own.
-		turnedOnSensors = nowCGraph.fieldOfView - lastCGraph.fieldOfView
-		if len(turnedOnSensors) > 0:
-			Logger().info("S2.1.1 -> Sensors turned on: %s" % repr(turnedOnSensors))
-		else:
-			Logger().info("S2.1.2 -> No newly turned on sensor.")
+		# turnedOnSensors = nowCGraph.fieldOfView - lastCGraph.fieldOfView
+		# if len(turnedOnSensors) > 0:
+		# 	Logger().info("S2.1.1 -> Sensors turned on: %s" % repr(turnedOnSensors))
+		# else:
+		# 	Logger().info("S2.1.2 -> No newly turned on sensor.")
 
 		# 3. Sensors that have moved ------> the shadows around S3 have evolved.
-		evolvedSensors = lastCGraph.fieldOfView & nowCGraph.fieldOfView
-		if len(evolvedSensors) > 0:
-			Logger().info("S3.1.1 -> Sensors evolved: %s" % repr(evolvedSensors))
+		# evolvedSensors = nowCGraph.fieldOfView & lastCGraph.fieldOfView
+		# if len(evolvedSensors) > 0:
+		# 	Logger().info("S3.1.1 -> Sensors evolved: %s" % repr(evolvedSensors))
+
+		checked: Set[Tuple[str, str]] = set()
+		intervals: List[CtCd.CollisionInterval] = []
+		for r1Now in regions:
+			r1Past = lastCGraph.getRegion(r1Now)
+			r1Past = r1Now if r1Past is None else r1Past
 
 
-		ctRegion1 = (lastCGraph.fieldOfView, nowCGraph.fieldOfView)
-		ctRegion2 = (lastCGraph.mapPerimeter.interior, lastCGraph.mapPerimeter.interior)
-		events = CtCd.detectCollisions(ctRegion1, ctRegion2, self.__rvizPublishers["continuous_time_collision_detection"])
-		eventGraphs = EventAggregator.aggregateCollisionEvents(events, lastCGraph, nowCGraph, symbols)
-		for graph in eventGraphs:
-			if self.__appendToHistory(graph): self.__connectGraphsTemporally(graph)
+			r2Past = MapRegion(lastCGraph.timeNanoSecs, Geometry.getGeometryCoords(nowCGraph.mapPerimeter.interior), timeNanoSecs=lastCGraph.timeNanoSecs)
+			r2Now = MapRegion(nowCGraph.timeNanoSecs, Geometry.getGeometryCoords(nowCGraph.mapPerimeter.interior), timeNanoSecs=nowCGraph.timeNanoSecs)
+			intervals += CtCd.estimateCollisionsIntervals((r1Past, r1Now), (r2Past, r2Now), self.__rvizPublishers["continuous_time_collision_detection"])
+			intervals += self.__iterateRegularRegion(lastCGraph, nowCGraph.fieldOfView, r1Past, r1Now, checked)
+			intervals += self.__iterateRegularRegion(lastCGraph, nowCGraph.symbols, r1Past, r1Now, checked)
+
+		Logger().info("Intervals %d" % len(intervals))
+		events = CtCd.refineCollisionIntervals(intervals)
+		# eventGraphs = EventAggregator.aggregateCollisionEvents(events, lastCGraph, nowCGraph, symbols)
+		# for graph in eventGraphs:
+		# 	if self.__appendToHistory(graph): self.__connectGraphsTemporally(graph)
 		return
 
 	def updateMap(self, timeNanoSecs: int, regions: List[MapRegion]) -> None:
@@ -251,7 +277,7 @@ class ShadowTree(nx.DiGraph):
 			self.__appendToHistory(currentConnectivityG)
 		return
 
-	def getShadowAreaMarkers(self) -> List[Marker]:
+	def getShadowAreaMarkers(self) -> Sequence[Marker]:
 		markers = []
 		if self.length == 0: return []
 		lastCGraph = self.history[-1]
