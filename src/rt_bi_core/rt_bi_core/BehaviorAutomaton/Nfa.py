@@ -1,8 +1,7 @@
 import json
 import re as RegEx
-from typing import Dict, List, Literal, Set, Union
+from typing import Dict, List, Set, Union
 
-import matplotlib.pyplot as plt
 import networkx as nx
 
 from rt_bi_core.BehaviorAutomaton.Symbol import Symbol
@@ -60,10 +59,8 @@ class Transition:
 		path = shadowTree.bfs(penny.path[-1], self.validator.lambdaObj.func)
 		return None if path is None else path
 
-SpecName = Literal["TET1", "TWIST"]
-
 class Nfa(nx.DiGraph):
-	def __init__(self, specName: SpecName, states, transitions, validators):
+	def __init__(self, specName: str, states, transitions, validators):
 		super().__init__()
 		self._specName = specName
 		self.states = states
@@ -74,7 +71,7 @@ class Nfa(nx.DiGraph):
 		self._fig = None
 		self.activeStates: Set[Penny] = set()
 		self.__buildGraph()
-		self._previousCGraph: ConnectivityGraph = None
+		self._previousCGraph: Union[ConnectivityGraph, None] = None
 
 	def __repr__(self):
 		return "%s.NFA" % self._specName
@@ -90,27 +87,8 @@ class Nfa(nx.DiGraph):
 				toState = matches.group(2)
 				self.add_edge(fromState, toState, transition=transition)
 
-	def displayGraph(self):
-		fig = plt.figure(len(GraphAlgorithms.__allFigs))
-		GraphAlgorithms.__allFigs.add(fig)
-		pos = nx.circular_layout(self)
-		activeStates = { penny.state for penny in self.activeStates }
-		inactiveStates = set(self.nodes) - activeStates
-		nx.draw_networkx_nodes(self, pos, nodelist=activeStates, node_color="PaleGreen")
-		nx.draw_networkx_nodes(self, pos, nodelist=inactiveStates - {"END"}, node_color="lightgrey")
-		# END STATE
-		nx.draw_networkx_nodes(self, pos, nodelist={"END"}, node_color="tomato" if "END" in inactiveStates else "PaleGreen")
-		nx.draw_networkx_edges(self, pos)
-		nx.draw_networkx_labels(self, pos, font_family="DejaVu Sans", font_size=10)
-		edgeLabel = nx.get_edge_attributes(self, "transition")
-		nx.draw_networkx_edge_labels(self, pos, edge_labels=edgeLabel)
-		pennyText = [repr(penny) for penny in self.activeStates]
-		plt.annotate("\n".join(pennyText), xy=(0.01, 0), xycoords="axes fraction") # cSpell:ignore xycoords
-		plt.axis("off")
-		fig.show()
-		self._fig = fig
+	def displayGraph(self) -> None:
+		return
 
-	def killDisplayedGraph(self):
-		if self._fig is not None:
-			GraphAlgorithms.killDisplayedGraph(self._fig)
-			self._fig = None
+	def killDisplayedGraph(self) -> None:
+		return

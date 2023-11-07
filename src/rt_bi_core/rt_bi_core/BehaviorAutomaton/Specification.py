@@ -1,44 +1,47 @@
+from typing import List, Literal, Union
+
 from rt_bi_core.BehaviorAutomaton.Nfa import Nfa
 from rt_bi_core.BehaviorAutomaton.Symbol import Symbol
 
+SpecName = Literal["TET1", "TWIST"]
 
 class Specification:
-	def __init__(self, name: str, specificationDict: str):
-		self.name: str = name
-		self._specificationDict: str = specificationDict
-		self._shapeIds: str = None
-		self._regionSymbols = []
-		self.validators = self._buildSymbolMap()
+	def __init__(self, name: SpecName, specificationDict: str):
+		self.name: SpecName = name
+		self.__specificationDict: str = specificationDict
+		self.__shapeIds: Union[str, None] = None
+		self.__regionSymbols: List[str] = []
+		self.validators = self.__buildSymbolMap()
 		self.nfa = Nfa(self.name, self.states, self.transitions, self.validators)
 
 	@property
 	def states(self):
-		return self._specificationDict["states"]
+		return self.__specificationDict["states"]
 
 	@property
 	def transitions(self):
-		return self._specificationDict["transitions"]
+		return self.__specificationDict["transitions"]
 
 	@property
-	def _validatorsDefs(self):
-		return self._specificationDict["validators"]
+	def __validatorsDefs(self):
+		return self.__specificationDict["validators"]
 
 	def __repr__(self):
 		return "SPEC-%s" % self.name
 
-	def _buildSymbolMap(self):
+	def __buildSymbolMap(self):
 		symbols = {}
-		for symName in self._validatorsDefs:
-			symbols[symName] = Symbol(symName, self._validatorsDefs[symName])
-			if symbols[symName].isRegion: self._regionSymbols.append(symName)
+		for symName in self.__validatorsDefs:
+			symbols[symName] = Symbol(symName, self.__validatorsDefs[symName])
+			if symbols[symName].isRegion: self.__regionSymbols.append(symName)
 		return symbols
 
 	def render(self):
-		for symName in self._regionSymbols:
+		for symName in self.__regionSymbols:
 			region = self.validators[symName].value
 			region.render(renderText=True)
 
 	def clearRender(self):
-		for symName in self._regionSymbols:
+		for symName in self.__regionSymbols:
 			region = self.validators[symName].value
 			region.clearRender()
