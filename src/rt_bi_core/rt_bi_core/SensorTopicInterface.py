@@ -32,13 +32,8 @@ class SensorTopicInterface(Node):
 	def __onRobotStateUpdate(self, update: RobotState) -> None:
 		if update is None:
 			self.get_logger().warn("Received empty RobotState!")
-			return False
-		if (
-			self.__sensors is not None and
-			update.robot_id in self.__sensors and
-			hash(repr(update)) == hash(repr(self.__sensors[update.robot_id]))
-		):
-			return False
+			return
+		if (self.__sensors is not None and update.robot_id in self.__sensors and hash(repr(update)) == hash(repr(self.__sensors[update.robot_id]))): return
 
 		self.get_logger().debug("Updating sensor %d definition." % update.robot_id)
 		if self.__sensors is None:
@@ -50,17 +45,13 @@ class SensorTopicInterface(Node):
 		self.render([sensor])
 		return
 
-	def render(self, regions: List[SensorRegion] = None):
+	def render(self, regions: List[SensorRegion]) -> None:
 		if not RViz.isRVizReady(self, self.__rvizPublisher):
 			self.get_logger().info("Skipping map render... RViz is not ready yet to receive messages.")
 			return
-		if regions is None:
-			regionList = self.regions.values()
-		else:
-			regionList = regions
 		message = MarkerArray()
-		for region in regionList:
-			message.markers += region.render()
+		for region in regions:
+			RosUtils.ConcatMessageArray(message.markers, region.render())
 		self.__rvizPublisher.publish(message)
 		return
 

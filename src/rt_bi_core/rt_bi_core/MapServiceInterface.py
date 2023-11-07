@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Dict, List
+from typing import Dict, List, Sequence
 
 import rclpy
 from rclpy.clock import Duration
@@ -42,8 +42,8 @@ class MapServiceInterface(Node):
 		return idNum
 
 	def __parseFeatureDefinition(self, region: MapRegion, request: QueryFeature.Request, response: QueryFeature.Response) -> List[Feature]:
-		individualFeature: FeatureInfoIndividual
 		parsedFeatures: List[Feature] = []
+		if not isinstance(response.feature_info_individual, Sequence): return parsedFeatures
 		if len(response.feature_info_individual) > 1:
 			raise RuntimeError("Currently we parse a single feature at a time.")
 		individualFeature = response.feature_info_individual[0]
@@ -64,7 +64,7 @@ class MapServiceInterface(Node):
 		self.get_logger().debug("Parsing response to \"%s\" query." % request.name)
 		if request.name != self.MAP_QUERY_NAME:
 			self.get_logger().error("Ignoring response to query %s. Cannot be parsed via %s" % (request.name, self.parsePolygonShapeList.__name__))
-			return
+			return []
 		regions: List[MapRegion] = []
 		individualFeature: FeatureInfoIndividual
 		for individualFeature in response.feature_info_individual:
@@ -95,7 +95,7 @@ class MapServiceInterface(Node):
 			return
 		message = MarkerArray()
 		for region in self.__regions:
-			message.markers += region.render()
+			RosUtils.ConcatMessageArray(message.markers, region.render())
 		self.__rvizPublisher.publish(message)
 		return
 

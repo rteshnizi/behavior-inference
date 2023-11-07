@@ -73,9 +73,9 @@ class ShadowTreeInterface(MapServiceInterface):
 	def __onRobotStateUpdate(self, update: RobotState) -> None:
 		if update is None:
 			self.get_logger().warn("Received empty RobotState!")
-			return False
+			return
 
-		timeNanoSecs = float(self.get_clock().now().nanoseconds)
+		timeNanoSecs = self.get_clock().now().nanoseconds
 		self.get_logger().debug("Updating sensor %d definition @%d." % (update.robot_id, timeNanoSecs))
 		coords = SaMsgs.convertSaPoseListToCoordsList(update.fov.corners)
 		pose = SaMsgs.convertSaPoseToPose(update.pose)
@@ -84,7 +84,7 @@ class ShadowTreeInterface(MapServiceInterface):
 		return
 
 	def __updateMap(self, regions: List[MapRegion]) -> None:
-		timeNanoSecs = float(self.get_clock().now().nanoseconds)
+		timeNanoSecs = self.get_clock().now().nanoseconds
 		self.get_logger().debug("Update map in ShadowTree with %s" % repr(regions))
 		self.__shadowTree.updateMap(timeNanoSecs, regions)
 		if self.__liveRender: self.render()
@@ -95,7 +95,7 @@ class ShadowTreeInterface(MapServiceInterface):
 		return
 
 	def __updateSensors(self, regions: List[SensorRegion]) -> None:
-		updateTime = float(self.get_clock().now().nanoseconds)
+		updateTime = self.get_clock().now().nanoseconds
 		self.get_logger().debug("Update sensors in ShadowTree %s @ %d" % (repr(regions), updateTime))
 		self.__shadowTree.updateSensors(timeNanoSecs=updateTime, regions=regions)
 		if self.__liveRender: self.render()

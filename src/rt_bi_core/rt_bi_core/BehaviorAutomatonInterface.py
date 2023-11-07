@@ -14,11 +14,11 @@ class BehaviorAutomatonInterface(Node):
 	"""
 	def __init__(self) -> None:
 		""" Create a Behavior Automaton Interface node. """
-		super().__init__(node_name="rt_bi_core_ba", subClass=True)
+		super().__init__(node_name="rt_bi_core_ba") # type: ignore - parameter_overrides: List[Parameter] = None
 		self.get_logger().info("%s is initializing." % self.get_fully_qualified_name())
 		RosUtils.SetLogger(self.get_logger())
 
-	def render(self, regions: List[PolygonalRegion] = None) -> None:
+	def render(self, regions: List[PolygonalRegion]) -> None:
 		self.get_logger().info("Render BA.")
 		return
 
