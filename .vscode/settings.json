@@ -615,6 +615,6 @@
 	],
 	"window.autoDetectColorScheme": true,
 	"workbench.preferredLightColorTheme": "Quiet Light",
-	"workbench.preferredDarkColorTheme": "Solarized Dark",
-	"workbench.colorTheme": "Quiet Light",
+	"workbench.preferredDarkColorTheme": "Monokai Dimmed",
+	"workbench.colorTheme": "Monokai Dimmed",
 }
