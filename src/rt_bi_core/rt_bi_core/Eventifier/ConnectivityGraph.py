@@ -61,7 +61,7 @@ class ConnectivityGraph(nx.DiGraph):
 		# self.__constructSymbols(symbols)
 
 	def __repr__(self):
-		return "cGraph-%.2f" % self.timeNanoSecs
+		return "CGr-%d" % self.timeNanoSecs
 
 	def __addNode(self, region: DynamicRegion) -> None:
 		if (
