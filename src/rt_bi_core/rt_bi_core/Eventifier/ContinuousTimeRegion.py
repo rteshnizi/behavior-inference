@@ -1,5 +1,5 @@
-from math import nan
-from typing import Generic, List, Sequence, Tuple, TypeVar
+from math import isnan, nan
+from typing import Generic, List, Sequence, Tuple, TypeVar, Union
 
 from rt_bi_core.Model.DynamicRegion import DynamicRegion
 from rt_bi_utils.Geometry import AffineTransform, Geometry, Polygon
@@ -13,7 +13,11 @@ class ContinuousTimeRegion(Generic[RegionType]):
 		self.__configs = tuple(sorted(regionConfigs, key=lambda r: r.timeNanoSecs))
 		Logger().debug("Creating ContinuousTimeRegion for %s" % repr(self.__configs))
 		self.__transforms: Sequence[AffineTransform] = self.__obtainTransformationMatrix()
+		Logger().info(repr(self))
 		return
+
+	def __repr__(self) -> str:
+		return "CTR-%s[%d, %d]" % (self.regionType.value, self.earliestNanoSecs, self.latestNanoSecs)
 
 	def __getitem__(self, timeNanoSecs: int) -> Polygon:
 		"""Get polygonal shape at time.
@@ -36,8 +40,16 @@ class ContinuousTimeRegion(Generic[RegionType]):
 		for i in range(self.numConfigs):
 			if timeNanoSecs <= self.__configs[i].timeNanoSecs: break
 		param = self.__getParameterizedTime(i - 1, timeNanoSecs)
+		if isnan(param):
+			return self.__configs[i - 1].interior
 		transform = Geometry.getParameterizedAffineTransformation(self.__transforms[i - 1], param)
 		return Geometry.applyMatrixTransformToPolygon(transform, self.__configs[i - 1].interior)
+
+	@property
+	def idNum(self) -> int:
+		if self.numConfigs == 0:
+			return -1
+		return self.configs[0].idNum
 
 	@property
 	def numConfigs(self) -> int:
@@ -46,6 +58,12 @@ class ContinuousTimeRegion(Generic[RegionType]):
 	@property
 	def configs(self) -> Tuple[RegionType, ...]:
 		return self.__configs
+
+	@property
+	def regionType(self) -> DynamicRegion.RegionType:
+		if self.numConfigs == 0:
+			return DynamicRegion.RegionType.BASE
+		return self.configs[0].regionType
 
 	@property
 	def transformations(self) -> Sequence[AffineTransform]:
@@ -85,9 +103,10 @@ class ContinuousTimeRegion(Generic[RegionType]):
 		Returns
 		-------
 		float
-			A number in the range `[0, 1]`
+			A number in the range `[0, 1]`, or `nan` if the two ends of the interval are the same.
 		"""
 		if self.numConfigs < 2: return nan
 		frac = timeNanoSecs - self.__configs[i].timeNanoSecs
 		total = self.__configs[i + 1].timeNanoSecs - self.__configs[i].timeNanoSecs
+		if total == 0: return nan
 		return (float(frac) / float(total))

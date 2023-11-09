@@ -1,63 +1,53 @@
-from typing import Dict, List, Literal, Tuple, TypeVar, Union
+from typing import Dict, List, Tuple, TypeVar, Union
 
 from rclpy.clock import Duration
 from visualization_msgs.msg import MarkerArray
 
 from rt_bi_core.Eventifier.ContinuousTimeRegion import ContinuousTimeRegion
 from rt_bi_core.Model.DynamicRegion import DynamicRegion
-from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
-from rt_bi_core.Model.TimeRegion import TimeRegion
-from rt_bi_utils.Geometry import AffineTransform, Geometry, LineString, MultiPolygon, Polygon
-from rt_bi_utils.Pose import Pose
+from rt_bi_utils.Geometry import AffineTransform, Geometry, LineString, Polygon
 from rt_bi_utils.Ros import AppendMessage, Logger, Publisher
-from rt_bi_utils.RViz import Color, KnownColors, RViz
+from rt_bi_utils.RViz import Color, RViz
 
+RegionTypeX = TypeVar("RegionTypeX", bound=DynamicRegion)
+RegionTypeY = TypeVar("RegionTypeY", bound=DynamicRegion)
+
+RegionCollisions = Dict[str, List[LineString]]
+"""
+Represents all the collisions a Region and a Polygon.
+### Type
+```
+{"edgeId": {L1, L2, ...}}
+Dict[str, List[LineString]]
+```
+wherein, `edgeId` is the id of the region edge and `Li` is the edge of the other.
+"""
+
+RegularRegionCollisions = Dict[str, RegionCollisions]
+"""
+Represents all the collisions between a regular region and a polygon.
+### Type
+```
+{"subRegionName": {"edgeId": {L1, L2, ...}}}
+Dict[str, Dict[str, List[LineString]]]
+```
+"""
+
+CollisionInterval = Tuple[ContinuousTimeRegion[RegionTypeX], str, ContinuousTimeRegion[RegionTypeY], str, int, int]
+"""## Collision Interval
+
+A collision interval is a represents an interval of time in which two edges collide.
+`[ctRegion1, edgeStrId1, ctRegion2, edgeStrId2, T1, T2]`
+`ctRegion1` and `ctRegion2` move and a collision will happen between edges with Id `edgeStrId1` and `edgeStrId2`, respectively.
+The two `int`s are the bounds of the interval of time when this event happens: `[T1, T2)`.
+`T1` and `T2` are absolute values of time in NanoSeconds as an integer.
+"""
 
 class ContinuousTimeCollisionDetection:
 	"""
 		This class contains functions related to Continuous-time Collision Detection.
 		© Reza Teshnizi 2018-2023
 	"""
-
-	Collision = Tuple[Polygon, TimeRegion, Literal["made", "released"], LineString]
-	"""### Collision
-	```
-	(Polygon, timeOfEvent, "made" | "released", collidingEdge)
-	```
-	Wherein:
-		* `collidingEdge` is the edge of the `Polygon` that is colliding at some point after `0 ≤ timeOfEvent≤ 1`.
-	"""
-
-	RegionCollisions = Dict[str, List[LineString]]
-	"""
-	Represents all the collisions a Region and a Polygon.
-	### Type
-	```
-	{"edgeId": {L1, L2, ...}}
-	Dict[str, List[LineString]]
-	```
-	wherein, `edgeId` is the id of the region edge and `Li` is the edge of the other.
-	"""
-
-	RegularRegionCollisions = Dict[str, RegionCollisions]
-	"""
-	Represents all the collisions between a regular region and a polygon.
-	### Type
-	```
-	{"subRegionName": {"edgeId": {L1, L2, ...}}}
-	Dict[str, Dict[str, List[LineString]]]
-	```
-	"""
-
-	CollisionInterval = Tuple[LineString, LineString, int, int]
-	"""## Collision Interval
-
-	A collision interval is a represents an interval of time in which two edges collide.
-	A tuple `(L1, L2, T1, T2)`, the two floats are the bounds of the interval of time when this event happens: `[T1, T2)`.
-	`T1` and `T2` are absolute values of time in NanoSeconds as an integer.
-	"""
-
-	RegionType = TypeVar("RegionType", bound=DynamicRegion)
 
 	MIN_TIME_DELTA = 1
 	"""
@@ -97,21 +87,19 @@ class ContinuousTimeCollisionDetection:
 		centerOfRotation = Geometry.getCenterOfRotation(transformation)
 		finalConfig = Geometry.applyMatrixTransformToLineString(transformation, lineSeg)
 		finalCoords = Geometry.getGeometryCoords(finalConfig)
-		polygons = []
+		verts: Geometry.CoordsList = []
 		for j in range(16):
 			v1 = cls.__expandVertObbWithAngularVelocity(originalCoords[0], angle, centerOfRotation, j & 1 != 0)
 			v2 = cls.__expandVertObbWithAngularVelocity(finalCoords[0], angle, centerOfRotation, j & 2 != 0)
 			v3 = cls.__expandVertObbWithAngularVelocity(finalCoords[1], angle, centerOfRotation, j & 4 != 0)
 			v4 = cls.__expandVertObbWithAngularVelocity(originalCoords[1], angle, centerOfRotation, j & 8 != 0)
-			p = Polygon([v1, v2, v3, v4])
-			polygons.append(p)
-		expandedObb = Geometry.union(polygons)
-		expandedObb: Polygon = expandedObb.convex_hull
+			verts += [v1, v2, v3, v4]
+		expandedObb = Geometry.convexHull(verts)
 		if isinstance(expandedObb, Polygon): return expandedObb
 		raise ValueError("Expanded OBB is not a polygon: %s" % repr(expandedObb))
 
 	@classmethod
-	def __obbTest(cls, ctRegion1: ContinuousTimeRegion[RegionType], ctRegion2: ContinuousTimeRegion[RegionType]) -> List[CollisionInterval]:
+	def __obbTest(cls, ctRegion1: ContinuousTimeRegion[RegionTypeX], ctRegion2: ContinuousTimeRegion[RegionTypeY]) -> List[CollisionInterval[RegionTypeX, RegionTypeY]]:
 		# If there is no overlap in time then there are no collisions.
 		if ctRegion1.latestNanoSecs < ctRegion2.earliestNanoSecs:
 			Logger().debug("ctRegion1.latest < ctRegion2.earliest --> %d < %d" % (ctRegion1.latestNanoSecs, ctRegion2.earliestNanoSecs))
@@ -120,23 +108,68 @@ class ContinuousTimeCollisionDetection:
 			Logger().debug("ctRegion1.earliest > ctRegion2.latest --> %d > %d" % (ctRegion1.earliestNanoSecs, ctRegion2.latestNanoSecs))
 			return []
 
-		collisions: List[ContinuousTimeCollisionDetection.CollisionInterval] = []
-		obbListToRender = []
+		collisions: List[CollisionInterval] = []
 		for eName1 in ctRegion1.configs[0].edges:
 			edge1 = ctRegion1.configs[0].edges[eName1]
 			for eName2 in ctRegion2.configs[0].edges:
 				edge2 = ctRegion2.configs[0].edges[eName2]
 				obb1 = cls.__getLineSegmentExpandedBb(ctRegion1.transformations[0], edge1)
 				obb2 = cls.__getLineSegmentExpandedBb(ctRegion2.transformations[0], edge2)
-				obbListToRender.append(obb1.exterior if isinstance(obb1, Polygon) else obb1)
-				obbListToRender.append(obb2.exterior if isinstance(obb2, Polygon) else obb2)
-				collision = (edge1, edge2, ctRegion1.earliestNanoSecs, ctRegion1.earliestNanoSecs)
+				edge1Id = ctRegion1.configs[0].edgeId(edge1)
+				if edge1Id is None: raise KeyError("Edge doesn't exist in ctRegion1. E: %s, R: %s" % (repr(edge1), repr(ctRegion1)))
+				edge2Id = ctRegion2.configs[0].edgeId(edge2)
+				if edge2Id is None: raise KeyError("Edge doesn't exist in ctRegion2. E: %s, R: %s" % (repr(edge2), repr(ctRegion2)))
+				collision = (
+					ctRegion1, edge1Id,
+					ctRegion2, edge2Id,
+					ctRegion1.earliestNanoSecs, ctRegion1.earliestNanoSecs
+				)
 				if Geometry.intersects(obb1, obb2): collisions.append(collision)
-		cls.__renderLineStrings(obbListToRender, RViz.randomColor(), 2)
 		return collisions
 
 	@classmethod
-	def estimateCollisionsIntervals(cls, r1Configs: Tuple[RegionType, RegionType], r2Configs: Tuple[RegionType, RegionType], rvizPublisher: Union[Publisher, None]) -> List[CollisionInterval]:
+	def __checkCollisionAtTime(cls, interval: CollisionInterval[RegionTypeX, RegionTypeY], timeNanoSecs: int) -> bool:
+		(ctRegion1, edgeStrId1, ctRegion2, edgeStrId2, intervalStart, intervalEnd) = interval
+		e1 = ctRegion1.configs[0].edges[edgeStrId1]
+		e2 = ctRegion2.configs[0].edges[edgeStrId2]
+		# Base case
+		if intervalStart == intervalEnd: return Geometry.intersects(e1, e2)
+
+		intervalFraction = ((timeNanoSecs - intervalStart) / (intervalEnd - intervalStart))
+		transformation1AtT = Geometry.getParameterizedAffineTransformation(ctRegion1.transformations[0], intervalFraction)
+		e1AtT = Geometry.applyMatrixTransformToLineString(transformation1AtT, e1)
+		transformation2AtT = Geometry.getParameterizedAffineTransformation(ctRegion2.transformations[0], intervalFraction)
+		e2AtT = Geometry.applyMatrixTransformToLineString(transformation2AtT, e2)
+		return Geometry.intersects(e1AtT, e2AtT)
+
+	@classmethod
+	def __checkIntervalsForOverlap(cls, interval1: Tuple[int, int], interval2: Tuple[int, int]) -> bool:
+		# If end of one interval happens earlier than the other
+		if interval1[1] <= interval2[0]: return False
+		if interval2[1] <= interval1[0]: return False
+		return True
+
+	@classmethod
+	def __splitIntervalsListForOverlap(cls, intervals: List[CollisionInterval[RegionTypeX, RegionTypeY]]) -> Tuple[List[CollisionInterval[RegionTypeX, RegionTypeY]], List[CollisionInterval[RegionTypeX, RegionTypeY]]]:
+		haveOverlap = []
+		dontHaveOverlap = []
+		while len(intervals) > 0:
+			interval1 = intervals.pop()
+			foundOverlap = False
+			for interval2 in intervals:
+				if interval1 == interval2: continue
+				(_, _, _, _, interval1Start, interval1End) = interval1
+				(_, _, _, _, interval2Start, interval2End) = interval2
+				if cls.__checkIntervalsForOverlap((interval1Start, interval1End), (interval2Start, interval2End)):
+					foundOverlap = True
+					haveOverlap.append(interval1)
+					break
+			if not foundOverlap:
+				dontHaveOverlap.append(interval1)
+		return (haveOverlap, dontHaveOverlap)
+
+	@classmethod
+	def estimateCollisionsIntervals(cls, r1Configs: Tuple[RegionTypeX, RegionTypeX], r2Configs: Tuple[RegionTypeY, RegionTypeY], rvizPublisher: Union[Publisher, None]) -> List[CollisionInterval[RegionTypeX, RegionTypeY]]:
 		"""## Detection Collisions
 
 		Parameters
@@ -156,11 +189,37 @@ class ContinuousTimeCollisionDetection:
 		cls.__rvizPublisher = rvizPublisher
 		(r1Past, r1Now) = r1Configs
 		(r2Past, r2Now) = r2Configs
-		ctRegion1 = ContinuousTimeRegion[cls.RegionType](r1Past, r1Now)
-		ctRegion2 = ContinuousTimeRegion[cls.RegionType](r2Past, r2Now)
+		ctRegion1 = ContinuousTimeRegion[RegionTypeX](r1Past, r1Now)
+		ctRegion2 = ContinuousTimeRegion[RegionTypeY](r2Past, r2Now)
 		intervals = cls.__obbTest(ctRegion1, ctRegion2)
 		return intervals
 
 	@classmethod
-	def refineCollisionIntervals(cls, interval: List[CollisionInterval]) -> List[Collision]:
-		return []
+	def refineCollisionIntervals(cls, intervals: List[CollisionInterval[RegionTypeX, RegionTypeY]]) -> List[CollisionInterval[RegionTypeX, RegionTypeY]]:
+		withOverlap = intervals.copy()
+		withoutOverlap: List[CollisionInterval[RegionTypeX, RegionTypeY]] = []
+		i = 0
+		while len(withOverlap) > 0 and i < len(withOverlap):
+			interval = withOverlap.pop(i)
+			(ctRegion1, edgeStrId1, ctRegion2, edgeStrId2, intervalStart, intervalEnd) = interval
+			intervalMid = int((intervalStart + intervalEnd) / 2)
+			collidingAtStart = cls.__checkCollisionAtTime(interval, intervalStart)
+			collidingAtMid = cls.__checkCollisionAtTime(interval, intervalMid)
+			collidingAtEnd = cls.__checkCollisionAtTime(interval, intervalEnd)
+			if collidingAtStart != collidingAtMid:
+				withOverlap.insert(i, (ctRegion1, edgeStrId1, ctRegion2, edgeStrId2, intervalStart, intervalMid))
+				i += 1
+			if collidingAtMid != collidingAtEnd:
+				withOverlap.insert(i, (ctRegion1, edgeStrId1, ctRegion2, edgeStrId2, intervalMid, intervalEnd))
+				i += 1
+			(withOverlap, withoutOverlap) = cls.__splitIntervalsListForOverlap(withOverlap)
+
+		obbListToRender = []
+		for interval in withoutOverlap:
+			(ctRegion1, edgeStrId1, ctRegion2, edgeStrId2, intervalStart, intervalEnd) = interval
+			obb1 = cls.__getLineSegmentExpandedBb(ctRegion1.transformations[0], ctRegion1.configs[0].edges[edgeStrId1])
+			obb2 = cls.__getLineSegmentExpandedBb(ctRegion2.transformations[0], ctRegion2.configs[0].edges[edgeStrId2])
+			obbListToRender.append(obb1.exterior if isinstance(obb1, Polygon) else obb1)
+			obbListToRender.append(obb2.exterior if isinstance(obb2, Polygon) else obb2)
+		cls.__renderLineStrings(obbListToRender, RViz.randomColor(), 2)
+		return withoutOverlap

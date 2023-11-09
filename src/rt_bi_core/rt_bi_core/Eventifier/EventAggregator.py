@@ -1,15 +1,19 @@
-from typing import Dict, List
+from typing import Dict, List, TypeVar
 
-from networkx.algorithms.isomorphism import is_isomorphic
+from networkx.algorithms.isomorphism import categorical_node_match, is_isomorphic
 
 import rt_bi_utils.Ros as RosUtils
 from rt_bi_core.BehaviorAutomaton.Symbol import Symbol
 from rt_bi_core.Eventifier.ConnectivityGraph import ConnectivityGraph
-from rt_bi_core.Eventifier.ContinuousTimeCollisionDetection import ContinuousTimeCollisionDetection as CtCd
+from rt_bi_core.Eventifier.ContinuousTimeCollisionDetection import CollisionInterval, ContinuousTimeCollisionDetection as CtCd
 from rt_bi_core.Model.DynamicRegion import DynamicRegion
 from rt_bi_core.Model.SensorRegion import SensorRegion
 from rt_bi_core.Model.Tracklet import Tracklet, Tracklets
 from rt_bi_utils.Geometry import Geometry
+from rt_bi_utils.Pose import Pose
+
+RegionTypeX = TypeVar("RegionTypeX", bound=DynamicRegion)
+RegionTypeY = TypeVar("RegionTypeY", bound=DynamicRegion)
 
 
 class EventAggregator:
@@ -25,7 +29,7 @@ class EventAggregator:
 		n2Content = n2["region"]
 		if not isinstance(n1Content, DynamicRegion): raise ValueError("No Region found.")
 		if not isinstance(n2Content, DynamicRegion): raise ValueError("No Region found.")
-		return n1Content.interior.equals(n2Content.interior)
+		return n1Content.name == n2Content.name
 
 	@classmethod
 	def isIsomorphic(cls, g1: ConnectivityGraph, g2: ConnectivityGraph, useMatcher = False) -> bool:
@@ -52,37 +56,42 @@ class EventAggregator:
 			return False
 
 	@classmethod
-	def __interpolateTrack(cls, previousTracks: Tracklets, currentTracks: Tracklets, eventTime: float, eventFraction: float) -> Tracklets:
+	def __interpolateTrack(cls, previousTracks: Tracklets, currentTracks: Tracklets, eventTimeNs: int, startTimeNs: int, endTimeNs: int) -> Tracklets:
 		"""
 			This function assumes members in previousTracks and currentTracks all have the same timestamp.
 		"""
 		if len(previousTracks) == 0 or len(currentTracks) == 0: return currentTracks
-		if eventFraction == 0: return previousTracks
-		if eventFraction == 1: return currentTracks
+		if eventTimeNs == startTimeNs: return previousTracks
+		if eventTimeNs == endTimeNs: return currentTracks
 		interpolatedTracks = {}
 		(currentTime, _) = next(iter(currentTracks))
+		eventFraction = int((eventTimeNs - startTimeNs) / (endTimeNs - startTimeNs))
 		for (prevTime, trackId) in previousTracks:
 			previousPose = previousTracks[(prevTime, trackId)].pose
 			currentPose = currentTracks[(currentTime, trackId)].pose
 			x = ((eventFraction * (currentPose.x - previousPose.x)) + previousPose.x)
 			y = ((eventFraction * (currentPose.y - previousPose.y)) + previousPose.y)
 			psi = ((eventFraction * (currentPose.psi - previousPose.psi)) + previousPose.psi)
-			interpolatedTracks[(eventTime, trackId)] = Tracklet(trackId, eventTime, x, y, psi, isInterpolated=True)
+			interpolatedTracks[(eventTimeNs, trackId)] = Tracklet(trackId, eventTimeNs, x, y, psi, isInterpolated=True)
 		return interpolatedTracks
 
 	@classmethod
-	def __obtainEventCGraphs(cls, events: List[CtCd.Collision], pastCGraph: ConnectivityGraph, nowCGraph: ConnectivityGraph, symbols: Dict[str, Symbol]) -> List[ConnectivityGraph]:
-		RosUtils.Logger().debug("Creating CGraphs for %d events." % len(events))
+	def __obtainEventCGraphs(cls, eventIntervals: List[CollisionInterval[RegionTypeX, RegionTypeY]], pastCGraph: ConnectivityGraph, nowCGraph: ConnectivityGraph, symbols: Dict[str, Symbol]) -> List[ConnectivityGraph]:
+		RosUtils.Logger().debug("Creating CGraphs for %d events." % len(eventIntervals))
 		graphs: List[ConnectivityGraph] = []
 		startTime = pastCGraph.timeNanoSecs
 		endTime = nowCGraph.timeNanoSecs
-		for event in events:
-			(intermediatePolygon, timeOfEvent, eventType, staticEdge) = event
-			eventTimeNs = int((relativeTime * (endTime - startTime)) + startTime)
-			interpolatedTracks = cls.__interpolateTrack(pastCGraph.fieldOfView.tracks, nowCGraph.fieldOfView.tracks, eventTimeNs, event[1])
+		for interval in eventIntervals:
+			(ctRegion1, _, ctRegion2, _, _, eventTimeNs) = interval
+			interpolatedTracks = cls.__interpolateTrack(pastCGraph.fieldOfView.tracks, nowCGraph.fieldOfView.tracks, eventTimeNs, startTime, endTime)
 			filteredTracks = {(tTime, tId): interpolatedTracks[(tTime, tId)] for (tTime, tId) in interpolatedTracks if tTime == eventTimeNs}
-			sensorPolys = Geometry.toGeometryList(intermediatePolygon)
-			fovRegions = [SensorRegion(centerOfRotation, idNum, envelope=Geometry.getGeometryCoords(poly), timeNanoSecs=eventTimeNs, tracks=filteredTracks) for poly in sensorPolys]
+			fovRegions: List[SensorRegion] = []
+			if ctRegion1.regionType == DynamicRegion.RegionType.SENSING:
+				poly = ctRegion1[eventTimeNs]
+				fovRegions.append(SensorRegion(Pose(0, 0, 0, 0), ctRegion1.idNum, envelope=Geometry.getGeometryCoords(poly), timeNanoSecs=eventTimeNs, tracks=filteredTracks))
+			if ctRegion2.regionType == DynamicRegion.RegionType.SENSING:
+				poly = ctRegion1[eventTimeNs]
+				fovRegions.append(SensorRegion(Pose(0, 0, 0, 0), ctRegion1.idNum, envelope=Geometry.getGeometryCoords(poly), timeNanoSecs=eventTimeNs, tracks=filteredTracks))
 			graph = ConnectivityGraph(timeNanoSecs=eventTimeNs, mapRegions=nowCGraph.mapPerimeter, fovRegions=fovRegions)
 			graphs.append(graph)
 		return graphs
@@ -96,7 +105,7 @@ class EventAggregator:
 		return filtered
 
 	@classmethod
-	def aggregateCollisionEvents(cls, events: List[CtCd.Collision], pastCGraph: ConnectivityGraph, nowCGraph: ConnectivityGraph, symbols: Dict[str, Symbol]) -> List[ConnectivityGraph]:
+	def aggregateCollisionEvents(cls, events: List[CollisionInterval], pastCGraph: ConnectivityGraph, nowCGraph: ConnectivityGraph, symbols: Dict[str, Symbol]) -> List[ConnectivityGraph]:
 		RosUtils.Logger().debug("Aggregating for %d events." % len(events))
 		graphs: List[ConnectivityGraph] = cls.__obtainEventCGraphs(events, pastCGraph, nowCGraph, symbols)
 		graphs.sort(key=lambda g: g.timeNanoSecs)

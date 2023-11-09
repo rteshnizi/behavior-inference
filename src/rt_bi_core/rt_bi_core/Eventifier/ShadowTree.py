@@ -1,6 +1,6 @@
 from math import inf
 from queue import Queue
-from typing import Callable, Dict, List, Literal, Sequence, Set, Tuple, Union
+from typing import Dict, List, Literal, Sequence, Set, Tuple, TypeVar, Union
 
 import networkx as nx
 from visualization_msgs.msg import Marker, MarkerArray
@@ -9,8 +9,7 @@ from rt_bi_core.BehaviorAutomaton.Lambda import NfaLambda
 from rt_bi_core.BehaviorAutomaton.SpaceTime import ProjectiveSpaceTimeSet
 from rt_bi_core.BehaviorAutomaton.Symbol import Symbol
 from rt_bi_core.Eventifier.ConnectivityGraph import ConnectivityGraph
-from rt_bi_core.Eventifier.ContinuousTimeCollisionDetection import ContinuousTimeCollisionDetection as CtCd
-from rt_bi_core.Eventifier.ContinuousTimeRegion import ContinuousTimeRegion
+from rt_bi_core.Eventifier.ContinuousTimeCollisionDetection import CollisionInterval, ContinuousTimeCollisionDetection as CtCd
 from rt_bi_core.Eventifier.EventAggregator import EventAggregator
 from rt_bi_core.Eventifier.FieldOfView import FieldOfView
 from rt_bi_core.Model.DynamicRegion import DynamicRegion
@@ -24,11 +23,8 @@ from rt_bi_utils.Geometry import AffineTransform, Geometry, Polygon
 from rt_bi_utils.Ros import AppendMessage, Logger, Publisher
 from rt_bi_utils.RViz import KnownColors, RViz
 
-
-def __queueRepr(self) -> str:
-	return repr(self.queue)
-
-Queue.__repr__ = __queueRepr
+RegionTypeX = TypeVar("RegionTypeX", bound=DynamicRegion)
+RegionTypeY = TypeVar("RegionTypeY", bound=DynamicRegion)
 
 class ShadowTree(nx.DiGraph):
 	"""
@@ -41,16 +37,16 @@ class ShadowTree(nx.DiGraph):
 
 	def __init__(self, rvizPublishers: Dict[SUBMODULE_TYPES, Union[Publisher, None]]):
 		"""Initialize the shadow tree. The tree is expected to be updated in a streaming fashion."""
-		super().__init__(name="ShadowTree V3")
+		super().__init__(name="ShTr-V3")
 		self.__history: List[ConnectivityGraph] = []
 		self.componentEvents: List[List[Polygon]] = []
 		""" The reason this is a list of lists is that the time of event is relative to the time between. """
 		self.__rvizPublishers = rvizPublishers
 
 	@property
-	def history(self) -> Tuple[ConnectivityGraph, ...]:
+	def history(self) -> Sequence[ConnectivityGraph]:
 		"""The list of the graphs."""
-		return tuple(self.__history)
+		return self.__history
 
 	@property
 	def length(self) -> int:
@@ -58,7 +54,12 @@ class ShadowTree(nx.DiGraph):
 		return len(self.__history)
 
 	def __repr__(self) -> str:
-		return self.name
+		timeRangeStr = "∅"
+		if self.length == 1:
+			timeRangeStr = "%d" % self.history[0].timeNanoSecs
+		if self.length > 1:
+			timeRangeStr = "%d-%d" % (self.history[0].timeNanoSecs, self.history[-1].timeNanoSecs)
+		return "%s[%s]{d=%d}" % (self.name, timeRangeStr, self.length)
 
 	def __getLowerAndUpperNode(self, n1: str, n2: str) -> Tuple[str, str]:
 		upper = n1 if self.nodes[n1]["fromTime"] > self.nodes[n2]["fromTime"] else n2
@@ -142,13 +143,10 @@ class ShadowTree(nx.DiGraph):
 		return
 
 	def __appendToHistory(self, graph: ConnectivityGraph) -> bool:
-		if len(self.__history) > 0:
-			if graph.timeNanoSecs < self.__history[-1].timeNanoSecs:
+		if self.length > 0 and graph.timeNanoSecs < self.__history[-1].timeNanoSecs:
 				Logger().info("OUT OF ORDER graph --> %.3f vs %.3f" % ((graph.timeNanoSecs / SensorRegion.NANO_CONSTANT, self.__history[0].timeNanoSecs / SensorRegion.NANO_CONSTANT)))
 				return False
-			if EventAggregator.isIsomorphic(self.__history[-1], graph):
-				Logger().debug("Isomorphic graph --> %.3f" % ((graph.timeNanoSecs / SensorRegion.NANO_CONSTANT)))
-				return False
+
 		for node in graph.nodes:
 			temporalName = self.generateTemporalName(node, graph.timeNanoSecs)
 			self.__addNode(temporalName, graph.timeNanoSecs)
@@ -159,12 +157,17 @@ class ShadowTree(nx.DiGraph):
 			self.__addEdge(frm, to, False)
 
 		graph.render(self.__rvizPublishers["connectivity_graph"])
-		self.__history.append(graph)
+		if self.length > 0 and EventAggregator.isIsomorphic(self.__history[-1], graph):
+			Logger().info("Updating last CGraph with the most recent isomorphic version --> %s" % repr(graph))
+			self.__history[-1] = graph
+		else:
+			Logger().info("Appending graph to history --> %s" % repr(graph))
+			self.__history.append(graph)
 		self.render()
 		return True
 
-	def __iterateRegularRegion(self, lastCGraph: ConnectivityGraph, regularRegion: RegularDynamicRegion[DynamicRegion], r1Past: DynamicRegion, r1Now: DynamicRegion, checked: Set[Tuple[str, str]]) -> List[CtCd.CollisionInterval]:
-		intervals: List[CtCd.CollisionInterval] = []
+	def __iterateRegularRegion(self, lastCGraph: ConnectivityGraph, regularRegion: RegularDynamicRegion[RegionTypeY], r1Past: RegionTypeX, r1Now: RegionTypeX, checked: Set[Tuple[str, str]]) -> List[CollisionInterval[RegionTypeX, RegionTypeY]]:
+		intervals: List[CollisionInterval[RegionTypeX, RegionTypeY]] = []
 		for rName in regularRegion:
 			if rName == r1Now.name: continue
 			r2Now = regularRegion[rName]
@@ -218,7 +221,6 @@ class ShadowTree(nx.DiGraph):
 			return
 
 		lastCGraph = self.history[-1]
-
 		# There are there possibilities for sensor names. We have decided to require specific messages for S1.
 		# 1. S1 is in pastSensors but not in nowSensors ----> S1 has turned off -> the shadows around S1 have merged.
 		# 2. S2 is not in pastSensors but is in nowSensors -> S2 has turned on --> the shadows around S2 have splitted.
@@ -231,28 +233,15 @@ class ShadowTree(nx.DiGraph):
 		else:
 			fovRegions = regions
 
-		nowCGraph = ConnectivityGraph(timeNanoSecs=timeNanoSecs, mapRegions=lastCGraph.mapPerimeter, fovRegions=fovRegions, rvizPublisher=self.__rvizPublishers["connectivity_graph"])
-		# 1. Sensors that have turned off -> the shadows around S1 have merged.
-		# turnedOffSensors = lastCGraph.fieldOfView - nowCGraph.fieldOfView
-		# if len(turnedOffSensors) > 0:
-		# 	Logger().info("S1.1.1 -> Sensors turned off: %s" % repr(turnedOffSensors))
-		# else:
-		# 	Logger().info("S1.1.2 -> No recently turned off sensor.")
-
-		# 2. Sensors that have turned on --> the shadows around S2 have splitted. No real algorithm needed, the code does it, on its own.
-		# turnedOnSensors = nowCGraph.fieldOfView - lastCGraph.fieldOfView
-		# if len(turnedOnSensors) > 0:
-		# 	Logger().info("S2.1.1 -> Sensors turned on: %s" % repr(turnedOnSensors))
-		# else:
-		# 	Logger().info("S2.1.2 -> No newly turned on sensor.")
-
-		# 3. Sensors that have moved ------> the shadows around S3 have evolved.
-		# evolvedSensors = nowCGraph.fieldOfView & lastCGraph.fieldOfView
-		# if len(evolvedSensors) > 0:
-		# 	Logger().info("S3.1.1 -> Sensors evolved: %s" % repr(evolvedSensors))
-
+		nowCGraph = ConnectivityGraph(
+			timeNanoSecs=timeNanoSecs,
+			mapRegions=lastCGraph.mapPerimeter,
+			fovRegions=fovRegions,
+			rvizPublisher=self.__rvizPublishers["connectivity_graph"]
+		)
+		Logger().info("last = %s, now = %s" % (repr(lastCGraph), repr(nowCGraph)))
 		checked: Set[Tuple[str, str]] = set()
-		intervals: List[CtCd.CollisionInterval] = []
+		intervals: List[CollisionInterval[SensorRegion, MapRegion]] = []
 		for r1Now in regions:
 			r1Past = lastCGraph.getRegion(r1Now)
 			r1Past = r1Now if r1Past is None else r1Past
@@ -264,11 +253,11 @@ class ShadowTree(nx.DiGraph):
 			intervals += self.__iterateRegularRegion(lastCGraph, nowCGraph.fieldOfView, r1Past, r1Now, checked)
 			intervals += self.__iterateRegularRegion(lastCGraph, nowCGraph.symbols, r1Past, r1Now, checked)
 
-		Logger().info("Intervals %d" % len(intervals))
-		events = CtCd.refineCollisionIntervals(intervals)
-		# eventGraphs = EventAggregator.aggregateCollisionEvents(events, lastCGraph, nowCGraph, symbols)
-		# for graph in eventGraphs:
-		# 	if self.__appendToHistory(graph): self.__connectGraphsTemporally(graph)
+		intervals = CtCd.refineCollisionIntervals(intervals)
+		eventGraphs = EventAggregator.aggregateCollisionEvents(intervals, lastCGraph, nowCGraph, symbols)
+		Logger().info("Intervals = %d, Graphs = %d" % (len(intervals), len(eventGraphs)))
+		for graph in eventGraphs:
+			if self.__appendToHistory(graph): self.__connectGraphsTemporally(graph)
 		return
 
 	def updateMap(self, timeNanoSecs: int, regions: List[MapRegion]) -> None:
