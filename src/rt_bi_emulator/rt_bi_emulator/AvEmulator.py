@@ -1,4 +1,5 @@
 import json
+from math import inf
 from typing import List
 
 import rclpy
@@ -36,8 +37,9 @@ class AvEmulator(Node):
 		self.__transformationMatrix = AffineTransform()
 		self.__parseConfigFileParameters()
 		(self.__fovPublisher, _) = SaMsgs.createSaRobotStatePublisher(self, self.__publishMyFov, self.__updateInterval)
-		# Junk code below
-		self.__passed295 = -1
+		# Provides a debugging way to stop the updating the position of the AV any further.
+		self.__passedCutOffTime: int = -1
+		self.__cutOffTime: float = inf
 
 	def __declareParameters(self) -> None:
 		self.get_logger().debug("%s is setting node parameters." % self.get_fully_qualified_name())
@@ -46,12 +48,15 @@ class AvEmulator(Node):
 		self.declare_parameter("timeSecs", Parameter.Type.DOUBLE_ARRAY)
 		self.declare_parameter("saPose", Parameter.Type.STRING_ARRAY)
 		self.declare_parameter("fov", Parameter.Type.STRING_ARRAY)
+		self.declare_parameter("cutOffTime", Parameter.Type.DOUBLE)
 		return
 
 	def __parseConfigFileParameters(self) -> None:
 		self.get_logger().debug("%s is parsing parameters." % self.get_fully_qualified_name())
 		self.__robotId = self.get_parameter("robotId").get_parameter_value().integer_value
 		self.__updateInterval = self.get_parameter("updateInterval").get_parameter_value().double_value
+		try: self.__cutOffTime = self.get_parameter("cutOffTime").get_parameter_value().double_value
+		except: self.__cutOffTime = inf
 		timePoints = self.get_parameter("timeSecs").get_parameter_value().double_array_value
 		saPoses = self.get_parameter("saPose").get_parameter_value().string_array_value
 		saPoses = [json.loads(pose) for pose in saPoses]
@@ -70,11 +75,11 @@ class AvEmulator(Node):
 		return
 
 	def __publishMyFov(self) -> None:
-		timeOfPublish = float(self.get_clock().now().nanoseconds)
-		if self.__passed295 < 0 and ((timeOfPublish - self.__initTime) / AvEmulator.NANO_CONVERSION_CONSTANT) > 29.5:
-			self.__passed295 = timeOfPublish
-		elif self.__passed295 > 0:
-			timeOfPublish = self.__passed295
+		timeOfPublish = self.get_clock().now().nanoseconds
+		if self.__passedCutOffTime < 0 and ((timeOfPublish - self.__initTime) / AvEmulator.NANO_CONVERSION_CONSTANT) > self.__cutOffTime:
+			self.__passedCutOffTime = timeOfPublish
+		elif self.__passedCutOffTime > 0:
+			timeOfPublish = self.__passedCutOffTime
 		elapsedTimeRatio = (timeOfPublish - self.__initTime) / self.__totalTimeNanoSecs
 		elapsedTimeRatio = 1 if elapsedTimeRatio > 1 else elapsedTimeRatio
 		if elapsedTimeRatio < 1:
