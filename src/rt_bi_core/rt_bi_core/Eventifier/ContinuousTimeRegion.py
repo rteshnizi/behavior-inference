@@ -11,13 +11,13 @@ class ContinuousTimeRegion(Generic[RegionType]):
 	def __init__(self, *regionConfigs: RegionType) -> None:
 		self.__configs: Tuple[RegionType, ...] = ()
 		self.__configs = tuple(sorted(regionConfigs, key=lambda r: r.timeNanoSecs))
-		Logger().debug("Creating ContinuousTimeRegion for %s" % repr(self.__configs))
 		self.__transforms: Sequence[AffineTransform] = self.__obtainTransformationMatrix()
-		Logger().info(repr(self))
+		Logger().debug("Created %s" % repr(self))
 		return
 
 	def __repr__(self) -> str:
-		return "CTR-%s[%d, %d]" % (self.regionType.value, self.earliestNanoSecs, self.latestNanoSecs)
+		typeStr = "∅" if self.length < 1 else self.configs[0].name
+		return "CTR-%s[%d, %d]" % (typeStr, self.earliestNanoSecs, self.latestNanoSecs)
 
 	def __getitem__(self, timeNanoSecs: int) -> Polygon:
 		"""Get polygonal shape at time.
@@ -32,12 +32,12 @@ class ContinuousTimeRegion(Generic[RegionType]):
 		Polygon
 			The shape.
 		"""
-		if self.numConfigs == 0: return Polygon()
+		if self.length == 0: return Polygon()
 		if timeNanoSecs < self.earliestNanoSecs: return Polygon()
 		if timeNanoSecs > self.earliestNanoSecs:
 			raise IndexError("Time %d is beyond available data. Max = %d" % (timeNanoSecs, self.latestNanoSecs))
 		i = 0
-		for i in range(self.numConfigs):
+		for i in range(self.length):
 			if timeNanoSecs <= self.__configs[i].timeNanoSecs: break
 		param = self.__getParameterizedTime(i - 1, timeNanoSecs)
 		if isnan(param):
@@ -47,12 +47,12 @@ class ContinuousTimeRegion(Generic[RegionType]):
 
 	@property
 	def idNum(self) -> int:
-		if self.numConfigs == 0:
+		if self.length == 0:
 			return -1
 		return self.configs[0].idNum
 
 	@property
-	def numConfigs(self) -> int:
+	def length(self) -> int:
 		return len(self.__configs)
 
 	@property
@@ -61,7 +61,7 @@ class ContinuousTimeRegion(Generic[RegionType]):
 
 	@property
 	def regionType(self) -> DynamicRegion.RegionType:
-		if self.numConfigs == 0:
+		if self.length == 0:
 			return DynamicRegion.RegionType.BASE
 		return self.configs[0].regionType
 
@@ -71,20 +71,20 @@ class ContinuousTimeRegion(Generic[RegionType]):
 
 	@property
 	def latestNanoSecs(self) -> int:
-		if self.numConfigs == 0:
+		if self.length == 0:
 			return -1
 		return self.__configs[-1].timeNanoSecs
 
 	@property
 	def earliestNanoSecs(self) -> int:
-		if self.numConfigs == 0:
+		if self.length == 0:
 			return -1
 		return self.__configs[0].timeNanoSecs
 
 	def __obtainTransformationMatrix(self) -> Sequence[AffineTransform]:
 		transforms: List[AffineTransform] = []
-		if self.numConfigs < 2: return transforms
-		for i in range(self.numConfigs - 1):
+		if self.length < 2: return transforms
+		for i in range(self.length - 1):
 			transform = Geometry.getAffineTransformation(self.__configs[i].envelope, self.__configs[i + 1].envelope)
 			transforms.append(transform)
 		return transforms
@@ -105,7 +105,7 @@ class ContinuousTimeRegion(Generic[RegionType]):
 		float
 			A number in the range `[0, 1]`, or `nan` if the two ends of the interval are the same.
 		"""
-		if self.numConfigs < 2: return nan
+		if self.length < 2: return nan
 		frac = timeNanoSecs - self.__configs[i].timeNanoSecs
 		total = self.__configs[i + 1].timeNanoSecs - self.__configs[i].timeNanoSecs
 		if total == 0: return nan
