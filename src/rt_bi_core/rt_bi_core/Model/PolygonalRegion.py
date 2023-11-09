@@ -59,7 +59,7 @@ class PolygonalRegion:
 			The width of the rendered lines.
 		"""
 		self.__idNum = idNum
-		self.__name = "%s-%d" % (regionType, idNum)
+		self.__name = "%s-%d" % (regionType.value, idNum)
 		self.__RENDER_LINE_WIDTH = renderLineWidth
 		self.__interiorPolygon = Polygon(envelope) if interior is None else interior
 		self.__envelope = envelope if interior is None else Geometry.getGeometryCoords(self.__interiorPolygon)
@@ -130,13 +130,25 @@ class PolygonalRegion:
 		self.__interiorPolygon = polygon
 		return
 
-	def hasEdge(self, e: LineString) -> bool:
+	def edgeId(self, e: LineString) -> Union[str, None]:
+		"""### Edge Id
+		Returns the Id of a given edge if it belongs to the region, or `None` otherwise.
+
+		Parameters
+		----------
+		e : LineString
+			The edge to receive its Id.
+
+		Returns
+		-------
+		Union[str, None]
+			The string Id or `None`.
+		"""
 		idCandidate1 = Geometry.lineStringId(e)
 		idCandidate2 = Geometry.lineStringId(e.reverse())
-		return idCandidate1 in self.__edges or idCandidate2 in self.__edges
-
-	def isInsideRegion(self, x: float, y: float) -> bool:
-		return Geometry.isXyInsidePolygon(x, y, self.interior)
+		if idCandidate1 in self.__edges: return idCandidate1
+		if idCandidate2 in self.__edges: return idCandidate2
+		return None
 
 	def getEquivalentEdge(self, finalConfig: LineString, transformation: transform.AffineTransform) -> Union[LineString, None]:
 		"""
@@ -146,19 +158,6 @@ class PolygonalRegion:
 		for edge in self.__edges.values():
 			afterTransformation = Geometry.applyMatrixTransformToLineString(transformation, edge)
 			if Geometry.lineSegmentsAreAlmostEqual(finalConfig, afterTransformation): return edge
-		return None
-
-	def intersectsRegion(self, other: "PolygonalRegion") -> bool:
-		return Geometry.intersects(self.interior, other.interior)
-
-	def union(self, others: List["PolygonalRegion"]) -> Polygon:
-		allPolygons = [r.interior for r in others]
-		allPolygons.append(self.interior)
-		return Geometry.union(allPolygons)
-
-	def getCommonEdge(self, other: "PolygonalRegion") -> Union[LineString, None]:
-		for e in self.__edges:
-			if other.hasEdge(self.__edges[e]): return self.__edges[e]
 		return None
 
 	def render(self, renderText: bool = False, fill: bool = False, envelopeColor: Union[Color, None] = None) -> Sequence[Marker]:
