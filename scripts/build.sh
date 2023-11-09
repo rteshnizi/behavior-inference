@@ -33,22 +33,22 @@ then
 	then
 		echo "colcon build --packages-up-to rt_bi_core --symlink-install"
 		colcon build --packages-up-to rt_bi_core --symlink-install
-		return $?
+		exit $?
 	else
 		echo "colcon build --symlink-install"
 		colcon build --symlink-install
-		return $?
+		exit $?
 	fi
 else
 	if [ -e ./install/local_setup.sh ]
 	then
 		echo "colcon build --packages-select-regex rt_bi_.*"
 		colcon build --packages-select-regex rt_bi_.*
-		return $?
+		exit $?
 	else
 		echo "colcon build"
 		colcon build
-		return $?
+		exit $?
 	fi
 fi
 
