@@ -7,6 +7,7 @@ from typing import Dict, List, Tuple, Union
 
 import numpy as np
 from scipy.spatial.transform import Rotation, Slerp
+from shapely.constructive import convex_hull
 from shapely.geometry import LineString, MultiLineString, MultiPolygon, Point
 from shapely.geometry.multipoint import MultiPoint
 from shapely.geometry.polygon import LinearRing, Polygon
@@ -103,17 +104,6 @@ class Geometry:
 		return sqrt((y * y) + (x * x))
 
 	@staticmethod
-	def sortCoordinatesClockwise(coords: CoordsList) -> CoordsList:
-		"""
-		(x,y)
-
-		coords = [(0, 1), (1, 0), (1, 1), (0, 0)]
-		"""
-		center = tuple(map(operator.truediv, reduce(lambda x, y: map(operator.add, x, y), coords), [len(coords)] * 2))
-		sortedCoords = sorted(coords, key=lambda coord: (-135 - degrees(atan2(*tuple(map(operator.sub, coord, center))[::-1]))) % 360)
-		return sortedCoords
-
-	@staticmethod
 	def isLineSegment(l: LineString) -> bool:
 		return isinstance(l, LineString) and len(l.coords) == 2
 
@@ -196,6 +186,16 @@ class Geometry:
 	@staticmethod
 	def isPointOnLine(p: Point, l: LineString) -> bool:
 		return l.distance(p) <= Geometry.EPSILON
+
+	@staticmethod
+	def convexHull(coordsList: CoordsList) -> Polygon:
+		pts = MultiPoint(coordsList)
+		try:
+			return convex_hull(pts)
+		except Exception as e:
+			Geometry.__reportShapelyException(Geometry.intersects.__name__, e, [pts])
+			return Polygon()
+
 
 	@staticmethod
 	def toGeometryList(polys: MultiGeometry) -> List[ConnectedGeometry]:
