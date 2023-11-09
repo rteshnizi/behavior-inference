@@ -16,7 +16,7 @@ setup(
 		(os.path.join("share", package_name, "config"), glob("config/*")),
 	],
 	install_requires= [
-		"setuptools",
+		"setuptools==58.2.0",
 	],
 	zip_safe=True,
 	maintainer="Reza Teshnizi",

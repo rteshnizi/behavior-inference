@@ -13,7 +13,7 @@ setup(
 	],
 	install_requires=[
 		"scikit-image~=0.19.3",
-		"setuptools",
+		"setuptools==58.2.0",
 		"shapely~=2.0.1",
 	],
 	zip_safe=True,

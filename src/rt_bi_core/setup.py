@@ -18,7 +18,7 @@ setup(
 	install_requires= [
 		"isort",
 		"networkx~=3.0",
-		"setuptools",
+		"setuptools==58.2.0",
 		"numpy~=1.24"
 	],
 	zip_safe=True,
