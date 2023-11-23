@@ -17,6 +17,11 @@ def generate_launch_description():
 			namespace=packageName,
 			executable="AV",
 			name="av1",
+			arguments= [
+				"--ros-args",
+				"--log-level",
+				"info",
+			],
 			parameters=[yamlPath]
 		),
 		Node(
@@ -24,6 +29,11 @@ def generate_launch_description():
 			namespace=packageName,
 			executable="AV",
 			name="av2",
+			arguments= [
+				"--ros-args",
+				"--log-level",
+				"info",
+			],
 			parameters=[yamlPath]
 		),
 	])
