@@ -1,18 +1,22 @@
-from typing import Sequence
+from typing import Sequence, Union
 
 from visualization_msgs.msg import Marker
 
 from rt_bi_core.Model.AffineRegion import AffineRegion
-from rt_bi_utils.Geometry import Geometry
+from rt_bi_utils.Geometry import Geometry, MultiPolygon, Polygon
+from rt_bi_utils.Pose import Pose
 from rt_bi_utils.RViz import KnownColors
 
 
 class SymbolRegion(AffineRegion):
-	def __init__(self, idNum: int, envelope: Geometry.CoordsList, inFov=False, **kwArgs):
+	def __init__(self, centerOfRotation: Pose, idNum: int, envelope: Geometry.CoordsList, timeNanoSecs: int, interior: Union[Polygon, MultiPolygon, None]=None, inFov=False, **kwArgs):
 		super().__init__(
+			centerOfRotation=centerOfRotation,
 			idNum=idNum,
 			envelope=envelope,
 			envelopeColor=KnownColors.RED if inFov else KnownColors.BLUE,
+			timeNanoSecs=timeNanoSecs,
+			interior=interior,
 			**kwArgs
 		)
 		self.__inFov = inFov

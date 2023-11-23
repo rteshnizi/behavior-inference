@@ -1,19 +1,22 @@
-from typing import Dict, List, TypeVar
+from typing import List, TypeVar, Union
 
-from networkx.algorithms.isomorphism import categorical_node_match, is_isomorphic
+from networkx.algorithms.isomorphism import is_isomorphic
 
 import rt_bi_utils.Ros as RosUtils
-from rt_bi_core.BehaviorAutomaton.Symbol import Symbol
 from rt_bi_core.Eventifier.ConnectivityGraph import ConnectivityGraph
-from rt_bi_core.Eventifier.ContinuousTimeCollisionDetection import CollisionInterval, ContinuousTimeCollisionDetection as CtCd
-from rt_bi_core.Model.DynamicRegion import DynamicRegion
+from rt_bi_core.Eventifier.ContinuousTimeCollisionDetection import CollisionInterval
+from rt_bi_core.Eventifier.ContinuousTimeRegion import ContinuousTimeRegion
+from rt_bi_core.Model.AffineRegion import AffineRegion
+from rt_bi_core.Model.MapRegion import MapRegion
+from rt_bi_core.Model.RegularAffineRegion import RegularAffineRegion
 from rt_bi_core.Model.SensorRegion import SensorRegion
+from rt_bi_core.Model.SymbolRegion import SymbolRegion
 from rt_bi_core.Model.Tracklet import Tracklet, Tracklets
 from rt_bi_utils.Geometry import Geometry
 from rt_bi_utils.Pose import Pose
 
-RegionTypeX = TypeVar("RegionTypeX", bound=DynamicRegion)
-RegionTypeY = TypeVar("RegionTypeY", bound=DynamicRegion)
+RegionTypeX = TypeVar("RegionTypeX", bound=AffineRegion)
+RegionTypeY = TypeVar("RegionTypeY", bound=AffineRegion)
 
 
 class EventAggregator:
@@ -24,11 +27,11 @@ class EventAggregator:
 	"""
 
 	@classmethod
-	def __nodeInteriorMatcher(cls, n1: ConnectivityGraph.NodeContent, n2: ConnectivityGraph.NodeContent) -> bool:
+	def __nodeNameMatcher(cls, n1: ConnectivityGraph.NodeContent, n2: ConnectivityGraph.NodeContent) -> bool:
 		n1Content = n1["region"]
 		n2Content = n2["region"]
-		if not isinstance(n1Content, DynamicRegion): raise ValueError("No Region found.")
-		if not isinstance(n2Content, DynamicRegion): raise ValueError("No Region found.")
+		if not isinstance(n1Content, AffineRegion): raise ValueError("No Region found.")
+		if not isinstance(n2Content, AffineRegion): raise ValueError("No Region found.")
 		return n1Content.name == n2Content.name
 
 	@classmethod
@@ -50,7 +53,7 @@ class EventAggregator:
 		bool
 			`True` if the graphs are isomorphic, `False` otherwise.
 		"""
-		if is_isomorphic(g1, g2, node_match= cls.__nodeInteriorMatcher if useMatcher else None):
+		if is_isomorphic(g1, g2, node_match= cls.__nodeNameMatcher if useMatcher else None):
 			return True
 		else:
 			return False
@@ -76,23 +79,53 @@ class EventAggregator:
 		return interpolatedTracks
 
 	@classmethod
-	def __obtainEventCGraphs(cls, eventIntervals: List[CollisionInterval[RegionTypeX, RegionTypeY]], pastCGraph: ConnectivityGraph, nowCGraph: ConnectivityGraph, symbols: Dict[str, Symbol]) -> List[ConnectivityGraph]:
-		RosUtils.Logger().debug("Creating CGraphs for %d events." % len(eventIntervals))
+	def __addRegionToList(cls, region: RegionTypeX, mapRegions: List[MapRegion], fovRegions: List[SensorRegion], symbolRegions: List[SymbolRegion], tracklets: Tracklets) -> None:
+		if region.regionType == AffineRegion.RegionType.SENSING:
+			region.tracks = tracklets # type: ignore
+			fovRegions.append(region) # type: ignore
+		elif region.regionType == AffineRegion.RegionType.MAP:
+			mapRegions.append(region) # type: ignore
+		elif region.regionType == AffineRegion.RegionType.SYMBOL:
+			symbolRegions.append(region) # type: ignore
+		else:
+			raise TypeError("Unexpected region type: %s" % repr(region.regionType))
+		return
+
+	@classmethod
+	def __interpolateRegion(cls, lastRegions: RegularAffineRegion[RegionTypeX], nowRegions: RegularAffineRegion[RegionTypeX], eventTimeNs: int, excludeRegions: List[str], tracklets: Tracklets) -> List[RegionTypeX]:
+		regions: List[RegionTypeX] = []
+		for rName in lastRegions:
+			if rName in excludeRegions: continue
+			if rName not in nowRegions.regionNames: continue
+			lastRegion = lastRegions[rName]
+			nowRegion = nowRegions[rName]
+			ctRegion = ContinuousTimeRegion[RegionTypeX](lastRegion, nowRegion)
+			region = ctRegion[eventTimeNs]
+			if region.regionType == AffineRegion.RegionType.SENSING:
+				region.tracks = tracklets # type: ignore
+			RosUtils.Logger().debug("[3] EventAggregator: region added: %s" % repr(region))
+			regions.append(region)
+		return regions
+
+	@classmethod
+	def __obtainEventCGraphs(cls, eventIntervals: List[CollisionInterval[RegionTypeX, RegionTypeY]], lastCGraph: ConnectivityGraph, nowCGraph: ConnectivityGraph) -> List[ConnectivityGraph]:
 		graphs: List[ConnectivityGraph] = []
-		startTime = pastCGraph.timeNanoSecs
+		startTime = lastCGraph.timeNanoSecs
 		endTime = nowCGraph.timeNanoSecs
 		for interval in eventIntervals:
 			(ctRegion1, _, ctRegion2, _, _, eventTimeNs) = interval
-			interpolatedTracks = cls.__interpolateTrack(pastCGraph.fieldOfView.tracks, nowCGraph.fieldOfView.tracks, eventTimeNs, startTime, endTime)
+			interpolatedTracks = cls.__interpolateTrack(lastCGraph.fieldOfView.tracks, nowCGraph.fieldOfView.tracks, eventTimeNs, startTime, endTime)
 			filteredTracks = {(tTime, tId): interpolatedTracks[(tTime, tId)] for (tTime, tId) in interpolatedTracks if tTime == eventTimeNs}
-			fovRegions: List[SensorRegion] = []
-			if ctRegion1.regionType == DynamicRegion.RegionType.SENSING:
-				poly = ctRegion1[eventTimeNs]
-				fovRegions.append(SensorRegion(Pose(0, 0, 0, 0), ctRegion1.idNum, envelope=Geometry.getGeometryCoords(poly), timeNanoSecs=eventTimeNs, tracks=filteredTracks))
-			if ctRegion2.regionType == DynamicRegion.RegionType.SENSING:
-				poly = ctRegion1[eventTimeNs]
-				fovRegions.append(SensorRegion(Pose(0, 0, 0, 0), ctRegion1.idNum, envelope=Geometry.getGeometryCoords(poly), timeNanoSecs=eventTimeNs, tracks=filteredTracks))
-			graph = ConnectivityGraph(timeNanoSecs=eventTimeNs, mapRegions=nowCGraph.mapPerimeter, fovRegions=fovRegions)
+			excludeList = [ctRegion1.name, ctRegion2.name]
+			mapRegions = cls.__interpolateRegion(lastCGraph.mapPerimeter, nowCGraph.mapPerimeter, eventTimeNs, excludeList, filteredTracks)
+			fovRegions = cls.__interpolateRegion(lastCGraph.fieldOfView, nowCGraph.fieldOfView, eventTimeNs, excludeList, filteredTracks)
+			symbolRegions = cls.__interpolateRegion(lastCGraph.symbols, nowCGraph.symbols, eventTimeNs, excludeList, filteredTracks)
+			region1 = ctRegion1[eventTimeNs]
+			region2 = ctRegion2[eventTimeNs]
+			cls.__addRegionToList(region1, mapRegions, fovRegions, symbolRegions, filteredTracks)
+			cls.__addRegionToList(region2, mapRegions, fovRegions, symbolRegions, filteredTracks)
+			RosUtils.Logger().info("[2] EventAggregator: mapRegions: %s, fovRegions %s, symbolRegions = %s" % (repr(mapRegions), repr(fovRegions), repr(symbolRegions)))
+			graph = ConnectivityGraph(timeNanoSecs=eventTimeNs, mapRegions=mapRegions, fovRegions=fovRegions, symbols=symbolRegions)
 			graphs.append(graph)
 		return graphs
 
@@ -105,9 +138,9 @@ class EventAggregator:
 		return filtered
 
 	@classmethod
-	def aggregateCollisionEvents(cls, events: List[CollisionInterval], pastCGraph: ConnectivityGraph, nowCGraph: ConnectivityGraph, symbols: Dict[str, Symbol]) -> List[ConnectivityGraph]:
-		RosUtils.Logger().debug("Aggregating for %d events." % len(events))
-		graphs: List[ConnectivityGraph] = cls.__obtainEventCGraphs(events, pastCGraph, nowCGraph, symbols)
-		graphs.sort(key=lambda g: g.timeNanoSecs)
+	def aggregateCollisionEvents(cls, events: List[CollisionInterval], lastCGraph: ConnectivityGraph, nowCGraph: ConnectivityGraph) -> List[ConnectivityGraph]:
+		events.sort(key=lambda e: e[-1]) # Sort events by their end time
+		RosUtils.Logger().info("[1] EventAggregator: Aggregating for events @ %s" % repr([(e[4], e[5]) for e in events]))
+		graphs: List[ConnectivityGraph] = cls.__obtainEventCGraphs(events, lastCGraph, nowCGraph)
 		graphs = cls.__aggregateIsomorphicGraphs(graphs)
 		return graphs

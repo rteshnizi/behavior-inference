@@ -6,7 +6,7 @@ from rt_bi_core.Model.Tracklet import Tracklets
 from rt_bi_utils.Geometry import MultiPolygon, Polygon
 
 
-class FieldOfView(RegularAffineRegion):
+class FieldOfView(RegularAffineRegion[SensorRegion]):
 	"""A Class to model Field-of-View."""
 	def __init__(self, sensors: List[SensorRegion] = []):
 		"""

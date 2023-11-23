@@ -36,7 +36,7 @@ class ConnectivityGraph(nx.DiGraph):
 			timeNanoSecs: int,
 			mapRegions: Union[List[MapRegion], MapPerimeter],
 			fovRegions: Union[List[SensorRegion], FieldOfView],
-			symbols: Dict[str, Symbol] = {},
+			symbols: Union[List[SymbolRegion], RegularSymbol] = [],
 			rvizPublisher: Union[Publisher, None] = None,
 	) -> None:
 		super().__init__()
@@ -52,7 +52,6 @@ class ConnectivityGraph(nx.DiGraph):
 		self.__mapPerimeter: MapPerimeter = MapPerimeter()
 		"""The RegularSpatialRegion representing the map's perimeter."""
 		self.__rvizPublisher = rvizPublisher
-		self.__passed295 = False
 		self.__constructRegularRegion(regionList=mapRegions, constructionCallback=self.__constructPerimeter, loggerString="Map Perimeter")
 		self.__constructRegularRegion(regionList=fovRegions, constructionCallback=self.__constructFov, loggerString="Field-of-View")
 		Logger().debug("Constructing Shadows.")
@@ -212,7 +211,7 @@ class ConnectivityGraph(nx.DiGraph):
 		markers: List[Marker] = []
 		ConcatMessageArray(markers, self.shadows.render())
 		ConcatMessageArray(markers, self.symbols.render())
-		ConcatMessageArray(markers, self.fieldOfView.render())
+		# ConcatMessageArray(markers, self.fieldOfView.render())
 		message = MarkerArray()
 		for marker in markers: AppendMessage(message.markers, marker)
 		Logger().info("Rendering %d CGraph markers." % len(message.markers))

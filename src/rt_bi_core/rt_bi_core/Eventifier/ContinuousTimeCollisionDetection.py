@@ -4,13 +4,14 @@ from rclpy.clock import Duration
 from visualization_msgs.msg import MarkerArray
 
 from rt_bi_core.Eventifier.ContinuousTimeRegion import ContinuousTimeRegion
-from rt_bi_core.Model.DynamicRegion import DynamicRegion
+from rt_bi_core.Model.AffineRegion import AffineRegion
 from rt_bi_utils.Geometry import AffineTransform, Geometry, LineString, Polygon
+from rt_bi_utils.Pose import Pose
 from rt_bi_utils.Ros import AppendMessage, Logger, Publisher
 from rt_bi_utils.RViz import Color, RViz
 
-RegionTypeX = TypeVar("RegionTypeX", bound=DynamicRegion)
-RegionTypeY = TypeVar("RegionTypeY", bound=DynamicRegion)
+RegionTypeX = TypeVar("RegionTypeX", bound=AffineRegion)
+RegionTypeY = TypeVar("RegionTypeY", bound=AffineRegion)
 
 RegionCollisions = Dict[str, List[LineString]]
 """
@@ -64,27 +65,26 @@ class ContinuousTimeCollisionDetection:
 		for line in lines:
 			strId = repr(Geometry.lineStringId(line))
 			marker = RViz.createLine(strId, Geometry.getGeometryCoords(line), color, renderWidth)
-			marker.lifetime = Duration(nanoseconds=int(15 * (DynamicRegion.NANO_CONSTANT / 10))).to_msg()
+			marker.lifetime = Duration(nanoseconds=int(15 * (AffineRegion.NANO_CONSTANT / 10))).to_msg()
 			AppendMessage(msg.markers, marker)
 		cls.__rvizPublisher.publish(msg)
 		return
 
 	@classmethod
-	def __expandVertObbWithAngularVelocity(cls, coords: Geometry.Coords, angle: float, centerOfRotation: Geometry.Coords, expandAway = True) -> Geometry.Coords:
-		displacement = (coords[0] - centerOfRotation[0], coords[1] - centerOfRotation[1])
+	def __expandVertObbWithAngularVelocity(cls, coords: Geometry.Coords, angle: float, centerOfRotation: Pose, expandAway = True) -> Geometry.Coords:
+		displacement = (coords[0] - centerOfRotation.x, coords[1] - centerOfRotation.y)
 		vertExpansion = (angle * displacement[0], angle * displacement[1])
 		expanded = (coords[0] + vertExpansion[0], coords[1] + vertExpansion[1]) if expandAway else (coords[0] - vertExpansion[0], coords[1] - vertExpansion[1])
 		return expanded
 
 	@classmethod
-	def __getLineSegmentExpandedBb(cls, transformation: AffineTransform, lineSeg: LineString) -> Union[Polygon, LineString]:
+	def __getLineSegmentExpandedBb(cls, transformation: AffineTransform, lineSeg: LineString, centerOfRotation: Pose) -> Union[Polygon, LineString]:
 		""" Gets a tight bounding box for a line segment that is moving with a constant angular velocity. """
 		angle: float = abs(transformation.rotation)
 		originalCoords = Geometry.getGeometryCoords(lineSeg)
 		if len(originalCoords) > 2: raise ValueError("A line segment must have two vertices. Input: %s" % repr(lineSeg))
 		if Geometry.isIdentityTransform(transformation):
 			return lineSeg
-		centerOfRotation = Geometry.getCenterOfRotation(transformation)
 		finalConfig = Geometry.applyMatrixTransformToLineString(transformation, lineSeg)
 		finalCoords = Geometry.getGeometryCoords(finalConfig)
 		verts: Geometry.CoordsList = []
@@ -113,8 +113,8 @@ class ContinuousTimeCollisionDetection:
 			edge1 = ctRegion1.configs[0].edges[eName1]
 			for eName2 in ctRegion2.configs[0].edges:
 				edge2 = ctRegion2.configs[0].edges[eName2]
-				obb1 = cls.__getLineSegmentExpandedBb(ctRegion1.transformations[0], edge1)
-				obb2 = cls.__getLineSegmentExpandedBb(ctRegion2.transformations[0], edge2)
+				obb1 = cls.__getLineSegmentExpandedBb(ctRegion1.transformations[0], edge1, ctRegion1.configs[0].centerOfRotation)
+				obb2 = cls.__getLineSegmentExpandedBb(ctRegion2.transformations[0], edge2, ctRegion2.configs[0].centerOfRotation)
 				edge1Id = ctRegion1.configs[0].edgeId(edge1)
 				if edge1Id is None: raise KeyError("Edge doesn't exist in ctRegion1. E: %s, R: %s" % (repr(edge1), repr(ctRegion1)))
 				edge2Id = ctRegion2.configs[0].edgeId(edge2)
@@ -191,13 +191,15 @@ class ContinuousTimeCollisionDetection:
 		(r2Past, r2Now) = r2Configs
 		ctRegion1 = ContinuousTimeRegion[RegionTypeX](r1Past, r1Now)
 		ctRegion2 = ContinuousTimeRegion[RegionTypeY](r2Past, r2Now)
+		Logger().debug("[1] CtCd: %s <---> %s" % (repr(ctRegion1), repr(ctRegion2)))
 		intervals = cls.__obbTest(ctRegion1, ctRegion2)
+		Logger().debug("[2] CtCd: intervals %d" % (len(intervals)))
 		return intervals
 
 	@classmethod
-	def refineCollisionIntervals(cls, intervals: List[CollisionInterval[RegionTypeX, RegionTypeY]]) -> List[CollisionInterval[RegionTypeX, RegionTypeY]]:
+	def refineCollisionIntervals(cls, intervals: List[CollisionInterval]) -> List[CollisionInterval]:
 		withOverlap = intervals.copy()
-		withoutOverlap: List[CollisionInterval[RegionTypeX, RegionTypeY]] = []
+		withoutOverlap: List[CollisionInterval] = []
 		i = 0
 		while len(withOverlap) > 0 and i < len(withOverlap):
 			interval = withOverlap.pop(i)
@@ -217,8 +219,8 @@ class ContinuousTimeCollisionDetection:
 		obbListToRender = []
 		for interval in withoutOverlap:
 			(ctRegion1, edgeStrId1, ctRegion2, edgeStrId2, intervalStart, intervalEnd) = interval
-			obb1 = cls.__getLineSegmentExpandedBb(ctRegion1.transformations[0], ctRegion1.configs[0].edges[edgeStrId1])
-			obb2 = cls.__getLineSegmentExpandedBb(ctRegion2.transformations[0], ctRegion2.configs[0].edges[edgeStrId2])
+			obb1 = cls.__getLineSegmentExpandedBb(ctRegion1.transformations[0], ctRegion1.configs[0].edges[edgeStrId1], ctRegion1.configs[0].centerOfRotation)
+			obb2 = cls.__getLineSegmentExpandedBb(ctRegion2.transformations[0], ctRegion2.configs[0].edges[edgeStrId2], ctRegion2.configs[0].centerOfRotation)
 			obbListToRender.append(obb1.exterior if isinstance(obb1, Polygon) else obb1)
 			obbListToRender.append(obb2.exterior if isinstance(obb2, Polygon) else obb2)
 		cls.__renderLineStrings(obbListToRender, RViz.randomColor(), 2)

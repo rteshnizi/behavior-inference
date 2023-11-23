@@ -4,13 +4,13 @@ from visualization_msgs.msg import Marker
 
 from rt_bi_core.Model.AffineRegion import AffineRegion
 from rt_bi_core.Model.FeatureMap import Feature
-from rt_bi_utils.Geometry import Geometry
+from rt_bi_utils.Geometry import Geometry, MultiPolygon, Polygon
 from rt_bi_utils.Pose import Pose
 from rt_bi_utils.RViz import Color, KnownColors
 
 
 class MapRegion(AffineRegion):
-	def __init__(self, idNum: int, envelope: Geometry.CoordsList, **kwArgs) -> None:
+	def __init__(self, idNum: int, envelope: Geometry.CoordsList, timeNanoSecs: int = 0, interior: Union[Polygon, MultiPolygon, None] = None,**kwArgs) -> None:
 		self.__featureDefinition: Union[Feature, None] = None
 		super().__init__(
 			centerOfRotation=Pose(0, 0, 0, 0),
@@ -18,7 +18,8 @@ class MapRegion(AffineRegion):
 			envelope=envelope,
 			envelopeColor=kwArgs.pop("envelopeColor", KnownColors.GREY),
 			regionType=AffineRegion.RegionType.MAP,
-			timeNanoSecs=kwArgs.pop("timeNanoSecs", 0),
+			timeNanoSecs=timeNanoSecs,
+			interior=interior,
 			interiorColor=kwArgs.pop("interiorColor", self.resolvedBgColor),
 			**kwArgs
 		)

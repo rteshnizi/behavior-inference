@@ -1,4 +1,4 @@
-from typing import List, Sequence, Set, TypeVar, Union
+from typing import Generic, List, Sequence, Set, TypeVar, Union
 
 from visualization_msgs.msg import Marker
 
@@ -9,7 +9,7 @@ from rt_bi_utils.RViz import Color
 
 RegionType = TypeVar("RegionType", bound=DynamicRegion)
 
-class RegularDynamicRegion(RegularSpatialRegion[RegionType]):
+class RegularDynamicRegion(Generic[RegionType], RegularSpatialRegion[RegionType]):
 	"""
 	A Class to model a set of Regular Dynamic Region.
 	Dynamic means, turns on, off, and/or undergoes an affine transformation.

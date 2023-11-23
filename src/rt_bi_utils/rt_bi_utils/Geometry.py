@@ -1,8 +1,7 @@
-import operator
 import traceback
 import warnings
-from functools import reduce
-from math import atan2, cos, degrees, inf, nan, sin, sqrt
+from copy import copy
+from math import cos, inf, isnan, nan, sin, sqrt
 from typing import Dict, List, Tuple, Union
 
 import numpy as np
@@ -433,6 +432,8 @@ class Geometry:
 			The starting configuration of the polygon.
 		end : Polygon
 			The starting configuration of the polygon.
+		centerOfRotation : Pose
+			The center of rotation of the rotation motion.
 
 		Returns
 		-------
@@ -494,6 +495,14 @@ class Geometry:
 		return transformedCoords
 
 	@staticmethod
+	def applyMatrixTransformToPose(transformation: AffineTransform, pose: Pose) -> Pose:
+		transformedCoords = Geometry.applyMatrixTransformToCoordsList(transformation, [(pose.x, pose.y)])
+		transformedPose = copy(pose)
+		pose.x = transformedCoords[0][0]
+		pose.y = transformedCoords[0][1]
+		return transformedPose
+
+	@staticmethod
 	def applyMatrixTransformToPolygon(transformation: AffineTransform, polygon: Polygon) -> Polygon:
 		pCoords = Geometry.getGeometryCoords(polygon)
 		transformedCoords = Geometry.applyMatrixTransformToCoordsList(transformation, pCoords)
@@ -506,40 +515,6 @@ class Geometry:
 		transformedCoords = Geometry.applyMatrixTransformToCoordsList(transformation, pCoords)
 		transformedLineString = LineString(transformedCoords)
 		return transformedLineString
-
-	@staticmethod
-	def findTheLastTimeTheyAreColliding(movingEdge: LineString, staticEdge: LineString, transformation: AffineTransform) -> float:
-		"""
-			### Remarks
-			This assumes the edges are in contact already.
-		"""
-		NUM_SAMPLES = 100
-		latestTime = inf
-		# If the edge is not intersecting currently, we don't need to check for the latest time
-		if Geometry.intersects(movingEdge, staticEdge):
-			return latestTime
-		for x in range(1, NUM_SAMPLES, 1):
-			fraction = x / NUM_SAMPLES
-			newTransform = Geometry.getParameterizedAffineTransformation(transformation, fraction)
-			intermediateLine = Geometry.applyMatrixTransformToLineString(newTransform, movingEdge)
-			if Geometry.intersects(intermediateLine, staticEdge):
-				latestTime = fraction
-			else:
-				break
-		return latestTime
-
-	@staticmethod
-	def findTheEarliestTimeTheyAreColliding(movingEdge: LineString, staticEdge: LineString, transformation: AffineTransform) -> float:
-		NUM_SAMPLES = 100
-		latestTime = inf
-		for x in range(0, NUM_SAMPLES, 1):
-			fraction = x / NUM_SAMPLES
-			newTransform = Geometry.getParameterizedAffineTransformation(transformation, fraction)
-			intermediateLine = Geometry.applyMatrixTransformToLineString(newTransform, movingEdge)
-			if Geometry.intersects(intermediateLine, staticEdge):
-				latestTime = fraction
-				break
-		return latestTime
 
 	@staticmethod
 	def inverseTransformation(transformation: AffineTransform) -> AffineTransform:

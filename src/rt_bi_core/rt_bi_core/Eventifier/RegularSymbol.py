@@ -4,7 +4,7 @@ from rt_bi_core.Model.RegularAffineRegion import RegularAffineRegion
 from rt_bi_core.Model.SymbolRegion import SymbolRegion
 
 
-class RegularSymbol(RegularAffineRegion):
+class RegularSymbol(RegularAffineRegion[SymbolRegion]):
 	"""A Class to model Regular Symbols."""
 	def __init__(self, regions: List[SymbolRegion] = []):
 		"""

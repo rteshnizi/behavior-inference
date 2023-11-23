@@ -67,6 +67,10 @@ class SensorRegion(AffineRegion):
 		"""The information about every tracklet, if any, within this sensing region."""
 		return self.__tracks
 
+	@tracks.setter
+	def tracks(self, tracks: Tracklets) -> None:
+		self.__tracks = tracks
+
 	@property
 	def hasTrack(self) -> bool:
 		"""

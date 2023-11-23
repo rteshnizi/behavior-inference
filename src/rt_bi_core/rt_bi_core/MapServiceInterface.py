@@ -72,7 +72,7 @@ class MapServiceInterface(Node):
 			poseArray = individualFeature.polygon_shape_list
 			coords = SaMsgs.convertSaPoseListToCoordsList(poseArray.traj)
 			idNum = self.__registerRegionId(fName)
-			region = MapRegion(idNum=idNum, envelope=coords)
+			region = MapRegion(idNum=idNum, envelope=coords, timeNanoSecs=-1)
 			regions.append(region)
 			if queryFeatures:
 				subRequest = QueryFeature.Request()

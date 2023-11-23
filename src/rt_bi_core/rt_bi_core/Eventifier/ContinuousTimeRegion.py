@@ -1,11 +1,15 @@
 from math import isnan, nan
-from typing import Generic, List, Sequence, Tuple, TypeVar, Union
+from typing import Generic, List, Sequence, Tuple, TypeVar
 
-from rt_bi_core.Model.DynamicRegion import DynamicRegion
-from rt_bi_utils.Geometry import AffineTransform, Geometry, Polygon
+from rt_bi_core.Model.AffineRegion import AffineRegion
+from rt_bi_core.Model.MapRegion import MapRegion
+from rt_bi_core.Model.SensorRegion import SensorRegion
+from rt_bi_core.Model.SymbolRegion import SymbolRegion
+from rt_bi_core.Model.Tracklet import Tracklets
+from rt_bi_utils.Geometry import AffineTransform, Geometry
 from rt_bi_utils.Ros import Logger
 
-RegionType = TypeVar("RegionType", bound=DynamicRegion)
+RegionType = TypeVar("RegionType", bound=AffineRegion)
 
 class ContinuousTimeRegion(Generic[RegionType]):
 	def __init__(self, *regionConfigs: RegionType) -> None:
@@ -16,10 +20,9 @@ class ContinuousTimeRegion(Generic[RegionType]):
 		return
 
 	def __repr__(self) -> str:
-		typeStr = "∅" if self.length < 1 else self.configs[0].name
-		return "CTR-%s[%d, %d]" % (typeStr, self.earliestNanoSecs, self.latestNanoSecs)
+		return "CTR-%s[%d, %d]" % (self.name, self.earliestNanoSecs, self.latestNanoSecs)
 
-	def __getitem__(self, timeNanoSecs: int) -> Polygon:
+	def __getitem__(self, timeNanoSecs: int) -> RegionType:
 		"""Get polygonal shape at time.
 
 		Parameters
@@ -32,18 +35,35 @@ class ContinuousTimeRegion(Generic[RegionType]):
 		Polygon
 			The shape.
 		"""
-		if self.length == 0: return Polygon()
-		if timeNanoSecs < self.earliestNanoSecs: return Polygon()
-		if timeNanoSecs > self.earliestNanoSecs:
-			raise IndexError("Time %d is beyond available data. Max = %d" % (timeNanoSecs, self.latestNanoSecs))
+		if self.length == 0: raise ValueError("Empty CTR.")
+		if self.earliestNanoSecs != -1 and timeNanoSecs < self.earliestNanoSecs:
+			return self.configs[0]
+		if self.earliestNanoSecs != -1 and timeNanoSecs > self.latestNanoSecs:
+			return self.configs[-1]
 		i = 0
 		for i in range(self.length):
-			if timeNanoSecs <= self.__configs[i].timeNanoSecs: break
+			if timeNanoSecs <= self.configs[i].timeNanoSecs: break
 		param = self.__getParameterizedTime(i - 1, timeNanoSecs)
 		if isnan(param):
-			return self.__configs[i - 1].interior
+			return self.configs[i - 1]
 		transform = Geometry.getParameterizedAffineTransformation(self.__transforms[i - 1], param)
-		return Geometry.applyMatrixTransformToPolygon(transform, self.__configs[i - 1].interior)
+		pose = Geometry.applyMatrixTransformToPose(transform, self.configs[i - 1].centerOfRotation)
+		regionPoly = Geometry.applyMatrixTransformToPolygon(transform, self.configs[i - 1].interior)
+		if self.regionType == AffineRegion.RegionType.SENSING:
+			tracklets: Tracklets = self.configs[i - 1].tracks # type: ignore -- We know it's a sensor
+			region = SensorRegion(pose, self.idNum, [], timeNanoSecs, interior=regionPoly, tracks=tracklets)
+		elif self.configs[i - 1].regionType == AffineRegion.RegionType.MAP:
+			region = MapRegion(0, [], timeNanoSecs, interior=regionPoly)
+		elif self.configs[i - 1].regionType == AffineRegion.RegionType.SYMBOL:
+			region = SymbolRegion(self.configs[i - 1].centerOfRotation, self.idNum, [], timeNanoSecs, interior=regionPoly)
+		else:
+			raise TypeError("Unexpected region type: %s" % repr(self.regionType))
+		return region # type: ignore -- Type checker doesn't understand I have type-checked here via regionType.
+
+	@property
+	def name(self) -> str:
+		"""Region name."""
+		return "∅" if self.length < 1 else self.configs[0].name
 
 	@property
 	def idNum(self) -> int:
@@ -60,9 +80,9 @@ class ContinuousTimeRegion(Generic[RegionType]):
 		return self.__configs
 
 	@property
-	def regionType(self) -> DynamicRegion.RegionType:
+	def regionType(self) -> AffineRegion.RegionType:
 		if self.length == 0:
-			return DynamicRegion.RegionType.BASE
+			return AffineRegion.RegionType.BASE
 		return self.configs[0].regionType
 
 	@property
@@ -81,14 +101,6 @@ class ContinuousTimeRegion(Generic[RegionType]):
 			return -1
 		return self.__configs[0].timeNanoSecs
 
-	def __obtainTransformationMatrix(self) -> Sequence[AffineTransform]:
-		transforms: List[AffineTransform] = []
-		if self.length < 2: return transforms
-		for i in range(self.length - 1):
-			transform = Geometry.getAffineTransformation(self.__configs[i].envelope, self.__configs[i + 1].envelope)
-			transforms.append(transform)
-		return transforms
-
 	def __getParameterizedTime(self, i: int, timeNanoSecs: int) -> float:
 		"""### Get Parameterized Time
 		Given a time, returns it as a fraction of the interval between `self.__configs[i]` and `self.__configs[i + 1]`.
@@ -106,7 +118,15 @@ class ContinuousTimeRegion(Generic[RegionType]):
 			A number in the range `[0, 1]`, or `nan` if the two ends of the interval are the same.
 		"""
 		if self.length < 2: return nan
-		frac = timeNanoSecs - self.__configs[i].timeNanoSecs
-		total = self.__configs[i + 1].timeNanoSecs - self.__configs[i].timeNanoSecs
+		frac = timeNanoSecs - self.configs[i].timeNanoSecs
+		total = self.configs[i + 1].timeNanoSecs - self.configs[i].timeNanoSecs
 		if total == 0: return nan
 		return (float(frac) / float(total))
+
+	def __obtainTransformationMatrix(self) -> Sequence[AffineTransform]:
+		transforms: List[AffineTransform] = []
+		if self.length < 2: return transforms
+		for i in range(self.length - 1):
+			transform = Geometry.getAffineTransformation(self.configs[i].envelope, self.configs[i + 1].envelope)
+			transforms.append(transform)
+		return transforms

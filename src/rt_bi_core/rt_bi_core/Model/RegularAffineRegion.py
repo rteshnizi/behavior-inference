@@ -1,11 +1,11 @@
-from typing import List, Set, TypeVar
+from typing import Generic, List, Set, TypeVar
 
 from rt_bi_core.Model.AffineRegion import AffineRegion
 from rt_bi_core.Model.RegularDynamicRegion import RegularDynamicRegion
 
 RegionType = TypeVar("RegionType", bound=AffineRegion)
 
-class RegularAffineRegion(RegularDynamicRegion[RegionType]):
+class RegularAffineRegion(Generic[RegionType], RegularDynamicRegion[RegionType]):
 	"""
 	A Class to model a set of Regular Affine Region.
 	"""

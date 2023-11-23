@@ -1,10 +1,10 @@
 from typing import List, Set
 
 from rt_bi_core.Model.MapRegion import MapRegion
-from rt_bi_core.Model.RegularSpatialRegion import RegularSpatialRegion
+from rt_bi_core.Model.RegularAffineRegion import RegularAffineRegion
 
 
-class MapPerimeter(RegularSpatialRegion[MapRegion]):
+class MapPerimeter(RegularAffineRegion[MapRegion]):
 	"""A Class to model Shadows."""
 	def __init__(self, regions: List[MapRegion] = []):
 		"""

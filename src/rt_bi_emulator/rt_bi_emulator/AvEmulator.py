@@ -19,6 +19,10 @@ class Av:
 		self.pose = p
 		self.interior = fov
 
+	def __repr__(self) -> str:
+		name = "#%d" % self.robotId
+		return "AV-%s@%s:%s" % (name, repr(self.pose), repr(self.interior))
+
 class AvEmulator(Node):
 	""" The Viewer ROS Node """
 	NANO_CONVERSION_CONSTANT = 10 ** 9
@@ -31,24 +35,26 @@ class AvEmulator(Node):
 		self.__robotId = -1
 		self.__updateInterval = 1
 		self.__initTime = float(self.get_clock().now().nanoseconds)
+		self.__cutOffTime: float = inf
+		self.__centersOfRotation: Geometry.CoordsList = []
 		self.__avPositions: List[Av] = []
 		self.__initFovPoly = Polygon()
 		self.__totalTimeNanoSecs = 0.0
-		self.__transformationMatrix = AffineTransform()
+		self.__transformationMatrix: List[AffineTransform] = []
 		self.__parseConfigFileParameters()
 		(self.__fovPublisher, _) = SaMsgs.createSaRobotStatePublisher(self, self.__publishMyFov, self.__updateInterval)
 		# Provides a debugging way to stop the updating the position of the AV any further.
 		self.__passedCutOffTime: int = -1
-		self.__cutOffTime: float = inf
 
 	def __declareParameters(self) -> None:
 		self.get_logger().debug("%s is setting node parameters." % self.get_fully_qualified_name())
 		self.declare_parameter("robotId", Parameter.Type.INTEGER)
 		self.declare_parameter("updateInterval", Parameter.Type.DOUBLE)
-		self.declare_parameter("timeSecs", Parameter.Type.DOUBLE_ARRAY)
-		self.declare_parameter("saPose", Parameter.Type.STRING_ARRAY)
-		self.declare_parameter("fov", Parameter.Type.STRING_ARRAY)
+		self.declare_parameter("timesSecs", Parameter.Type.DOUBLE_ARRAY)
 		self.declare_parameter("cutOffTime", Parameter.Type.DOUBLE)
+		self.declare_parameter("saPoses", Parameter.Type.STRING_ARRAY)
+		self.declare_parameter("centersOfRotation", Parameter.Type.STRING_ARRAY)
+		self.declare_parameter("fovs", Parameter.Type.STRING_ARRAY)
 		return
 
 	def __parseConfigFileParameters(self) -> None:
@@ -57,21 +63,27 @@ class AvEmulator(Node):
 		self.__updateInterval = self.get_parameter("updateInterval").get_parameter_value().double_value
 		try: self.__cutOffTime = self.get_parameter("cutOffTime").get_parameter_value().double_value
 		except: self.__cutOffTime = inf
-		timePoints = self.get_parameter("timeSecs").get_parameter_value().double_array_value
-		saPoses = self.get_parameter("saPose").get_parameter_value().string_array_value
-		saPoses = [json.loads(pose) for pose in saPoses]
-		saPoses = tuple(saPoses)
-		fov = self.get_parameter("fov").get_parameter_value().string_array_value
+		timePoints = self.get_parameter("timesSecs").get_parameter_value().double_array_value
+		saPoses = list(self.get_parameter("saPoses").get_parameter_value().string_array_value)
+		centersOfRotation = list(self.get_parameter("centersOfRotation").get_parameter_value().string_array_value)
+		fovs = list(self.get_parameter("fovs").get_parameter_value().string_array_value)
 		parsedFov = []
-		for f in fov:
-			f = json.loads(f)
-			parsedFov.append([tuple(p) for p in f])
 		for i in range(len(timePoints)):
-			timeNanoSecs = int(timePoints[i] * AvEmulator.NANO_CONVERSION_CONSTANT)
-			self.__avPositions.append(Av(self.__robotId, Pose(timeNanoSecs, *(saPoses[0])), parsedFov[i]))
+			self.__centersOfRotation.append(json.loads(centersOfRotation[i]))
+			fov = [tuple(p) for p in json.loads(fovs[i])]
+			self.get_logger().debug("parsed %s" % repr(fov))
+			parsedFov.append(fov)
+			pose = json.loads(saPoses[i])
+			timeNanoSecs = int(timePoints[i] * self.NANO_CONVERSION_CONSTANT)
+			av = Av(self.__robotId, Pose(timeNanoSecs, *(pose)), parsedFov[i])
+			self.get_logger().debug("parsed %s" % repr(av))
+			self.__avPositions.append(av)
+			centerOfRotation = Pose(timeNanoSecs, self.__centersOfRotation[i][0], self.__centersOfRotation[i][1], 0)
+			if i > 0:
+				matrix = Geometry.getAffineTransformation(self.__avPositions[i - 1].interior, self.__avPositions[i].interior)
+				self.__transformationMatrix.append(matrix)
 		self.__initFovPoly = Polygon(self.__avPositions[0].interior)
-		self.__transformationMatrix = Geometry.getAffineTransformation(self.__avPositions[0].interior, self.__avPositions[-1].interior)
-		self.__totalTimeNanoSecs = timePoints[-1] * AvEmulator.NANO_CONVERSION_CONSTANT
+		self.__totalTimeNanoSecs = timePoints[-1] * self.NANO_CONVERSION_CONSTANT
 		return
 
 	def __publishMyFov(self) -> None:
@@ -83,7 +95,8 @@ class AvEmulator(Node):
 		elapsedTimeRatio = (timeOfPublish - self.__initTime) / self.__totalTimeNanoSecs
 		elapsedTimeRatio = 1 if elapsedTimeRatio > 1 else elapsedTimeRatio
 		if elapsedTimeRatio < 1:
-			matrix = Geometry.getParameterizedAffineTransformation(self.__transformationMatrix, elapsedTimeRatio)
+			matrix = Geometry.getParameterizedAffineTransformation(self.__transformationMatrix[0], elapsedTimeRatio)
+			centerOfRotation = Pose(timeOfPublish, self.__centersOfRotation[0][0], self.__centersOfRotation[0][1], 0)
 			fov = Geometry.applyMatrixTransformToPolygon(matrix, self.__initFovPoly)
 		else:
 			fov = Polygon(self.__avPositions[-1].interior)
@@ -91,7 +104,7 @@ class AvEmulator(Node):
 		msg.robot_id = self.__robotId
 		msg.pose = SaMsgs.createSaPoseMsg(self.__avPositions[0].pose.x, self.__avPositions[0].pose.y)
 		msg.fov = SaMsgs.createSaFovMsg(list(fov.exterior.coords))
-		self.get_logger().debug("Sending updated fov location for robot %d @ param = %.3f" % (self.__robotId, elapsedTimeRatio))
+		self.get_logger().info("Sending updated fov location for robot %d @ param = %.3f, %s" % (self.__robotId, elapsedTimeRatio, list(fov.exterior.coords)))
 		self.__fovPublisher.publish(msg)
 		return
 

@@ -1,18 +1,18 @@
-from typing import List, Sequence, Set, Union
+from typing import Sequence, Set, Union
 
 from visualization_msgs.msg import Marker
 
-from rt_bi_core.Model.DynamicRegion import DynamicRegion
+from rt_bi_core.Model.AffineRegion import AffineRegion
 from rt_bi_utils.Geometry import Geometry
+from rt_bi_utils.Pose import Pose
 from rt_bi_utils.RViz import Color, KnownColors
 
 
-class ShadowRegion(DynamicRegion):
+class ShadowRegion(AffineRegion):
 	def __init__(
 		self,
 		idNum: int,
 		envelope: Geometry.CoordsList,
-		timeNanoSecs: int,
 		**kwArgs,
 	):
 		"""
@@ -29,14 +29,16 @@ class ShadowRegion(DynamicRegion):
 		"""
 
 		super().__init__(
+			centerOfRotation=kwArgs.pop("centerOfRotation", Pose(0, 0, 0, 0)),
 			idNum=idNum,
 			envelope=envelope,
 			envelopeColor=KnownColors.BLACK,
 			regionType=self.RegionType.SHADOW,
-			timeNanoSecs=timeNanoSecs,
+			timeNanoSecs=kwArgs.pop("timeNanoSecs", 0),
 			renderLineWidth=2,
 			**kwArgs,
 		)
+		self.centerOfRotation = Geometry.toPose(self.interior.centroid, timeNanoSecs=self.timeNanoSecs)
 		self.__neighboringSensors: Set[str] = set()
 
 	def isNeighboringSensor(self, sensorRegionName: str) -> bool:

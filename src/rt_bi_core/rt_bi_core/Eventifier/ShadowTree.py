@@ -12,9 +12,9 @@ from rt_bi_core.Eventifier.ConnectivityGraph import ConnectivityGraph
 from rt_bi_core.Eventifier.ContinuousTimeCollisionDetection import CollisionInterval, ContinuousTimeCollisionDetection as CtCd
 from rt_bi_core.Eventifier.EventAggregator import EventAggregator
 from rt_bi_core.Eventifier.FieldOfView import FieldOfView
-from rt_bi_core.Model.DynamicRegion import DynamicRegion
+from rt_bi_core.Model.AffineRegion import AffineRegion
 from rt_bi_core.Model.MapRegion import MapRegion
-from rt_bi_core.Model.RegularDynamicRegion import RegularDynamicRegion
+from rt_bi_core.Model.RegularAffineRegion import RegularAffineRegion
 from rt_bi_core.Model.SensorRegion import SensorRegion
 from rt_bi_core.Model.ShadowRegion import ShadowRegion
 from rt_bi_core.Model.SymbolRegion import SymbolRegion
@@ -23,8 +23,8 @@ from rt_bi_utils.Geometry import AffineTransform, Geometry, Polygon
 from rt_bi_utils.Ros import AppendMessage, Logger, Publisher
 from rt_bi_utils.RViz import KnownColors, RViz
 
-RegionTypeX = TypeVar("RegionTypeX", bound=DynamicRegion)
-RegionTypeY = TypeVar("RegionTypeY", bound=DynamicRegion)
+RegionTypeX = TypeVar("RegionTypeX", bound=AffineRegion)
+RegionTypeY = TypeVar("RegionTypeY", bound=AffineRegion)
 
 class ShadowTree(nx.DiGraph):
 	"""
@@ -89,7 +89,7 @@ class ShadowTree(nx.DiGraph):
 		"""
 		pastRegion = pastShadow["region"]
 		nowRegion = nowShadow["region"]
-		if isinstance(pastRegion, DynamicRegion) and isinstance(nowRegion, DynamicRegion):
+		if isinstance(pastRegion, AffineRegion) and isinstance(nowRegion, AffineRegion):
 			intersectionOfShadows = Geometry.intersection(pastRegion.interior, nowRegion.interior)
 			for fov in pastGraph.fieldOfView:
 				if fov not in pastGraph.nodes: continue
@@ -144,7 +144,7 @@ class ShadowTree(nx.DiGraph):
 
 	def __appendToHistory(self, graph: ConnectivityGraph) -> bool:
 		if self.length > 0 and graph.timeNanoSecs < self.__history[-1].timeNanoSecs:
-				Logger().info("OUT OF ORDER graph --> %.3f vs %.3f" % ((graph.timeNanoSecs / SensorRegion.NANO_CONSTANT, self.__history[0].timeNanoSecs / SensorRegion.NANO_CONSTANT)))
+				Logger().info("OUT OF ORDER graph --> %d vs %d" % ((graph.timeNanoSecs, self.__history[-1].timeNanoSecs)))
 				return False
 
 		for node in graph.nodes:
@@ -166,14 +166,13 @@ class ShadowTree(nx.DiGraph):
 		self.render()
 		return True
 
-	def __iterateRegularRegion(self, lastCGraph: ConnectivityGraph, regularRegion: RegularDynamicRegion[RegionTypeY], r1Past: RegionTypeX, r1Now: RegionTypeX, checked: Set[Tuple[str, str]]) -> List[CollisionInterval[RegionTypeX, RegionTypeY]]:
+	def __iterateRegularRegion(self, lastCGraph: ConnectivityGraph, regularRegion: RegularAffineRegion[RegionTypeY], r1Past: RegionTypeX, r1Now: RegionTypeX, checked: Set[Tuple[str, str]]) -> List[CollisionInterval[RegionTypeX, RegionTypeY]]:
 		intervals: List[CollisionInterval[RegionTypeX, RegionTypeY]] = []
 		for rName in regularRegion:
 			if rName == r1Now.name: continue
 			r2Now = regularRegion[rName]
-			if (r1Now.name, r2Now.name) in checked: continue
+			if ((r1Now.name, r2Now.name) in checked) or ((r2Now.name, r1Now.name) in checked): continue
 			checked.add((r1Now.name, r2Now.name))
-			checked.add((r2Now.name, r1Now.name))
 			r2Past = lastCGraph.getRegion(r2Now)
 			r2Past = r2Now if r2Past is None else r2Past
 			intervals += CtCd.estimateCollisionsIntervals((r1Past, r1Now), (r2Past, r2Now), self.__rvizPublishers["continuous_time_collision_detection"])
@@ -239,22 +238,22 @@ class ShadowTree(nx.DiGraph):
 			fovRegions=fovRegions,
 			rvizPublisher=self.__rvizPublishers["connectivity_graph"]
 		)
-		Logger().info("last = %s, now = %s" % (repr(lastCGraph), repr(nowCGraph)))
 		checked: Set[Tuple[str, str]] = set()
-		intervals: List[CollisionInterval[SensorRegion, MapRegion]] = []
+		intervals: List[CollisionInterval] = []
 		for r1Now in regions:
 			r1Past = lastCGraph.getRegion(r1Now)
-			r1Past = r1Now if r1Past is None else r1Past
+			if r1Past is None:
+				Logger().error("Past sensor was not found for %s" % repr(r1Now))
+				r1Past = r1Now
 
-
-			r2Past = MapRegion(lastCGraph.timeNanoSecs, Geometry.getGeometryCoords(nowCGraph.mapPerimeter.interior), timeNanoSecs=lastCGraph.timeNanoSecs)
-			r2Now = MapRegion(nowCGraph.timeNanoSecs, Geometry.getGeometryCoords(nowCGraph.mapPerimeter.interior), timeNanoSecs=nowCGraph.timeNanoSecs)
+			r2Past = MapRegion(0, Geometry.getGeometryCoords(nowCGraph.mapPerimeter.interior), timeNanoSecs=lastCGraph.timeNanoSecs)
+			r2Now = MapRegion(0, Geometry.getGeometryCoords(nowCGraph.mapPerimeter.interior), timeNanoSecs=nowCGraph.timeNanoSecs)
 			intervals += CtCd.estimateCollisionsIntervals((r1Past, r1Now), (r2Past, r2Now), self.__rvizPublishers["continuous_time_collision_detection"])
 			intervals += self.__iterateRegularRegion(lastCGraph, nowCGraph.fieldOfView, r1Past, r1Now, checked)
 			intervals += self.__iterateRegularRegion(lastCGraph, nowCGraph.symbols, r1Past, r1Now, checked)
 
 		intervals = CtCd.refineCollisionIntervals(intervals)
-		eventGraphs = EventAggregator.aggregateCollisionEvents(intervals, lastCGraph, nowCGraph, symbols)
+		eventGraphs = EventAggregator.aggregateCollisionEvents(intervals, lastCGraph, nowCGraph)
 		Logger().info("Intervals = %d, Graphs = %d" % (len(intervals), len(eventGraphs)))
 		for graph in eventGraphs:
 			if self.__appendToHistory(graph): self.__connectGraphsTemporally(graph)
@@ -287,7 +286,7 @@ class ShadowTree(nx.DiGraph):
 		lastCGraph = self.history[-1]
 		timerCoords = Geometry.findBottomLeft(lastCGraph.mapPerimeter.envelopePolygon)
 		timerCoords = Geometry.addCoords(timerCoords, (20, 20))
-		timerText = "T = %.3f" % (float(lastCGraph.timeNanoSecs) / float(SensorRegion.NANO_CONSTANT))
+		timerText = "T = %d" % (lastCGraph.timeNanoSecs)
 		timerMarker = RViz.createText("rt_st_time", timerCoords, timerText, KnownColors.RED, fontSize=7.5)
 		AppendMessage(markerArray.markers, timerMarker)
 
