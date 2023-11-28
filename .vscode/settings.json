@@ -494,6 +494,7 @@
 	"cSpell.words": [
 		"anant",
 		"eventifier",
+		"fovs",
 		"levelname",
 		"matplotlib",
 		"mplot",
@@ -611,10 +612,9 @@
 		"**/ContinuousTimeCollisionDetection.v1.py",
 		"**/BehaviorAutomaton",
 		"**/Trajectory.py",
-		"**/EventAggregator.py"
 	],
 	"window.autoDetectColorScheme": true,
-	"workbench.preferredLightColorTheme": "Quiet Light",
-	"workbench.preferredDarkColorTheme": "Monokai Dimmed",
-	"workbench.colorTheme": "Monokai Dimmed",
+	"workbench.preferredLightColorTheme": "Ayu Light Bordered",
+	"workbench.preferredDarkColorTheme": "Abyss",
+	"workbench.colorTheme": "Abyss",
 }
