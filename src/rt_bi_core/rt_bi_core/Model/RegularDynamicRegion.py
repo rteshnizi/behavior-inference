@@ -1,4 +1,4 @@
-from typing import Generic, List, Sequence, Set, TypeVar, Union
+from typing import Generic, Sequence, Set, TypeVar, Union
 
 from visualization_msgs.msg import Marker
 
@@ -44,14 +44,14 @@ class RegularDynamicRegion(Generic[RegionType], RegularSpatialRegion[RegionType]
 	def addConnectedComponent(self, region: RegionType) -> None:
 		if not self.isEmpty and self.timeNanoSec - region.timeNanoSecs > self.MAX_UPDATE_DELAY_NS:
 			RosUtils.Logger().debug(
-				"Discarded old region. Given region is older than %.2fs. Time difference = %d ns." %
-				(self.MAX_UPDATE_DELAY_NS / DynamicRegion.NANO_CONSTANT, self.timeNanoSec - region.timeNanoSecs)
+				"Discarded old region %s. Given region is older than %fs. Time difference = %d ns." %
+				(repr(region), self.MAX_UPDATE_DELAY_NS / DynamicRegion.NANO_CONSTANT, self.timeNanoSec - region.timeNanoSecs)
 			)
 			return
 		if region.name in self.regionNames and self.timeNanoSec > region.timeNanoSecs:
 			RosUtils.Logger().debug(
 				"Region %s already exist and will not be replaced by older version. self.t = %d and region.t = %d" %
-				(region.name, self.timeNanoSec, region.timeNanoSecs)
+				(repr(region), self.timeNanoSec, region.timeNanoSecs)
 			)
 			return
 		return super().addConnectedComponent(region)
