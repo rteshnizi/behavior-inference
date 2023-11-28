@@ -122,7 +122,7 @@ class ContinuousTimeCollisionDetection:
 				collision = (
 					ctRegion1, edge1Id,
 					ctRegion2, edge2Id,
-					ctRegion1.earliestNanoSecs, ctRegion1.earliestNanoSecs
+					ctRegion1.earliestNanoSecs, ctRegion1.latestNanoSecs
 				)
 				if Geometry.intersects(obb1, obb2): collisions.append(collision)
 		return collisions
