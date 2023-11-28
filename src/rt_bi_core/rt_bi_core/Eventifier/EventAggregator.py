@@ -1,4 +1,4 @@
-from typing import List, TypeVar, Union
+from typing import List, TypeVar
 
 from networkx.algorithms.isomorphism import is_isomorphic
 
@@ -12,8 +12,6 @@ from rt_bi_core.Model.RegularAffineRegion import RegularAffineRegion
 from rt_bi_core.Model.SensorRegion import SensorRegion
 from rt_bi_core.Model.SymbolRegion import SymbolRegion
 from rt_bi_core.Model.Tracklet import Tracklet, Tracklets
-from rt_bi_utils.Geometry import Geometry
-from rt_bi_utils.Pose import Pose
 
 RegionTypeX = TypeVar("RegionTypeX", bound=AffineRegion)
 RegionTypeY = TypeVar("RegionTypeY", bound=AffineRegion)
