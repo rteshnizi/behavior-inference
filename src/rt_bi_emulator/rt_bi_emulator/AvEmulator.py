@@ -14,14 +14,14 @@ from rt_bi_utils.SaMsgs import SaMsgs
 
 
 class Av:
-	def __init__(self, id: int, p: Pose, fov: Geometry.CoordsList) -> None:
+	def __init__(self, id: int, cOR: Pose, fov: Geometry.CoordsList) -> None:
 		self.robotId: int = id
-		self.pose = p
+		self.centerOfRotation = cOR
 		self.interior = fov
 
 	def __repr__(self) -> str:
 		name = "#%d" % self.robotId
-		return "AV-%s@%s:%s" % (name, repr(self.pose), repr(self.interior))
+		return "AV-%s(COR:%s):%s" % (name, repr(self.centerOfRotation), repr(self.interior))
 
 class AvEmulator(Node):
 	""" The Viewer ROS Node """
@@ -71,14 +71,13 @@ class AvEmulator(Node):
 		for i in range(len(timePoints)):
 			self.__centersOfRotation.append(json.loads(centersOfRotation[i]))
 			fov = [tuple(p) for p in json.loads(fovs[i])]
-			self.get_logger().debug("parsed %s" % repr(fov))
+			self.get_logger().info("parsed %s" % repr(fov))
 			parsedFov.append(fov)
 			pose = json.loads(saPoses[i])
 			timeNanoSecs = int(timePoints[i] * self.NANO_CONVERSION_CONSTANT)
 			av = Av(self.__robotId, Pose(timeNanoSecs, *(pose)), parsedFov[i])
-			self.get_logger().debug("parsed %s" % repr(av))
+			self.get_logger().info("parsed %s" % repr(av))
 			self.__avPositions.append(av)
-			centerOfRotation = Pose(timeNanoSecs, self.__centersOfRotation[i][0], self.__centersOfRotation[i][1], 0)
 			if i > 0:
 				matrix = Geometry.getAffineTransformation(self.__avPositions[i - 1].interior, self.__avPositions[i].interior)
 				self.__transformationMatrix.append(matrix)
@@ -102,7 +101,7 @@ class AvEmulator(Node):
 			fov = Polygon(self.__avPositions[-1].interior)
 		msg = RobotState()
 		msg.robot_id = self.__robotId
-		msg.pose = SaMsgs.createSaPoseMsg(self.__avPositions[0].pose.x, self.__avPositions[0].pose.y)
+		msg.pose = SaMsgs.createSaPoseMsg(self.__avPositions[0].centerOfRotation.x, self.__avPositions[0].centerOfRotation.y)
 		msg.fov = SaMsgs.createSaFovMsg(list(fov.exterior.coords))
 		self.get_logger().info("Sending updated fov location for robot %d @ param = %.3f, %s" % (self.__robotId, elapsedTimeRatio, list(fov.exterior.coords)))
 		self.__fovPublisher.publish(msg)
