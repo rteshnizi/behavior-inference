@@ -5,7 +5,7 @@ rt_bi_emulator:
       updateInterval: 0.75
       timesSecs:
         - 0.0
-        - 100.0
+        - 50.0
       cutOffTime: inf
       saPoses:
         - "[120.804, 134.190, -13.0]"
@@ -22,7 +22,7 @@ rt_bi_emulator:
       updateInterval: 0.75
       timesSecs:
         - 0.0
-        - 100.0
+        - 50.0
       cutOffTime: inf
       saPoses:
         - "[342.837, -48.842, -13.0]"
