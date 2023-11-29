@@ -1,10 +1,11 @@
 # import rt_bi_core # If you remove this, this file will throw an error
-from rt_bi_core.BehaviorAutomaton.Lambda import LambdaType, NfaLambda
+from rt_bi_core.BehaviorInference.Lambda import LambdaType, NfaLambda
 from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
+from rt_bi_utils.RViz import Color, KnownColors, RViz
 
 
 class Symbol:
-	def __init__(self, name, lambdaStr):
+	def __init__(self, name: str, lambdaStr: str, id: int) -> None:
 		self.name = name
 		# for Time, value is a float
 		# myStr = "from sa_bil.core.utils.geometry import Geometry;" + lambdaStr + ";"
@@ -12,7 +13,7 @@ class Symbol:
 		self._lambdaString = lambdaStr
 		# for Region, value is a polygonalRegion
 		if self.isRegion:
-			self.value = PolygonalRegion("sym-%s" % self.name, [], "BLUE", interior=self.lambdaObj.spaceTimeSet.spaceRegion)
+			self.value = PolygonalRegion(id, envelope=[], envelopeColor=KnownColors.PURPLE, interior=self.lambdaObj.spaceTimeSet.spaceRegion)
 		else:
 			self.value = self.lambdaObj.spaceTimeSet.timeRegion
 

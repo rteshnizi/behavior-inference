@@ -4,7 +4,7 @@ from typing import Dict, List, Set, Union
 
 import networkx as nx
 
-from rt_bi_core.BehaviorAutomaton.Symbol import Symbol
+from rt_bi_core.BehaviorInference.Symbol import Symbol
 from rt_bi_core.Eventifier.ConnectivityGraph import ConnectivityGraph
 from rt_bi_core.Eventifier.ShadowTree import ShadowTree
 

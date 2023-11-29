@@ -1,7 +1,7 @@
 from typing import List, Literal, Union
 
-from rt_bi_core.BehaviorAutomaton.Nfa import Nfa
-from rt_bi_core.BehaviorAutomaton.Symbol import Symbol
+from rt_bi_core.BehaviorInference.Nfa import Nfa
+from rt_bi_core.BehaviorInference.Symbol import Symbol
 
 SpecName = Literal["TET1", "TWIST"]
 
