@@ -1,0 +1,1 @@
+rt_bi_interfaces/ComponentEvent[] component_events
