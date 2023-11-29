@@ -1,7 +1,6 @@
 import logging
-from collections import UserList
 from math import isnan, nan
-from typing import AbstractSet, Any, Callable, List, MutableSequence, Sequence, Tuple, TypeVar, Union
+from typing import AbstractSet, Any, Callable, Dict, List, Sequence, Tuple, TypeVar, Union
 
 import rclpy
 from builtin_interfaces.msg import Time
@@ -15,6 +14,10 @@ NAMESPACE = "rt_bi_core"
 __LOGGER: Union[RcutilsLogger, None] = None
 # In case of failure to obtain a ROS logger, the default Python logger will be used, which most likely will log to std stream.
 logging.basicConfig(format="[+][%(levelname)s]: %(message)s", force=True)
+
+__strNameToIdNum: Dict[str, int] = dict()
+"""This map helps us assume nothing about the meaning of the names assigned to any regions."""
+
 
 def SetLogger(logger: RcutilsLogger) -> None:
 	global __LOGGER
@@ -159,3 +162,12 @@ def ConcatMessageArray(array: Union[Sequence[Topic], AbstractSet[Topic], List[To
 	assert isinstance(array, List), ("Failed to append messages to array. Array type: %s" % type(array))
 	array += toConcat
 	return array
+
+def RegisterRegionId(featureName: str) -> int:
+	if featureName in __strNameToIdNum:
+		idNum = __strNameToIdNum[featureName]
+		Logger().warn("Duplicate region name encountered: %s... same id assigned %d." % (featureName, idNum))
+		return __strNameToIdNum[featureName]
+	idNum = len(__strNameToIdNum)
+	__strNameToIdNum[featureName] = idNum
+	return idNum

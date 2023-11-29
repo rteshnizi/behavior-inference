@@ -22,8 +22,6 @@ class MapServiceInterface(Node):
 		newKw = { "node_name": "rt_bi_core_map", **kwArgs}
 		super().__init__(**newKw)
 		self.MAP_QUERY_NAME = "map"
-		self.__strNameToIdNum: Dict[str, int] = dict()
-		"""This map helps us assume nothing about the meaning of the names assigned to map regions."""
 		if self.__class__.__name__ == MapServiceInterface.__name__:
 			self.get_logger().debug("%s is initializing." % self.get_fully_qualified_name())
 			RosUtils.SetLogger(self.get_logger())
@@ -32,14 +30,6 @@ class MapServiceInterface(Node):
 			(self.__rvizPublisher, _) = RViz.createRVizPublisher(self, RosUtils.CreateTopicName("map"))
 		else:
 			self.get_logger().debug("%s finished super class service init." % self.get_fully_qualified_name())
-
-	def __registerRegionId(self, featureName: str) -> int:
-		if featureName in self.__strNameToIdNum:
-			self.get_logger().error("Duplicate feature name encountered: %s... region will be ignored." % featureName)
-			return self.__strNameToIdNum[featureName]
-		idNum = len(self.__strNameToIdNum)
-		self.__strNameToIdNum[featureName] = idNum
-		return idNum
 
 	def __parseFeatureDefinition(self, region: MapRegion, request: QueryFeature.Request, response: QueryFeature.Response) -> List[Feature]:
 		parsedFeatures: List[Feature] = []
@@ -71,7 +61,7 @@ class MapServiceInterface(Node):
 			fName = individualFeature.feature_name
 			poseArray = individualFeature.polygon_shape_list
 			coords = SaMsgs.convertSaPoseListToCoordsList(poseArray.traj)
-			idNum = self.__registerRegionId(fName)
+			idNum = RosUtils.RegisterRegionId(fName)
 			region = MapRegion(idNum=idNum, envelope=coords, timeNanoSecs=-1)
 			regions.append(region)
 			if queryFeatures:
