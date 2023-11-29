@@ -13,8 +13,8 @@ from rt_bi_core.Model.SensorRegion import SensorRegion
 from rt_bi_core.Model.SymbolRegion import SymbolRegion
 from rt_bi_core.Model.Tracklet import Tracklet, Tracklets
 
-RegionTypeX = TypeVar("RegionTypeX", bound=AffineRegion)
-RegionTypeY = TypeVar("RegionTypeY", bound=AffineRegion)
+RegionTypeX = TypeVar("RegionTypeX", SensorRegion, SymbolRegion, MapRegion)
+RegionTypeY = TypeVar("RegionTypeY", SensorRegion, SymbolRegion, MapRegion)
 
 
 class EventAggregator:

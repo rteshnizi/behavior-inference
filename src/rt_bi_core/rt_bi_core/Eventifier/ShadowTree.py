@@ -23,8 +23,8 @@ from rt_bi_utils.Geometry import AffineTransform, Geometry, Polygon
 from rt_bi_utils.Ros import AppendMessage, Logger, Publisher
 from rt_bi_utils.RViz import KnownColors, RViz
 
-RegionTypeX = TypeVar("RegionTypeX", bound=AffineRegion)
-RegionTypeY = TypeVar("RegionTypeY", bound=AffineRegion)
+RegionTypeX = TypeVar("RegionTypeX", SensorRegion, SymbolRegion, MapRegion)
+RegionTypeY = TypeVar("RegionTypeY", SensorRegion, SymbolRegion, MapRegion)
 
 class ShadowTree(nx.DiGraph):
 	"""

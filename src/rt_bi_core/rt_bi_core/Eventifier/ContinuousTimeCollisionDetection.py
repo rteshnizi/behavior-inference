@@ -5,13 +5,16 @@ from visualization_msgs.msg import MarkerArray
 
 from rt_bi_core.Eventifier.ContinuousTimeRegion import ContinuousTimeRegion
 from rt_bi_core.Model.AffineRegion import AffineRegion
+from rt_bi_core.Model.MapRegion import MapRegion
+from rt_bi_core.Model.SensorRegion import SensorRegion
+from rt_bi_core.Model.SymbolRegion import SymbolRegion
 from rt_bi_utils.Geometry import AffineTransform, Geometry, LineString, Polygon
 from rt_bi_utils.Pose import Pose
 from rt_bi_utils.Ros import AppendMessage, Logger, Publisher
 from rt_bi_utils.RViz import Color, RViz
 
-RegionTypeX = TypeVar("RegionTypeX", bound=AffineRegion)
-RegionTypeY = TypeVar("RegionTypeY", bound=AffineRegion)
+RegionTypeX = TypeVar("RegionTypeX", SensorRegion, SymbolRegion, MapRegion)
+RegionTypeY = TypeVar("RegionTypeY", SensorRegion, SymbolRegion, MapRegion)
 
 RegionCollisions = Dict[str, List[LineString]]
 """
