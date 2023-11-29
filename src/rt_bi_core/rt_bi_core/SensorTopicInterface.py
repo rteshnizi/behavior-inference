@@ -56,9 +56,6 @@ class SensorTopicInterface(Node):
 		return
 
 def main(args=None):
-	"""
-	Start the Behavior Inference Run-time.
-	"""
 	rclpy.init(args=args)
 	node = SensorTopicInterface()
 	rclpy.spin(node)

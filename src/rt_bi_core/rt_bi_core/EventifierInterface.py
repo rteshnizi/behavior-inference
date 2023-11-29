@@ -113,9 +113,6 @@ class EventifierInterface(MapServiceInterface):
 		return super().requestMap(mapClient)
 
 def main(args=None) -> None:
-	"""
-	Start the Behavior Inference Run-time.
-	"""
 	rclpy.init(args=args)
 	node = EventifierInterface()
 	rclpy.spin(node)

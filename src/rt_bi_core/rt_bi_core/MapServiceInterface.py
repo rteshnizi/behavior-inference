@@ -99,9 +99,6 @@ class MapServiceInterface(Node):
 		return
 
 def main(args=None):
-	"""
-	Start the Behavior Inference Run-time.
-	"""
 	rclpy.init(args=args)
 	node = MapServiceInterface()
 	node.requestMap(node.mapClient)
