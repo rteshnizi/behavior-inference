@@ -1,5 +1,5 @@
-from rt_bi_core.BehaviorAutomaton.Lambda import LambdaType, NfaLambda
-from rt_bi_core.BehaviorAutomaton.SpaceTime import ProjectiveSpaceTimeSet
+from rt_bi_core.BehaviorInference.Lambda import LambdaType, NfaLambda
+from rt_bi_core.BehaviorInference.SpaceTime import ProjectiveSpaceTimeSet
 from rt_bi_utils.Python import ObjectLiteral
 
 

@@ -5,9 +5,9 @@ from typing import Dict, List, Literal, Sequence, Set, Tuple, TypeVar, Union
 import networkx as nx
 from visualization_msgs.msg import Marker, MarkerArray
 
-from rt_bi_core.BehaviorAutomaton.Lambda import NfaLambda
-from rt_bi_core.BehaviorAutomaton.SpaceTime import ProjectiveSpaceTimeSet
-from rt_bi_core.BehaviorAutomaton.Symbol import Symbol
+from rt_bi_core.BehaviorInference.Lambda import NfaLambda
+from rt_bi_core.BehaviorInference.SpaceTime import ProjectiveSpaceTimeSet
+from rt_bi_core.BehaviorInference.Symbol import Symbol
 from rt_bi_core.Eventifier.ConnectivityGraph import ConnectivityGraph
 from rt_bi_core.Eventifier.ContinuousTimeCollisionDetection import CollisionInterval, ContinuousTimeCollisionDetection as CtCd
 from rt_bi_core.Eventifier.EventAggregator import EventAggregator
@@ -20,7 +20,7 @@ from rt_bi_core.Model.ShadowRegion import ShadowRegion
 from rt_bi_core.Model.SymbolRegion import SymbolRegion
 from rt_bi_core.Model.TimeRegion import TimeRegion
 from rt_bi_utils.Geometry import AffineTransform, Geometry, Polygon
-from rt_bi_utils.Ros import AppendMessage, Logger, Publisher
+from rt_bi_utils.Ros import AppendMessage, Logger, Publisher, RegisterRegionId
 from rt_bi_utils.RViz import KnownColors, RViz
 
 RegionTypeX = TypeVar("RegionTypeX", SensorRegion, SymbolRegion, MapRegion)
@@ -246,8 +246,8 @@ class ShadowTree(nx.DiGraph):
 				Logger().error("Past sensor was not found for %s" % repr(r1Now))
 				r1Past = r1Now
 
-			r2Past = MapRegion(0, Geometry.getGeometryCoords(nowCGraph.mapPerimeter.interior), timeNanoSecs=lastCGraph.timeNanoSecs)
-			r2Now = MapRegion(0, Geometry.getGeometryCoords(nowCGraph.mapPerimeter.interior), timeNanoSecs=nowCGraph.timeNanoSecs)
+			r2Past = MapRegion(RegisterRegionId(repr(nowCGraph.mapPerimeter)), Geometry.getGeometryCoords(nowCGraph.mapPerimeter.interior), timeNanoSecs=lastCGraph.timeNanoSecs)
+			r2Now = MapRegion(RegisterRegionId(repr(nowCGraph.mapPerimeter)), Geometry.getGeometryCoords(nowCGraph.mapPerimeter.interior), timeNanoSecs=nowCGraph.timeNanoSecs)
 			intervals += CtCd.estimateCollisionsIntervals((r1Past, r1Now), (r2Past, r2Now), self.__rvizPublishers["continuous_time_collision_detection"])
 			intervals += self.__iterateRegularRegion(lastCGraph, nowCGraph.fieldOfView, r1Past, r1Now, checked)
 			intervals += self.__iterateRegularRegion(lastCGraph, nowCGraph.symbols, r1Past, r1Now, checked)
