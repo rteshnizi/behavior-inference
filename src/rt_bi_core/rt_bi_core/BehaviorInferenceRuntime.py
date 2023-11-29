@@ -7,7 +7,7 @@ import rt_bi_utils.Ros as RosUtils
 from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
 
 
-class BehaviorAutomatonInterface(Node):
+class BehaviorInferenceRuntime(Node):
 	"""
 	This Node listens to all the messages published on the topics related to the Behavior Automaton.
 	This node combines topic listeners and service clients.
@@ -27,7 +27,7 @@ def main(args=None):
 	Start the Behavior Inference Run-time.
 	"""
 	rclpy.init(args=args)
-	node = BehaviorAutomatonInterface()
+	node = BehaviorInferenceRuntime()
 	rclpy.spin(node)
 	node.destroy_node()
 	rclpy.shutdown()

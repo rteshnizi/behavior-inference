@@ -28,7 +28,7 @@ setup(
 	license="UNLICENSED",
 	entry_points={
 		"console_scripts": [
-			"BA = rt_bi_core.BehaviorAutomatonInterface:main",
+			"BI = rt_bi_core.BehaviorInferenceRuntime:main",
 			"MI = rt_bi_core.MapServiceInterface:main",
 			"SI = rt_bi_core.SensorTopicInterface:main",
 			"EV = rt_bi_core.EventifierInterface:main",
