@@ -9,11 +9,12 @@
 		"streetsidesoftware.code-spell-checker",
 		"maptz.camelcasenavigation",
 		"wmaurer.change-case",
-		"eamodio.gitlens",
 		"tyriar.sort-lines",
 		"redhat.vscode-yaml",
 		"daohong-emilio.yash",
 		"redhat.vscode-xml",
-		"ms-python.python"
+		"ms-python.python",
+		"maattdd.gitless",
+		"mhutchie.git-graph"
 	]
 }
