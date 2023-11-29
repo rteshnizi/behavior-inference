@@ -1,12 +1,11 @@
 from enum import Enum
-from typing import Dict, List, Sequence, Union
+from typing import Dict, Sequence, Union
 
 from skimage import transform
 from visualization_msgs.msg import Marker
 
 import rt_bi_utils.Ros as RosUtils
 from rt_bi_utils.Geometry import Geometry, LineString, MultiPolygon, Polygon
-from rt_bi_utils.Pose import Pose
 from rt_bi_utils.RViz import Color, KnownColors, RViz
 
 
