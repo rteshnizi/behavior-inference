@@ -7,7 +7,7 @@
 	<maintainer email="reza.teshnizi@gmail.com">Reza Teshnizi</maintainer>
 	<license>UNLICENSED</license>
 
-	<depend>rclcpp</depend>
+	<depend>rclpy</depend>
 	<depend>std_msgs</depend>
 	<depend>geometry_msgs</depend>
 	<depend>visualization_msgs</depend>
