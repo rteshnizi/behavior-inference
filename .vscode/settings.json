@@ -609,8 +609,6 @@
 	"python.analysis.exclude": [
 		"**/build",
 		"**/install",
-		"**/ContinuousTimeCollisionDetection.v1.py",
-		"**/BehaviorAutomaton",
 		"**/Trajectory.py",
 	],
 	"window.autoDetectColorScheme": true,
