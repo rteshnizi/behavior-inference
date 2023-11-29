@@ -9,7 +9,7 @@
 			"type": "ros",
 			"request": "launch",
 			"envFile": "${workspaceFolder}/.vscode/colcon.rt.env",
-			"target": "${workspaceFolder}/install/rt_bi_core/share/rt_bi_core/launch/st.launch.py",
+			"target": "${workspaceFolder}/install/rt_bi_core/share/rt_bi_core/launch/ev.launch.py",
 			"preLaunchTask": "rbc: launch",
 			"sourceFileMap": {
 				"${workspaceFolder}/install/rt_bi_core/lib/python3.10/site-packages/": "${workspaceFolder}/src/rt_bi_core/",

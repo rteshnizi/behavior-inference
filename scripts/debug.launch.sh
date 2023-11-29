@@ -31,7 +31,7 @@ echo
 
 concurrently\
 	--kill-others\
-	--names "RVZ,MAP,AV ,MI ,SI ,ST "\
+	--names "RVZ,MAP,AV ,MI ,SI ,EV "\
 	--prefix "[{name}-{time}]"\
 	-c "bgWhite.black,bgBlueBright.black,bgBlue.black,bgYellow.black,bgMagentaBright.black,bgGreenBright.black"\
 	--timestamp-format "HH:mm:ss"\
@@ -40,6 +40,6 @@ concurrently\
 	"ros2 launch rt_bi_emulator avs.1.launch.py"\
 	"ros2 launch rt_bi_core mi.launch.py"\
 	"ros2 launch rt_bi_core si.launch.py"\
-	"ros2 launch rt_bi_core st.launch.py"\
+	"ros2 launch rt_bi_core ev.launch.py"\
 	--hide "0,1,2,3,4"
 exit 0

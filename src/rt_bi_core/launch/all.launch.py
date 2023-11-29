@@ -12,27 +12,28 @@ emulatorPackageName = "rt_bi_emulator"
 corePackageName = "rt_bi_core"
 
 def generate_launch_description():
-	yamlPath = os.path.join(get_package_share_directory(emulatorPackageName), "config", "case1.avs.yaml")
+	emulatorYamlPath = os.path.join(get_package_share_directory(emulatorPackageName), "config", "case1.avs.yaml")
+	eventifierYamlPath = os.path.join(get_package_share_directory(corePackageName), "config", "ev.debug.yaml")
 	EmulatorNodes = [
 		Node(
 			package=emulatorPackageName,
 			namespace=emulatorPackageName,
 			executable="MP",
-			name="map"
+			name="map",
 		),
 		Node(
 			package=emulatorPackageName,
 			namespace=emulatorPackageName,
 			executable="AV",
 			name="av1",
-			parameters=[yamlPath]
+			parameters=[emulatorYamlPath],
 		),
 		Node(
 			package=emulatorPackageName,
 			namespace=emulatorPackageName,
 			executable="AV",
 			name="av2",
-			parameters=[yamlPath]
+			parameters=[emulatorYamlPath],
 		),
 	]
 	CoreNodes = [
@@ -40,19 +41,25 @@ def generate_launch_description():
 			package=corePackageName,
 			namespace=corePackageName,
 			executable="SI",
-			name="si"
+			name="si",
 		),
 		Node(
 			package=corePackageName,
 			namespace=corePackageName,
 			executable="MI",
-			name="mi"
+			name="mi",
 		),
 		Node(
 			package=corePackageName,
 			namespace=corePackageName,
-			executable="ST",
-			name="st"
+			executable="EV",
+			name="ev",
+			arguments= [
+				"--ros-args",
+				"--log-level",
+				"info",
+			],
+			parameters=[eventifierYamlPath],
 		),
 	]
 
@@ -65,7 +72,7 @@ def generate_launch_description():
 			arguments=[
 				"-d",
 				[os.path.join(shareDir, "config", "rbc_map.rviz")],
-			]
+			],
 		),
 	]
 

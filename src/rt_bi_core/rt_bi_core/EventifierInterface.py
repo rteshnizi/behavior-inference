@@ -16,7 +16,7 @@ from rt_bi_utils.RViz import RViz
 from rt_bi_utils.SaMsgs import SaMsgs
 
 
-class ShadowTreeInterface(MapServiceInterface):
+class EventifierInterface(MapServiceInterface):
 	"""
 	This Node listens to all the messages published on the topics related to the Shadow Tree.
 	This node combines topic listeners and service clients.
@@ -117,7 +117,7 @@ def main(args=None) -> None:
 	Start the Behavior Inference Run-time.
 	"""
 	rclpy.init(args=args)
-	node = ShadowTreeInterface()
+	node = EventifierInterface()
 	rclpy.spin(node)
 	node.destroy_node()
 	rclpy.shutdown()

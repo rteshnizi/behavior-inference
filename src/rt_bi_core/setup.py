@@ -31,7 +31,7 @@ setup(
 			"BA = rt_bi_core.BehaviorAutomatonInterface:main",
 			"MI = rt_bi_core.MapServiceInterface:main",
 			"SI = rt_bi_core.SensorTopicInterface:main",
-			"ST = rt_bi_core.ShadowTreeInterface:main",
+			"EV = rt_bi_core.EventifierInterface:main",
 		],
 	},
 )
