@@ -28,7 +28,7 @@ class AvEmulator(Node):
 	NANO_CONVERSION_CONSTANT = 10 ** 9
 	def __init__(self):
 		""" Create a Viewer ROS node. """
-		super().__init__(node_name="rt_bi_av_emulator") # type: ignore - parameter_overrides: List[Parameter] = None
+		super().__init__(node_name="rt_bi_emulator_av") # type: ignore - parameter_overrides: List[Parameter] = None
 		self.get_logger().debug("%s is initializing." % self.get_fully_qualified_name())
 		self.__declareParameters()
 		RosUtils.SetLogger(self.get_logger())
