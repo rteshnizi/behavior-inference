@@ -1,10 +1,9 @@
 import os
-import pathlib
 from glob import glob
 
 from setuptools import find_packages, setup
 
-packageName = pathlib.Path(__file__).parent.parent.name
+packageName = "rt_bi_core"
 
 setup(
 	name=packageName,
