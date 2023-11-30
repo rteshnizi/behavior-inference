@@ -3,8 +3,8 @@ from functools import partial
 from math import inf
 from typing import Callable, Union
 
-from rt_bi_core.BehaviorInference.SpaceTime import ProjectiveSpaceTimeSet
 from rt_bi_core.Model.TimeRegion import TimeRegion
+from rt_bi_runtime.BehaviorInference.SpaceTime import ProjectiveSpaceTimeSet
 from rt_bi_utils.Geometry import Polygon
 
 

@@ -4,9 +4,9 @@ from typing import Dict, List, Set, Union
 
 import networkx as nx
 
-from rt_bi_core.BehaviorInference.Symbol import Symbol
 from rt_bi_core.Eventifier.ConnectivityGraph import ConnectivityGraph
 from rt_bi_core.Eventifier.ShadowTree import ShadowTree
+from rt_bi_runtime.BehaviorInference.Symbol import Symbol
 
 
 class Penny:
@@ -35,14 +35,11 @@ class Penny:
 	def __hash__(self):
 		return hash(repr(self))
 
-	def getShapelyPolygon(self, cGraph: ConnectivityGraph):
-		cluster = cGraph.nodeToClusterMap[self.path]
-		return cGraph.nodeClusters[cluster].polygon
-
 class Transition:
-	def __init__(self, specifier, validators):
+	def __init__(self, specifier: str, validators):
 		self.specifier = specifier
 		matches = RegEx.search(r"\((.*),\s+(.*)\)", self.specifier)
+		if matches is None: raise ValueError("Unexpected specifier format: %s" % specifier)
 		self.name = matches.group(1)
 		self.consuming = json.loads(matches.group(2).lower())
 		self.validator: Symbol = validators[self.name]
@@ -56,8 +53,7 @@ class Transition:
 			#### Returns
 				The path that satisfied the validator function or `None`
 		"""
-		path = shadowTree.bfs(penny.path[-1], self.validator.lambdaObj.func)
-		return None if path is None else path
+		return
 
 class Nfa(nx.DiGraph):
 	def __init__(self, specName: str, states, transitions, validators):
@@ -83,6 +79,7 @@ class Nfa(nx.DiGraph):
 		for fromState in self.transitions:
 			for i in range(len(self.transitions[fromState])):
 				matches = RegEx.search(r"\((\(.*\)),\s+(.*)\)", self.transitions[fromState][i])
+				if matches is None: raise ValueError("Unexpected transition format: %s" % self.transitions[fromState][i])
 				transition = Transition(matches.group(1), self.validators)
 				toState = matches.group(2)
 				self.add_edge(fromState, toState, transition=transition)

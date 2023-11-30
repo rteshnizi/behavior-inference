@@ -10,6 +10,7 @@ rt_bi_core:
         - "[(('T0', False), 'Q0')]"
         - "[(('A', True), 'Q1')]"
         - "[(('B', True), 'END')]"
+        - "[]"
 
       validators:
         "{ 'A': 'bil.spec.lambdas.Prototypes.P2.A', 'B': 'bil.spec.lambdas.Prototypes.P2.B', 'T0': 'bil.spec.lambdas.Prototypes.P2.T0', 'C': 'bil.spec.lambdas.Prototypes.P2.C' }"

@@ -18,12 +18,16 @@ class BehaviorAutomaton(Node):
 		super().__init__(node_name="rt_bi_core_bi") # type: ignore - parameter_overrides: List[Parameter] = None
 		self.get_logger().info("%s is initializing." % self.get_fully_qualified_name())
 		self.__declareParameters()
+		self.__name: str = self.get_fully_qualified_name()
+		self.__states: List[str] = []
+		self.__transitions: List[str] = []
 		self.__parseConfigFileParameters()
 		RosUtils.SetLogger(self.get_logger())
 		return
 
 	def __declareParameters(self) -> None:
 		self.get_logger().debug("%s is setting node parameters." % self.get_fully_qualified_name())
+		self.declare_parameter("name", Parameter.Type.STRING)
 		self.declare_parameter("states", Parameter.Type.STRING_ARRAY)
 		self.declare_parameter("transitions", Parameter.Type.STRING_ARRAY)
 		return
