@@ -1,5 +1,5 @@
 from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
-from rt_bi_runtime.BehaviorInference.Lambda import LambdaType, NfaLambda
+from rt_bi_runtime.BehaviorAutomaton.Lambda import LambdaType, NfaLambda
 from rt_bi_utils.RViz import KnownColors
 
 

@@ -6,7 +6,7 @@ import networkx as nx
 
 from rt_bi_core.Eventifier.ConnectivityGraph import ConnectivityGraph
 from rt_bi_core.Eventifier.ShadowTree import ShadowTree
-from rt_bi_runtime.BehaviorInference.Symbol import Symbol
+from rt_bi_runtime.BehaviorAutomaton.Symbol import Symbol
 
 
 class Penny:
