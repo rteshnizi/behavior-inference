@@ -1,13 +1,9 @@
 from math import inf
-from queue import Queue
 from typing import Dict, List, Literal, Sequence, Set, Tuple, TypeVar, Union
 
 import networkx as nx
 from visualization_msgs.msg import Marker, MarkerArray
 
-from rt_bi_core.BehaviorInference.Lambda import NfaLambda
-from rt_bi_core.BehaviorInference.SpaceTime import ProjectiveSpaceTimeSet
-from rt_bi_core.BehaviorInference.Symbol import Symbol
 from rt_bi_core.Eventifier.ConnectivityGraph import ConnectivityGraph
 from rt_bi_core.Eventifier.ContinuousTimeCollisionDetection import CollisionInterval, ContinuousTimeCollisionDetection as CtCd
 from rt_bi_core.Eventifier.EventAggregator import EventAggregator
@@ -18,7 +14,6 @@ from rt_bi_core.Model.RegularAffineRegion import RegularAffineRegion
 from rt_bi_core.Model.SensorRegion import SensorRegion
 from rt_bi_core.Model.ShadowRegion import ShadowRegion
 from rt_bi_core.Model.SymbolRegion import SymbolRegion
-from rt_bi_core.Model.TimeRegion import TimeRegion
 from rt_bi_utils.Geometry import AffineTransform, Geometry, Polygon
 from rt_bi_utils.Ros import AppendMessage, Logger, Publisher, RegisterRegionId
 from rt_bi_utils.RViz import KnownColors, RViz
@@ -191,30 +186,10 @@ class ShadowTree(nx.DiGraph):
 			y += 2
 		return pos
 
-	def bfs(self, start: str, goalFunc: NfaLambda.NfaLambdaFunc) -> Union[List[str], None]:
-		q = Queue()
-		visited = set()
-		q.put([start])
-		while not q.empty():
-			path = q.get()
-			n = path[-1]
-			visited.add(n)
-			nodeData = self.nodes[n]
-			spaceTimeSetOfNode = ProjectiveSpaceTimeSet(nodeData["region"].interior, TimeRegion(nodeData["fromTime"], nodeData["toTime"], True, True))
-			# if nodeData["type"] == "sensor": continue # FIXME: check if there is a track head here
-			if goalFunc(spaceTimeSetOfNode):
-				return path
-			for child in self.adj[n]:
-				if child in visited: continue
-				newPath = list(path)
-				newPath.append(child)
-				q.put(newPath)
-		return None
-
 	def updateNamedRegions(self, timeNanoSecs: int, regions: List[SymbolRegion]) -> None:
 		return
 
-	def updateSensors(self, timeNanoSecs: int, regions: List[SensorRegion], symbols: Dict[str, Symbol] = {}) -> None:
+	def updateSensors(self, timeNanoSecs: int, regions: List[SensorRegion]) -> None:
 		if self.length == 0:
 			Logger().error("Initial CGraph cannot be created from from sensors.")
 			return

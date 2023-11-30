@@ -3,7 +3,6 @@ from typing import Callable, Dict, List, Literal, Sequence, Set, TypeVar, Union
 import networkx as nx
 from visualization_msgs.msg import Marker, MarkerArray
 
-from rt_bi_core.BehaviorInference.Symbol import Symbol
 from rt_bi_core.Eventifier.FieldOfView import FieldOfView
 from rt_bi_core.Eventifier.MapPerimeter import MapPerimeter
 from rt_bi_core.Eventifier.RegularSymbol import RegularSymbol
