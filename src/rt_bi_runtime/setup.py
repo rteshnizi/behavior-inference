@@ -26,7 +26,7 @@ setup(
 	license="UNLICENSED",
 	entry_points={
 		"console_scripts": [
-			"BI = rt_bi_core.BehaviorInferenceRuntime:main",
+			"BA = rt_bi_core.BehaviorAutomaton:main",
 		],
 	},
 )
