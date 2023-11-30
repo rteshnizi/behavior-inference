@@ -18,7 +18,6 @@ setup(
 	],
 	install_requires= [
 		"setuptools==58.2.0",
-		"numpy~=1.24"
 	],
 	zip_safe=True,
 	maintainer="Reza Teshnizi",
@@ -28,9 +27,6 @@ setup(
 	entry_points={
 		"console_scripts": [
 			"BI = rt_bi_core.BehaviorInferenceRuntime:main",
-			"MI = rt_bi_core.MapServiceInterface:main",
-			"SI = rt_bi_core.SensorTopicInterface:main",
-			"EV = rt_bi_core.EventifierInterface:main",
 		],
 	},
 )
