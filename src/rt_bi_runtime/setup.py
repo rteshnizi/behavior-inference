@@ -1,10 +1,9 @@
 import os
-import pathlib
 from glob import glob
 
 from setuptools import find_packages, setup
 
-packageName = pathlib.Path(__file__).parent.parent.name
+packageName = "rt_bi_runtime"
 
 setup(
 	name=packageName,
@@ -26,7 +25,7 @@ setup(
 	license="UNLICENSED",
 	entry_points={
 		"console_scripts": [
-			"BA = rt_bi_core.BehaviorAutomaton:main",
+			"BA = rt_bi_runtime.BehaviorAutomaton:main",
 		],
 	},
 )
