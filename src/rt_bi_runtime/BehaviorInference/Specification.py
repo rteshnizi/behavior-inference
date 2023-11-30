@@ -1,5 +1,6 @@
 from typing import List, Literal, Union
 
+import rt_bi_utils.Ros as RosUtils
 from rt_bi_core.BehaviorInference.Nfa import Nfa
 from rt_bi_core.BehaviorInference.Symbol import Symbol
 
@@ -32,7 +33,8 @@ class Specification:
 	def __buildSymbolMap(self):
 		symbols = {}
 		for symName in self.__validatorsDefs:
-			symbols[symName] = Symbol(symName, self.__validatorsDefs[symName])
+			idNum = RosUtils.RegisterRegionId(symName)
+			symbols[symName] = Symbol(symName, self.__validatorsDefs[symName], idNum)
 			if symbols[symName].isRegion: self.__regionSymbols.append(symName)
 		return symbols
 

@@ -1,4 +1,3 @@
-# import rt_bi_core # If you remove this, this file will throw an error
 from rt_bi_core.BehaviorInference.Lambda import LambdaType, NfaLambda
 from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
 from rt_bi_utils.RViz import KnownColors

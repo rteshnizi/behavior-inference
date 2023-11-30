@@ -17,9 +17,6 @@ class Prototypes:
 	@staticmethod
 	def initialize():
 		Prototypes.P2 = ObjectLiteral(
-			# A = NfaLambda(Prototypes.funcP2A, [[29, 46], [56, 46], [56, -1], [29, -1]], LambdaType.Region),
-			# B = NfaLambda(Prototypes.funcP2B, [[19, 201], [41, 201], [41, 154], [19, 154]], LambdaType.Region),
-			# C = NfaLambda(Prototypes.funcP2C, [[180, 140], [195, 140], [195, 160], [180, 160]], LambdaType.Region),
 			A = NfaLambda(Prototypes.funcP2A, [[40, 30], [60, 30], [60, 20], [40, 20]], LambdaType.Region),
 			B = NfaLambda(Prototypes.funcP2B, [[30, 180], [50, 180], [50, 170], [30, 170]], LambdaType.Region),
 			C = NfaLambda(Prototypes.funcP2C, [[180, 140], [195, 140], [195, 160], [180, 160]], LambdaType.Region),
@@ -37,17 +34,19 @@ class Prototypes:
 		)
 
 	@staticmethod
-	def funcP2A(mySpaceTime: ProjectiveSpaceTimeSet, spaceTimeOfQuery: ProjectiveSpaceTimeSet) -> bool:
-		return mySpaceTime.intersects(spaceTimeOfQuery)
+	def delta(mySpaceTime: ProjectiveSpaceTimeSet, spaceTimeOfQuery: ProjectiveSpaceTimeSet) -> bool:
+		"""### Delta
 
-	@staticmethod
-	def funcP2B(mySpaceTime: ProjectiveSpaceTimeSet, spaceTimeOfQuery: ProjectiveSpaceTimeSet) -> bool:
-		return mySpaceTime.intersects(spaceTimeOfQuery)
+		Parameters
+		----------
+		mySpaceTime : ProjectiveSpaceTimeSet
+			Mine
+		spaceTimeOfQuery : ProjectiveSpaceTimeSet
+			The other
 
-	@staticmethod
-	def funcP2C(mySpaceTime: ProjectiveSpaceTimeSet, spaceTimeOfQuery: ProjectiveSpaceTimeSet) -> bool:
-		return mySpaceTime.intersects(spaceTimeOfQuery)
-
-	@staticmethod
-	def funcP2T0(mySpaceTime: ProjectiveSpaceTimeSet, spaceTimeOfQuery: ProjectiveSpaceTimeSet) -> bool:
+		Returns
+		-------
+		bool
+			Whether the transition should happen.
+		"""
 		return mySpaceTime.intersects(spaceTimeOfQuery)
