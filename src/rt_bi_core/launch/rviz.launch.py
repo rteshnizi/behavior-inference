@@ -19,24 +19,4 @@ def generate_launch_description():
 				[os.path.join(shareDir, "config", "rviz.live.rviz")],
 			]
 		),
-		Node(
-			package="rviz2",
-			namespace="rviz2",
-			executable="rviz2",
-			name="rviz2_cg",
-			arguments=[
-				"-d",
-				[os.path.join(shareDir, "config", "rviz.cg.rviz")],
-			]
-		),
-		Node(
-			package="rviz2",
-			namespace="rviz2",
-			executable="rviz2",
-			name="rviz2_ctcd", # cspell: disable-line
-			arguments=[
-				"-d",
-				[os.path.join(shareDir, "config", "rviz.ctcd.rviz")], # cspell: disable-line
-			]
-		),
 	])
