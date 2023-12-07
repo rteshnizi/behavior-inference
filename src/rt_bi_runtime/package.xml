@@ -8,6 +8,7 @@
 	<license>UNLICENSED</license>
 
 	<depend>rclpy</depend>
+	<depend version_eq="0.0.6">rt_bi_eventifier</depend>
 	<depend version_eq="0.0.6">rt_bi_interfaces</depend>
 	<depend version_eq="0.0.6">rt_bi_utils</depend>
 
