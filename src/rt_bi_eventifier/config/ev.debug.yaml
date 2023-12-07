@@ -1,4 +1,4 @@
-rt_bi_core:
+rt_bi_eventifier:
   ev:
     ros__parameters:
       liveRender: False

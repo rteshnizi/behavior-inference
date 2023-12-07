@@ -3,15 +3,15 @@ from typing import Callable, Dict, List, Literal, Sequence, Set, TypeVar, Union
 import networkx as nx
 from visualization_msgs.msg import Marker, MarkerArray
 
-from rt_bi_core.Eventifier.FieldOfView import FieldOfView
-from rt_bi_core.Eventifier.MapPerimeter import MapPerimeter
-from rt_bi_core.Eventifier.RegularSymbol import RegularSymbol
-from rt_bi_core.Eventifier.Shadows import Shadows
 from rt_bi_core.Model.DynamicRegion import DynamicRegion
 from rt_bi_core.Model.MapRegion import MapRegion
 from rt_bi_core.Model.SensorRegion import SensorRegion
 from rt_bi_core.Model.ShadowRegion import ShadowRegion
 from rt_bi_core.Model.SymbolRegion import SymbolRegion
+from rt_bi_eventifier.Model.FieldOfView import FieldOfView
+from rt_bi_eventifier.Model.MapPerimeter import MapPerimeter
+from rt_bi_eventifier.Model.RegularSymbol import RegularSymbol
+from rt_bi_eventifier.Model.Shadows import Shadows
 from rt_bi_utils.Geometry import Geometry, LineString, Point, Polygon
 from rt_bi_utils.Ros import AppendMessage, ConcatMessageArray, Logger
 from rt_bi_utils.RViz import Publisher

@@ -7,16 +7,16 @@ from sa_msgs.msg import RobotState
 from sa_msgs.srv import QueryFeature
 
 import rt_bi_utils.Ros as RosUtils
-from rt_bi_core import MapServiceInterface
-from rt_bi_core.Eventifier.ShadowTree import ShadowTree
+from rt_bi_core.MapServiceInterface import MapServiceInterface
 from rt_bi_core.Model.MapRegion import MapRegion
 from rt_bi_core.Model.SensorRegion import SensorRegion
 from rt_bi_core.Model.SymbolRegion import SymbolRegion
+from rt_bi_eventifier.Model.ShadowTree import ShadowTree
 from rt_bi_utils.RViz import RViz
 from rt_bi_utils.SaMsgs import SaMsgs
 
 
-class EventifierInterface(MapServiceInterface):
+class Eventifier(MapServiceInterface):
 	"""
 	This Node listens to all the messages published on the topics related to the Shadow Tree.
 	This node combines topic listeners and service clients.
@@ -40,7 +40,7 @@ class EventifierInterface(MapServiceInterface):
 			modulePublishers[module] = publisher
 		self.__shadowTree: ShadowTree = ShadowTree(modulePublishers)
 
-		(self.__rvizPublisher, _) = RViz.createRVizPublisher(self, RosUtils.CreateTopicName("shadow_tree_interface"))
+		(self.__rvizPublisher, _) = RViz.createRVizPublisher(self, RosUtils.CreateTopicName("eventifier_interface"))
 		self.__mapClient = SaMsgs.createSaFeatureQueryClient(self)
 		SaMsgs.subscribeToSaRobotStateTopic(self, self.__onRobotStateUpdate)
 		self.__shadowTreeColdStart()
@@ -114,7 +114,7 @@ class EventifierInterface(MapServiceInterface):
 
 def main(args=None) -> None:
 	rclpy.init(args=args)
-	node = EventifierInterface()
+	node = Eventifier()
 	rclpy.spin(node)
 	node.destroy_node()
 	rclpy.shutdown()

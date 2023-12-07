@@ -3,11 +3,11 @@ from typing import Dict, List, Tuple, TypeVar, Union
 from rclpy.clock import Duration
 from visualization_msgs.msg import MarkerArray
 
-from rt_bi_core.Eventifier.ContinuousTimeRegion import ContinuousTimeRegion
 from rt_bi_core.Model.AffineRegion import AffineRegion
 from rt_bi_core.Model.MapRegion import MapRegion
 from rt_bi_core.Model.SensorRegion import SensorRegion
 from rt_bi_core.Model.SymbolRegion import SymbolRegion
+from rt_bi_eventifier.Model.ContinuousTimeRegion import ContinuousTimeRegion
 from rt_bi_utils.Geometry import AffineTransform, Geometry, LineString, Polygon
 from rt_bi_utils.Pose import Pose
 from rt_bi_utils.Ros import AppendMessage, Logger, Publisher

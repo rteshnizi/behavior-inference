@@ -4,16 +4,16 @@ from typing import Dict, List, Literal, Sequence, Set, Tuple, TypeVar, Union
 import networkx as nx
 from visualization_msgs.msg import Marker, MarkerArray
 
-from rt_bi_core.Eventifier.ConnectivityGraph import ConnectivityGraph
-from rt_bi_core.Eventifier.ContinuousTimeCollisionDetection import CollisionInterval, ContinuousTimeCollisionDetection as CtCd
-from rt_bi_core.Eventifier.EventAggregator import EventAggregator
-from rt_bi_core.Eventifier.FieldOfView import FieldOfView
 from rt_bi_core.Model.AffineRegion import AffineRegion
 from rt_bi_core.Model.MapRegion import MapRegion
 from rt_bi_core.Model.RegularAffineRegion import RegularAffineRegion
 from rt_bi_core.Model.SensorRegion import SensorRegion
 from rt_bi_core.Model.ShadowRegion import ShadowRegion
 from rt_bi_core.Model.SymbolRegion import SymbolRegion
+from rt_bi_eventifier.Model.ConnectivityGraph import ConnectivityGraph
+from rt_bi_eventifier.Model.ContinuousTimeCollisionDetection import CollisionInterval, ContinuousTimeCollisionDetection as CtCd
+from rt_bi_eventifier.Model.EventAggregator import EventAggregator
+from rt_bi_eventifier.Model.FieldOfView import FieldOfView
 from rt_bi_utils.Geometry import AffineTransform, Geometry, Polygon
 from rt_bi_utils.Ros import AppendMessage, Logger, Publisher, RegisterRegionId
 from rt_bi_utils.RViz import KnownColors, RViz

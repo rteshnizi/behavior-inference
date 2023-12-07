@@ -1,9 +1,12 @@
-from typing import List, Set, Union
+from typing import List, Sequence, Set, Union
+
+from visualization_msgs.msg import Marker
 
 from rt_bi_core.Model.RegularAffineRegion import RegularAffineRegion
 from rt_bi_core.Model.SensorRegion import SensorRegion
 from rt_bi_core.Model.Tracklet import Tracklets
 from rt_bi_utils.Geometry import MultiPolygon, Polygon
+from rt_bi_utils.RViz import KnownColors
 
 
 class FieldOfView(RegularAffineRegion[SensorRegion]):
@@ -50,3 +53,6 @@ class FieldOfView(RegularAffineRegion[SensorRegion]):
 
 	def difference(self, other: "FieldOfView") -> Set[str]:
 		return super().difference(other)
+
+	def render(self) -> Sequence[Marker]:
+		return super().render(envelopeColor=KnownColors.GREEN)
