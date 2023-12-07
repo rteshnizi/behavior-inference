@@ -23,9 +23,12 @@ class KnownColors:
 	DARK_GREY: Color = 		(0.25, 0.25, 0.25, 1)
 	BLACK: Color = 			(0, 0, 0, 1)
 	RED: Color = 			(1, 0, 0, 1)
-	MAROON: Color = 		(0.502, 0, 0, 1)
+	DARK_RED: Color =		(9.4, 2.4, 2.4, 1)
+	MAROON: Color = 		(0.5, 0, 0, 1)
 	GREEN: Color = 			(0, 1, 0, 1)
+	DARK_GREEN: Color = 	(0, 0.25, 0, 1)
 	BLUE: Color = 			(0, 0, 1, 1)
+	DARK_BLUE: Color = 		(0, 0, 0.25, 1)
 	PURPLE: Color = 		(0.36, 0.25, 0.83, 1)
 
 class RViz:
