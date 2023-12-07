@@ -4,7 +4,7 @@ from math import inf
 from typing import Callable, Union
 
 from rt_bi_core.Model.TimeRegion import TimeRegion
-from rt_bi_runtime.BehaviorAutomaton.SpaceTime import ProjectiveSpaceTimeSet
+from rt_bi_runtime.Model.SpaceTime import ProjectiveSpaceTimeSet
 from rt_bi_utils.Geometry import Polygon
 
 

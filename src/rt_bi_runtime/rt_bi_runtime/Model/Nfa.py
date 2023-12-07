@@ -3,9 +3,9 @@ from typing import Dict, Set, Union
 
 import networkx as nx
 
-from rt_bi_runtime.BehaviorAutomaton.Symbol import Symbol
-from rt_bi_runtime.rt_bi_runtime.BehaviorAutomaton.StateSummary import StateSummary
-from rt_bi_runtime.rt_bi_runtime.BehaviorAutomaton.Transition import Transition
+from rt_bi_runtime.Model.Symbol import Symbol
+from rt_bi_runtime.rt_bi_runtime.Model.StateSummary import StateSummary
+from rt_bi_runtime.rt_bi_runtime.Model.Transition import Transition
 
 
 class Nfa(nx.DiGraph):

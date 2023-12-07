@@ -1,7 +1,7 @@
 import json
 import re as RegEx
 
-from rt_bi_runtime.BehaviorAutomaton.Symbol import Symbol
+from rt_bi_runtime.Model.Symbol import Symbol
 
 
 class Transition:
