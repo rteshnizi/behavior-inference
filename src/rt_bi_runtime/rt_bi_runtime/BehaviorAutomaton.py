@@ -1,3 +1,4 @@
+import json
 from typing import List
 
 import rclpy
@@ -20,10 +21,15 @@ class BehaviorAutomaton(Node):
 		self.__declareParameters()
 		self.__name: str = self.get_fully_qualified_name()
 		self.__states: List[str] = []
-		self.__transitions: List[str] = []
+		self.__transitions: List[List[tuple]] = []
+		self.__start: str = self.get_fully_qualified_name()
+		self.__accepting: List[str] = []
 		self.__parseConfigFileParameters()
 		RosUtils.SetLogger(self.get_logger())
 		return
+
+	def __repr__(self) -> str:
+		return self.__name
 
 	def __declareParameters(self) -> None:
 		self.get_logger().debug("%s is setting node parameters." % self.get_fully_qualified_name())
@@ -34,6 +40,17 @@ class BehaviorAutomaton(Node):
 
 	def __parseConfigFileParameters(self) -> None:
 		self.get_logger().debug("%s is parsing parameters." % self.get_fully_qualified_name())
+		self.__name = self.get_parameter("name").get_parameter_value().string_value
+		self.__states = list(self.get_parameter("states").get_parameter_value().string_array_value)
+		transitionsLists = list(self.get_parameter("transitions").get_parameter_value().string_array_value)
+		self.__transitions = [json.loads(transitionsList) for transitionsList in transitionsLists]
+		self.__start = self.get_parameter("start").get_parameter_value().string_value
+		self.__accepting = list(self.get_parameter("transitions").get_parameter_value().string_array_value)
+		# matches = RegEx.search(r"\((.*),\s+(.*)\)", self.specifier)
+		# if matches is None: raise ValueError("Unexpected specifier format: %s" % specifier)
+		# self.symbol = matches.group(1)
+		# self.consuming = json.loads(matches.group(2).lower())
+		# self.validator: Symbol = validators[self.name]
 		return
 
 	def render(self, regions: List[PolygonalRegion]) -> None:
