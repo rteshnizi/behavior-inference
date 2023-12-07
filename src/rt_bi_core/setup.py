@@ -18,7 +18,6 @@ setup(
 	install_requires= [
 		"networkx~=3.0",
 		"setuptools==58.2.0",
-		"numpy~=1.24"
 	],
 	zip_safe=True,
 	maintainer="Reza Teshnizi",
@@ -29,7 +28,6 @@ setup(
 		"console_scripts": [
 			"MI = rt_bi_core.MapServiceInterface:main",
 			"SI = rt_bi_core.SensorTopicInterface:main",
-			"EV = rt_bi_core.EventifierInterface:main",
 		],
 	},
 )
