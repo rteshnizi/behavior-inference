@@ -5,3 +5,4 @@ rt_bi_eventifier:
       renderModules:
         - connectivity_graph
         - continuous_time_collision_detection
+        - shadow_tree
