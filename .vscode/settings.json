@@ -613,8 +613,4 @@
 		"**/install",
 		"**/Trajectory.py",
 	],
-	"window.autoDetectColorScheme": true,
-	"workbench.preferredLightColorTheme": "Ayu Light Bordered",
-	"workbench.preferredDarkColorTheme": "Abyss",
-	"workbench.colorTheme": "Ayu Light Bordered",
 }
