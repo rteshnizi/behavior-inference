@@ -166,7 +166,7 @@ def ConcatMessageArray(array: Union[Sequence[Topic], AbstractSet[Topic], List[To
 def RegisterRegionId(featureName: str) -> int:
 	if featureName in __strNameToIdNum:
 		idNum = __strNameToIdNum[featureName]
-		Logger().warn("Duplicate region name encountered: %s... same id assigned %d." % (featureName, idNum))
+		Logger().debug("Duplicate region name encountered: %s... same id assigned %d." % (featureName, idNum))
 		return __strNameToIdNum[featureName]
 	idNum = len(__strNameToIdNum)
 	__strNameToIdNum[featureName] = idNum
