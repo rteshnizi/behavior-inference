@@ -14,7 +14,7 @@ from rt_bi_eventifier.Model.RegularSymbol import RegularSymbol
 from rt_bi_eventifier.Model.Shadows import Shadows
 from rt_bi_utils.Geometry import Geometry, LineString, Point, Polygon
 from rt_bi_utils.Ros import AppendMessage, ConcatMessageArray, Logger
-from rt_bi_utils.RViz import Publisher
+from rt_bi_utils.RViz import KnownColors, Publisher, RViz
 
 
 class ConnectivityGraph(nx.DiGraph):
@@ -174,6 +174,16 @@ class ConnectivityGraph(nx.DiGraph):
 				if broken: continue
 		return
 
+	def __getShadowAreaMarkers(self, markerArray: MarkerArray) -> MarkerArray:
+		for shadowName in self.shadows:
+			shadow = self.shadows[shadowName]
+			textCoords = shadow.interior.centroid
+			textCoords = (textCoords.x, textCoords.y)
+			timerText = "area(%s) = %.3f" % (shadowName, shadow.interior.area)
+			timerMarker = RViz.createText("rt_st_%s" % shadowName, textCoords, timerText, KnownColors.RED, fontSize=7.5)
+			AppendMessage(markerArray.markers, timerMarker)
+		return markerArray
+
 	@property
 	def mapPerimeter(self) -> MapPerimeter:
 		"""The geometric description of the map."""
@@ -213,6 +223,7 @@ class ConnectivityGraph(nx.DiGraph):
 		# ConcatMessageArray(markers, self.fieldOfView.render())
 		message = MarkerArray()
 		for marker in markers: AppendMessage(message.markers, marker)
+		message = self.__getShadowAreaMarkers(message)
 		Logger().info("Rendering %d CGraph markers." % len(message.markers))
 		self.__rvizPublisher.publish(message)
 		return

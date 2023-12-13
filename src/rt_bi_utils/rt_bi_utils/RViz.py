@@ -16,21 +16,27 @@ Color = Tuple[numeric, numeric, numeric, numeric]
 """ A tuple that represents an RGBA value. Values between [0-1]. """
 
 class KnownColors:
+	BLACK: Color = 			(0, 0, 0, 1)
+	BLUE: Color = 			(0, 0, 1, 1)
+	COLD_BLUE: Color = 		(0, 0.5, 1, 1)
+	CYAN: Color =	 		(0, 1, 1, 1)
+	DARK_CYAN: Color = 		(0, 0.5, 0.5, 1)
+	DARK_BLUE: Color = 		(0, 0, 0.25, 1)
+	DARK_GREEN: Color = 	(0, 0.25, 0, 1)
+	DARK_GREY: Color = 		(0.25, 0.25, 0.25, 1)
+	DARK_MAGENTA: Color =	(0.7, 0, 0.7, 1)
+	DARK_RED: Color =		(9.4, 2.4, 2.4, 1)
+	DARK_YELLOW: Color =	(0.7, 0.7, 0, 1)
+	GREEN: Color = 			(0, 1, 0, 1)
+	GREY: Color = 			(0.5, 0.5, 0.5, 1)
+	LIGHT_GREY: Color = 	(0.75, 0.75, 0.75, 1)
+	MAGENTA: Color = 		(1, 0, 1, 1)
+	MAROON: Color = 		(0.5, 0, 0, 1)
+	PURPLE: Color = 		(0.36, 0.25, 0.83, 1)
+	RED: Color = 			(1, 0, 0, 1)
 	TRANSPARENT: Color = 	(0, 0, 0, 0)
 	WHITE: Color = 			(1, 1, 1, 1)
-	LIGHT_GREY: Color = 	(0.75, 0.75, 0.75, 1)
-	GREY: Color = 			(0.5, 0.5, 0.5, 1)
-	DARK_GREY: Color = 		(0.25, 0.25, 0.25, 1)
-	BLACK: Color = 			(0, 0, 0, 1)
-	RED: Color = 			(1, 0, 0, 1)
-	DARK_RED: Color =		(9.4, 2.4, 2.4, 1)
-	MAROON: Color = 		(0.5, 0, 0, 1)
-	GREEN: Color = 			(0, 1, 0, 1)
-	DARK_GREEN: Color = 	(0, 0.25, 0, 1)
-	BLUE: Color = 			(0, 0, 1, 1)
-	DARK_BLUE: Color = 		(0, 0, 0.25, 1)
-	PURPLE: Color = 		(0.36, 0.25, 0.83, 1)
-
+	YELLOW: Color =			(1, 1, 0, 1)
 class RViz:
 	"""
 		This class only prepares the visualization messages for R-Viz.
@@ -86,9 +92,9 @@ class RViz:
 		PointMsg
 		"""
 		p = PointMsg()
-		p.x = x
-		p.y = y
-		p.z = z
+		p.x = float(x)
+		p.y = float(y)
+		p.z = float(z)
 		return p
 
 	@staticmethod
@@ -150,21 +156,6 @@ class RViz:
 
 	@staticmethod
 	def createCircle(strId: str, centerX: float, centerY: float, radius: float, outline: Color, width = 1.0) -> Marker:
-		"""
-		Returns shape id
-
-		center: Point
-
-		radius: number
-
-		outline: color string (empty string for transparent)
-
-		fill: color string (empty string for transparent)
-
-		width: number
-
-		tag: a unique identifier (use entity name)
-		"""
 		RosUtils.Logger().debug("Render circle id %s." % strId)
 		circle = Marker()
 		circle = RViz.__setMarkerHeader(circle)
@@ -182,18 +173,23 @@ class RViz:
 
 	@staticmethod
 	def createPolygon(strId: str, coords: Geometry.CoordsList, outline: Color, width: float) -> Marker:
-		"""
-		Returns shape id
+		"""Create a polygon Marker message.
 
-		coords: A list of coordinate pairs [x, y]
+		Parameters
+		----------
+		strId : str
+			Used for refreshing the same element over successive frames.
+		coords : Geometry.Coords
+			The placement.
+		outline : Color
+			The color of the outline.
+		width : float
+			The width of the rendered outline.
 
-		outline: color string (empty string for transparent)
-
-		fill: color string (empty string for transparent)
-
-		width: number
-
-		tag: a unique identifier (use entity name)
+		Returns
+		-------
+		Marker
+			The marker message.
 		"""
 		RosUtils.Logger().debug("Render polygon id %s." % strId)
 		polygon = Marker()
@@ -206,23 +202,32 @@ class RViz:
 		for (x, y) in coords:
 			RosUtils.AppendMessage(polygon.points, RViz.__createPointMessage(x, y))
 
+		if Geometry.coordsAreEqual(coords[0], coords[-1]): return polygon
+		# If the last vertex is not the same as the first one, we need to close the loop-back here.
 		RosUtils.AppendMessage(polygon.points, RViz.__createPointMessage(*coords[0]))
 		return polygon
 
 	@staticmethod
-	def createLine(strId: str, coords: Geometry.CoordsList, outline: Color, width = 1.0, arrow = False) -> Marker:
-		"""
-		Returns shape id, or None if there are no points.
+	def createLine(strId: str, coords: Geometry.CoordsList, outline: Color, width: float, arrow = False) -> Marker:
+		"""Create a line Marker message.
 
-		coords: A list of coordinate pairs [x, y]
+		Parameters
+		----------
+		strId : str
+			Used for refreshing the same element over successive frames.
+		coords : Geometry.Coords
+			The placement.
+		outline : Color
+			The color.
+		width : float
+			The width of the rendered line.
+		arrow : bool, optional
+			Whether to render an arrow-head, by default False.
 
-		color: color string (empty string for transparent)
-
-		width: number; default is 1
-
-		dash: Dash pattern, given as a list of segment lengths. Only the odd segments are drawn.
-
-		tag: a unique identifier (use entity name)
+		Returns
+		-------
+		Marker
+			The marker message.
 		"""
 		RosUtils.Logger().debug("Render line strip id %s." % strId)
 		lineSeg = Marker()
@@ -234,6 +239,7 @@ class RViz:
 		lineSeg.scale.x = float(width)
 		for (x, y) in coords:
 			RosUtils.AppendMessage(lineSeg.points, RViz.__createPointMessage(x, y))
+		if arrow: RosUtils.Logger().info("Rendering arrow-head is not implemented.")
 		return lineSeg
 
 	@staticmethod
@@ -271,7 +277,7 @@ class RViz:
 		return textMarker
 
 	@staticmethod
-	def removeShape(strId: str) -> None:
+	def removeMarker(strId: str) -> Marker:
 		"""
 		Remove a shape from RViz.
 		"""
@@ -280,10 +286,10 @@ class RViz:
 		marker = RViz.__setMarkerHeader(marker)
 		marker.action = Marker.DELETE # To remove shape
 		marker = RViz.__setMarkerId(marker, strId)
-		return
+		return marker
 
 	@staticmethod
-	def removeAllShapes() -> None:
+	def removeAllMarkers() -> Marker:
 		"""
 		Remove all shapes from RViz
 		"""
@@ -291,4 +297,4 @@ class RViz:
 		marker = Marker()
 		marker = RViz.__setMarkerHeader(marker)
 		marker.action = Marker.DELETEALL # To remove shape # CSpell: disable-line
-		return
+		return marker

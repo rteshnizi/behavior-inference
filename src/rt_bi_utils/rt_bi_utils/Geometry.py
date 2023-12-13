@@ -57,8 +57,38 @@ class Geometry:
 		return(c1[0] + c2[0], c1[1] + c2[1])
 
 	@staticmethod
-	def addScalar(c1: Coords, s: float) -> Coords:
+	def subtractCoords(c1: Coords, c2: Coords) -> Coords:
+		"""c1 - c2
+
+		Parameters
+		----------
+		c1 : Coords
+		c2 : Coords
+
+		Returns
+		-------
+		Coords
+		"""
+		return(c1[0] - c2[0], c1[1] - c2[1])
+
+	@staticmethod
+	def addScalarToCoords(c1: Coords, s: float) -> Coords:
+		"""c1 + (s * I)
+
+		Parameters
+		----------
+		c1 : Coords
+		s : float
+
+		Returns
+		-------
+		Coords
+		"""
 		return(c1[0] + s, c1[1] + s)
+
+	@staticmethod
+	def scaleCoords(c1: Coords, s: float) -> Coords:
+		return(c1[0] * s, c1[1] * s)
 
 	@staticmethod
 	def getGeometryCoords(geom: ConnectedGeometry) -> CoordsList:
@@ -80,14 +110,22 @@ class Geometry:
 		return tuple(Geometry.pointStringId(coords[0], coords[1]) for coords in coordsList)
 
 	@staticmethod
+	def coordsDistance(coords1: Coords, coords2: Coords) -> float:
+		return Geometry.distance(coords1[0], coords1[1], coords2[0], coords2[1])
+
+	@staticmethod
 	def vectorsAreEqual(vec1: Vector, vec2: Vector, withinEpsilon = True) -> bool:
-		d1 = Geometry.distanceFromVects(vec1, vec2)
+		d1 = Geometry.coordsDistance(vec1, vec2)
 		margin = Geometry.EPSILON if withinEpsilon else 0
 		return d1 <= margin
 
 	@staticmethod
+	def coordsAreEqual(coords1: Coords, coords2: Coords) -> bool:
+		return Geometry.vectorsAreEqual(coords1, coords2)
+
+	@staticmethod
 	def coordsAreAlmostEqual(coords1: Coords, coords2: Coords) -> bool:
-		d1 = Geometry.distance(coords1[0], coords1[1], coords2[0], coords2[1])
+		d1 = Geometry.coordsDistance(coords1, coords2)
 		return d1 <= 0.35 # FIXME: EPSILON is too small unfortunately
 
 	@staticmethod
@@ -124,31 +162,18 @@ class Geometry:
 
 	@staticmethod
 	def distance(x1: float, y1: float, x2: float, y2: float) -> float:
-		vect = Geometry.distanceVect(x1, y1, x2, y2)
-		length = Geometry.vectLength(vect[0], vect[1])
-		return length
-
-	@staticmethod
-	def distanceFromVects(vect1: Vector, vect2: Vector) -> float:
-		return Geometry.distance(vect1[0], vect1[1], vect2[0], vect2[1])
-
-	@staticmethod
-	def distanceVect(x1: float, y1: float, x2: float, y2: float) -> Vector:
 		dx = x2 - x1
 		dy = y2 - y1
-		return (dx, dy)
-
-	@staticmethod
-	def distanceVectFromPts(pt1: Point, pt2: Point) -> Vector:
-		return Geometry.distanceVect(pt1.x, pt1.y, pt2.x, pt2.y)
+		length = Geometry.vectLength(dx, dy)
+		return length
 
 	@staticmethod
 	def getUnitVector(x: float, y: float) -> Vector:
 		"""
 		Returns a tuple (x, y) of a vector.
 		"""
-		length = Geometry.distance(0, 0, x, y)
-		return (x / length, y / length)
+		distance = Geometry.vectLength(x, y)
+		return (x / distance, y / distance)
 
 	@staticmethod
 	def getUnitVectorFromAngle(theta: float) -> Vector:
