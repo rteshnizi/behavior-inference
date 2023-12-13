@@ -12,6 +12,7 @@ from rt_bi_core.Model.MapRegion import MapRegion
 from rt_bi_core.Model.SensorRegion import SensorRegion
 from rt_bi_core.Model.SymbolRegion import SymbolRegion
 from rt_bi_eventifier.Model.ShadowTree import ShadowTree
+from rt_bi_interfaces.msg import Events, Graph
 from rt_bi_utils.RViz import RViz
 from rt_bi_utils.SaMsgs import SaMsgs
 
@@ -26,11 +27,12 @@ class Eventifier(MapServiceInterface):
 		"""
 		Create a Shadow Tree Interface node.
 		"""
-		super().__init__(node_name="rt_bi_core_st")
+		super().__init__(node_name="rt_bi_eventifier")
 		self.get_logger().debug("%s is initializing." % self.get_fully_qualified_name())
 		self.__declareParameters()
 		self.__liveRender: bool = False
 		self.__renderModules: List[ShadowTree.SUBMODULE_TYPES] = []
+		self.__topicPublishers: Dict[ShadowTree.TOPICS, Publisher] = {}
 		self.__parseConfigFileParameters()
 		RosUtils.SetLogger(self.get_logger())
 		modulePublishers: Dict[ShadowTree.SUBMODULE_TYPES, Union[Publisher, None]] = {}
@@ -38,9 +40,10 @@ class Eventifier(MapServiceInterface):
 			if module in self.__renderModules: (publisher, _) = RViz.createRVizPublisher(self, RosUtils.CreateTopicName(module))
 			else: publisher = None
 			modulePublishers[module] = publisher
-		self.__shadowTree: ShadowTree = ShadowTree(modulePublishers)
+		(self.__topicPublishers["eventifier_graph"], _) = RosUtils.CreatePublisher(self, Graph, RosUtils.CreateTopicName("eventifier_graph"))
+		(self.__topicPublishers["eventifier_event"], _) = RosUtils.CreatePublisher(self, Events, RosUtils.CreateTopicName("eventifier_event"))
+		self.__shadowTree: ShadowTree = ShadowTree(self.__topicPublishers, modulePublishers)
 
-		(self.__rvizPublisher, _) = RViz.createRVizPublisher(self, RosUtils.CreateTopicName("eventifier_interface"))
 		self.__mapClient = SaMsgs.createSaFeatureQueryClient(self)
 		SaMsgs.subscribeToSaRobotStateTopic(self, self.__onRobotStateUpdate)
 		self.__shadowTreeColdStart()
@@ -105,9 +108,6 @@ class Eventifier(MapServiceInterface):
 		regions = super().parsePolygonShapeList(request, response, False)
 		self.__updateMap(regions)
 		return regions
-
-	def render(self) -> None:
-		return
 
 	def requestMap(self, mapClient: Client) -> None:
 		return super().requestMap(mapClient)

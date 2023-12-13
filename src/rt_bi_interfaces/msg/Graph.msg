@@ -1,0 +1,2 @@
+string[] vertices
+Adjacency[] adjacency
