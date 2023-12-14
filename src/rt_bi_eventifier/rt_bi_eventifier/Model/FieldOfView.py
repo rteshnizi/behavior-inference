@@ -1,10 +1,10 @@
-from typing import List, Sequence, Set, Union
+from typing import Dict, List, Sequence, Set, Union
 
 from visualization_msgs.msg import Marker
 
 from rt_bi_core.Model.RegularAffineRegion import RegularAffineRegion
 from rt_bi_core.Model.SensorRegion import SensorRegion
-from rt_bi_core.Model.Tracklet import Tracklets
+from rt_bi_core.Model.Tracklet import Tracklet
 from rt_bi_utils.Geometry import MultiPolygon, Polygon
 from rt_bi_utils.RViz import KnownColors
 
@@ -34,11 +34,11 @@ class FieldOfView(RegularAffineRegion[SensorRegion]):
 		return self.interior
 
 	@property
-	def tracks(self) -> Tracklets:
-		tracks: Tracklets = {}
+	def tracks(self) -> List[Tracklet]:
+		tracks: List[Tracklet] = []
 		for n in self:
 			sensor = self[n]
-			tracks = { **tracks, **sensor.tracks }
+			tracks += sensor.tracks
 		return tracks
 
 	def addConnectedComponent(self, region: SensorRegion) -> None:

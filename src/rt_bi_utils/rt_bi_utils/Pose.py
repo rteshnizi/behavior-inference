@@ -1,6 +1,3 @@
-from shapely.geometry import Point
-
-
 class Pose:
 	def __init__(self, timeNanoSecs: int, x: float, y: float, angleFromX: float):
 		"""
@@ -21,9 +18,7 @@ class Pose:
 		self.x: float = float(x)
 		self.y: float = float(y)
 		self.angleFromX: float = float(angleFromX)
-		self.pt = Point(x, y)
-		# FIXME: Set when deletedTracks is set and when new ID is detected in tracks dict
-		self.spawn = False
+		self.spawned = False
 		self.vanished = False
 
 	@property
@@ -32,11 +27,11 @@ class Pose:
 		return self.angleFromX
 
 	def __bareRepr(self) -> str:
-		return "(%.2f, %.2f, %.2f)" % (self.timeNanoSecs, self.x, self.y)
+		return "(%d, %.2f, %.2f)" % (self.timeNanoSecs, self.x, self.y)
 
 	def __repr__(self) -> str:
 		s = self.__bareRepr()
-		if self.spawn and self.vanished: return "%s%s" % ("+/- ", s)
-		if self.spawn: return "%s%s" % ("+ ", s)
+		if self.spawned and self.vanished: return "%s%s" % ("+/- ", s)
+		if self.spawned: return "%s%s" % ("+ ", s)
 		if self.vanished: return "%s%s" % ("- ", s)
 		return s

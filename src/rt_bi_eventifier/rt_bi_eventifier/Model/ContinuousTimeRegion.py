@@ -5,7 +5,6 @@ from rt_bi_core.Model.AffineRegion import AffineRegion
 from rt_bi_core.Model.MapRegion import MapRegion
 from rt_bi_core.Model.SensorRegion import SensorRegion
 from rt_bi_core.Model.SymbolRegion import SymbolRegion
-from rt_bi_core.Model.Tracklet import Tracklets
 from rt_bi_utils.Geometry import AffineTransform, Geometry
 from rt_bi_utils.Ros import Logger
 

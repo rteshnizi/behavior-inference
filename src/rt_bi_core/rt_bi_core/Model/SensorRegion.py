@@ -4,8 +4,7 @@ from visualization_msgs.msg import Marker
 
 import rt_bi_utils.Ros as RosUtils
 from rt_bi_core.Model.AffineRegion import AffineRegion
-from rt_bi_core.Model.FeatureMap import FeatureMap
-from rt_bi_core.Model.Tracklet import Tracklets
+from rt_bi_core.Model.Tracklet import Tracklet
 from rt_bi_utils.Geometry import Geometry, MultiPolygon, Polygon
 from rt_bi_utils.Pose import Pose
 from rt_bi_utils.RViz import Color, KnownColors
@@ -24,7 +23,7 @@ class SensorRegion(AffineRegion):
 			envelope: Geometry.CoordsList,
 			timeNanoSecs: int,
 			interior: Union[Polygon, MultiPolygon, None] = None,
-			tracks: Tracklets = {},
+			tracks: List[Tracklet] = [],
 			**kwArgs
 		) -> None:
 		"""
@@ -63,13 +62,9 @@ class SensorRegion(AffineRegion):
 		self.__tracks = tracks
 
 	@property
-	def tracks(self) -> Tracklets:
+	def tracks(self) -> List[Tracklet]:
 		"""The information about every tracklet, if any, within this sensing region."""
 		return self.__tracks
-
-	@tracks.setter
-	def tracks(self, tracks: Tracklets) -> None:
-		self.__tracks = tracks
 
 	@property
 	def hasTrack(self) -> bool:
@@ -83,23 +78,12 @@ class SensorRegion(AffineRegion):
 		"""
 		return len(self.__tracks) > 0
 
-	def updateVisibilityPolygon(self, regions: List[AffineRegion], featureMap: FeatureMap) -> None:
-		RosUtils.Logger().info("Updating visibility")
-		polygon = Polygon(self.envelope)
-		for region in regions:
-			# FIXME: Currently, the type of sensor is missing.
-			# Once its available you should check the type and see which type of seeThrough I should look for
-			if featureMap.features[region.regionType.value].visibleFromAbove: continue
-			polygon = Geometry.difference(polygon, region.interior)
-		self.forceUpdateInteriorPolygon(polygon)
-		return
-
 	def render(self, envelopeColor: Union[Color, None] = None) -> Sequence[Marker]:
 		msgs = super().render(renderText=False, envelopeColor=envelopeColor)
-		for trackId in self.__tracks:
-			track = self.__tracks[trackId]
-			RosUtils.ConcatMessageArray(msgs, track.render())
+		for tracklet in self.__tracks: RosUtils.ConcatMessageArray(msgs, tracklet.render())
 		return msgs
 
-	def clearRender(self) -> None:
-		return super().clearRender()
+	def clearRender(self) -> Sequence[Marker]:
+		msgs = super().clearRender()
+		for tracklet in self.__tracks: RosUtils.ConcatMessageArray(msgs, tracklet.clearRender())
+		return msgs

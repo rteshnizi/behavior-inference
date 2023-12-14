@@ -29,6 +29,7 @@ class KnownColors:
 	DARK_YELLOW: Color =	(0.7, 0.7, 0, 1)
 	GREEN: Color = 			(0, 1, 0, 1)
 	GREY: Color = 			(0.5, 0.5, 0.5, 1)
+	LIGHT_GREEN: Color = 	(0.56, 0.93, 0.56, 1)
 	LIGHT_GREY: Color = 	(0.75, 0.75, 0.75, 1)
 	MAGENTA: Color = 		(1, 0, 1, 1)
 	MAROON: Color = 		(0.5, 0, 0, 1)
@@ -37,6 +38,7 @@ class KnownColors:
 	TRANSPARENT: Color = 	(0, 0, 0, 0)
 	WHITE: Color = 			(1, 1, 1, 1)
 	YELLOW: Color =			(1, 1, 0, 1)
+
 class RViz:
 	"""
 		This class only prepares the visualization messages for R-Viz.
@@ -240,6 +242,11 @@ class RViz:
 		for (x, y) in coords:
 			RosUtils.AppendMessage(lineSeg.points, RViz.__createPointMessage(x, y))
 		if arrow: RosUtils.Logger().info("Rendering arrow-head is not implemented.")
+		# if not self.renderArrows: continue
+		# (dx, dy) = Geometry.getUnitVectorFromAngle(end.angleFromX)
+		# dx = dx * self.HEADING_ARROW_LENGTH
+		# dy = dy * self.HEADING_ARROW_LENGTH
+		# msgs.append(RViz.createLine(canvas, [[p.pt.x, p.pt.y], [p.pt.x + dx, p.pt.y + dy]], color=self.MARKING_COLOR, tag=self.name, arrow=True))
 		return lineSeg
 
 	@staticmethod

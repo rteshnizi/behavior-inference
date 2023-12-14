@@ -1,39 +1,29 @@
-# from bil.model.trajectory import Trajectory
-from typing import Dict, Sequence, Tuple
+from typing import List, Sequence
 
 from visualization_msgs.msg import Marker
 
 from rt_bi_utils.Pose import Pose
-from rt_bi_utils.RViz import KnownColors, RViz
+from rt_bi_utils.RViz import Color, KnownColors, RViz
 
 
-class Tracklet:
-	def __init__(self, idNum: int, timeNanoSecs: int, x: float, y: float, psi: float, isInterpolated=False):
-		self.id = idNum
-		self.isInterpolated = isInterpolated
-		self.pose = Pose(timeNanoSecs, x, y, psi)
-		self.canvasId = None
+class Tracklet(Pose):
+	def __init__(self, id: int, timeNanoSecs: int, x: float, y: float, angleFromX: float) -> None:
+		super().__init__(timeNanoSecs, x, y, angleFromX)
+		self.id = id
 
-	def __repr__(self):
-		return "Trk-%d: %s" % (self.id, repr(self.pose))
+	def __repr__(self) -> str:
+		return "Trk-%d" % self.id
 
 	def render(self) -> Sequence[Marker]:
 		msgs = []
-		color = KnownColors.GREEN
-		if self.pose.spawn:
-			color = KnownColors.GREEN
-		elif self.pose.vanished:
-			color = KnownColors.MAROON
-		tag = "track%d-%.1f" % (self.id, self.pose.timeNanoSecs)
-		color = color if self.isInterpolated else KnownColors.PURPLE
-		width = 1 if self.isInterpolated else 3
-		msgs.append(RViz.createCircle(tag, self.pose.x, self.pose.y, 2, color, width))
+		if self.spawned: msgs.append(RViz.createCircle("%s-circle" % repr(self), self.x, self.y, radius=5, outline=KnownColors.LIGHT_GREEN))
+		elif self.vanished: msgs.append(RViz.createCircle("%s-circle" % repr(self), self.x, self.y, radius=5, outline=KnownColors.DARK_RED))
+		else: msgs.append(RViz.createCircle("%s-circle" % repr(self), self.x, self.y, radius=5, outline=KnownColors.PURPLE))
+		msgs.append(RViz.createText("%s-txt" % repr(self), (self.x, self.y), repr(self), KnownColors.WHITE))
 		return msgs
 
-	def clearRender(self):
-		return
-
-Tracklets = Dict[Tuple[float, int], Tracklet]
-"""
-Tracklets is a dictionary of (time, trackId) to Tracklet.
-"""
+	def clearRender(self) -> Sequence[Marker]:
+		msgs = []
+		msgs.append(RViz.removeMarker("%s-circle" % repr(self)))
+		msgs.append(RViz.removeMarker("%s-txt" % repr(self)))
+		return msgs

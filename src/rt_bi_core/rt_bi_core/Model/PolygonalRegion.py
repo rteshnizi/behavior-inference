@@ -170,6 +170,8 @@ class PolygonalRegion:
 			msgs.append(RViz.createText("%s_txt" % self.name, self.interior.centroid.xy, self.name, self.__TEXT_COLOR))
 		return msgs
 
-	def clearRender(self) -> None:
-		RosUtils.Logger().info("No implementation for %s" % PolygonalRegion.clearRender.__name__)
-		return
+	def clearRender(self) -> Sequence[Marker]:
+		msgs = []
+		msgs.append(RViz.removeMarker(self.name))
+		msgs.append(RViz.removeMarker("%s_txt" % self.name))
+		return msgs

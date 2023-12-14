@@ -8,7 +8,7 @@ from rt_bi_core.Model.MapRegion import MapRegion
 from rt_bi_core.Model.RegularAffineRegion import RegularAffineRegion
 from rt_bi_core.Model.SensorRegion import SensorRegion
 from rt_bi_core.Model.SymbolRegion import SymbolRegion
-from rt_bi_core.Model.Tracklet import Tracklet, Tracklets
+from rt_bi_core.Model.Tracklet import Tracklet
 from rt_bi_eventifier.Model.ConnectivityGraph import ConnectivityGraph
 from rt_bi_eventifier.Model.ContinuousTimeCollisionDetection import CollisionInterval
 from rt_bi_eventifier.Model.ContinuousTimeRegion import ContinuousTimeRegion
@@ -57,29 +57,23 @@ class EventAggregator:
 			return False
 
 	@classmethod
-	def __interpolateTrack(cls, previousTracks: Tracklets, currentTracks: Tracklets, eventTimeNs: int, startTimeNs: int, endTimeNs: int) -> Tracklets:
+	def __interpolateTrack(cls, pastTracklet: Tracklet, nowTracklet: Tracklet, eventTimeNs: int, startTimeNs: int, endTimeNs: int) -> Tracklet:
 		"""
 			This function assumes members in previousTracks and currentTracks all have the same timestamp.
 		"""
-		if len(previousTracks) == 0 or len(currentTracks) == 0: return currentTracks
-		if eventTimeNs == startTimeNs: return previousTracks
-		if eventTimeNs == endTimeNs: return currentTracks
-		interpolatedTracks = {}
-		(currentTime, _) = next(iter(currentTracks))
+		if pastTracklet.id != nowTracklet.id: raise ValueError("Tracklets don't have the same id.. prevId = %d, currentId = %d" % (pastTracklet.id, nowTracklet.id))
+		if eventTimeNs == startTimeNs: return pastTracklet
+		if eventTimeNs == endTimeNs: return nowTracklet
 		eventFraction = int((eventTimeNs - startTimeNs) / (endTimeNs - startTimeNs))
-		for (prevTime, trackId) in previousTracks:
-			previousPose = previousTracks[(prevTime, trackId)].pose
-			currentPose = currentTracks[(currentTime, trackId)].pose
-			x = ((eventFraction * (currentPose.x - previousPose.x)) + previousPose.x)
-			y = ((eventFraction * (currentPose.y - previousPose.y)) + previousPose.y)
-			psi = ((eventFraction * (currentPose.psi - previousPose.psi)) + previousPose.psi)
-			interpolatedTracks[(eventTimeNs, trackId)] = Tracklet(trackId, eventTimeNs, x, y, psi, isInterpolated=True)
-		return interpolatedTracks
+		x = ((eventFraction * (nowTracklet.x - pastTracklet.x)) + pastTracklet.x)
+		y = ((eventFraction * (nowTracklet.y - pastTracklet.y)) + pastTracklet.y)
+		psi = ((eventFraction * (nowTracklet.psi - pastTracklet.psi)) + pastTracklet.psi)
+		Tracklet(nowTracklet.id, eventTimeNs, x, y, psi)
+		return Tracklet(nowTracklet.id, eventTimeNs, x, y, psi)
 
 	@classmethod
-	def __addRegionToList(cls, region: RegionTypeX, mapRegions: List[MapRegion], fovRegions: List[SensorRegion], symbolRegions: List[SymbolRegion], tracklets: Tracklets) -> None:
+	def __addRegionToList(cls, region: RegionTypeX, mapRegions: List[MapRegion], fovRegions: List[SensorRegion], symbolRegions: List[SymbolRegion]) -> None:
 		if region.regionType == AffineRegion.RegionType.SENSING:
-			region.tracks = tracklets # type: ignore
 			fovRegions.append(region) # type: ignore
 		elif region.regionType == AffineRegion.RegionType.MAP:
 			mapRegions.append(region) # type: ignore
@@ -90,7 +84,7 @@ class EventAggregator:
 		return
 
 	@classmethod
-	def __interpolateRegion(cls, lastRegions: RegularAffineRegion[RegionTypeX], nowRegions: RegularAffineRegion[RegionTypeX], eventTimeNs: int, excludeRegions: List[str], tracklets: Tracklets) -> List[RegionTypeX]:
+	def __interpolateRegion(cls, lastRegions: RegularAffineRegion[RegionTypeX], nowRegions: RegularAffineRegion[RegionTypeX], eventTimeNs: int, excludeRegions: List[str], tracklets: List[Tracklet] = []) -> List[RegionTypeX]:
 		regions: List[RegionTypeX] = []
 		for rName in lastRegions:
 			if rName in excludeRegions: continue
@@ -100,8 +94,7 @@ class EventAggregator:
 			ctRegion = ContinuousTimeRegion[RegionTypeX](lastRegion, nowRegion)
 			region = ctRegion[eventTimeNs]
 			if region.regionType == AffineRegion.RegionType.SENSING:
-				region.tracks = tracklets # type: ignore
-			RosUtils.Logger().debug("[3] EventAggregator: region added: %s" % repr(region))
+				for track in tracklets: region.tracks.append(track) # type: ignore
 			regions.append(region)
 		return regions
 
@@ -112,17 +105,20 @@ class EventAggregator:
 		endTime = nowCGraph.timeNanoSecs
 		for interval in eventIntervals:
 			(ctRegion1, _, ctRegion2, _, _, eventTimeNs) = interval
-			interpolatedTracks = cls.__interpolateTrack(lastCGraph.fieldOfView.tracks, nowCGraph.fieldOfView.tracks, eventTimeNs, startTime, endTime)
-			filteredTracks = {(tTime, tId): interpolatedTracks[(tTime, tId)] for (tTime, tId) in interpolatedTracks if tTime == eventTimeNs}
+			interpolatedTracks: List[Tracklet] = []
+			for tracklet in nowCGraph.fieldOfView.tracks:
+				previousTracklet = [tracklet for prevTracklet in lastCGraph.fieldOfView.tracks if prevTracklet.id == tracklet.id]
+				if len(previousTracklet) == 1:
+					interpolatedTracks.append(cls.__interpolateTrack(previousTracklet[0], tracklet, eventTimeNs, startTime, endTime))
+				if len(previousTracklet) > 1: raise RuntimeError("How does this happen?")
 			excludeList = [ctRegion1.name, ctRegion2.name]
-			mapRegions = cls.__interpolateRegion(lastCGraph.mapPerimeter, nowCGraph.mapPerimeter, eventTimeNs, excludeList, filteredTracks)
-			fovRegions = cls.__interpolateRegion(lastCGraph.fieldOfView, nowCGraph.fieldOfView, eventTimeNs, excludeList, filteredTracks)
-			symbolRegions = cls.__interpolateRegion(lastCGraph.symbols, nowCGraph.symbols, eventTimeNs, excludeList, filteredTracks)
+			mapRegions = cls.__interpolateRegion(lastCGraph.mapPerimeter, nowCGraph.mapPerimeter, eventTimeNs, excludeList)
+			fovRegions = cls.__interpolateRegion(lastCGraph.fieldOfView, nowCGraph.fieldOfView, eventTimeNs, excludeList, interpolatedTracks)
+			symbolRegions = cls.__interpolateRegion(lastCGraph.symbols, nowCGraph.symbols, eventTimeNs, excludeList)
 			region1 = ctRegion1[eventTimeNs]
 			region2 = ctRegion2[eventTimeNs]
-			cls.__addRegionToList(region1, mapRegions, fovRegions, symbolRegions, filteredTracks)
-			cls.__addRegionToList(region2, mapRegions, fovRegions, symbolRegions, filteredTracks)
-			RosUtils.Logger().info("[2] EventAggregator: mapRegions: %s, fovRegions %s, symbolRegions = %s" % (repr(mapRegions), repr(fovRegions), repr(symbolRegions)))
+			cls.__addRegionToList(region1, mapRegions, fovRegions, symbolRegions)
+			cls.__addRegionToList(region2, mapRegions, fovRegions, symbolRegions)
 			graph = ConnectivityGraph(timeNanoSecs=eventTimeNs, mapRegions=mapRegions, fovRegions=fovRegions, symbols=symbolRegions)
 			graphs.append(graph)
 		return graphs
