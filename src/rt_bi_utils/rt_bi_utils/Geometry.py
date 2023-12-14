@@ -490,7 +490,7 @@ class Geometry:
 		if param == 0: return AffineTransform(np.identity(3))
 		if param == 1: return AffineTransform(transformation.params)
 		scale = [((transformation.scale[0] - 1) * param) + 1, ((transformation.scale[1] - 1) * param) + 1]
-		rotations = Rotation.from_matrix([
+		rotations = Rotation.from_matrix((
 			[
 				[1, 0, 0],
 				[0, 1, 0],
@@ -500,8 +500,7 @@ class Geometry:
 				[transformation.params[0][0], transformation.params[0][1], 0],
 				[transformation.params[1][0], transformation.params[1][1], 0],
 				[0, 0, 1]
-			]
-		])
+			]))
 		slerp = Slerp([0, 1], rotations)
 		# https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.transform.Rotation.as_euler.html#scipy-spatial-transform-rotation-as-euler
 		# Any orientation can be expressed as a composition of 3 elementary rotations.
