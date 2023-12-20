@@ -10,10 +10,11 @@ from sa_msgs.msg import RobotState
 import rt_bi_utils.Ros as RosUtils
 from rt_bi_utils.Geometry import AffineTransform, Geometry, Polygon
 from rt_bi_utils.Pose import Pose
+from rt_bi_utils.RtBiEmulator import RtBiEmulator
 from rt_bi_utils.SaMsgs import SaMsgs
 
 
-class Av:
+class Target:
 	def __init__(self, id: int, cOR: Pose, fov: Geometry.CoordsList) -> None:
 		self.id: int = id
 		self.centerOfRotation = cOR
@@ -21,14 +22,14 @@ class Av:
 
 	def __repr__(self) -> str:
 		name = "#%d" % self.id
-		return "AV-%s(COR:%s):%s" % (name, repr(self.centerOfRotation), repr(self.interior))
+		return "TG-%s:%s" % (name, repr(self.interior))
 
-class AvEmulator(Node):
+class TargetEmulator(Node):
 	""" The Viewer ROS Node """
 	NANO_CONVERSION_CONSTANT = 10 ** 9
 	def __init__(self):
 		""" Create a Viewer ROS node. """
-		super().__init__(node_name="rt_bi_emulator_av") # type: ignore - parameter_overrides: List[Parameter] = None
+		super().__init__(node_name="rt_bi_emulator_target") # type: ignore - parameter_overrides: List[Parameter] = None
 		self.get_logger().debug("%s is initializing." % self.get_fully_qualified_name())
 		self.__declareParameters()
 		RosUtils.SetLogger(self.get_logger())
@@ -37,12 +38,12 @@ class AvEmulator(Node):
 		self.__initTime = float(self.get_clock().now().nanoseconds)
 		self.__cutOffTime: float = inf
 		self.__centersOfRotation: Geometry.CoordsList = []
-		self.__avPositions: List[Av] = []
+		self.__avPositions: List[Target] = []
 		self.__initFovPoly = Polygon()
 		self.__totalTimeNanoSecs = 0.0
 		self.__transformationMatrix: List[AffineTransform] = []
 		self.__parseConfigFileParameters()
-		(self.__fovPublisher, _) = SaMsgs.createSaRobotStatePublisher(self, self.__publishMyFov, self.__updateInterval)
+		(self.__fovPublisher, _) = RtBiEmulator.createTargetPublisher(self, self.__publishMyFov,self.__updateInterval)
 		# Provides a debugging way to stop the updating the position any further.
 		self.__passedCutOffTime: int = -1
 
@@ -71,12 +72,12 @@ class AvEmulator(Node):
 		for i in range(len(timePoints)):
 			self.__centersOfRotation.append(json.loads(centersOfRotation[i]))
 			fov = [tuple(p) for p in json.loads(fovs[i])]
-			self.get_logger().info("parsed %s" % repr(fov))
+			self.get_logger().debug("parsed %s" % repr(fov))
 			parsedFov.append(fov)
 			pose = json.loads(saPoses[i])
 			timeNanoSecs = int(timePoints[i] * self.NANO_CONVERSION_CONSTANT)
-			av = Av(self.__id, Pose(timeNanoSecs, *(pose)), parsedFov[i])
-			self.get_logger().info("parsed %s" % repr(av))
+			av = Target(self.__id, Pose(timeNanoSecs, *(pose)), parsedFov[i])
+			self.get_logger().debug("parsed %s" % repr(av))
 			self.__avPositions.append(av)
 			if i > 0:
 				matrix = Geometry.getAffineTransformation(self.__avPositions[i - 1].interior, self.__avPositions[i].interior)
@@ -87,7 +88,7 @@ class AvEmulator(Node):
 
 	def __publishMyFov(self) -> None:
 		timeOfPublish = self.get_clock().now().nanoseconds
-		if self.__passedCutOffTime < 0 and ((timeOfPublish - self.__initTime) / AvEmulator.NANO_CONVERSION_CONSTANT) > self.__cutOffTime:
+		if self.__passedCutOffTime < 0 and ((timeOfPublish - self.__initTime) / TargetEmulator.NANO_CONVERSION_CONSTANT) > self.__cutOffTime:
 			self.__passedCutOffTime = timeOfPublish
 		elif self.__passedCutOffTime > 0:
 			timeOfPublish = self.__passedCutOffTime
@@ -103,7 +104,7 @@ class AvEmulator(Node):
 		msg.robot_id = self.__id
 		msg.pose = SaMsgs.createSaPoseMsg(self.__avPositions[0].centerOfRotation.x, self.__avPositions[0].centerOfRotation.y)
 		msg.fov = SaMsgs.createSaFovMsg(list(fov.exterior.coords))
-		self.get_logger().info("Sending updated fov location for robot %d @ param = %.3f, %s" % (self.__id, elapsedTimeRatio, list(fov.exterior.coords)))
+		self.get_logger().debug("Sending updated fov location for target %d @ param = %.3f, %s" % (self.__id, elapsedTimeRatio, list(fov.exterior.coords)))
 		self.__fovPublisher.publish(msg)
 		return
 
@@ -112,9 +113,9 @@ def main(args=None):
 	Start the Behavior Inference Run-time.
 	"""
 	rclpy.init(args=args)
-	avNode = AvEmulator()
-	rclpy.spin(avNode)
-	avNode.destroy_node()
+	targetNode = TargetEmulator()
+	rclpy.spin(targetNode)
+	targetNode.destroy_node()
 	rclpy.shutdown()
 	return
 

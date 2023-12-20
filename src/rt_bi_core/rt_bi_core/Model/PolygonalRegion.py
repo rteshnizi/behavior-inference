@@ -26,6 +26,7 @@ class PolygonalRegion:
 		SENSING = "Z"
 		SHADOW = "S"
 		SYMBOL = "A"
+		TARGET = "T"
 
 	def __init__(
 		self,

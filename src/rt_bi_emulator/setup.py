@@ -27,6 +27,7 @@ setup(
 		"console_scripts": [
 			"MP = rt_bi_emulator.MapEmulator:main",
 			"AV = rt_bi_emulator.AvEmulator:main",
+			"TG = rt_bi_emulator.TargetEmulator:main",
 			# "GvEmulator = rt_bi_emulator.GvEmulator:main",
 		],
 	},

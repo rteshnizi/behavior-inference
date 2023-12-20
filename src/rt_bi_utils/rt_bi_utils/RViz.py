@@ -133,6 +133,12 @@ class RViz:
 		return (random.uniform(0.1, 0.8), random.uniform(0.1, 0.8), random.uniform(0.1, 0.8), alpha)
 
 	@staticmethod
+	def randomLightColor(alpha = 1.0) -> Color:
+		color = RViz.randomColor(alpha)
+		while not RViz.isLightColor(color): color = RViz.randomColor(alpha)
+		return color
+
+	@staticmethod
 	def inverseColor(color: Color, inverseAlpha = False) -> Color:
 		return (1 - color[0], 1 - color[1], 1 - color[2], 1 - color[3] if inverseAlpha else color[3])
 

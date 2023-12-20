@@ -1,7 +1,7 @@
 rt_bi_emulator:
   av1:
     ros__parameters:
-      robotId: 1
+      id: 1
       updateInterval: 0.75
       timesSecs:
         - 0.0
