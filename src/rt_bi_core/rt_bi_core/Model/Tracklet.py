@@ -21,7 +21,6 @@ class Tracklet(Pose):
 		elif self.vanished: msgs.append(RViz.createCircle("%s-circle" % repr(self), self.x, self.y, radius=5, outline=KnownColors.DARK_RED))
 		else: msgs.append(RViz.createCircle("%s-circle" % repr(self), self.x, self.y, radius=10, outline=KnownColors.PURPLE, width=3.0))
 		msgs.append(RViz.createText("%s-txt" % repr(self), (self.x, self.y), repr(self), KnownColors.WHITE))
-		Logger().info("%d TRACKLET MARKERS MADE @ %s" % (len(msgs), repr((self.x, self.y))))
 		return msgs
 
 	def clearRender(self) -> Sequence[Marker]:
