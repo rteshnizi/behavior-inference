@@ -99,10 +99,14 @@ class ConnectivityGraph(nx.DiGraph):
 		return
 
 	def __constructFov(self, regions: Sequence[SensorRegion]) -> None:
-		for region in regions:
-			if region.regionType != DynamicRegion.RegionType.SENSING: continue
-			self.fieldOfView.addConnectedComponent(region)
-			self.__addNode(region)
+		for region1 in regions:
+			if region1.regionType != DynamicRegion.RegionType.SENSING: continue
+			self.fieldOfView.addConnectedComponent(region1)
+			self.__addNode(region1)
+			for region2 in regions:
+				if region2.regionType != DynamicRegion.RegionType.SENSING: continue
+				if region1.name == region2.name: continue
+				if Geometry.intersects(region1.interior, region2.interior): self.__addEdges(region1, region2, directed=True)
 		return
 
 	def __addShadowNode(self, shadow: Polygon) -> None:
