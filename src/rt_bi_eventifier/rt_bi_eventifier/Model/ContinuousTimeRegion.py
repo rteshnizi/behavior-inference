@@ -1,10 +1,11 @@
 from math import isnan, nan
-from typing import Generic, List, Sequence, Tuple, TypeVar
+from typing import Dict, Generic, List, Sequence, Tuple, TypeVar
 
 from rt_bi_core.Model.AffineRegion import AffineRegion
 from rt_bi_core.Model.MapRegion import MapRegion
 from rt_bi_core.Model.SensorRegion import SensorRegion
 from rt_bi_core.Model.SymbolRegion import SymbolRegion
+from rt_bi_core.Model.Tracklet import Tracklet
 from rt_bi_utils.Geometry import AffineTransform, Geometry
 from rt_bi_utils.Ros import Logger
 
@@ -49,8 +50,8 @@ class ContinuousTimeRegion(Generic[RegionType]):
 		pose = Geometry.applyMatrixTransformToPose(transform, self.configs[i - 1].centerOfRotation)
 		regionPoly = Geometry.applyMatrixTransformToPolygon(transform, self.configs[i - 1].interior)
 		if self.regionType == AffineRegion.RegionType.SENSING:
-			tracklets: Tracklets = self.configs[i - 1].tracks # type: ignore -- We know it's a sensor
-			region = SensorRegion(pose, self.idNum, [], timeNanoSecs, interior=regionPoly, tracks=tracklets)
+			tracklets: Dict[int, Tracklet] = self.configs[i - 1].tracklets # type: ignore
+			region = SensorRegion(pose, self.idNum, [], timeNanoSecs, interior=regionPoly, tracklets=tracklets)
 		elif self.configs[i - 1].regionType == AffineRegion.RegionType.MAP:
 			region = MapRegion(0, [], timeNanoSecs, interior=regionPoly)
 		elif self.configs[i - 1].regionType == AffineRegion.RegionType.SYMBOL:

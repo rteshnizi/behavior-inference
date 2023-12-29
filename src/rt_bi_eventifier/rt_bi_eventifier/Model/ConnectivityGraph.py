@@ -113,7 +113,8 @@ class ConnectivityGraph(nx.DiGraph):
 			fovComponent = self.fieldOfView[fovName]
 			if not fovComponent.hasTrack: continue
 			if Geometry.haveOverlappingEdge(fovComponent.interior, region.interior):
-				for tracklet in fovComponent.tracks:
+				for i in fovComponent.tracklets:
+					tracklet = fovComponent.tracklets[i]
 					if tracklet.spawned:
 						self.__addEdges(region, fovComponent, directed=True)
 					if tracklet.vanished:

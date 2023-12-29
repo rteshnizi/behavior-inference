@@ -521,9 +521,7 @@ class Geometry:
 	@staticmethod
 	def applyMatrixTransformToPose(transformation: AffineTransform, pose: Pose) -> Pose:
 		transformedCoords = Geometry.applyMatrixTransformToCoordsList(transformation, [(pose.x, pose.y)])
-		transformedPose = copy(pose)
-		pose.x = transformedCoords[0][0]
-		pose.y = transformedCoords[0][1]
+		transformedPose = Pose(0, transformedCoords[0][0], transformedCoords[0][1], 0)
 		return transformedPose
 
 	@staticmethod

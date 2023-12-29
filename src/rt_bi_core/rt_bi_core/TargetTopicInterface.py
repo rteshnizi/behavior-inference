@@ -2,14 +2,13 @@ from typing import Dict, List, Union
 
 import rclpy
 from rclpy.node import Node
-from sa_msgs.msg import RobotState
+from sa_msgs.msg import EstimationMsg, RobotState
 from visualization_msgs.msg import MarkerArray
 
 import rt_bi_utils.Ros as RosUtils
-from rt_bi_core.Model.SensorRegion import SensorRegion
 from rt_bi_core.Model.TargetRegion import TargetRegion
 from rt_bi_utils.RtBiEmulator import RtBiEmulator
-from rt_bi_utils.RViz import RViz
+from rt_bi_utils.RViz import KnownColors, RViz
 from rt_bi_utils.SaMsgs import SaMsgs
 
 
@@ -30,21 +29,21 @@ class TargetTopicInterface(Node):
 		else:
 			RtBiEmulator.subscribeToTargetTopic(self, self.__onTargetUpdate)
 			(self.__rvizPublisher, _) = RViz.createRVizPublisher(self, RosUtils.CreateTopicName("map"))
-			self.__renderColor = RViz.randomColor()
+			self.__renderColor = KnownColors.ORANGE
 
-	def __onTargetUpdate(self, update: RobotState) -> None:
-		if update is None:
-			self.get_logger().warn("Received empty RobotState!")
+	def __onTargetUpdate(self, msg: RobotState) -> None:
+		if msg is None:
+			self.get_logger().warn("Received empty target!")
 			return
-		if (self.__targets is not None and update.robot_id in self.__targets and hash(repr(update)) == hash(repr(self.__targets[update.robot_id]))): return
+		if (self.__targets is not None and msg.robot_id in self.__targets and hash(repr(msg)) == hash(repr(self.__targets[msg.robot_id]))): return
 
-		self.get_logger().debug("Updating target %d definition." % update.robot_id)
+		self.get_logger().debug("Updating target %d definition." % msg.robot_id)
 		if self.__targets is None:
 			self.__targets = {}
-		coords = SaMsgs.convertSaPoseListToCoordsList(update.fov.corners)
+		coords = SaMsgs.convertSaPoseListToCoordsList(msg.fov.corners)
 		timeNanoSecs = self.get_clock().now().nanoseconds
-		target = TargetRegion(centerOfRotation=SaMsgs.convertSaPoseToPose(update.pose), idNum=update.robot_id, envelope=coords, envelopeColor=self.__renderColor, timeNanoSecs=timeNanoSecs)
-		self.__targets[update.robot_id] = target
+		target = TargetRegion(centerOfRotation=SaMsgs.convertSaPoseToPose(msg.pose), idNum=msg.robot_id, envelope=coords, envelopeColor=self.__renderColor, timeNanoSecs=timeNanoSecs)
+		self.__targets[msg.robot_id] = target
 		self.render([target])
 		return
 

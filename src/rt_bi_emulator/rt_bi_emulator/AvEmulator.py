@@ -1,15 +1,17 @@
 import json
 from math import inf
-from typing import List
+from typing import Dict, List, Tuple
 
 import rclpy
 from rclpy.node import Node
 from rclpy.parameter import Parameter
-from sa_msgs.msg import RobotState
+from sa_msgs.msg import EstimationMsg, PoseEstimation, RobotState
 
 import rt_bi_utils.Ros as RosUtils
+from rt_bi_emulator.Shared import Target
 from rt_bi_utils.Geometry import AffineTransform, Geometry, Polygon
 from rt_bi_utils.Pose import Pose
+from rt_bi_utils.RtBiEmulator import RtBiEmulator
 from rt_bi_utils.SaMsgs import SaMsgs
 
 
@@ -37,12 +39,14 @@ class AvEmulator(Node):
 		self.__initTime = float(self.get_clock().now().nanoseconds)
 		self.__cutOffTime: float = inf
 		self.__centersOfRotation: Geometry.CoordsList = []
-		self.__avPositions: List[Av] = []
+		self.__configFilePositions: List[Av] = []
 		self.__initFovPoly = Polygon()
 		self.__totalTimeNanoSecs = 0.0
 		self.__transformationMatrix: List[AffineTransform] = []
 		self.__parseConfigFileParameters()
-		(self.__fovPublisher, _) = SaMsgs.createSaRobotStatePublisher(self, self.__publishMyFov, self.__updateInterval)
+		(self.__fovPublisher, _) = SaMsgs.createRobotStatePublisher(self, self.__publishMyFov, self.__updateInterval)
+		(self.__estPublisher, _) = SaMsgs.createEstimationPublisher(self)
+		RtBiEmulator.subscribeToTargetTopic(self, self.__onTargetUpdate)
 		# Provides a debugging way to stop the updating the position any further.
 		self.__passedCutOffTime: int = -1
 
@@ -77,34 +81,77 @@ class AvEmulator(Node):
 			timeNanoSecs = int(timePoints[i] * self.NANO_CONVERSION_CONSTANT)
 			av = Av(self.__id, Pose(timeNanoSecs, *(pose)), parsedFov[i])
 			self.get_logger().info("parsed %s" % repr(av))
-			self.__avPositions.append(av)
+			self.__configFilePositions.append(av)
 			if i > 0:
-				matrix = Geometry.getAffineTransformation(self.__avPositions[i - 1].interior, self.__avPositions[i].interior)
+				matrix = Geometry.getAffineTransformation(self.__configFilePositions[i - 1].interior, self.__configFilePositions[i].interior)
 				self.__transformationMatrix.append(matrix)
-		self.__initFovPoly = Polygon(self.__avPositions[0].interior)
+		self.__initFovPoly = Polygon(self.__configFilePositions[0].interior)
 		self.__totalTimeNanoSecs = timePoints[-1] * self.NANO_CONVERSION_CONSTANT
 		return
 
-	def __publishMyFov(self) -> None:
-		timeOfPublish = self.get_clock().now().nanoseconds
-		if self.__passedCutOffTime < 0 and ((timeOfPublish - self.__initTime) / AvEmulator.NANO_CONVERSION_CONSTANT) > self.__cutOffTime:
-			self.__passedCutOffTime = timeOfPublish
+	def __getFovAtTime(self, timeNanoSecs: int) -> Polygon:
+		if self.__passedCutOffTime < 0 and ((timeNanoSecs - self.__initTime) / AvEmulator.NANO_CONVERSION_CONSTANT) > self.__cutOffTime:
+			self.__passedCutOffTime = timeNanoSecs
 		elif self.__passedCutOffTime > 0:
-			timeOfPublish = self.__passedCutOffTime
-		elapsedTimeRatio = (timeOfPublish - self.__initTime) / self.__totalTimeNanoSecs
+			timeNanoSecs = self.__passedCutOffTime
+		elapsedTimeRatio = (timeNanoSecs - self.__initTime) / self.__totalTimeNanoSecs
 		elapsedTimeRatio = 1 if elapsedTimeRatio > 1 else elapsedTimeRatio
 		if elapsedTimeRatio < 1:
 			matrix = Geometry.getParameterizedAffineTransformation(self.__transformationMatrix[0], elapsedTimeRatio)
-			centerOfRotation = Pose(timeOfPublish, self.__centersOfRotation[0][0], self.__centersOfRotation[0][1], 0)
-			fov = Geometry.applyMatrixTransformToPolygon(matrix, self.__initFovPoly)
-		else:
-			fov = Polygon(self.__avPositions[-1].interior)
-		msg = RobotState()
-		msg.robot_id = self.__id
-		msg.pose = SaMsgs.createSaPoseMsg(self.__avPositions[0].centerOfRotation.x, self.__avPositions[0].centerOfRotation.y)
-		msg.fov = SaMsgs.createSaFovMsg(list(fov.exterior.coords))
-		self.get_logger().info("Sending updated fov location for robot %d @ param = %.3f, %s" % (self.__id, elapsedTimeRatio, list(fov.exterior.coords)))
-		self.__fovPublisher.publish(msg)
+			return Geometry.applyMatrixTransformToPolygon(matrix, self.__initFovPoly)
+		return Polygon(self.__configFilePositions[-1].interior)
+
+	def __getPoseAtTime(self, timeNanoSecs: int) -> Pose:
+		if self.__passedCutOffTime < 0 and ((timeNanoSecs - self.__initTime) / AvEmulator.NANO_CONVERSION_CONSTANT) > self.__cutOffTime:
+			self.__passedCutOffTime = timeNanoSecs
+		elif self.__passedCutOffTime > 0:
+			timeNanoSecs = self.__passedCutOffTime
+		elapsedTimeRatio = (timeNanoSecs - self.__initTime) / self.__totalTimeNanoSecs
+		elapsedTimeRatio = 1 if elapsedTimeRatio > 1 else elapsedTimeRatio
+		if elapsedTimeRatio < 1:
+			matrix = Geometry.getParameterizedAffineTransformation(self.__transformationMatrix[0], elapsedTimeRatio)
+			return Geometry.applyMatrixTransformToPose(matrix, self.__configFilePositions[0].centerOfRotation)
+		return self.__configFilePositions[-1].centerOfRotation
+
+	def __publishMyFov(self) -> None:
+		timeOfPublish: int = self.get_clock().now().nanoseconds
+		fov = self.__getFovAtTime(timeOfPublish)
+
+		robotStateMsg = RobotState()
+		robotStateMsg.robot_id = self.__id
+
+		robotStateMsg.pose = SaMsgs.createSaPoseMsg(self.__configFilePositions[0].centerOfRotation.x, self.__configFilePositions[0].centerOfRotation.y)
+		robotStateMsg.fov = SaMsgs.createSaFovMsg(list(fov.exterior.coords))
+
+		self.get_logger().info("Sending updated fov location for AV#%d." % self.__id)
+		self.__fovPublisher.publish(robotStateMsg)
+		return
+
+	def __onTargetUpdate(self, msg: RobotState) -> None:
+		if msg is None:
+			self.get_logger().warn("Received empty Target message!")
+			return
+
+		coords = SaMsgs.convertSaPoseListToCoordsList(msg.fov.corners)
+		timeNanoSecs = self.get_clock().now().nanoseconds
+		target = Target(msg.robot_id, Pose(timeNanoSecs, msg.pose.x, msg.pose.y, msg.pose.yaw), coords)
+		targetLocation = Polygon(target.spatialRegion)
+		fov = self.__getFovAtTime(timeNanoSecs)
+		if Geometry.intersects(targetLocation, fov):
+			self.get_logger().info("Detected TG#%d" % msg.robot_id)
+			estMsg = EstimationMsg()
+			estMsg.detection_time = float(timeNanoSecs)
+			robotStateMsg = RobotState()
+			robotStateMsg.robot_id = self.__id
+			pose = self.__getPoseAtTime(timeNanoSecs)
+			robotStateMsg.pose = SaMsgs.createSaPoseMsg(pose.x, pose.y)
+			robotStateMsg.fov = SaMsgs.createSaFovMsg(list(fov.exterior.coords))
+			estMsg.robot_state = robotStateMsg
+			poseEstMsg = PoseEstimation()
+			poseEstMsg.trajectory_id = target.id
+			poseEstMsg.pose = SaMsgs.createSaPoseMsg(target.location.x, target.location.y, target.location.angleFromX)
+			RosUtils.AppendMessage(estMsg.pose_estimations, poseEstMsg)
+			self.__estPublisher.publish(estMsg)
 		return
 
 def main(args=None):

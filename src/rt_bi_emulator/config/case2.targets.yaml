@@ -2,7 +2,7 @@ rt_bi_emulator:
   tg1:
     ros__parameters:
       id: 1
-      updateInterval: 0.75
+      updateInterval: 0.25
       timesSecs:
         - 0.0
         - 50.0

@@ -94,7 +94,7 @@ class EventAggregator:
 			ctRegion = ContinuousTimeRegion[RegionTypeX](lastRegion, nowRegion)
 			region = ctRegion[eventTimeNs]
 			if region.regionType == AffineRegion.RegionType.SENSING:
-				for track in tracklets: region.tracks.append(track) # type: ignore
+				for track in tracklets: region.tracklets.append(track) # type: ignore
 			regions.append(region)
 		return regions
 
@@ -106,8 +106,8 @@ class EventAggregator:
 		for interval in eventIntervals:
 			(ctRegion1, _, ctRegion2, _, _, eventTimeNs) = interval
 			interpolatedTracks: List[Tracklet] = []
-			for tracklet in nowCGraph.fieldOfView.tracks:
-				previousTracklet = [tracklet for prevTracklet in lastCGraph.fieldOfView.tracks if prevTracklet.id == tracklet.id]
+			for tracklet in nowCGraph.fieldOfView.tracks.values():
+				previousTracklet = [tracklet for prevTracklet in lastCGraph.fieldOfView.tracks.values() if prevTracklet.id == tracklet.id]
 				if len(previousTracklet) == 1:
 					interpolatedTracks.append(cls.__interpolateTrack(previousTracklet[0], tracklet, eventTimeNs, startTime, endTime))
 				if len(previousTracklet) > 1: raise RuntimeError("How does this happen?")

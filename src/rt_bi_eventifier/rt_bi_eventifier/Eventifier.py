@@ -45,7 +45,7 @@ class Eventifier(MapServiceInterface):
 		self.__shadowTree: ShadowTree = ShadowTree(self.__topicPublishers, modulePublishers)
 
 		self.__mapClient = SaMsgs.createSaFeatureQueryClient(self)
-		SaMsgs.subscribeToSaRobotStateTopic(self, self.__onRobotStateUpdate)
+		SaMsgs.subscribeToRobotStateTopic(self, self.__onRobotStateUpdate)
 		self.__shadowTreeColdStart()
 
 	def __declareParameters(self) -> None:

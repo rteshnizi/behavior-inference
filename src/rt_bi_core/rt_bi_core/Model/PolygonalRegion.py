@@ -22,10 +22,11 @@ class PolygonalRegion:
 	class RegionType(Enum):
 		"""All the types of `PolygonalRegion`."""
 		BASE = "B"
+		ESTIMATION = "E"
 		MAP = "M"
 		SENSING = "Z"
 		SHADOW = "S"
-		SYMBOL = "A"
+		SYMBOL = "σ"
 		TARGET = "T"
 
 	def __init__(

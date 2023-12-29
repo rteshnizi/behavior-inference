@@ -9,8 +9,6 @@ from rt_bi_utils.Geometry import Geometry, MultiPolygon, Polygon
 from rt_bi_utils.Pose import Pose
 from rt_bi_utils.RViz import Color, RViz
 
-COLOR_PALETTE = ["Green", "Purple", "Gold"]
-NUM_COLORS = len(COLOR_PALETTE)
 
 class TargetRegion(AffineRegion):
 	"""

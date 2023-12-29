@@ -1,4 +1,4 @@
-from typing import List, Sequence, Union
+from typing import Dict, List, Sequence, Union
 
 from visualization_msgs.msg import Marker
 
@@ -9,8 +9,6 @@ from rt_bi_utils.Geometry import Geometry, MultiPolygon, Polygon
 from rt_bi_utils.Pose import Pose
 from rt_bi_utils.RViz import Color, KnownColors
 
-COLOR_PALETTE = ["Green", "Purple", "Gold"]
-NUM_COLORS = len(COLOR_PALETTE)
 
 class SensorRegion(AffineRegion):
 	"""
@@ -23,7 +21,7 @@ class SensorRegion(AffineRegion):
 			envelope: Geometry.CoordsList,
 			timeNanoSecs: int,
 			interior: Union[Polygon, MultiPolygon, None] = None,
-			tracks: List[Tracklet] = [],
+			tracklets: Dict[int, Tracklet] = {},
 			**kwArgs
 		) -> None:
 		"""
@@ -45,7 +43,7 @@ class SensorRegion(AffineRegion):
 			A timestamp representing absolute value of time in nanosecond (ns).
 		fov: Union[Polygon, MultiPolygon, None], default `None`
 			The field-of-view, default forces construction using knowledge-base.
-		tracks : Tracks, default `{}`
+		tracks : Dict[int, Tracklet], default `{}`
 			The tracklets, as defined in the dissertation, observable in the fov,
 			default forces construction using knowledge-base.
 		"""
@@ -59,12 +57,12 @@ class SensorRegion(AffineRegion):
 			interior=interior,
 			**kwArgs
 		)
-		self.__tracks = tracks
+		self.__tracklets = tracklets
 
 	@property
-	def tracks(self) -> List[Tracklet]:
+	def tracklets(self) -> Dict[int, Tracklet]:
 		"""The information about every tracklet, if any, within this sensing region."""
-		return self.__tracks
+		return self.__tracklets
 
 	@property
 	def hasTrack(self) -> bool:
@@ -76,14 +74,19 @@ class SensorRegion(AffineRegion):
 		bool
 			`True` if there is any tracklets information, `False` otherwise.
 		"""
-		return len(self.__tracks) > 0
+		return len(self.__tracklets) > 0
+
+	def addTracklet(self, tracklet: Tracklet) -> None:
+		"""Add a tracklet."""
+		self.__tracklets[tracklet.id] = tracklet
+		return
 
 	def render(self, envelopeColor: Union[Color, None] = None) -> Sequence[Marker]:
 		msgs = super().render(renderText=False, envelopeColor=envelopeColor)
-		for tracklet in self.__tracks: RosUtils.ConcatMessageArray(msgs, tracklet.render())
+		for i in self.__tracklets: RosUtils.ConcatMessageArray(msgs, self.__tracklets[i].render())
 		return msgs
 
 	def clearRender(self) -> Sequence[Marker]:
 		msgs = super().clearRender()
-		for tracklet in self.__tracks: RosUtils.ConcatMessageArray(msgs, tracklet.clearRender())
+		for tracklet in self.__tracklets: RosUtils.ConcatMessageArray(msgs, self.__tracklets[tracklet].clearRender())
 		return msgs

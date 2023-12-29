@@ -15,6 +15,7 @@ class SymbolRegion(AffineRegion):
 			idNum=idNum,
 			envelope=envelope,
 			envelopeColor=KnownColors.RED if inFov else KnownColors.BLUE,
+			regionType=AffineRegion.RegionType.SYMBOL,
 			timeNanoSecs=timeNanoSecs,
 			interior=interior,
 			**kwArgs

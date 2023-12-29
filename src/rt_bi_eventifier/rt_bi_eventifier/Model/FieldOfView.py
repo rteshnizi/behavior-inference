@@ -34,11 +34,11 @@ class FieldOfView(RegularAffineRegion[SensorRegion]):
 		return self.interior
 
 	@property
-	def tracks(self) -> List[Tracklet]:
-		tracks: List[Tracklet] = []
+	def tracks(self) -> Dict[int, Tracklet]:
+		tracks: Dict[int, Tracklet] = {}
 		for n in self:
 			sensor = self[n]
-			tracks += sensor.tracks
+			tracks = {**sensor.tracklets, **tracks}
 		return tracks
 
 	def addConnectedComponent(self, region: SensorRegion) -> None:

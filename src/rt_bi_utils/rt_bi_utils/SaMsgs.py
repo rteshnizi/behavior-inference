@@ -1,6 +1,6 @@
 from collections import UserList
 from math import nan
-from typing import AbstractSet, Callable, Sequence, Tuple, Union
+from typing import AbstractSet, Any, Callable, Sequence, Tuple, Union
 
 from rclpy.node import Client, Node, Publisher, Service, Timer
 from sa_msgs.msg import EstimationMsg, FeatureInfo, Fov as SaFovMsg, Pose as SaPoseMsg, PoseArray as SaPoseArray, RobotState
@@ -101,15 +101,19 @@ class SaMsgs:
 		RosUtils.CreateSubscriber(node, FeatureInfo, SaMsgs.__MAP_UPDATE_TOPIC, callbackFunc) # type: ignore - "type[Metaclass_FeatureInfo]" is incompatible with "type[FeatureInfo]"
 
 	@staticmethod
-	def createSaRobotStatePublisher(node: Node, callbackFunc: Callable = lambda: None, intervalSecs: float = nan) -> Tuple[Publisher, Union[Timer, None]]:
+	def createRobotStatePublisher(node: Node, callbackFunc: Callable = lambda: None, intervalSecs: float = nan) -> Tuple[Publisher, Union[Timer, None]]:
 		return RosUtils.CreatePublisher(node, RobotState, SaMsgs.__ROBOT_STATE_TOPIC, callbackFunc, intervalSecs)
 
 	@staticmethod
-	def subscribeToSaRobotStateTopic(node: Node, callbackFunc: Callable[[RobotState], None]) -> None:
+	def subscribeToRobotStateTopic(node: Node, callbackFunc: Callable[[RobotState], Any]) -> None:
 		RosUtils.CreateSubscriber(node, RobotState, SaMsgs.__ROBOT_STATE_TOPIC, callbackFunc) # type: ignore - "type[Metaclass_RobotState]" is incompatible with "type[RobotState]"
 
 	@staticmethod
-	def subscribeToSaEstimationTopic(node: Node, callbackFunc: Callable[[EstimationMsg], None]) -> None:
+	def createEstimationPublisher(node: Node, callbackFunc: Callable = lambda: None, intervalSecs: float = nan) -> Tuple[Publisher, Union[Timer, None]]:
+		return RosUtils.CreatePublisher(node, EstimationMsg, SaMsgs.__ESTIMATION_TOPIC, callbackFunc, intervalSecs)
+
+	@staticmethod
+	def subscribeToEstimationTopic(node: Node, callbackFunc: Callable[[EstimationMsg], None]) -> None:
 		RosUtils.CreateSubscriber(node, EstimationMsg, SaMsgs.__ESTIMATION_TOPIC, callbackFunc) # type: ignore - "type[Metaclass_EstimationMsg]" is incompatible with "type[EstimationMsg]"
 
 	@staticmethod
