@@ -38,7 +38,9 @@ class FieldOfView(RegularAffineRegion[SensorRegion]):
 		tracks: Dict[int, Tracklet] = {}
 		for n in self:
 			sensor = self[n]
-			tracks = {**sensor.tracklets, **tracks}
+			for id in sensor.tracklets:
+				if id not in tracks or tracks[id].timeNanoSecs < sensor.tracklets[id].timeNanoSecs:
+					tracks[id] = sensor.tracklets[id]
 		return tracks
 
 	def addConnectedComponent(self, region: SensorRegion) -> None:

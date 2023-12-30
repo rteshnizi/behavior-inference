@@ -7,14 +7,18 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(sa_msgs REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 find_package(rosidl_default_generators REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Adjacency.msg"
   "msg/ComponentEvent.msg"
+  "msg/EstimationMsg.msg"
   "msg/Events.msg"
   "msg/Graph.msg"
+  "msg/PoseEstimation.msg"
+  DEPENDENCIES sa_msgs
  )
 ament_export_dependencies(rosidl_default_runtime)
 

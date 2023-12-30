@@ -31,7 +31,7 @@ echo
 
 concurrently\
 	--kill-others\
-	--names "LVZ,EVZ,MAP,AV ,TG ,MI ,SI ,TI ,EV "\
+	--names "LVZ,EVZ,MAP,AV ,TG ,MI ,SI ,EV "\
 	--prefix "[{name}-{time}]"\
 	-c "bgWhite.black,bgWhite.black,bgGrey.inverse,bgBlue,bgRed,bgMagenta,bgBlueBright.black,bgRedBright.black,bgGreen.black"\
 	--timestamp-format "HH:mm:ss"\

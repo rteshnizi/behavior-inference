@@ -1,6 +1,6 @@
 import json
 from math import inf
-from typing import List
+from typing import List, Set
 
 import rclpy
 from rclpy.node import Node
@@ -33,6 +33,7 @@ class TargetEmulator(Node):
 		self.__initRegionPoly = Polygon()
 		self.__totalTimeNanoSecs = 0.0
 		self.__transformationMatrix: List[AffineTransform] = []
+		self.__targetIds: Set[int] = set()
 		self.__parseConfigFileParameters()
 		(self.__targetPublisher, _) = RtBiEmulator.createTargetPublisher(self, self.__publishMyRegion, self.__updateInterval)
 		# Provides a debugging way to stop the updating the position any further.

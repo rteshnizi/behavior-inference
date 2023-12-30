@@ -57,7 +57,11 @@ class SensorRegion(AffineRegion):
 			interior=interior,
 			**kwArgs
 		)
-		self.__tracklets = tracklets
+		self.__tracklets = {}
+		for i in tracklets:
+			if not tracklets[i].vanished:
+				self.__tracklets[i] = tracklets[i]
+
 
 	@property
 	def tracklets(self) -> Dict[int, Tracklet]:
@@ -76,14 +80,10 @@ class SensorRegion(AffineRegion):
 		"""
 		return len(self.__tracklets) > 0
 
-	def addTracklet(self, tracklet: Tracklet) -> None:
-		"""Add a tracklet."""
-		self.__tracklets[tracklet.id] = tracklet
-		return
-
-	def render(self, envelopeColor: Union[Color, None] = None) -> Sequence[Marker]:
+	def render(self, renderTracklet = False, envelopeColor: Union[Color, None] = None) -> Sequence[Marker]:
 		msgs = super().render(renderText=False, envelopeColor=envelopeColor)
-		for i in self.__tracklets: RosUtils.ConcatMessageArray(msgs, self.__tracklets[i].render())
+		if renderTracklet:
+			for i in self.__tracklets: RosUtils.ConcatMessageArray(msgs, self.__tracklets[i].render())
 		return msgs
 
 	def clearRender(self) -> Sequence[Marker]:

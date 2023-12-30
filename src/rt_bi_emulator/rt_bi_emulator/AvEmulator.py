@@ -1,14 +1,15 @@
 import json
 from math import inf
-from typing import Dict, List, Tuple
+from typing import List
 
 import rclpy
 from rclpy.node import Node
 from rclpy.parameter import Parameter
-from sa_msgs.msg import EstimationMsg, PoseEstimation, RobotState
+from sa_msgs.msg import RobotState
 
 import rt_bi_utils.Ros as RosUtils
 from rt_bi_emulator.Shared import Target
+from rt_bi_interfaces.msg import EstimationMsg, PoseEstimation
 from rt_bi_utils.Geometry import AffineTransform, Geometry, Polygon
 from rt_bi_utils.Pose import Pose
 from rt_bi_utils.RtBiEmulator import RtBiEmulator
@@ -43,9 +44,10 @@ class AvEmulator(Node):
 		self.__initFovPoly = Polygon()
 		self.__totalTimeNanoSecs = 0.0
 		self.__transformationMatrix: List[AffineTransform] = []
+		self.__targetIds = set()
 		self.__parseConfigFileParameters()
 		(self.__fovPublisher, _) = SaMsgs.createRobotStatePublisher(self, self.__publishMyFov, self.__updateInterval)
-		(self.__estPublisher, _) = SaMsgs.createEstimationPublisher(self)
+		(self.__estPublisher, _) = RtBiEmulator.createEstimationPublisher(self)
 		RtBiEmulator.subscribeToTargetTopic(self, self.__onTargetUpdate)
 		# Provides a debugging way to stop the updating the position any further.
 		self.__passedCutOffTime: int = -1
@@ -138,7 +140,6 @@ class AvEmulator(Node):
 		targetLocation = Polygon(target.spatialRegion)
 		fov = self.__getFovAtTime(timeNanoSecs)
 		if Geometry.intersects(targetLocation, fov):
-			self.get_logger().info("Detected TG#%d" % msg.robot_id)
 			estMsg = EstimationMsg()
 			estMsg.detection_time = float(timeNanoSecs)
 			robotStateMsg = RobotState()
@@ -147,11 +148,34 @@ class AvEmulator(Node):
 			robotStateMsg.pose = SaMsgs.createSaPoseMsg(pose.x, pose.y)
 			robotStateMsg.fov = SaMsgs.createSaFovMsg(list(fov.exterior.coords))
 			estMsg.robot_state = robotStateMsg
-			poseEstMsg = PoseEstimation()
+			poseEstMsg = PoseEstimation(spawned=False, vanished=False)
+			if target.id not in self.__targetIds:
+				self.get_logger().info("TG#%d spawned." % msg.robot_id)
+				poseEstMsg.spawned = True
+				self.__targetIds.add(target.id)
 			poseEstMsg.trajectory_id = target.id
 			poseEstMsg.pose = SaMsgs.createSaPoseMsg(target.location.x, target.location.y, target.location.angleFromX)
 			RosUtils.AppendMessage(estMsg.pose_estimations, poseEstMsg)
 			self.__estPublisher.publish(estMsg)
+			return
+		if target.id in self.__targetIds:
+			self.get_logger().info("TG#%d vanished." % msg.robot_id)
+			estMsg = EstimationMsg()
+			estMsg.detection_time = float(timeNanoSecs)
+			robotStateMsg = RobotState()
+			robotStateMsg.robot_id = self.__id
+			pose = self.__getPoseAtTime(timeNanoSecs)
+			robotStateMsg.pose = SaMsgs.createSaPoseMsg(pose.x, pose.y)
+			robotStateMsg.fov = SaMsgs.createSaFovMsg(list(fov.exterior.coords))
+			estMsg.robot_state = robotStateMsg
+			poseEstMsg = PoseEstimation(spawned=False, vanished=False)
+			poseEstMsg.vanished = True
+			self.__targetIds.remove(target.id)
+			poseEstMsg.trajectory_id = target.id
+			poseEstMsg.pose = SaMsgs.createSaPoseMsg(target.location.x, target.location.y, target.location.angleFromX)
+			RosUtils.AppendMessage(estMsg.pose_estimations, poseEstMsg)
+			self.__estPublisher.publish(estMsg)
+			return
 		return
 
 def main(args=None):

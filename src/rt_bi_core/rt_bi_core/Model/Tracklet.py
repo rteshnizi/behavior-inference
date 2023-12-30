@@ -3,28 +3,33 @@ from typing import Sequence
 from visualization_msgs.msg import Marker
 
 from rt_bi_utils.Pose import Pose
-from rt_bi_utils.Ros import Logger
 from rt_bi_utils.RViz import KnownColors, RViz
 
 
 class Tracklet(Pose):
-	def __init__(self, id: int, timeNanoSecs: int, x: float, y: float, angleFromX: float) -> None:
+	def __init__(self, id: int, timeNanoSecs: int, x: float, y: float, angleFromX: float, spawned = False, vanished = False) -> None:
 		super().__init__(timeNanoSecs, x, y, angleFromX)
 		self.id = id
+		self.spawned = spawned
+		self.vanished = vanished
 
 	def __repr__(self) -> str:
-		return "Trk-%d" % self.id
+		s = "TK#%d" % self.id
+		if self.spawned and self.vanished: return "%s%s" % ("[+/-]", s)
+		if self.spawned: return "%s%s" % ("[+]", s)
+		if self.vanished: return "%s%s" % ("[-]", s)
+		return s
 
 	def render(self) -> Sequence[Marker]:
 		msgs = []
-		if self.spawned: msgs.append(RViz.createCircle("%s-circle" % repr(self), self.x, self.y, radius=5, outline=KnownColors.LIGHT_GREEN))
-		elif self.vanished: msgs.append(RViz.createCircle("%s-circle" % repr(self), self.x, self.y, radius=5, outline=KnownColors.DARK_RED))
-		else: msgs.append(RViz.createCircle("%s-circle" % repr(self), self.x, self.y, radius=10, outline=KnownColors.PURPLE, width=3.0))
-		msgs.append(RViz.createText("%s-txt" % repr(self), (self.x, self.y), repr(self), KnownColors.WHITE))
+		if self.spawned: msgs.append(RViz.createCircle("TK#%d-circle" % self.id, self.x, self.y, radius=13, outline=KnownColors.GREEN, width=3.0))
+		elif self.vanished: msgs.append(RViz.createCircle("TK#%d-circle" % self.id, self.x, self.y, radius=13, outline=KnownColors.RED, width=3.0))
+		else: msgs.append(RViz.createCircle("TK#%d-circle" % self.id, self.x, self.y, radius=10, outline=KnownColors.PURPLE, width=3.0))
+		msgs.append(RViz.createText("TK#%d-txt" % self.id, (self.x, self.y), repr(self), KnownColors.WHITE))
 		return msgs
 
 	def clearRender(self) -> Sequence[Marker]:
 		msgs = []
-		msgs.append(RViz.removeMarker("%s-circle" % repr(self)))
-		msgs.append(RViz.removeMarker("%s-txt" % repr(self)))
+		msgs.append(RViz.removeMarker("TK#%d-circle" % self.id))
+		msgs.append(RViz.removeMarker("TK#%d-txt" % self.id))
 		return msgs
