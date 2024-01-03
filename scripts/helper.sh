@@ -65,7 +65,7 @@ parseArgs () {
 	return $scriptResult
 }
 
-source_workspace () {
+sourceWorkspace () {
 	cdScriptsDir
 	cd .. # now we are in the workspace directory
 	echo "source $PWD/install/local_setup.sh"
@@ -78,4 +78,8 @@ source_workspace () {
 		echo "Workspace source failed!"
 		exit 1
 	fi
+}
+
+printEnv () {
+	printenv
 }

@@ -1,5 +1,6 @@
 #!/bin/bash
 . $(dirname "$0")/helper.sh
+setEnvVars # set the necessary environment variables
 installRequirements
 parseArgs $@
 parsingResult=$?
@@ -16,13 +17,11 @@ fi
 
 if [ $? -eq 0 ]
 then
-	source_workspace
+	sourceWorkspace
 else
 	echo "${Red}Build Failed!${Color_Off}"
 	exit 1
 fi
-
-setEnvVars # set the necessary environment variables
 
 cdScriptsDir
 cd .. # now we are in the workspace directory
@@ -31,9 +30,9 @@ echo
 
 concurrently\
 	--kill-others\
-	--names "LVZ,EVZ,MAP,AV ,TG ,MI ,SI ,EV "\
+	--names "LVZ,EVZ,MAP,AV ,TG ,MI ,SI ,EV ,RUN"\
 	--prefix "[{name}-{time}]"\
-	-c "bgWhite.black,bgWhite.black,bgGrey.inverse,bgBlue,bgRed,bgMagenta,bgBlueBright.black,bgRedBright.black,bgGreen.black"\
+	-c "bgWhite.black,bgWhite.black,bgGrey.inverse,bgBlue,bgRed,bgMagenta,bgBlue.inverse,bgRed.inverse,bgGreen"\
 	--timestamp-format "HH:mm:ss"\
 	"ros2 launch rt_bi_core rviz.launch.py"\
 	"ros2 launch rt_bi_eventifier rviz.launch.py"\
@@ -43,6 +42,7 @@ concurrently\
 	"ros2 launch rt_bi_core mi.launch.py"\
 	"ros2 launch rt_bi_core si.launch.py"\
 	"ros2 launch rt_bi_eventifier ev.launch.py"\
-	--hide "0,1,2,3,4,5,7"
+	"ros2 launch rt_bi_runtime c2.all.launch.py"\
+	--hide "0,1,2,3,4,5,6,7"
 	# --hide "0,1,2"
 exit 0

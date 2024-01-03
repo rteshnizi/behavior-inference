@@ -57,9 +57,9 @@ rotationParser.add_argument(
 	type=str,
 	help="Second list of coordinates."
 )
-#endregion # cSpell: disable-line
+#endregion
 
-#endregion # cSpell: disable-line
+#endregion
 
 def getAngle(coords1: str, coords2: str) -> tuple:
 	__coords1: Geometry.CoordsList = loads(coords1)
