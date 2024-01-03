@@ -12,6 +12,7 @@ setup(
 		("share/" + package_name, ["package.xml"]),
 	],
 	install_requires=[
+		"networkx~=3.2",
 		"scikit-image~=0.19.3",
 		"setuptools==58.2.0",
 		"shapely~=2.0.1",

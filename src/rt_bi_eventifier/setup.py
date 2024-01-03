@@ -16,7 +16,7 @@ setup(
 		(os.path.join("share", packageName, "config"), glob("config/*")),
 	],
 	install_requires= [
-		"networkx~=3.0",
+		"networkx~=3.2", # Used in ConnectivityGraph and ShadowTree
 		"setuptools==58.2.0",
 	],
 	zip_safe=True,

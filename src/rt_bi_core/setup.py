@@ -16,7 +16,6 @@ setup(
 		(os.path.join("share", packageName, "config"), glob("config/*")),
 	],
 	install_requires= [
-		"networkx~=3.0",
 		"setuptools==58.2.0",
 	],
 	zip_safe=True,
