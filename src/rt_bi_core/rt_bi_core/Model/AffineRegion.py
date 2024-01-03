@@ -3,7 +3,7 @@ from typing import Union
 from rt_bi_core.Model.DynamicRegion import DynamicRegion
 from rt_bi_utils.Geometry import Geometry, MultiPolygon, Polygon
 from rt_bi_utils.Pose import Pose
-from rt_bi_utils.RViz import Color
+from rt_bi_utils.RViz import RGBA
 
 
 class AffineRegion(DynamicRegion):
@@ -12,7 +12,7 @@ class AffineRegion(DynamicRegion):
 			centerOfRotation: Pose,
 			idNum: int,
 			envelope: Geometry.CoordsList,
-			envelopeColor: Color,
+			envelopeColor: RGBA,
 			regionType: DynamicRegion.RegionType,
 			timeNanoSecs: int,
 			interior: Union[Polygon, MultiPolygon, None]=None,

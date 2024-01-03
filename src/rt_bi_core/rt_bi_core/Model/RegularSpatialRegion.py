@@ -5,7 +5,7 @@ from visualization_msgs.msg import Marker
 import rt_bi_utils.Ros as RosUtils
 from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
 from rt_bi_utils.Geometry import Geometry, LineString, MultiPolygon, Polygon
-from rt_bi_utils.RViz import Color, RViz
+from rt_bi_utils.RViz import RGBA, RViz
 
 RegionType = TypeVar("RegionType", bound=PolygonalRegion)
 
@@ -102,7 +102,7 @@ class RegularSpatialRegion(Generic[RegionType]):
 	def difference(self, others: "RegularSpatialRegion") -> Set[str]:
 		return self.__sub__(others)
 
-	def render(self, envelopeColor: Union[Color, None] = None) -> Sequence[Marker]:
+	def render(self, envelopeColor: Union[RGBA, None] = None) -> Sequence[Marker]:
 		markers = []
 		for region in self.__regions.values():
 			RosUtils.ConcatMessageArray(markers, region.render(envelopeColor=envelopeColor))

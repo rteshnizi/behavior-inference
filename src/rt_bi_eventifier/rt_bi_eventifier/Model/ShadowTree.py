@@ -17,8 +17,9 @@ from rt_bi_eventifier.Model.EventAggregator import EventAggregator
 from rt_bi_eventifier.Model.FieldOfView import FieldOfView
 from rt_bi_interfaces.msg import Adjacency, ComponentEvent, Events, Graph
 from rt_bi_utils.Geometry import AffineTransform, Geometry, Polygon
+from rt_bi_utils.NetworkX import NxUtils
 from rt_bi_utils.Ros import AppendMessage, Logger, Publisher, RegisterRegionId
-from rt_bi_utils.RViz import KnownColors, RViz
+from rt_bi_utils.RViz import RgbaNames, RViz
 
 RegionTypeX = TypeVar("RegionTypeX", SensorRegion, SymbolRegion, MapRegion)
 RegionTypeY = TypeVar("RegionTypeY", SensorRegion, SymbolRegion, MapRegion)
@@ -278,9 +279,9 @@ class ShadowTree(nx.DiGraph):
 		x: float = region.interior.centroid.x
 		return (timeNanoSecs, x)
 
-	def __multiPartiteLayout(self) -> Dict[str, Tuple[float, float]]:
+	def __multiPartiteLayout(self) -> NxUtils.GraphLayout:
 		keys = sorted(self.nodes, key=self.__nodeSortKey)
-		pos: Dict[str, Tuple[float, float]] = {}
+		pos: NxUtils.GraphLayout = {}
 		y = 0
 		x = 0
 		timeNanoSecs: int = 0
@@ -298,13 +299,13 @@ class ShadowTree(nx.DiGraph):
 		timerCoords = Geometry.findBottomLeft(lastCGraph.mapPerimeter.envelopePolygon)
 		timerCoords = Geometry.addCoords(timerCoords, (20, 20))
 		timerText = "T = %d" % (lastCGraph.timeNanoSecs)
-		timerMarker = RViz.createText("rt_st_time", timerCoords, timerText, KnownColors.RED, fontSize=7.5)
+		timerMarker = RViz.createText("rt_st_time", timerCoords, timerText, RgbaNames.RED, fontSize=7.5)
 		AppendMessage(markerArray.markers, timerMarker)
 
 		timerCoords = Geometry.findBottomLeft(lastCGraph.mapPerimeter.envelopePolygon)
 		timerCoords = Geometry.addCoords(timerCoords, (20, 10))
 		timerText = "D = %d" % self.length
-		timerMarker = RViz.createText("rt_st_depth", timerCoords, timerText, KnownColors.RED, fontSize=7.5)
+		timerMarker = RViz.createText("rt_st_depth", timerCoords, timerText, RgbaNames.RED, fontSize=7.5)
 		AppendMessage(markerArray.markers, timerMarker)
 		return markerArray
 
@@ -316,17 +317,17 @@ class ShadowTree(nx.DiGraph):
 			regionName: str = self.nodes[n]["regionName"]
 			region: AffineRegion = cGraph.nodes[regionName]["region"]
 			if region.regionType == AffineRegion.RegionType.SHADOW:
-				outlineColor = KnownColors.LIGHT_GREY
+				outlineColor = RgbaNames.LIGHT_GREY
 			elif region.regionType == AffineRegion.RegionType.SENSING:
-				outlineColor = KnownColors.GREEN
+				outlineColor = RgbaNames.GREEN
 			elif region.regionType == AffineRegion.RegionType.SYMBOL:
-				outlineColor = KnownColors.PURPLE
+				outlineColor = RgbaNames.PURPLE
 			else:
-				outlineColor = KnownColors.RED
+				outlineColor = RgbaNames.RED
 			coords = nodePositions[n]
 			marker = RViz.createCircle("rt_st_%s" % n, centerX=coords[0], centerY=coords[1], radius=self.RENDER_RADIUS, outline=outlineColor)
 			AppendMessage(markerArray.markers, marker)
-			marker = RViz.createText("rt_st_%s_txt" % n, coords, regionName, KnownColors.RED, fontSize=self.RENDER_FONT_SIZE)
+			marker = RViz.createText("rt_st_%s_txt" % n, coords, regionName, RgbaNames.RED, fontSize=self.RENDER_FONT_SIZE)
 			AppendMessage(markerArray.markers, marker)
 		return markerArray
 
@@ -337,7 +338,7 @@ class ShadowTree(nx.DiGraph):
 		for (frm, to) in outEdgeView:
 			edgeData = outEdgeView[frm, to]
 			strId = repr((frm, to))
-			color = KnownColors.DARK_CYAN if ("isTemporal" in edgeData and edgeData["isTemporal"]) else KnownColors.DARK_MAGENTA
+			color = RgbaNames.DARK_CYAN if ("isTemporal" in edgeData and edgeData["isTemporal"]) else RgbaNames.DARK_MAGENTA
 			(dx, dy) = Geometry.subtractCoords(nodePositions[to], nodePositions[frm])
 			dVect = Geometry.getUnitVector(dx, dy)
 			dVect = Geometry.scaleCoords(dVect, self.RENDER_RADIUS)

@@ -1,0 +1,17 @@
+rt_bi_runtime:
+  ba1:
+    ros__parameters:
+      name: "spec1"
+      states:
+        - "Q0"
+        - "Q1"
+        - "Q2"
+        - "Q3"
+      transitions:
+        - "[[\"LEFT\", \"Q1\"]]"
+        - "[[\"NOON\", \"Q2\"]]"
+        - "[[\"RIGHT\", \"Q3\"]]"
+        - "[]"
+      start: "Q0"
+      accepting:
+        - "Q3"

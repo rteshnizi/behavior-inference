@@ -1,12 +1,11 @@
 from enum import Enum
 from typing import Dict, Sequence, Union
 
-from skimage import transform
 from visualization_msgs.msg import Marker
 
 import rt_bi_utils.Ros as RosUtils
-from rt_bi_utils.Geometry import Geometry, LineString, MultiPolygon, Polygon
-from rt_bi_utils.RViz import Color, KnownColors, RViz
+from rt_bi_utils.Geometry import AffineTransform, Geometry, LineString, MultiPolygon, Polygon
+from rt_bi_utils.RViz import RGBA, RgbaNames, RViz
 
 
 class PolygonalRegion:
@@ -33,8 +32,8 @@ class PolygonalRegion:
 		self,
 		idNum: int,
 		envelope: Geometry.CoordsList,
-		envelopeColor: Color,
-		interiorColor: Color = KnownColors.WHITE,
+		envelopeColor: RGBA,
+		interiorColor: RGBA = RgbaNames.WHITE,
 		interior: Union[Polygon, MultiPolygon, None] = None,
 		regionType: RegionType = RegionType.BASE,
 		renderLineWidth = 1,
@@ -68,7 +67,7 @@ class PolygonalRegion:
 		self.__regionType = regionType
 		self.__DEFAULT_ENVELOPE_COLOR = envelopeColor
 		self.__INTERIOR_COLOR = interiorColor
-		self.__TEXT_COLOR = KnownColors.BLACK if RViz.isLightColor(interiorColor) else KnownColors.WHITE
+		self.__TEXT_COLOR = RgbaNames.BLACK if RViz.isLightColor(interiorColor) else RgbaNames.WHITE
 		if len(kwArgs) > 0 : RosUtils.Logger().warn("Unassigned keyword args ignored: %s" % repr(kwArgs))
 		self.__edges: PolygonalRegion.Edges = self.__buildEdges()
 
@@ -95,7 +94,7 @@ class PolygonalRegion:
 		return self.__name
 
 	@property
-	def envelopeColor(self) -> Color:
+	def envelopeColor(self) -> RGBA:
 		"""The color used to render the boundary of this polygon."""
 		return self.__DEFAULT_ENVELOPE_COLOR
 
@@ -110,7 +109,7 @@ class PolygonalRegion:
 		return self.__interiorPolygon
 
 	@property
-	def interiorColor(self) -> Color:
+	def interiorColor(self) -> RGBA:
 		"""The color used for rendering the background of this polygon (to fill)."""
 		return self.__INTERIOR_COLOR
 
@@ -152,7 +151,7 @@ class PolygonalRegion:
 		if idCandidate2 in self.__edges: return idCandidate2
 		return None
 
-	def getEquivalentEdge(self, finalConfig: LineString, transformation: transform.AffineTransform) -> Union[LineString, None]:
+	def getEquivalentEdge(self, finalConfig: LineString, transformation: AffineTransform) -> Union[LineString, None]:
 		"""
 			Given an affine transformation, and the final configuration of an edge after the transformation,
 			find the edge that will be in that final configuration after the transformation, and `None` otherwise. Boy didn't I repeat myself?!
@@ -162,7 +161,7 @@ class PolygonalRegion:
 			if Geometry.lineSegmentsAreAlmostEqual(finalConfig, afterTransformation): return edge
 		return None
 
-	def render(self, renderText: bool = False, fill: bool = False, envelopeColor: Union[Color, None] = None) -> Sequence[Marker]:
+	def render(self, renderText: bool = False, fill: bool = False, envelopeColor: Union[RGBA, None] = None) -> Sequence[Marker]:
 		msgs = []
 		if fill:
 			RosUtils.Logger().debug("Cannot fill polygons yet.")

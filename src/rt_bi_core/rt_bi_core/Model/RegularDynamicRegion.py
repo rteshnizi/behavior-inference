@@ -5,7 +5,7 @@ from visualization_msgs.msg import Marker
 import rt_bi_utils.Ros as RosUtils
 from rt_bi_core.Model.DynamicRegion import DynamicRegion
 from rt_bi_core.Model.RegularSpatialRegion import RegularSpatialRegion
-from rt_bi_utils.RViz import Color
+from rt_bi_utils.RViz import RGBA
 
 RegionType = TypeVar("RegionType", bound=DynamicRegion)
 
@@ -65,5 +65,5 @@ class RegularDynamicRegion(Generic[RegionType], RegularSpatialRegion[RegionType]
 	def difference(self, other: "RegularDynamicRegion") -> Set[str]:
 		return super().difference(other)
 
-	def render(self, envelopeColor: Union[Color, None] = None) -> Sequence[Marker]:
+	def render(self, envelopeColor: Union[RGBA, None] = None) -> Sequence[Marker]:
 		return super().render(envelopeColor)

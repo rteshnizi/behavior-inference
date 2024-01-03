@@ -4,7 +4,7 @@ from visualization_msgs.msg import Marker
 
 from rt_bi_core.Model.RegularAffineRegion import RegularAffineRegion
 from rt_bi_core.Model.SymbolRegion import SymbolRegion
-from rt_bi_utils.RViz import KnownColors
+from rt_bi_utils.RViz import RgbaNames
 
 
 class RegularSymbol(RegularAffineRegion[SymbolRegion]):
@@ -41,4 +41,4 @@ class RegularSymbol(RegularAffineRegion[SymbolRegion]):
 		return super().difference(others)
 
 	def render(self) -> Sequence[Marker]:
-		return super().render(envelopeColor=KnownColors.BLUE)
+		return super().render(envelopeColor=RgbaNames.BLUE)

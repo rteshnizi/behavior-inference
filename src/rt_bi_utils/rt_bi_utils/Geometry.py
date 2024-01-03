@@ -29,12 +29,12 @@ class Geometry:
 	Coords = Tuple[float, float]
 	CoordsList = List[Coords]
 	CoordsMap = Dict[Coords, Coords]
-	ConnectedGeometry = Union[Polygon, LineString, Point]
-	MultiGeometry = Union[MultiPolygon, MultiLineString, MultiPoint]
-	Geometry = Union[Polygon, MultiPolygon, LineString, MultiLineString, Point, MultiPoint]
+	ConnectedComponent = Union[Polygon, LineString, Point]
+	MultiComponent = Union[MultiPolygon, MultiLineString, MultiPoint]
+	AnyShapelyObj = Union[Polygon, MultiPolygon, LineString, MultiLineString, Point, MultiPoint]
 
 	@staticmethod
-	def __reportShapelyException(functionName: str, exc: Exception, objs: List[Geometry]) -> None:
+	def __reportShapelyException(functionName: str, exc: Exception, objs: List[AnyShapelyObj]) -> None:
 		Logger().error("1. Shapely exception.. in %s(): %s" % (functionName, repr(exc)))
 		Logger().error("2. Shapely exception.. args: %s" % (", ".join([repr(o) for o in objs])))
 		i = 3
@@ -91,7 +91,7 @@ class Geometry:
 		return(c1[0] * s, c1[1] * s)
 
 	@staticmethod
-	def getGeometryCoords(geom: ConnectedGeometry) -> CoordsList:
+	def getGeometryCoords(geom: ConnectedComponent) -> CoordsList:
 		if not hasattr(geom, "exterior"):
 			if not hasattr(geom, "coords"):
 				Logger().error("Unknown geometry %s." % repr(geom))
@@ -222,7 +222,7 @@ class Geometry:
 
 
 	@staticmethod
-	def toGeometryList(polys: MultiGeometry) -> List[ConnectedGeometry]:
+	def toGeometryList(polys: MultiComponent) -> List[ConnectedComponent]:
 		try:
 			if len(polys.geoms) > 0:
 				return list(polys.geoms)
@@ -251,7 +251,7 @@ class Geometry:
 		return slope
 
 	@staticmethod
-	def intersects(o1: Geometry, o2: Geometry) -> bool:
+	def intersects(o1: AnyShapelyObj, o2: AnyShapelyObj) -> bool:
 		"""## Intersects
 		A function to safely test if two geometries intersect while handling shapely exceptions and warnings.
 
@@ -276,7 +276,7 @@ class Geometry:
 			return False
 
 	@staticmethod
-	def intersection(o1: Geometry, o2: Geometry) -> Geometry:
+	def intersection(o1: AnyShapelyObj, o2: AnyShapelyObj) -> AnyShapelyObj:
 		"""## Intersects
 		A function to safely test obtain the intersection of two geometries while handling shapely exceptions and warnings.
 
@@ -412,7 +412,7 @@ class Geometry:
 		`Coords`
 			The center of rotation if there exists one, `(nan, nan)` otherwise.
 		"""
-		matrix = transformation.params
+		matrix = transformation.params # type: ignore - transformation.params
 		# [[a0  a1  a2]
 		#  [b0  b1  b2]
 		#  [0   0    1]]
@@ -441,7 +441,7 @@ class Geometry:
 		bool
 			True if the sum of element-wise diff between the matrix and identity matrix is almost zero.
 		"""
-		matrix = transformation.params
+		matrix = transformation.params # type: ignore - transformation.params
 		if ((matrix - np.identity(3)).sum()) < Geometry.EPSILON: return True
 		return False
 
@@ -488,7 +488,7 @@ class Geometry:
 		if param > 1 or param < 0: raise ValueError("Parameter should be in range [0, 1]. Given param = %f" % param)
 		# Easy cases that do not need calculation
 		if param == 0: return AffineTransform(np.identity(3))
-		if param == 1: return AffineTransform(transformation.params)
+		if param == 1: return AffineTransform(transformation.params) # type: ignore - transformation.params
 		scale = [((transformation.scale[0] - 1) * param) + 1, ((transformation.scale[1] - 1) * param) + 1]
 		rotations = Rotation.from_matrix((
 			[
@@ -497,8 +497,8 @@ class Geometry:
 				[0, 0, 1]
 			],
 			[
-				[transformation.params[0][0], transformation.params[0][1], 0],
-				[transformation.params[1][0], transformation.params[1][1], 0],
+				[transformation.params[0][0], transformation.params[0][1], 0], # type: ignore - transformation.params
+				[transformation.params[1][0], transformation.params[1][1], 0], # type: ignore - transformation.params
 				[0, 0, 1]
 			]))
 		slerp = Slerp([0, 1], rotations)
@@ -515,7 +515,7 @@ class Geometry:
 
 	@staticmethod
 	def applyMatrixTransformToCoordsList(transformation: AffineTransform, coordsList: CoordsList) -> CoordsList:
-		transformedCoords = matrix_transform(coordsList, transformation.params)
+		transformedCoords = matrix_transform(coordsList, transformation.params) # type: ignore - transformation.params
 		return transformedCoords
 
 	@staticmethod
@@ -598,13 +598,13 @@ def __pointMulScalar(self: Point, num: float) -> Point:
 	"""
 	return Point(self.x * num, self.y * num)
 
-def __connectedGeometryRepr(self: Geometry.ConnectedGeometry) -> str:
+def __connectedGeometryRepr(self: Geometry.ConnectedComponent) -> str:
 	coordsList = Geometry.getGeometryCoords(self)
 	if len(coordsList) > 0 and len(coordsList) < 4:
 		return "%s" % repr(coordsList)
 	return "[#%d, v:%s, e:%s]" % (len(coordsList), "Y" if self.is_valid else "N", "Y" if self.is_empty else "N")
 
-def __multiGeometryRepr(self: Geometry.MultiGeometry) -> str:
+def __multiGeometryRepr(self: Geometry.MultiComponent) -> str:
 	return "{%s}" % ", ".join([repr(o) for o in self.geoms])
 
 Point.__neg__ = __pointNeg

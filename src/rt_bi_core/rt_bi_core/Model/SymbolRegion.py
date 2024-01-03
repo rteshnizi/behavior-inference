@@ -5,7 +5,7 @@ from visualization_msgs.msg import Marker
 from rt_bi_core.Model.AffineRegion import AffineRegion
 from rt_bi_utils.Geometry import Geometry, MultiPolygon, Polygon
 from rt_bi_utils.Pose import Pose
-from rt_bi_utils.RViz import KnownColors
+from rt_bi_utils.RViz import RgbaNames
 
 
 class SymbolRegion(AffineRegion):
@@ -14,7 +14,7 @@ class SymbolRegion(AffineRegion):
 			centerOfRotation=centerOfRotation,
 			idNum=idNum,
 			envelope=envelope,
-			envelopeColor=KnownColors.RED if inFov else KnownColors.BLUE,
+			envelopeColor=RgbaNames.RED if inFov else RgbaNames.BLUE,
 			regionType=AffineRegion.RegionType.SYMBOL,
 			timeNanoSecs=timeNanoSecs,
 			interior=interior,

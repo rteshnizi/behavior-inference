@@ -9,36 +9,9 @@ from rclpy.node import Node, Publisher, Timer
 from visualization_msgs.msg import Marker, MarkerArray
 
 import rt_bi_utils.Ros as RosUtils
+from rt_bi_utils.Color import RGBA, RgbaNames
 from rt_bi_utils.Geometry import Geometry
 
-numeric = Union[int, float]
-Color = Tuple[numeric, numeric, numeric, numeric]
-""" A tuple that represents an RGBA value. Values between [0-1]. """
-
-class KnownColors:
-	BLACK: Color = 			(0, 0, 0, 1)
-	BLUE: Color = 			(0, 0, 1, 1)
-	COLD_BLUE: Color = 		(0, 0.5, 1, 1)
-	CYAN: Color =	 		(0, 1, 1, 1)
-	DARK_BLUE: Color = 		(0, 0, 0.25, 1)
-	DARK_CYAN: Color = 		(0, 0.5, 0.5, 1)
-	DARK_GREEN: Color = 	(0, 0.25, 0, 1)
-	DARK_GREY: Color = 		(0.25, 0.25, 0.25, 1)
-	DARK_MAGENTA: Color =	(0.7, 0, 0.7, 1)
-	DARK_RED: Color =		(0.94, 0.24, 0.24, 1)
-	DARK_YELLOW: Color =	(0.7, 0.7, 0, 1)
-	GREEN: Color = 			(0, 1, 0, 1)
-	GREY: Color = 			(0.5, 0.5, 0.5, 1)
-	LIGHT_GREEN: Color = 	(0.24, 0.94, 0.24, 1)
-	LIGHT_GREY: Color = 	(0.75, 0.75, 0.75, 1)
-	MAGENTA: Color = 		(1, 0, 1, 1)
-	MAROON: Color = 		(0.5, 0, 0, 1)
-	ORANGE: Color = 		(1, 0.647, 0, 1)
-	PURPLE: Color = 		(0.36, 0.25, 0.83, 1)
-	RED: Color = 			(1, 0, 0, 1)
-	TRANSPARENT: Color = 	(0, 0, 0, 0)
-	WHITE: Color = 			(1, 1, 1, 1)
-	YELLOW: Color =			(1, 1, 0, 1)
 
 class RViz:
 	"""
@@ -101,7 +74,7 @@ class RViz:
 		return p
 
 	@staticmethod
-	def __setMarkerColor(marker: Marker, color: Color) -> Marker:
+	def __setMarkerColor(marker: Marker, color: RGBA) -> Marker:
 		marker.color.r = float(color[0])
 		marker.color.g = float(color[1])
 		marker.color.b = float(color[2])
@@ -130,21 +103,21 @@ class RViz:
 		return marker
 
 	@staticmethod
-	def randomColor(alpha = 1.0) -> Color:
+	def randomColor(alpha = 1.0) -> RGBA:
 		return (random.uniform(0.1, 0.8), random.uniform(0.1, 0.8), random.uniform(0.1, 0.8), alpha)
 
 	@staticmethod
-	def randomLightColor(alpha = 1.0) -> Color:
+	def randomLightColor(alpha = 1.0) -> RGBA:
 		color = RViz.randomColor(alpha)
 		while not RViz.isLightColor(color): color = RViz.randomColor(alpha)
 		return color
 
 	@staticmethod
-	def inverseColor(color: Color, inverseAlpha = False) -> Color:
+	def inverseColor(color: RGBA, inverseAlpha = False) -> RGBA:
 		return (1 - color[0], 1 - color[1], 1 - color[2], 1 - color[3] if inverseAlpha else color[3])
 
 	@staticmethod
-	def isLightColor(rgbColor: Color) -> bool:
+	def isLightColor(rgbColor: RGBA) -> bool:
 		"""
 		https://stackoverflow.com/a/58270890/750567
 
@@ -164,7 +137,7 @@ class RViz:
 		else: return False
 
 	@staticmethod
-	def createCircle(strId: str, centerX: float, centerY: float, radius: float, outline: Color, width = 1.0) -> Marker:
+	def createCircle(strId: str, centerX: float, centerY: float, radius: float, outline: RGBA, width = 1.0) -> Marker:
 		RosUtils.Logger().debug("Render circle id %s." % strId)
 		circle = Marker()
 		circle = RViz.__setMarkerHeader(circle)
@@ -181,7 +154,7 @@ class RViz:
 		return circle
 
 	@staticmethod
-	def createPolygon(strId: str, coords: Geometry.CoordsList, outline: Color, width: float) -> Marker:
+	def createPolygon(strId: str, coords: Geometry.CoordsList, outline: RGBA, width: float) -> Marker:
 		"""Create a polygon Marker message.
 
 		Parameters
@@ -217,7 +190,7 @@ class RViz:
 		return polygon
 
 	@staticmethod
-	def createLine(strId: str, coords: Geometry.CoordsList, outline: Color, width: float, arrow = False) -> Marker:
+	def createLine(strId: str, coords: Geometry.CoordsList, outline: RGBA, width: float, arrow = False) -> Marker:
 		"""Create a line Marker message.
 
 		Parameters
@@ -257,7 +230,7 @@ class RViz:
 		return lineSeg
 
 	@staticmethod
-	def createText(strId: str, coords: Geometry.Coords, text: str, outline: Color = KnownColors.BLACK, fontSize = 10.0) -> Marker:
+	def createText(strId: str, coords: Geometry.Coords, text: str, outline: RGBA = RgbaNames.BLACK, fontSize = 10.0) -> Marker:
 		"""Create a text Marker message.
 
 		Parameters

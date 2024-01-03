@@ -11,7 +11,7 @@ from rt_bi_eventifier.Model.ContinuousTimeRegion import ContinuousTimeRegion
 from rt_bi_utils.Geometry import AffineTransform, Geometry, LineString, Polygon
 from rt_bi_utils.Pose import Pose
 from rt_bi_utils.Ros import AppendMessage, Logger, Publisher
-from rt_bi_utils.RViz import Color, RViz
+from rt_bi_utils.RViz import RGBA, RViz
 
 RegionTypeX = TypeVar("RegionTypeX", SensorRegion, SymbolRegion, MapRegion)
 RegionTypeY = TypeVar("RegionTypeY", SensorRegion, SymbolRegion, MapRegion)
@@ -62,7 +62,7 @@ class ContinuousTimeCollisionDetection:
 	__rvizPublisher: Union[Publisher, None] = None
 
 	@classmethod
-	def __renderLineStrings(cls, lines: List[LineString], color: Color, renderWidth: float = 1.0) -> None:
+	def __renderLineStrings(cls, lines: List[LineString], color: RGBA, renderWidth: float = 1.0) -> None:
 		if cls.__rvizPublisher is None: return
 		msg = MarkerArray()
 		for line in lines:

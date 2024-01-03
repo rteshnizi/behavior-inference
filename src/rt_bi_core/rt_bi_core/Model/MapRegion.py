@@ -6,7 +6,7 @@ from rt_bi_core.Model.AffineRegion import AffineRegion
 from rt_bi_core.Model.FeatureMap import Feature
 from rt_bi_utils.Geometry import Geometry, MultiPolygon, Polygon
 from rt_bi_utils.Pose import Pose
-from rt_bi_utils.RViz import Color, KnownColors
+from rt_bi_utils.RViz import RGBA, RgbaNames
 
 
 class MapRegion(AffineRegion):
@@ -16,7 +16,7 @@ class MapRegion(AffineRegion):
 			centerOfRotation=Pose(0, 0, 0, 0),
 			idNum=idNum,
 			envelope=envelope,
-			envelopeColor=kwArgs.pop("envelopeColor", KnownColors.GREY),
+			envelopeColor=kwArgs.pop("envelopeColor", RgbaNames.GREY),
 			regionType=AffineRegion.RegionType.MAP,
 			timeNanoSecs=timeNanoSecs,
 			interior=interior,
@@ -26,8 +26,8 @@ class MapRegion(AffineRegion):
 		self.centerOfRotation = Geometry.toPose(self.interior.centroid, self.timeNanoSecs)
 
 	@property
-	def resolvedBgColor(self) -> Color:
-		return KnownColors.BLACK if self.isObstacle else KnownColors.TRANSPARENT
+	def resolvedBgColor(self) -> RGBA:
+		return RgbaNames.BLACK if self.isObstacle else RgbaNames.TRANSPARENT
 
 	@property
 	def isObstacle(self) -> bool:

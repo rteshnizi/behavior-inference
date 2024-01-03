@@ -2,7 +2,7 @@ from typing import Union
 
 from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
 from rt_bi_utils.Geometry import Geometry, MultiPolygon, Polygon
-from rt_bi_utils.RViz import Color, KnownColors
+from rt_bi_utils.RViz import RGBA, RgbaNames
 
 
 class DynamicRegion(PolygonalRegion):
@@ -18,7 +18,7 @@ class DynamicRegion(PolygonalRegion):
 			self,
 			idNum: int,
 			envelope: Geometry.CoordsList,
-			envelopeColor: Color,
+			envelopeColor: RGBA,
 			regionType: PolygonalRegion.RegionType,
 			timeNanoSecs: int,
 			interior: Union[Polygon, MultiPolygon, None] = None,

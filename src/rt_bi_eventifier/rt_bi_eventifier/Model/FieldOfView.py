@@ -6,7 +6,7 @@ from rt_bi_core.Model.RegularAffineRegion import RegularAffineRegion
 from rt_bi_core.Model.SensorRegion import SensorRegion
 from rt_bi_core.Model.Tracklet import Tracklet
 from rt_bi_utils.Geometry import MultiPolygon, Polygon
-from rt_bi_utils.RViz import KnownColors
+from rt_bi_utils.RViz import RgbaNames
 
 
 class FieldOfView(RegularAffineRegion[SensorRegion]):
@@ -57,4 +57,4 @@ class FieldOfView(RegularAffineRegion[SensorRegion]):
 		return super().difference(other)
 
 	def render(self) -> Sequence[Marker]:
-		return super().render(envelopeColor=KnownColors.GREEN)
+		return super().render(envelopeColor=RgbaNames.GREEN)

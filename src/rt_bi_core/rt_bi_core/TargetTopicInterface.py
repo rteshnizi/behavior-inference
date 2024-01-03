@@ -8,7 +8,7 @@ from visualization_msgs.msg import MarkerArray
 import rt_bi_utils.Ros as RosUtils
 from rt_bi_core.Model.TargetRegion import TargetRegion
 from rt_bi_utils.RtBiEmulator import RtBiEmulator
-from rt_bi_utils.RViz import KnownColors, RViz
+from rt_bi_utils.RViz import RgbaNames, RViz
 from rt_bi_utils.SaMsgs import SaMsgs
 
 
@@ -29,7 +29,7 @@ class TargetTopicInterface(Node):
 		else:
 			RtBiEmulator.subscribeToTargetTopic(self, self.__onTargetUpdate)
 			(self.__rvizPublisher, _) = RViz.createRVizPublisher(self, RosUtils.CreateTopicName("map"))
-			self.__renderColor = KnownColors.ORANGE
+			self.__renderColor = RgbaNames.ORANGE
 
 	def __onTargetUpdate(self, msg: RobotState) -> None:
 		if msg is None:

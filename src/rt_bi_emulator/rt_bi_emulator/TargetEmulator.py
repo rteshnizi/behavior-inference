@@ -33,7 +33,6 @@ class TargetEmulator(Node):
 		self.__initRegionPoly = Polygon()
 		self.__totalTimeNanoSecs = 0.0
 		self.__transformationMatrix: List[AffineTransform] = []
-		self.__targetIds: Set[int] = set()
 		self.__parseConfigFileParameters()
 		(self.__targetPublisher, _) = RtBiEmulator.createTargetPublisher(self, self.__publishMyRegion, self.__updateInterval)
 		# Provides a debugging way to stop the updating the position any further.
@@ -115,9 +114,6 @@ class TargetEmulator(Node):
 		return
 
 def main(args=None):
-	"""
-	Start the Behavior Inference Run-time.
-	"""
 	rclpy.init(args=args)
 	targetNode = TargetEmulator()
 	rclpy.spin(targetNode)

@@ -7,7 +7,7 @@ from rt_bi_core.Model.AffineRegion import AffineRegion
 from rt_bi_core.Model.Tracklet import Tracklet
 from rt_bi_utils.Geometry import Geometry, MultiPolygon, Polygon
 from rt_bi_utils.Pose import Pose
-from rt_bi_utils.RViz import Color, KnownColors
+from rt_bi_utils.RViz import RGBA, RgbaNames
 
 
 class SensorRegion(AffineRegion):
@@ -51,7 +51,7 @@ class SensorRegion(AffineRegion):
 			centerOfRotation=centerOfRotation,
 			idNum=idNum,
 			envelope=envelope,
-			envelopeColor=KnownColors.GREEN,
+			envelopeColor=RgbaNames.GREEN,
 			regionType=AffineRegion.RegionType.SENSING,
 			timeNanoSecs=timeNanoSecs,
 			interior=interior,
@@ -80,7 +80,7 @@ class SensorRegion(AffineRegion):
 		"""
 		return len(self.__tracklets) > 0
 
-	def render(self, renderTracklet = False, envelopeColor: Union[Color, None] = None) -> Sequence[Marker]:
+	def render(self, renderTracklet = False, envelopeColor: Union[RGBA, None] = None) -> Sequence[Marker]:
 		msgs = super().render(renderText=False, envelopeColor=envelopeColor)
 		if renderTracklet:
 			for i in self.__tracklets: RosUtils.ConcatMessageArray(msgs, self.__tracklets[i].render())
