@@ -18,7 +18,6 @@ from rt_bi_utils.SaMsgs import SaMsgs
 class SensorTopicInterface(Node):
 	""" This Node listens to all the messages published on the topics related to sensors and renders them. """
 	def __init__(self, subClass=False, **kwArgs):
-		""" Create a Viewer ROS node. """
 		newKw = { "node_name": "rt_bi_core_sensor", **kwArgs}
 		super().__init__(**newKw)
 		if subClass:

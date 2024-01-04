@@ -27,10 +27,8 @@ class Av:
 		return "AV-%s(COR:%s):%s" % (name, repr(self.centerOfRotation), repr(self.interior))
 
 class AvEmulator(Node):
-	""" The Viewer ROS Node """
 	NANO_CONVERSION_CONSTANT = 10 ** 9
 	def __init__(self):
-		""" Create a Viewer ROS node. """
 		super().__init__(node_name="rt_bi_emulator_av") # type: ignore - parameter_overrides: List[Parameter] = None
 		self.get_logger().debug("%s is initializing." % self.get_fully_qualified_name())
 		self.__declareParameters()

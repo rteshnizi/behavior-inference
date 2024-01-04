@@ -7,8 +7,6 @@ from visualization_msgs.msg import MarkerArray
 
 import rt_bi_utils.Ros as RosUtils
 from rt_bi_core.Model.SymbolRegion import SymbolRegion
-from rt_bi_core.Model.TargetRegion import TargetRegion
-from rt_bi_utils.Color import ColorNames
 from rt_bi_utils.RtBiEmulator import RtBiEmulator
 from rt_bi_utils.RViz import RViz
 from rt_bi_utils.SaMsgs import SaMsgs
@@ -17,7 +15,6 @@ from rt_bi_utils.SaMsgs import SaMsgs
 class DyRegTopicInterface(Node):
 	""" This Node listens to all the messages published on the topics related to dynamic regions and renders them. """
 	def __init__(self, subClass=False, **kwArgs):
-		""" Create a Viewer ROS node. """
 		newKw = { "node_name": "rt_bi_core_dy", **kwArgs}
 		super().__init__(**newKw)
 		if subClass:

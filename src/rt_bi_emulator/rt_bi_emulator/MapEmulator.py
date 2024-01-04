@@ -9,9 +9,7 @@ from rt_bi_utils.SaMsgs import SaMsgs
 
 
 class MapEmulator(Node):
-	""" The Viewer ROS Node """
 	def __init__(self):
-		""" Create a Viewer ROS node. """
 		super().__init__(node_name="rt_bi_emulator_map") # type: ignore - parameter_overrides: List[Parameter] = None
 		self.get_logger().info("%s is initializing." % self.get_fully_qualified_name())
 		RosUtils.SetLogger(self.get_logger())

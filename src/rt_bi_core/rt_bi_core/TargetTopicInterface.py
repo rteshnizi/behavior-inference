@@ -15,7 +15,6 @@ from rt_bi_utils.SaMsgs import SaMsgs
 class TargetTopicInterface(Node):
 	""" This Node listens to all the messages published on the topics related to targets and renders them. """
 	def __init__(self, subClass=False, **kwArgs):
-		""" Create a Viewer ROS node. """
 		newKw = { "node_name": "rt_bi_core_target", **kwArgs}
 		super().__init__(**newKw)
 		if subClass:

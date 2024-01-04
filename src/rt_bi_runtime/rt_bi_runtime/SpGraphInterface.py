@@ -1,16 +1,21 @@
 import rclpy
-from rclpy.node import Node
 
-import rt_bi_utils.Ros as RosUtils
+from rt_bi_utils.RtBiNode import RtBiNode
 
 
-class SpGraphInterface(Node):
+class SpGraphInterface(RtBiNode):
 	def __init__(self) -> None:
-		super().__init__(node_name="rt_bi_core_sp_graph") # type: ignore - parameter_overrides: List[Parameter] = None
-		self.get_logger().info("%s is initializing." % self.get_fully_qualified_name())
-		RosUtils.SetLogger(self.get_logger())
+		super().__init__(node_name="rt_bi_core_sp_graph")
 		return
 
+	def declareParameters(self) -> None:
+		return
+
+	def parseConfigFileParameters(self) -> None:
+		return
+
+	def render(self) -> None:
+		return
 
 def main(args=None):
 	rclpy.init(args=args)

@@ -2,32 +2,29 @@ import json
 from typing import List
 
 import rclpy
-from rclpy.node import Node
 from rclpy.parameter import Parameter
 
-import rt_bi_utils.Ros as RosUtils
 from rt_bi_runtime.Model.BaMatplotlibRenderer import BaMatplotlibRenderer
 from rt_bi_runtime.Model.BehaviorAutomaton import BehaviorAutomaton
+from rt_bi_utils.RtBiNode import RtBiNode
 
 
-class BaInterface(Node):
+class BaInterface(RtBiNode):
 	"""
 	This Node listens to all the messages published on the topics related to the Behavior Automaton.
 	This node combines topic listeners and service clients.
 	"""
 	def __init__(self) -> None:
 		""" Create a Behavior Automaton node. """
-		super().__init__(node_name="rt_bi_core_bi") # type: ignore - parameter_overrides: List[Parameter] = None
-		self.get_logger().info("%s is initializing." % self.get_fully_qualified_name())
-		RosUtils.SetLogger(self.get_logger())
-		self.__declareParameters()
+		super().__init__(node_name="rt_bi_core_bi")
+		self.declareParameters()
 		self.__name: str = self.get_fully_qualified_name()
 		self.__shouldRender: bool = False
 		self.__states: List[str] = []
 		self.__transitions: List[List[List[str]]] = []
 		self.__start: str = ""
 		self.__accepting: List[str] = []
-		self.__parseConfigFileParameters()
+		self.parseConfigFileParameters()
 		self.__ba = BehaviorAutomaton(self.__name, self.__states, self.__transitions, self.__start, self.__accepting)
 		if self.__shouldRender: self.render()
 		return
@@ -35,8 +32,8 @@ class BaInterface(Node):
 	def __repr__(self) -> str:
 		return self.__name
 
-	def __declareParameters(self) -> None:
-		self.get_logger().debug("%s is setting node parameters." % self.get_fully_qualified_name())
+	def declareParameters(self) -> None:
+		self.log("%s is setting node parameters." % self.get_fully_qualified_name())
 		self.declare_parameter("name", Parameter.Type.STRING)
 		self.declare_parameter("render", Parameter.Type.BOOL)
 		self.declare_parameter("states", Parameter.Type.STRING_ARRAY)
@@ -45,8 +42,8 @@ class BaInterface(Node):
 		self.declare_parameter("accepting", Parameter.Type.STRING_ARRAY)
 		return
 
-	def __parseConfigFileParameters(self) -> None:
-		self.get_logger().debug("%s is parsing parameters." % self.get_fully_qualified_name())
+	def parseConfigFileParameters(self) -> None:
+		self.log("%s is parsing parameters." % self.get_fully_qualified_name())
 		self.__name = self.get_parameter("name").get_parameter_value().string_value
 		self.__shouldRender = self.get_parameter("render").get_parameter_value().bool_value
 		self.__states = list(self.get_parameter("states").get_parameter_value().string_array_value)

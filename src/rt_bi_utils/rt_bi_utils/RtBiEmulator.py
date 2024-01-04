@@ -10,7 +10,7 @@ from rt_bi_interfaces.msg import EstimationMsg
 
 class RtBiEmulator:
 	"""
-		This class only prepares the messages defined in the rt_bi_eMulator.
+		This class only prepares the messages defined in the rt_bi_emulator.
 	"""
 	__RT_BI_EMULATOR_DY_REGION = "/rt_bi_emulator/dy"
 	__RT_BI_EMULATOR_TARGET = "/rt_bi_emulator/target"

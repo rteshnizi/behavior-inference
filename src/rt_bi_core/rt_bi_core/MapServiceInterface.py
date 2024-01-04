@@ -18,7 +18,6 @@ from rt_bi_utils.SaMsgs import SaMsgs
 class MapServiceInterface(Node):
 	""" This Node listens to all the messages published on the topics related to the map and renders them. """
 	def __init__(self, **kwArgs):
-		""" Create a Viewer ROS node. """
 		newKw = { "node_name": "rt_bi_core_map", **kwArgs}
 		super().__init__(**newKw)
 		self.MAP_QUERY_NAME = "map"
