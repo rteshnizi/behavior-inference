@@ -8,27 +8,20 @@ from visualization_msgs.msg import MarkerArray
 import rt_bi_utils.Ros as RosUtils
 from rt_bi_core.Model.TargetRegion import TargetRegion
 from rt_bi_utils.RtBiEmulator import RtBiEmulator
+from rt_bi_utils.RtBiNode import RtBiNode
 from rt_bi_utils.RViz import ColorNames, RViz
 from rt_bi_utils.SaMsgs import SaMsgs
 
 
-class TargetTopicInterface(Node):
+class TargetTopicInterface(RtBiNode):
 	""" This Node listens to all the messages published on the topics related to targets and renders them. """
-	def __init__(self, subClass=False, **kwArgs):
+	def __init__(self, **kwArgs):
 		newKw = { "node_name": "rt_bi_core_target", **kwArgs}
 		super().__init__(**newKw)
-		if subClass:
-			self.get_logger().debug("%s in sensor topic init." % self.get_fully_qualified_name())
-		else:
-			self.get_logger().debug("%s is initializing." % self.get_fully_qualified_name())
-			RosUtils.SetLogger(self.get_logger())
 		self.__targets: Union[Dict[int, TargetRegion], None] = None
-		if subClass:
-			self.get_logger().debug("%s skipping creating publishers and subscribers." % self.get_fully_qualified_name())
-		else:
-			RtBiEmulator.subscribeToTargetTopic(self, self.__onTargetUpdate)
-			(self.__rvizPublisher, _) = RViz.createRVizPublisher(self, RosUtils.CreateTopicName("map"))
-			self.__renderColor = ColorNames.ORANGE
+		RtBiEmulator.subscribeToTargetTopic(self, self.__onTargetUpdate)
+		(self.__rvizPublisher, _) = RViz.createRVizPublisher(self, RosUtils.CreateTopicName("map"))
+		self.__renderColor = ColorNames.ORANGE
 
 	def __onTargetUpdate(self, msg: RobotState) -> None:
 		if msg is None:
@@ -46,6 +39,12 @@ class TargetTopicInterface(Node):
 		self.__targets[msg.robot_id] = target
 		self.render([target])
 		return
+
+	def declareParameters(self) -> None:
+		return super().declareParameters()
+
+	def parseConfigFileParameters(self) -> None:
+		return super().parseConfigFileParameters()
 
 	def render(self, regions: List[TargetRegion]) -> None:
 		if not RViz.isRVizReady(self, self.__rvizPublisher):

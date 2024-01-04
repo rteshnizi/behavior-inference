@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Dict, List, Sequence
+from typing import List, Sequence
 
 import rclpy
 from rclpy.clock import Duration
@@ -11,24 +11,26 @@ from visualization_msgs.msg import MarkerArray
 import rt_bi_utils.Ros as RosUtils
 from rt_bi_core.Model.FeatureMap import Feature
 from rt_bi_core.Model.MapRegion import MapRegion
+from rt_bi_utils.RtBiNode import RtBiNode
 from rt_bi_utils.RViz import RViz
 from rt_bi_utils.SaMsgs import SaMsgs
 
 
-class MapServiceInterface(Node):
+class MapServiceInterface(RtBiNode):
 	""" This Node listens to all the messages published on the topics related to the map and renders them. """
 	def __init__(self, **kwArgs):
 		newKw = { "node_name": "rt_bi_core_map", **kwArgs}
 		super().__init__(**newKw)
 		self.MAP_QUERY_NAME = "map"
-		if self.__class__.__name__ == MapServiceInterface.__name__:
-			self.get_logger().debug("%s is initializing." % self.get_fully_qualified_name())
-			RosUtils.SetLogger(self.get_logger())
-			self.__regions: List[MapRegion] = []
-			self.mapClient = SaMsgs.createSaFeatureQueryClient(self)
-			(self.__rvizPublisher, _) = RViz.createRVizPublisher(self, RosUtils.CreateTopicName("map"))
-		else:
-			self.get_logger().debug("%s finished super class service init." % self.get_fully_qualified_name())
+		self.__regions: List[MapRegion] = []
+		self.mapClient = SaMsgs.createSaFeatureQueryClient(self)
+		(self.__rvizPublisher, _) = RViz.createRVizPublisher(self, RosUtils.CreateTopicName("map"))
+
+	def declareParameters(self) -> None:
+		return super().declareParameters()
+
+	def parseConfigFileParameters(self) -> None:
+		return super().parseConfigFileParameters()
 
 	def __parseFeatureDefinition(self, region: MapRegion, request: QueryFeature.Request, response: QueryFeature.Response) -> List[Feature]:
 		parsedFeatures: List[Feature] = []

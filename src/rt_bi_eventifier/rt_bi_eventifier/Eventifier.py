@@ -28,13 +28,11 @@ class Eventifier(MapServiceInterface):
 		Create a Shadow Tree Interface node.
 		"""
 		super().__init__(node_name="rt_bi_eventifier")
-		self.get_logger().debug("%s is initializing." % self.get_fully_qualified_name())
-		self.__declareParameters()
+		self.declareParameters()
 		self.__liveRender: bool = False
 		self.__renderModules: List[ShadowTree.SUBMODULE_TYPES] = []
 		self.__topicPublishers: Dict[ShadowTree.TOPICS, Publisher] = {}
-		self.__parseConfigFileParameters()
-		RosUtils.SetLogger(self.get_logger())
+		self.parseConfigFileParameters()
 		modulePublishers: Dict[ShadowTree.SUBMODULE_TYPES, Union[Publisher, None]] = {}
 		for module in ShadowTree.SUBMODULES:
 			if module in self.__renderModules: (publisher, _) = RViz.createRVizPublisher(self, RosUtils.CreateTopicName(module))
@@ -48,14 +46,14 @@ class Eventifier(MapServiceInterface):
 		SaMsgs.subscribeToRobotStateTopic(self, self.__onRobotStateUpdate)
 		self.__shadowTreeColdStart()
 
-	def __declareParameters(self) -> None:
-		self.get_logger().debug("%s is setting node parameters." % self.get_fully_qualified_name())
+	def declareParameters(self) -> None:
+		self.log("%s is setting node parameters." % self.get_fully_qualified_name())
 		self.declare_parameter("liveRender", Parameter.Type.BOOL)
 		self.declare_parameter("renderModules", Parameter.Type.STRING_ARRAY)
 		return
 
-	def __parseConfigFileParameters(self) -> None:
-		self.get_logger().debug("%s is parsing parameters." % self.get_fully_qualified_name())
+	def parseConfigFileParameters(self) -> None:
+		self.log("%s is parsing parameters." % self.get_fully_qualified_name())
 		self.__liveRender = self.get_parameter("liveRender").get_parameter_value().bool_value
 		yamlModules = self.get_parameter("renderModules").get_parameter_value().string_array_value
 		for module in yamlModules:
@@ -79,7 +77,7 @@ class Eventifier(MapServiceInterface):
 			return
 
 		timeNanoSecs = self.get_clock().now().nanoseconds
-		self.get_logger().debug("Updating sensor %d definition @%d." % (update.robot_id, timeNanoSecs))
+		self.log("Updating sensor %d definition @%d." % (update.robot_id, timeNanoSecs))
 		coords = SaMsgs.convertSaPoseListToCoordsList(update.fov.corners)
 		pose = SaMsgs.convertSaPoseToPose(update.pose)
 		region = SensorRegion(centerOfRotation=pose, idNum=update.robot_id, envelope=coords, timeNanoSecs=timeNanoSecs)
@@ -88,7 +86,7 @@ class Eventifier(MapServiceInterface):
 
 	def __updateMap(self, regions: List[MapRegion]) -> None:
 		timeNanoSecs = self.get_clock().now().nanoseconds
-		self.get_logger().debug("Update map in ShadowTree with %s" % repr(regions))
+		self.log("Update map in ShadowTree with %s" % repr(regions))
 		self.__shadowTree.updateMap(timeNanoSecs, regions)
 		if self.__liveRender: self.render()
 		return
@@ -99,7 +97,7 @@ class Eventifier(MapServiceInterface):
 
 	def __updateSensors(self, regions: List[SensorRegion]) -> None:
 		updateTime = self.get_clock().now().nanoseconds
-		self.get_logger().debug("Update sensors in ShadowTree %s @ %d" % (repr(regions), updateTime))
+		self.log("Update sensors in ShadowTree %s @ %d" % (repr(regions), updateTime))
 		self.__shadowTree.updateSensors(timeNanoSecs=updateTime, regions=regions)
 		if self.__liveRender: self.render()
 		return

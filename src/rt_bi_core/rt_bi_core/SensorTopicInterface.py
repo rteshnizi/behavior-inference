@@ -2,7 +2,6 @@ from functools import partial
 from typing import Dict, List, Union
 
 import rclpy
-from rclpy.node import Node
 from sa_msgs.msg import RobotState
 from visualization_msgs.msg import MarkerArray
 
@@ -11,27 +10,20 @@ from rt_bi_core.Model.SensorRegion import SensorRegion
 from rt_bi_core.Model.Tracklet import Tracklet
 from rt_bi_interfaces.msg import EstimationMsg
 from rt_bi_utils.RtBiEmulator import RtBiEmulator
+from rt_bi_utils.RtBiNode import RtBiNode
 from rt_bi_utils.RViz import RViz
 from rt_bi_utils.SaMsgs import SaMsgs
 
 
-class SensorTopicInterface(Node):
+class SensorTopicInterface(RtBiNode):
 	""" This Node listens to all the messages published on the topics related to sensors and renders them. """
-	def __init__(self, subClass=False, **kwArgs):
+	def __init__(self, **kwArgs):
 		newKw = { "node_name": "rt_bi_core_sensor", **kwArgs}
 		super().__init__(**newKw)
-		if subClass:
-			self.get_logger().debug("%s in sensor topic init." % self.get_fully_qualified_name())
-		else:
-			self.get_logger().debug("%s is initializing." % self.get_fully_qualified_name())
-			RosUtils.SetLogger(self.get_logger())
 		self.__sensors: Dict[int, SensorRegion] = {}
-		if subClass:
-			self.get_logger().debug("%s skipping creating publishers and subscribers." % self.get_fully_qualified_name())
-		else:
-			SaMsgs.subscribeToRobotStateTopic(self, partial(self.__onRobotStateUpdate, render=True))
-			RtBiEmulator.subscribeToEstimationTopic(self, self.__onEstimation)
-			(self.__rvizPublisher, _) = RViz.createRVizPublisher(self, RosUtils.CreateTopicName("map"))
+		SaMsgs.subscribeToRobotStateTopic(self, partial(self.__onRobotStateUpdate, render=True))
+		RtBiEmulator.subscribeToEstimationTopic(self, self.__onEstimation)
+		(self.__rvizPublisher, _) = RViz.createRVizPublisher(self, RosUtils.CreateTopicName("map"))
 
 	def __onRobotStateUpdate(self, update: RobotState, render = False) -> Union[SensorRegion, None]:
 		if update is None:
@@ -66,6 +58,12 @@ class SensorTopicInterface(Node):
 			tracks = {**tracks, **self.__sensors[i].tracklets}
 		self.render(sensors, tracks)
 		return
+
+	def declareParameters(self) -> None:
+		return super().declareParameters()
+
+	def parseConfigFileParameters(self) -> None:
+		return super().parseConfigFileParameters()
 
 	def render(self, regions: List[SensorRegion], tracklets: Dict[int, Tracklet]) -> None:
 		if not RViz.isRVizReady(self, self.__rvizPublisher):

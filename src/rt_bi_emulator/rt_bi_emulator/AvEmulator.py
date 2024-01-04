@@ -3,7 +3,6 @@ from math import inf
 from typing import List
 
 import rclpy
-from rclpy.node import Node
 from rclpy.parameter import Parameter
 from sa_msgs.msg import RobotState
 
@@ -13,6 +12,7 @@ from rt_bi_interfaces.msg import EstimationMsg, PoseEstimation
 from rt_bi_utils.Geometry import AffineTransform, Geometry, Polygon
 from rt_bi_utils.Pose import Pose
 from rt_bi_utils.RtBiEmulator import RtBiEmulator
+from rt_bi_utils.RtBiNode import RtBiNode
 from rt_bi_utils.SaMsgs import SaMsgs
 
 
@@ -26,13 +26,11 @@ class Av:
 		name = "#%d" % self.id
 		return "AV-%s(COR:%s):%s" % (name, repr(self.centerOfRotation), repr(self.interior))
 
-class AvEmulator(Node):
+class AvEmulator(RtBiNode):
 	NANO_CONVERSION_CONSTANT = 10 ** 9
 	def __init__(self):
-		super().__init__(node_name="rt_bi_emulator_av") # type: ignore - parameter_overrides: List[Parameter] = None
-		self.get_logger().debug("%s is initializing." % self.get_fully_qualified_name())
-		self.__declareParameters()
-		RosUtils.SetLogger(self.get_logger())
+		super().__init__(node_name="rt_bi_emulator_av")
+		self.declareParameters()
 		self.__id = -1
 		self.__updateInterval = 1
 		self.__initTime = float(self.get_clock().now().nanoseconds)
@@ -43,14 +41,14 @@ class AvEmulator(Node):
 		self.__totalTimeNanoSecs = 0.0
 		self.__transformationMatrix: List[AffineTransform] = []
 		self.__targetIds = set()
-		self.__parseConfigFileParameters()
+		self.parseConfigFileParameters()
 		(self.__fovPublisher, _) = SaMsgs.createRobotStatePublisher(self, self.__publishMyFov, self.__updateInterval)
 		(self.__estPublisher, _) = RtBiEmulator.createEstimationPublisher(self)
 		RtBiEmulator.subscribeToTargetTopic(self, self.__onTargetUpdate)
 		# Provides a debugging way to stop the updating the position any further.
 		self.__passedCutOffTime: int = -1
 
-	def __declareParameters(self) -> None:
+	def declareParameters(self) -> None:
 		self.get_logger().debug("%s is setting node parameters." % self.get_fully_qualified_name())
 		self.declare_parameter("id", Parameter.Type.INTEGER)
 		self.declare_parameter("updateInterval", Parameter.Type.DOUBLE)
@@ -61,7 +59,7 @@ class AvEmulator(Node):
 		self.declare_parameter("fovs", Parameter.Type.STRING_ARRAY)
 		return
 
-	def __parseConfigFileParameters(self) -> None:
+	def parseConfigFileParameters(self) -> None:
 		self.get_logger().debug("%s is parsing parameters." % self.get_fully_qualified_name())
 		self.__id = self.get_parameter("id").get_parameter_value().integer_value
 		self.__updateInterval = self.get_parameter("updateInterval").get_parameter_value().double_value
@@ -175,6 +173,9 @@ class AvEmulator(Node):
 			self.__estPublisher.publish(estMsg)
 			return
 		return
+
+	def render(self) -> None:
+		return super().render()
 
 def main(args=None):
 	"""

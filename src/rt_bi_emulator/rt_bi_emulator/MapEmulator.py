@@ -1,22 +1,20 @@
 import rclpy
-from rclpy.node import Node
 from sa_msgs.msg import FeatureInfoIndividual
 from sa_msgs.srv import QueryFeature
 
 import rt_bi_utils.Ros as RosUtils
 from rt_bi_emulator.Map.FeatureInfoIndividual import Case1
+from rt_bi_utils.RtBiNode import RtBiNode
 from rt_bi_utils.SaMsgs import SaMsgs
 
 
-class MapEmulator(Node):
+class MapEmulator(RtBiNode):
 	def __init__(self):
-		super().__init__(node_name="rt_bi_emulator_map") # type: ignore - parameter_overrides: List[Parameter] = None
-		self.get_logger().info("%s is initializing." % self.get_fully_qualified_name())
-		RosUtils.SetLogger(self.get_logger())
+		super().__init__(node_name="rt_bi_emulator_map")
 		SaMsgs.createSaFeatureQueryService(self, self.__featureInfoQueryCallback)
 
 	def __featureInfoQueryCallback(self, request: QueryFeature.Request, response: QueryFeature.Response) -> QueryFeature.Response:
-		RosUtils.Logger().info("Received QueryFeature \"%s\" request." % request.name)
+		self.log("Received QueryFeature \"%s\" request." % request.name)
 		if request.name == "map":
 			# The response to this query is all the map regions without their feature definitions
 			for feature in Case1.FeatureIndividuals:
@@ -39,9 +37,17 @@ class MapEmulator(Node):
 			if len(response.feature_info_individual) == 0:
 				self.get_logger().error("Feature name \"%s\" not in Map Dictionary. **Returning empty feature**" % request.name)
 				return response
-		self.get_logger().info("Response has %d features." % len(response.feature_info_individual))
+		self.log("Response has %d features." % len(response.feature_info_individual))
 		return response
 
+	def declareParameters(self) -> None:
+		return super().declareParameters()
+
+	def parseConfigFileParameters(self) -> None:
+		return super().parseConfigFileParameters()
+
+	def render(self) -> None:
+		return super().render()
 
 def main(args=None):
 	"""
