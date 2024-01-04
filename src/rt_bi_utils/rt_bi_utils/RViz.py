@@ -9,7 +9,7 @@ from rclpy.node import Node, Publisher, Timer
 from visualization_msgs.msg import Marker, MarkerArray
 
 import rt_bi_utils.Ros as RosUtils
-from rt_bi_utils.Color import RGBA, RgbaNames
+from rt_bi_utils.Color import RGBA, ColorNames
 from rt_bi_utils.Geometry import Geometry
 
 
@@ -22,9 +22,6 @@ class RViz:
 		http://wiki.ros.org/rviz/Tutorials/Markers%3A%20Points%20and%20Lines#The_Code_Explained
 	"""
 
-	TRANSLATION_X = 0
-	TRANSLATION_Y = 0
-	SCALE = 1
 	FRAME_ID = "map"
 
 	@staticmethod
@@ -43,14 +40,6 @@ class RViz:
 	@staticmethod
 	def createRVizPublisher(node: Node, topic: str) -> Tuple[Publisher, Union[Timer, None]]:
 		return RosUtils.CreatePublisher(node, MarkerArray, topic)
-
-	@staticmethod
-	def __translateCoords(coord: Geometry.Coords) -> Geometry.Coords:
-		RosUtils.Logger().info("Translate Coord %s" % repr(coord))
-		RosUtils.Logger().warn("No translation done.")
-		return coord
-		c = [RViz.SCALE * (coord[0] + RViz.TRANSLATION_X), RViz.SCALE * ((coord[1]) + RViz.TRANSLATION_Y)]
-		return c
 
 	@staticmethod
 	def __createPointMessage(x: float, y: float, z = 0.0) -> PointMsg:
@@ -101,40 +90,6 @@ class RViz:
 		marker.header.frame_id = RViz.FRAME_ID
 		marker.header.stamp = RosUtils.RosTimeStamp()
 		return marker
-
-	@staticmethod
-	def randomColor(alpha = 1.0) -> RGBA:
-		return (random.uniform(0.1, 0.8), random.uniform(0.1, 0.8), random.uniform(0.1, 0.8), alpha)
-
-	@staticmethod
-	def randomLightColor(alpha = 1.0) -> RGBA:
-		color = RViz.randomColor(alpha)
-		while not RViz.isLightColor(color): color = RViz.randomColor(alpha)
-		return color
-
-	@staticmethod
-	def inverseColor(color: RGBA, inverseAlpha = False) -> RGBA:
-		return (1 - color[0], 1 - color[1], 1 - color[2], 1 - color[3] if inverseAlpha else color[3])
-
-	@staticmethod
-	def isLightColor(rgbColor: RGBA) -> bool:
-		"""
-		https://stackoverflow.com/a/58270890/750567
-
-		Parameters
-		----------
-		rgbColor : Color
-			The input color which we would like to determine whether it is light or dark.
-
-		Returns
-		-------
-		bool
-			The truth of "it is light" statement about the color.
-		"""
-		[r, g, b, a] = rgbColor
-		hsp = sqrt(0.299 * (r * r) + 0.587 * (g * g) + 0.114 * (b * b))
-		if (hsp > 0.5): return True
-		else: return False
 
 	@staticmethod
 	def createCircle(strId: str, centerX: float, centerY: float, radius: float, outline: RGBA, width = 1.0) -> Marker:
@@ -230,7 +185,7 @@ class RViz:
 		return lineSeg
 
 	@staticmethod
-	def createText(strId: str, coords: Geometry.Coords, text: str, outline: RGBA = RgbaNames.BLACK, fontSize = 10.0) -> Marker:
+	def createText(strId: str, coords: Geometry.Coords, text: str, outline: RGBA = ColorNames.BLACK, fontSize = 10.0) -> Marker:
 		"""Create a text Marker message.
 
 		Parameters

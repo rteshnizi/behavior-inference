@@ -4,8 +4,9 @@ from typing import Dict, Sequence, Union
 from visualization_msgs.msg import Marker
 
 import rt_bi_utils.Ros as RosUtils
+from rt_bi_utils.Color import RGBA, ColorNames, ColorUtils
 from rt_bi_utils.Geometry import AffineTransform, Geometry, LineString, MultiPolygon, Polygon
-from rt_bi_utils.RViz import RGBA, RgbaNames, RViz
+from rt_bi_utils.RViz import RViz
 
 
 class PolygonalRegion:
@@ -25,7 +26,7 @@ class PolygonalRegion:
 		MAP = "M"
 		SENSING = "Z"
 		SHADOW = "S"
-		SYMBOL = "σ"
+		SYMBOL = "A"
 		TARGET = "T"
 
 	def __init__(
@@ -33,7 +34,7 @@ class PolygonalRegion:
 		idNum: int,
 		envelope: Geometry.CoordsList,
 		envelopeColor: RGBA,
-		interiorColor: RGBA = RgbaNames.WHITE,
+		interiorColor: RGBA = ColorNames.DARK_GREY,
 		interior: Union[Polygon, MultiPolygon, None] = None,
 		regionType: RegionType = RegionType.BASE,
 		renderLineWidth = 1,
@@ -67,7 +68,7 @@ class PolygonalRegion:
 		self.__regionType = regionType
 		self.__DEFAULT_ENVELOPE_COLOR = envelopeColor
 		self.__INTERIOR_COLOR = interiorColor
-		self.__TEXT_COLOR = RgbaNames.BLACK if RViz.isLightColor(interiorColor) else RgbaNames.WHITE
+		self.__TEXT_COLOR = ColorNames.BLACK if ColorUtils.isLightColor(interiorColor) else ColorNames.WHITE
 		if len(kwArgs) > 0 : RosUtils.Logger().warn("Unassigned keyword args ignored: %s" % repr(kwArgs))
 		self.__edges: PolygonalRegion.Edges = self.__buildEdges()
 
@@ -168,7 +169,8 @@ class PolygonalRegion:
 		envelopColor = envelopeColor if envelopeColor is not None else self.__DEFAULT_ENVELOPE_COLOR
 		msgs.append(RViz.createPolygon(self.name, Geometry.getGeometryCoords(self.interior), envelopColor, self.__RENDER_LINE_WIDTH))
 		if renderText:
-			msgs.append(RViz.createText("%s_txt" % self.name, self.interior.centroid.xy, self.name, self.__TEXT_COLOR))
+			textCoords = Geometry.getGeometryCoords(self.interior.centroid)[0]
+			msgs.append(RViz.createText("%s_txt" % self.name, textCoords, self.name, self.__TEXT_COLOR))
 		return msgs
 
 	def clearRender(self) -> Sequence[Marker]:

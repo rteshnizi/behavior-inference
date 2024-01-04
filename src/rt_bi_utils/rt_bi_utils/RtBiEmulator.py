@@ -12,8 +12,17 @@ class RtBiEmulator:
 	"""
 		This class only prepares the messages defined in the rt_bi_eMulator.
 	"""
+	__RT_BI_EMULATOR_DY_REGION = "/rt_bi_emulator/dy"
 	__RT_BI_EMULATOR_TARGET = "/rt_bi_emulator/target"
 	__RT_BI_EMULATOR_ESTIMATION = "/rt_bi_emulator/estimation"
+
+	@staticmethod
+	def createDyRegPublisher(node: Node, callbackFunc: Callable = lambda: None, intervalSecs: float = nan) -> Tuple[Publisher, Union[Timer, None]]:
+		return RosUtils.CreatePublisher(node, RobotState, RtBiEmulator.__RT_BI_EMULATOR_DY_REGION, callbackFunc, intervalSecs)
+
+	@staticmethod
+	def subscribeToDyRegTopic(node: Node, callbackFunc: Callable[[RobotState], None]) -> None:
+		RosUtils.CreateSubscriber(node, RobotState, RtBiEmulator.__RT_BI_EMULATOR_DY_REGION, callbackFunc) # type: ignore - "type[Metaclass_RobotState]" is incompatible with "type[RobotState]"
 
 	@staticmethod
 	def createTargetPublisher(node: Node, callbackFunc: Callable = lambda: None, intervalSecs: float = nan) -> Tuple[Publisher, Union[Timer, None]]:

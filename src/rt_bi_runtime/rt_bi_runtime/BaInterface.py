@@ -10,7 +10,7 @@ from rt_bi_runtime.Model.BaMatplotlibRenderer import BaMatplotlibRenderer
 from rt_bi_runtime.Model.BehaviorAutomaton import BehaviorAutomaton
 
 
-class BaRosNode(Node):
+class BaInterface(Node):
 	"""
 	This Node listens to all the messages published on the topics related to the Behavior Automaton.
 	This node combines topic listeners and service clients.
@@ -22,12 +22,14 @@ class BaRosNode(Node):
 		RosUtils.SetLogger(self.get_logger())
 		self.__declareParameters()
 		self.__name: str = self.get_fully_qualified_name()
+		self.__shouldRender: bool = False
 		self.__states: List[str] = []
 		self.__transitions: List[List[List[str]]] = []
 		self.__start: str = ""
 		self.__accepting: List[str] = []
 		self.__parseConfigFileParameters()
 		self.__ba = BehaviorAutomaton(self.__name, self.__states, self.__transitions, self.__start, self.__accepting)
+		if self.__shouldRender: self.render()
 		return
 
 	def __repr__(self) -> str:
@@ -36,6 +38,7 @@ class BaRosNode(Node):
 	def __declareParameters(self) -> None:
 		self.get_logger().debug("%s is setting node parameters." % self.get_fully_qualified_name())
 		self.declare_parameter("name", Parameter.Type.STRING)
+		self.declare_parameter("render", Parameter.Type.BOOL)
 		self.declare_parameter("states", Parameter.Type.STRING_ARRAY)
 		self.declare_parameter("transitions", Parameter.Type.STRING_ARRAY)
 		self.declare_parameter("start", Parameter.Type.STRING)
@@ -45,6 +48,7 @@ class BaRosNode(Node):
 	def __parseConfigFileParameters(self) -> None:
 		self.get_logger().debug("%s is parsing parameters." % self.get_fully_qualified_name())
 		self.__name = self.get_parameter("name").get_parameter_value().string_value
+		self.__shouldRender = self.get_parameter("render").get_parameter_value().bool_value
 		self.__states = list(self.get_parameter("states").get_parameter_value().string_array_value)
 		for transition in list(self.get_parameter("transitions").get_parameter_value().string_array_value):
 			self.__transitions.append(json.loads(transition))
@@ -53,7 +57,7 @@ class BaRosNode(Node):
 		return
 
 	def render(self) -> None:
-		BaMatplotlibRenderer.createBehaviorAutomatonFigure(self, self.__ba)
+		BaMatplotlibRenderer.createBehaviorAutomatonFigure(self.__ba)
 		return
 
 	def destroy_node(self) -> None:
@@ -63,8 +67,7 @@ class BaRosNode(Node):
 
 def main(args=None):
 	rclpy.init(args=args)
-	ba = BaRosNode()
-	ba.render()
+	ba = BaInterface()
 	rclpy.spin(ba)
 	ba.destroy_node()
 	rclpy.shutdown()

@@ -8,7 +8,7 @@ from rclpy.parameter import Parameter
 from sa_msgs.msg import RobotState
 
 import rt_bi_utils.Ros as RosUtils
-from rt_bi_emulator.Shared import Target
+from rt_bi_emulator.Model.Shared import Body
 from rt_bi_interfaces.msg import EstimationMsg, PoseEstimation
 from rt_bi_utils.Geometry import AffineTransform, Geometry, Polygon
 from rt_bi_utils.Pose import Pose
@@ -136,7 +136,7 @@ class AvEmulator(Node):
 
 		coords = SaMsgs.convertSaPoseListToCoordsList(msg.fov.corners)
 		timeNanoSecs = self.get_clock().now().nanoseconds
-		target = Target(msg.robot_id, Pose(timeNanoSecs, msg.pose.x, msg.pose.y, msg.pose.yaw), coords)
+		target = Body(msg.robot_id, Pose(timeNanoSecs, msg.pose.x, msg.pose.y, msg.pose.yaw), coords)
 		targetLocation = Polygon(target.spatialRegion)
 		fov = self.__getFovAtTime(timeNanoSecs)
 		if Geometry.intersects(targetLocation, fov):

@@ -7,7 +7,7 @@ from rt_bi_core.Model.AffineRegion import AffineRegion
 from rt_bi_core.Model.Tracklet import Tracklet
 from rt_bi_utils.Geometry import Geometry, MultiPolygon, Polygon
 from rt_bi_utils.Pose import Pose
-from rt_bi_utils.RViz import RGBA, RgbaNames
+from rt_bi_utils.RViz import RGBA, ColorNames
 
 
 class SensorRegion(AffineRegion):
@@ -51,7 +51,7 @@ class SensorRegion(AffineRegion):
 			centerOfRotation=centerOfRotation,
 			idNum=idNum,
 			envelope=envelope,
-			envelopeColor=RgbaNames.GREEN,
+			envelopeColor=ColorNames.GREEN,
 			regionType=AffineRegion.RegionType.SENSING,
 			timeNanoSecs=timeNanoSecs,
 			interior=interior,

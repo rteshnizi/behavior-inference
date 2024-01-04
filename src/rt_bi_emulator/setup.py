@@ -28,6 +28,7 @@ setup(
 			"MP = rt_bi_emulator.MapEmulator:main",
 			"AV = rt_bi_emulator.AvEmulator:main",
 			"TG = rt_bi_emulator.TargetEmulator:main",
+			"DY = rt_bi_emulator.DyRegionEmulator:main",
 		],
 	},
 )

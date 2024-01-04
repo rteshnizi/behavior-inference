@@ -5,20 +5,21 @@ from rt_bi_emulator.Model.DynamicRegionNode import DynamicRegionBase
 from rt_bi_utils.RtBiEmulator import RtBiEmulator
 
 
-class TargetEmulator(DynamicRegionBase):
+class DynamicRegionEmulator(DynamicRegionBase):
 	def __init__(self):
-		super().__init__(loggingLevel=LoggingSeverity.DEBUG, node_name="rt_bi_emulator_target")
-		(self.__publisher, _) = RtBiEmulator.createTargetPublisher(self, self.publishUpdate, self.updateInterval)
+		super().__init__(loggingLevel=LoggingSeverity.DEBUG, node_name="rt_bi_emulator_dy")
+		(self.__publisher, _) = RtBiEmulator.createDyRegPublisher(self, self.publishUpdate, self.updateInterval)
 
 	def publishUpdate(self) -> None:
 		msg = self.createRobotStateMsg()
 		self.__publisher.publish(msg)
 
+
 def main(args=None):
 	rclpy.init(args=args)
-	targetNode = TargetEmulator()
-	rclpy.spin(targetNode)
-	targetNode.destroy_node()
+	dynRegNode = DynamicRegionEmulator()
+	rclpy.spin(dynRegNode)
+	dynRegNode.destroy_node()
 	rclpy.shutdown()
 	return
 

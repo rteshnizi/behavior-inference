@@ -5,7 +5,7 @@ from visualization_msgs.msg import Marker
 from rt_bi_core.Model.AffineRegion import AffineRegion
 from rt_bi_utils.Geometry import Geometry
 from rt_bi_utils.Pose import Pose
-from rt_bi_utils.RViz import RGBA, RgbaNames
+from rt_bi_utils.RViz import RGBA, ColorNames
 
 
 class ShadowRegion(AffineRegion):
@@ -32,7 +32,7 @@ class ShadowRegion(AffineRegion):
 			centerOfRotation=kwArgs.pop("centerOfRotation", Pose(0, 0, 0, 0)),
 			idNum=idNum,
 			envelope=envelope,
-			envelopeColor=RgbaNames.BLACK,
+			envelopeColor=ColorNames.BLACK,
 			regionType=self.RegionType.SHADOW,
 			timeNanoSecs=kwArgs.pop("timeNanoSecs", 0),
 			renderLineWidth=2,

@@ -4,7 +4,7 @@ from visualization_msgs.msg import Marker
 
 from rt_bi_core.Model.RegularAffineRegion import RegularAffineRegion
 from rt_bi_core.Model.ShadowRegion import ShadowRegion
-from rt_bi_utils.RViz import RgbaNames
+from rt_bi_utils.RViz import ColorNames
 
 
 class Shadows(RegularAffineRegion[ShadowRegion]):
@@ -41,4 +41,4 @@ class Shadows(RegularAffineRegion[ShadowRegion]):
 		return super().difference(others)
 
 	def render(self) -> Sequence[Marker]:
-		return super().render(envelopeColor=RgbaNames.DARK_RED)
+		return super().render(envelopeColor=ColorNames.DARK_RED)

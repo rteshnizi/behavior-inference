@@ -132,7 +132,7 @@ class EventAggregator:
 		return filtered
 
 	@classmethod
-	def aggregateCollisionEvents(cls, events: List[CollisionInterval], lastCGraph: ConnectivityGraph, nowCGraph: ConnectivityGraph) -> List[ConnectivityGraph]:
+	def aggregateCollisionEvents(cls, events: List[CollisionInterval[RegionTypeX, RegionTypeY]], lastCGraph: ConnectivityGraph, nowCGraph: ConnectivityGraph) -> List[ConnectivityGraph]:
 		events.sort(key=lambda e: e[-1]) # Sort events by their end time
 		RosUtils.Logger().info("[1] EventAggregator: Aggregating for events @ %s" % repr([(e[4], e[5]) for e in events]))
 		graphs: List[ConnectivityGraph] = cls.__obtainEventCGraphs(events, lastCGraph, nowCGraph)

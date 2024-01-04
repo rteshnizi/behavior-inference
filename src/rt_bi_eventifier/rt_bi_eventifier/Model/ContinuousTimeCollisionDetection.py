@@ -8,10 +8,11 @@ from rt_bi_core.Model.MapRegion import MapRegion
 from rt_bi_core.Model.SensorRegion import SensorRegion
 from rt_bi_core.Model.SymbolRegion import SymbolRegion
 from rt_bi_eventifier.Model.ContinuousTimeRegion import ContinuousTimeRegion
+from rt_bi_utils.Color import RGBA, ColorUtils
 from rt_bi_utils.Geometry import AffineTransform, Geometry, LineString, Polygon
 from rt_bi_utils.Pose import Pose
 from rt_bi_utils.Ros import AppendMessage, Logger, Publisher
-from rt_bi_utils.RViz import RGBA, RViz
+from rt_bi_utils.RViz import RViz
 
 RegionTypeX = TypeVar("RegionTypeX", SensorRegion, SymbolRegion, MapRegion)
 RegionTypeY = TypeVar("RegionTypeY", SensorRegion, SymbolRegion, MapRegion)
@@ -226,5 +227,5 @@ class ContinuousTimeCollisionDetection:
 			obb2 = cls.__getLineSegmentExpandedBb(ctRegion2.transformations[0], ctRegion2.configs[0].edges[edgeStrId2], ctRegion2.configs[0].centerOfRotation)
 			obbListToRender.append(obb1.exterior if isinstance(obb1, Polygon) else obb1)
 			obbListToRender.append(obb2.exterior if isinstance(obb2, Polygon) else obb2)
-		cls.__renderLineStrings(obbListToRender, RViz.randomColor(), 2)
+		cls.__renderLineStrings(obbListToRender, ColorUtils.randomColor(), 2)
 		return withoutOverlap
