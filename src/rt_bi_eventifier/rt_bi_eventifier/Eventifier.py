@@ -1,18 +1,21 @@
-from typing import Dict, List, Union
+from functools import partial
+from typing import Dict, List, Tuple, Union
 
 import rclpy
+from rclpy.logging import LoggingSeverity
 from rclpy.node import Client, Publisher
 from rclpy.parameter import Parameter
-from sa_msgs.msg import RobotState
 from sa_msgs.srv import QueryFeature
 
-import rt_bi_utils.Ros as RosUtils
 from rt_bi_core.MapServiceInterface import MapServiceInterface
 from rt_bi_core.Model.MapRegion import MapRegion
 from rt_bi_core.Model.SensorRegion import SensorRegion
 from rt_bi_core.Model.SymbolRegion import SymbolRegion
 from rt_bi_eventifier.Model.ShadowTree import ShadowTree
-from rt_bi_interfaces.msg import Events, Graph
+from rt_bi_interfaces.msg import DynamicRegion, Events, Graph
+from rt_bi_utils.MinQueue import MinQueue
+from rt_bi_utils.Ros import CreatePublisher, CreateTimer, CreateTopicName, Timer, TimeToInt
+from rt_bi_utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_utils.RViz import RViz
 from rt_bi_utils.SaMsgs import SaMsgs
 
@@ -27,7 +30,7 @@ class Eventifier(MapServiceInterface):
 		"""
 		Create a Shadow Tree Interface node.
 		"""
-		super().__init__(node_name="rt_bi_eventifier")
+		super().__init__(loggingSeverity=LoggingSeverity.INFO, node_name="rt_bi_eventifier")
 		self.declareParameters()
 		self.__liveRender: bool = False
 		self.__renderModules: List[ShadowTree.SUBMODULE_TYPES] = []
@@ -35,35 +38,40 @@ class Eventifier(MapServiceInterface):
 		self.parseConfigFileParameters()
 		modulePublishers: Dict[ShadowTree.SUBMODULE_TYPES, Union[Publisher, None]] = {}
 		for module in ShadowTree.SUBMODULES:
-			if module in self.__renderModules: (publisher, _) = RViz.createRVizPublisher(self, RosUtils.CreateTopicName(module))
+			if module in self.__renderModules: (publisher, _) = RViz.createRVizPublisher(self, CreateTopicName(module))
 			else: publisher = None
 			modulePublishers[module] = publisher
-		(self.__topicPublishers["eventifier_graph"], _) = RosUtils.CreatePublisher(self, Graph, RosUtils.CreateTopicName("eventifier_graph"))
-		(self.__topicPublishers["eventifier_event"], _) = RosUtils.CreatePublisher(self, Events, RosUtils.CreateTopicName("eventifier_event"))
+		(self.__topicPublishers["eventifier_graph"], _) = CreatePublisher(self, Graph, CreateTopicName("eventifier_graph"))
+		(self.__topicPublishers["eventifier_event"], _) = CreatePublisher(self, Events, CreateTopicName("eventifier_event"))
 		self.__shadowTree: ShadowTree = ShadowTree(self.__topicPublishers, modulePublishers)
+		self.__eventPQueue: MinQueue[Tuple[SensorRegion.RegionType, DynamicRegion]] = MinQueue(key=self.__eventPqKey)
+		self.__processingTimer: Union[Timer, None] = None
 
 		self.__mapClient = SaMsgs.createSaFeatureQueryClient(self)
-		SaMsgs.subscribeToRobotStateTopic(self, self.__onRobotStateUpdate)
+		RtBiInterfaces.subscribeToSensorTopic(self, partial(self.__onDynamicRegionUpdate, SensorRegion.RegionType.SENSING))
+		RtBiInterfaces.subscribeToSymbolTopic(self, partial(self.__onDynamicRegionUpdate, SymbolRegion.RegionType.SYMBOL))
 		self.__shadowTreeColdStart()
 
 	def declareParameters(self) -> None:
-		self.log("%s is setting node parameters." % self.get_fully_qualified_name())
+		self.log(f"{self.get_fully_qualified_name()} is setting node parameters.")
 		self.declare_parameter("liveRender", Parameter.Type.BOOL)
 		self.declare_parameter("renderModules", Parameter.Type.STRING_ARRAY)
 		return
 
 	def parseConfigFileParameters(self) -> None:
-		self.log("%s is parsing parameters." % self.get_fully_qualified_name())
+		self.log(f"{self.get_fully_qualified_name()} is parsing parameters.")
 		self.__liveRender = self.get_parameter("liveRender").get_parameter_value().bool_value
 		yamlModules = self.get_parameter("renderModules").get_parameter_value().string_array_value
 		for module in yamlModules:
 			if module in ShadowTree.SUBMODULES:
 				self.__renderModules.append(module)
 			else:
-				self.get_logger().warn(
-					"Unknown module name in config file %s for node %s" % (module, self.get_fully_qualified_name())
-				)
+				self.get_logger().warn(f"Unknown module name in config file {module} for node {self.get_fully_qualified_name()}")
 		return
+
+	def __eventPqKey(self, val: Tuple[SensorRegion.RegionType, DynamicRegion]) -> float:
+		(_, region) = val
+		return float(TimeToInt(region.stamp))
 
 	def __shadowTreeColdStart(self) -> None:
 		self.requestMap(self.__mapClient)
@@ -71,34 +79,43 @@ class Eventifier(MapServiceInterface):
 		# self.create_timer(5, self.__queryDefinitions)
 		return
 
-	def __onRobotStateUpdate(self, update: RobotState) -> None:
-		if update is None:
-			self.get_logger().warn("Received empty RobotState!")
-			return
+	def __processDynamicRegionUpdate(self) -> None:
+		if self.__processingTimer is not None: self.__processingTimer.destroy()
 
-		timeNanoSecs = self.get_clock().now().nanoseconds
-		self.log("Updating sensor %d definition @%d." % (update.robot_id, timeNanoSecs))
-		coords = SaMsgs.convertSaPoseListToCoordsList(update.fov.corners)
-		pose = SaMsgs.convertSaPoseToPose(update.pose)
-		region = SensorRegion(centerOfRotation=pose, idNum=update.robot_id, envelope=coords, timeNanoSecs=timeNanoSecs)
-		self.__updateSensors([region])
+		sensors: List[SensorRegion] = []
+		symbols: List[SymbolRegion] = []
+		while not self.__eventPQueue.isEmpty:
+			(regionType, update) = self.__eventPQueue.dequeue()
+			timeNanoSecs = TimeToInt(update.stamp)
+			self.log(f"Updating region type {regionType} id {update.id} definition @{timeNanoSecs}.")
+			coords = RtBiInterfaces.fromStdPoints32ToCoordsList(update.region.points) # type: ignore
+			cor = RtBiInterfaces.fromStdPointToCoords(update.center_of_rotation)
+			if regionType == SensorRegion.RegionType.SENSING:
+				region = SensorRegion(centerOfRotation=cor, idNum=update.id, envelope=coords, timeNanoSecs=timeNanoSecs)
+				sensors.append(region)
+			elif regionType == SymbolRegion.RegionType.SYMBOL:
+				region = SymbolRegion(centerOfRotation=cor, idNum=update.id, envelope=coords, timeNanoSecs=timeNanoSecs, overlappingRegionId=0, overlappingRegionType=SymbolRegion.RegionType.BASE)
+				symbols.append(region)
+			else:
+				raise TypeError(f"Unexpected region type: {regionType}")
+		self.__updateAffineRegions(sensors, symbols)
+		self.__processingTimer = CreateTimer(self, self.__processDynamicRegionUpdate)
+		return
+
+	def __onDynamicRegionUpdate(self, regionType: SensorRegion.RegionType, update: DynamicRegion) -> None:
+		self.__eventPQueue.enqueue((regionType, update))
+		self.__processDynamicRegionUpdate()
 		return
 
 	def __updateMap(self, regions: List[MapRegion]) -> None:
 		timeNanoSecs = self.get_clock().now().nanoseconds
-		self.log("Update map in ShadowTree with %s" % repr(regions))
+		self.log(f"Update map region @{timeNanoSecs}")
 		self.__shadowTree.updateMap(timeNanoSecs, regions)
 		if self.__liveRender: self.render()
 		return
 
-	def __updateSymbol(self, regions: List[SymbolRegion]) -> None:
-		self.get_logger().error("__updateSymbol not implemented.")
-		return
-
-	def __updateSensors(self, regions: List[SensorRegion]) -> None:
-		updateTime = self.get_clock().now().nanoseconds
-		self.log("Update sensors in ShadowTree %s @ %d" % (repr(regions), updateTime))
-		self.__shadowTree.updateSensors(timeNanoSecs=updateTime, regions=regions)
+	def __updateAffineRegions(self, sensors: List[SensorRegion], symbols: List[SymbolRegion]) -> None:
+		self.__shadowTree.updateAffineRegions(sensors=sensors, symbols=symbols)
 		if self.__liveRender: self.render()
 		return
 

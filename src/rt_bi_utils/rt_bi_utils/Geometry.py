@@ -1,8 +1,7 @@
 import traceback
 import warnings
-from copy import copy
-from math import cos, inf, isnan, nan, sin, sqrt
-from typing import Dict, List, Tuple, Union
+from math import cos, inf, nan, sin, sqrt
+from typing import Callable, Dict, List, Tuple, Union
 
 import numpy as np
 from scipy.spatial.transform import Rotation, Slerp
@@ -14,7 +13,7 @@ from shapely.ops import unary_union
 from shapely.validation import make_valid
 from skimage.transform import AffineTransform as AffineTransform, matrix_transform
 
-from rt_bi_utils.Pose import Pose
+from rt_bi_utils.Pose import Coords, CoordsList, Pose, Quaternion, angleToQuat
 from rt_bi_utils.Ros import Logger
 
 
@@ -25,13 +24,15 @@ class Geometry:
 	TODO: Make sure to use shapely.prepared.prep() to optimize
 	"""
 	EPSILON = 0.001
-	Vector = Tuple[float, float]
-	Coords = Tuple[float, float]
-	CoordsList = List[Coords]
+	Vector = Coords
+	Coords = Coords
+	CoordsList = CoordsList
+	Quaternion = Quaternion
 	CoordsMap = Dict[Coords, Coords]
 	ConnectedComponent = Union[Polygon, LineString, Point]
 	MultiComponent = Union[MultiPolygon, MultiLineString, MultiPoint]
 	AnyShapelyObj = Union[Polygon, MultiPolygon, LineString, MultiLineString, Point, MultiPoint]
+	angleToQuat: Callable[[float], np.ndarray] = angleToQuat
 
 	@staticmethod
 	def __reportShapelyException(functionName: str, exc: Exception, objs: List[AnyShapelyObj]) -> None:
@@ -47,6 +48,21 @@ class Geometry:
 			i += 1
 		Logger().info("%d. Shapely exception.. Stack trace:\n%s" % (i, traceback.format_exc()))
 		return
+
+	@staticmethod
+	def __reportSkImageException(functionName: str, exc: Exception, objs: List[CoordsList]) -> None:
+		Logger().error("1. SkImage exception.. in %s(): %s" % (functionName, repr(exc)))
+		Logger().error("2. SkImage exception.. args: %s" % (", ".join([repr(o) for o in objs])))
+		i = 3
+		for o in objs:
+			Logger().error("%d. SkImage exception.. Verts: %s" % (i, repr(o)))
+			i += 1
+		Logger().info("%d. SkImage exception.. Stack trace:\n%s" % (i, traceback.format_exc()))
+		return
+
+	@staticmethod
+	def toCoords(pt: Point) -> Coords:
+		return (pt.x, pt.y)
 
 	@staticmethod
 	def toPose(pt: Point, timeNanoSecs: int = 0, angle: float = 0.0) -> Pose:
@@ -97,7 +113,6 @@ class Geometry:
 				Logger().error("Unknown geometry %s." % repr(geom))
 				return []
 			return list(geom.coords) # type: ignore
-
 		return list(geom.exterior.coords)
 
 	@staticmethod
@@ -121,7 +136,7 @@ class Geometry:
 
 	@staticmethod
 	def coordsAreEqual(coords1: Coords, coords2: Coords) -> bool:
-		return Geometry.vectorsAreEqual(coords1, coords2)
+		return Geometry.vectorsAreEqual(coords1, coords2, False)
 
 	@staticmethod
 	def coordsAreAlmostEqual(coords1: Coords, coords2: Coords) -> bool:
@@ -220,7 +235,6 @@ class Geometry:
 			Geometry.__reportShapelyException(Geometry.intersects.__name__, e, [pts])
 			return Polygon()
 
-
 	@staticmethod
 	def toGeometryList(polys: MultiComponent) -> List[ConnectedComponent]:
 		try:
@@ -257,9 +271,9 @@ class Geometry:
 
 		Parameters
 		----------
-		o1 : GeometricObject
+		o1 : `AnyShapelyObj`
 			A known Shapely geometry type.
-		o2 : GeometricObject
+		o2 : `AnyShapelyObj`
 			A known Shapely geometry type.
 
 		Returns
@@ -278,18 +292,19 @@ class Geometry:
 	@staticmethod
 	def intersection(o1: AnyShapelyObj, o2: AnyShapelyObj) -> AnyShapelyObj:
 		"""## Intersects
-		A function to safely test obtain the intersection of two geometries while handling shapely exceptions and warnings.
+		A function to safely obtain the intersection of two geometries while handling shapely exceptions and warnings.
+		This also performs an intersection test to avoid Shapely exceptions.
 
 		Parameters
 		----------
-		o1 : GeometricObject
+		o1 : `AnyShapelyObj`
 			A known Shapely geometry type.
-		o2 : GeometricObject
+		o2 : `AnyShapelyObj`
 			A known Shapely geometry type.
 
 		Returns
 		-------
-		bool
+		`AnyShapelyObj`
 			A known Shapely geometry type of lower dimension.
 		"""
 		if (not o1.is_valid) or (not o2.is_valid): return type(o1)()
@@ -425,6 +440,9 @@ class Geometry:
 		y: float = (b0 * x + b2) / (1 - b1)
 		return (x, y)
 
+	@staticmethod
+	def quatToAngle(quat: Union[Quaternion, List[float]]) -> float: # CSpell: ignore ndarray
+		return Rotation.from_quat(list(quat)).as_euler("xyz")[2]
 
 	@staticmethod
 	def isIdentityTransform(transformation: AffineTransform) -> bool:
@@ -469,8 +487,12 @@ class Geometry:
 		endCoords = np.array(end)
 		weights = np.ones(len(start))
 		matrix = AffineTransform()
-		if matrix.estimate(startCoords, endCoords, weights=weights): return matrix
-		raise RuntimeError("SciKit failed to estimate a transform")
+		try:
+			if matrix.estimate(startCoords, endCoords, weights=weights): return matrix
+			raise RuntimeError("SciKit failed to estimate a transform")
+		except Exception as e:
+			Geometry.__reportSkImageException(Geometry.getAffineTransformation.__name__, e, [start, end])
+			raise e
 
 	@staticmethod
 	def getParameterizedAffineTransformation(transformation: AffineTransform, param: float) -> AffineTransform:
@@ -519,6 +541,11 @@ class Geometry:
 		return transformedCoords
 
 	@staticmethod
+	def applyMatrixTransformToCoords(transformation: AffineTransform, pose: Coords) -> Coords:
+		transformedCoords = Geometry.applyMatrixTransformToCoordsList(transformation, [(pose[0], pose[1])])
+		return transformedCoords[0]
+
+	@staticmethod
 	def applyMatrixTransformToPose(transformation: AffineTransform, pose: Pose) -> Pose:
 		transformedCoords = Geometry.applyMatrixTransformToCoordsList(transformation, [(pose.x, pose.y)])
 		transformedPose = Pose(0, transformedCoords[0][0], transformedCoords[0][1], 0)
@@ -547,6 +574,34 @@ class Geometry:
 	def findBottomLeft(poly: Polygon) -> Coords:
 		(minX, minY, maxX, maxY) = poly.bounds
 		return (minX, minY)
+
+	@staticmethod
+	def expandVertObbWithAngularVelocity(coords: Coords, angle: float, centerOfRotation: Coords, expandAway = True) -> Coords:
+		displacement = (coords[0] - centerOfRotation[0], coords[1] - centerOfRotation[1])
+		vertExpansion = (angle * displacement[0], angle * displacement[1])
+		expanded = (coords[0] + vertExpansion[0], coords[1] + vertExpansion[1]) if expandAway else (coords[0] - vertExpansion[0], coords[1] - vertExpansion[1])
+		return expanded
+
+	@staticmethod
+	def getLineSegmentExpandedBb(transformation: AffineTransform, lineSeg: LineString, centerOfRotation: Coords) -> Union[Polygon, LineString]:
+		""" Gets a tight bounding box for a line segment that is moving with a constant angular velocity. """
+		angle: float = abs(transformation.rotation)
+		originalCoords = Geometry.getGeometryCoords(lineSeg)
+		if len(originalCoords) > 2: raise ValueError(f"A line segment must have two vertices. Input: {repr(lineSeg)}")
+		if Geometry.isIdentityTransform(transformation):
+			return lineSeg
+		finalConfig = Geometry.applyMatrixTransformToLineString(transformation, lineSeg)
+		finalCoords = Geometry.getGeometryCoords(finalConfig)
+		verts: Geometry.CoordsList = []
+		for j in range(16):
+			v1 = Geometry.expandVertObbWithAngularVelocity(originalCoords[0], angle, centerOfRotation, j & 1 != 0)
+			v2 = Geometry.expandVertObbWithAngularVelocity(finalCoords[0], angle, centerOfRotation, j & 2 != 0)
+			v3 = Geometry.expandVertObbWithAngularVelocity(finalCoords[1], angle, centerOfRotation, j & 4 != 0)
+			v4 = Geometry.expandVertObbWithAngularVelocity(originalCoords[1], angle, centerOfRotation, j & 8 != 0)
+			verts += [v1, v2, v3, v4]
+		expandedObb = Geometry.convexHull(verts)
+		if isinstance(expandedObb, Polygon): return expandedObb
+		raise ValueError(f"Expanded OBB is not a polygon: {repr(expandedObb)}")
 
 def __pointNeg(self: Point) -> Point:
 	"""

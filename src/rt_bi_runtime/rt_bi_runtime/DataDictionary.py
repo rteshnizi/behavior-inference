@@ -30,8 +30,7 @@ class DataDictionary(RtBiNode):
 		return
 
 	def render(self) -> None:
-		self.log(f"No render for {self.get_fully_qualified_name()}")
-		return
+		return super().render()
 
 def main(args=None):
 	rclpy.init(args=args)

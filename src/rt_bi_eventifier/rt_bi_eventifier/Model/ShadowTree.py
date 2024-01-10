@@ -1,8 +1,7 @@
-from math import inf
-from typing import Dict, List, Literal, Sequence, Set, Tuple, TypeVar, Union
+from typing import Dict, List, Literal, Sequence, Tuple, TypeVar, Union
 
 import networkx as nx
-from networkx.classes.reportviews import OutEdgeView  # CSpell: disable-line
+from networkx.classes.reportviews import OutEdgeView
 from visualization_msgs.msg import MarkerArray
 
 from rt_bi_core.Model.AffineRegion import AffineRegion
@@ -13,13 +12,17 @@ from rt_bi_core.Model.ShadowRegion import ShadowRegion
 from rt_bi_core.Model.SymbolRegion import SymbolRegion
 from rt_bi_eventifier.Model.ConnectivityGraph import ConnectivityGraph
 from rt_bi_eventifier.Model.ContinuousTimeCollisionDetection import CollisionInterval, ContinuousTimeCollisionDetection as CtCd
+from rt_bi_eventifier.Model.ContinuousTimeRegion import ContinuousTimeRegion
 from rt_bi_eventifier.Model.EventAggregator import EventAggregator
 from rt_bi_eventifier.Model.FieldOfView import FieldOfView
+from rt_bi_eventifier.Model.SymbolRegions import SymbolRegions
 from rt_bi_interfaces.msg import Adjacency, ComponentEvent, Events, Graph
 from rt_bi_utils.Geometry import AffineTransform, Geometry, Polygon
 from rt_bi_utils.NetworkX import NxUtils
-from rt_bi_utils.Ros import AppendMessage, Logger, Publisher, RegisterRegionId
+from rt_bi_utils.Ros import AppendMessage, Log, Logger, Publisher
 from rt_bi_utils.RViz import ColorNames, RViz
+
+# CSpell: ignore reportviews
 
 RegionTypeX = TypeVar("RegionTypeX", SensorRegion, SymbolRegion, MapRegion)
 RegionTypeY = TypeVar("RegionTypeY", SensorRegion, SymbolRegion, MapRegion)
@@ -67,12 +70,18 @@ class ShadowTree(nx.DiGraph):
 			timeRangeStr = "%d-%d" % (self.history[0].timeNanoSecs, self.history[-1].timeNanoSecs)
 		return "%s[%s]{d=%d}" % (self.name, timeRangeStr, self.length)
 
+	@staticmethod
+	def __generateTemporalName(name: str, time: int) -> str:
+		""" Use this function to safely generate (typo-free and in uniform format) the names for the temporal edges. """
+		return "%s-%d" % (name, time)
+
 	def __getCGraph(self, timeNanoSecs: int) -> ConnectivityGraph:
 		ind = self.__timeToCGraph[timeNanoSecs]
 		return self.history[ind]
 
 	def __addNode(self, node: str, timeNanoSecs: int) -> str:
 		temporalName = self.__generateTemporalName(node, timeNanoSecs)
+		# Logger().warn(f"Adding to ST {temporalName}")
 		self.add_node(temporalName, regionName=node, timeNanoSecs=timeNanoSecs)
 		return temporalName
 
@@ -80,6 +89,8 @@ class ShadowTree(nx.DiGraph):
 		if isTemporal and (fromTime is None or toTime is None):
 			raise ValueError("Temporal edge requires from and to times.")
 		if n1 == n2: Logger().warn("Self loop edge added to ShadowTree for %s" % n1)
+		if n1 not in self.nodes: Logger().error(f"Adding edge to none-existing node-1 {n1}")
+		if n2 not in self.nodes: Logger().error(f"Adding edge to none-existing node-2 {n2}")
 		self.add_edge(n1, n2, isTemporal=isTemporal, fromTime=fromTime, toTime=toTime)
 		return
 
@@ -128,9 +139,11 @@ class ShadowTree(nx.DiGraph):
 			self.__addEdge(fovNodeInShadowTree, fovNodeInCurrentGraph, isTemporal=True, fromTime=fromGraph.timeNanoSecs, toTime=toGraph.timeNanoSecs)
 		# Add temporal edges between symbols
 		for symNode in fromGraph.symbols:
-			symNodeInShadowTree = self.__generateTemporalName(symNode, fromGraph.timeNanoSecs)
-			symNodeInCurrentGraph = self.__generateTemporalName(symNode, toGraph.timeNanoSecs)
-			self.__addEdge(symNodeInShadowTree, symNodeInCurrentGraph, isTemporal=True, fromTime=fromGraph.timeNanoSecs, toTime=toGraph.timeNanoSecs)
+			fromTemporalName = self.__generateTemporalName(symNode, fromGraph.timeNanoSecs)
+			splittedNodes = toGraph.symbols.getRegionsByShortName(fromGraph.symbols[symNode].shortName)
+			for n in splittedNodes:
+				toTemporalName = self.__generateTemporalName(n.name, toGraph.timeNanoSecs)
+				self.__addEdge(fromTemporalName, toTemporalName, isTemporal=True, fromTime=fromGraph.timeNanoSecs, toTime=toGraph.timeNanoSecs)
 		# Add temporal edges between shadows
 		for shadowNodeInPastGraph in fromGraph.shadows:
 			for shadowNodeInNowGraph in toGraph.shadows:
@@ -147,17 +160,18 @@ class ShadowTree(nx.DiGraph):
 		for n in self.__history[indexToReplace].nodes:
 			node = self.__generateTemporalName(n, self.__history[indexToReplace].timeNanoSecs)
 			self.remove_node(node)
+		self.__timeToCGraph.pop(self.__history[indexToReplace].timeNanoSecs)
 		self.__history[indexToReplace] = graph
+		self.__timeToCGraph[graph.timeNanoSecs] = indexToReplace
 		return
 
 	def __appendToHistory(self, graph: ConnectivityGraph) -> None:
 		if self.length > 0 and graph.timeNanoSecs < self.__history[-1].timeNanoSecs:
-				Logger().info("OUT OF ORDER graph --> %d vs %d" % ((graph.timeNanoSecs, self.__history[-1].timeNanoSecs)))
+				Log("Older graph than latest in history --> %d vs %d" % ((graph.timeNanoSecs, self.__history[-1].timeNanoSecs)))
 				return
 
 		for node in graph.nodes:
-			temporalName = self.__addNode(node, graph.timeNanoSecs)
-			self.shallowCopyNode(graph.nodes[node], self.nodes[temporalName])
+			self.__addNode(node, graph.timeNanoSecs)
 		for edge in graph.edges:
 			frm = self.__generateTemporalName(edge[0], graph.timeNanoSecs)
 			to = self.__generateTemporalName(edge[1], graph.timeNanoSecs)
@@ -165,28 +179,17 @@ class ShadowTree(nx.DiGraph):
 
 		graph.render(self.__rvizPublishers["connectivity_graph"])
 		if self.length > 0 and EventAggregator.isIsomorphic(self.__history[-1], graph):
-			Logger().info("Updating last CGraph with the most recent isomorphic version --> %s" % repr(graph))
-			self.__replaceInHistory(-1, graph)
-			self.__timeToCGraph[graph.timeNanoSecs] = self.length - 1
+			# if graph.timeNanoSecs == self.__history[-1].timeNanoSecs:
+			# 	return # Identical graph
+			Log("Updating last CGraph with the most recent isomorphic version --> %s" % repr(graph))
+			self.__replaceInHistory(self.length - 1, graph)
 		else:
-			Logger().info("Appending graph to history --> %s" % repr(graph))
+			Log("Appending graph to history --> %s" % repr(list(graph.nodes)))
 			self.__history.append(graph)
 			self.__timeToCGraph[graph.timeNanoSecs] = self.length - 1
-			self.__publishGraphEvent()
+			# self.__publishGraphEvent()
 		if self.length > 1: self.__connectGraphsTemporally(self.__history[-2], self.__history[-1])
 		self.render()
-
-	def __iterateRegularRegion(self, lastCGraph: ConnectivityGraph, regularRegion: RegularAffineRegion[RegionTypeY], r1Past: RegionTypeX, r1Now: RegionTypeX, checked: Set[Tuple[str, str]]) -> List[CollisionInterval[RegionTypeX, RegionTypeY]]:
-		intervals: List[CollisionInterval[RegionTypeX, RegionTypeY]] = []
-		for rName in regularRegion:
-			if rName == r1Now.name: continue
-			r2Now = regularRegion[rName]
-			if ((r1Now.name, r2Now.name) in checked) or ((r2Now.name, r1Now.name) in checked): continue
-			checked.add((r1Now.name, r2Now.name))
-			r2Past = lastCGraph.getRegion(r2Now)
-			r2Past = r2Now if r2Past is None else r2Past
-			intervals += CtCd.estimateCollisionsIntervals((r1Past, r1Now), (r2Past, r2Now), self.__rvizPublishers["continuous_time_collision_detection"])
-		return intervals
 
 	def __publishGraphEvent(self) -> None:
 		if self.length == 1:
@@ -250,34 +253,17 @@ class ShadowTree(nx.DiGraph):
 		self.__eventPublisher["eventifier_event"].publish(eventsMsg)
 		return
 
-	@staticmethod
-	def __generateTemporalName(name: str, time: int) -> str:
-		""" Use this function to safely generate (typo-free and in uniform format) the names for the temporal edges. """
-		return "%s-%d" % (name, time)
-
-	def __multiPartiteLayout_old(self) -> Dict[str, Tuple[AffineRegion, Tuple[float, float]]]:
-		DELTA_X = 150
-		DELTA_Y = 50
-		y = 0
-		pos: Dict[str, Tuple[AffineRegion, Tuple[float, float]]] = {}
-		for subG in self.history:
-			keys = sorted(subG.nodes, key=lambda n: subG.nodes[n]["region"].interior.centroid.x)
-			x = 0
-			for n in keys:
-				nn = self.__generateTemporalName(n , subG.timeNanoSecs)
-				region: AffineRegion = subG.nodes[n]["region"]
-				pos[nn] = (region, (x / len(subG.nodes), y))
-				x += DELTA_X
-			y += DELTA_Y
-		return pos
-
 	def __nodeSortKey(self, n: str) -> Tuple[int, float]:
-		timeNanoSecs = self.nodes[n]["timeNanoSecs"]
-		regionName: str = self.nodes[n]["regionName"]
-		cGraph: ConnectivityGraph = self.__getCGraph(self.nodes[n]["timeNanoSecs"])
-		region: AffineRegion = cGraph.nodes[regionName]["region"]
-		x: float = region.interior.centroid.x
-		return (timeNanoSecs, x)
+		try:
+			timeNanoSecs = self.nodes[n]["timeNanoSecs"]
+			regionName: str = self.nodes[n]["regionName"]
+			cGraph: ConnectivityGraph = self.__getCGraph(timeNanoSecs)
+			region: AffineRegion = cGraph.nodes[regionName]["region"]
+			x: float = region.interior.centroid.x
+			return (timeNanoSecs, x)
+		except Exception as e:
+			Logger().error(n)
+			raise e
 
 	def __multiPartiteLayout(self) -> NxUtils.GraphLayout:
 		keys = sorted(self.nodes, key=self.__nodeSortKey)
@@ -296,13 +282,13 @@ class ShadowTree(nx.DiGraph):
 
 	def __getTextMarkers(self, markerArray: MarkerArray) -> MarkerArray:
 		lastCGraph = self.history[-1]
-		timerCoords = Geometry.findBottomLeft(lastCGraph.mapPerimeter.envelopePolygon)
+		timerCoords = Geometry.findBottomLeft(lastCGraph.mapRegions.envelopePolygon)
 		timerCoords = Geometry.addCoords(timerCoords, (20, 20))
 		timerText = "T = %d" % (lastCGraph.timeNanoSecs)
 		timerMarker = RViz.createText("rt_st_time", timerCoords, timerText, ColorNames.RED, fontSize=7.5)
 		AppendMessage(markerArray.markers, timerMarker)
 
-		timerCoords = Geometry.findBottomLeft(lastCGraph.mapPerimeter.envelopePolygon)
+		timerCoords = Geometry.findBottomLeft(lastCGraph.mapRegions.envelopePolygon)
 		timerCoords = Geometry.addCoords(timerCoords, (20, 10))
 		timerText = "D = %d" % self.length
 		timerMarker = RViz.createText("rt_st_depth", timerCoords, timerText, ColorNames.RED, fontSize=7.5)
@@ -348,50 +334,48 @@ class ShadowTree(nx.DiGraph):
 			AppendMessage(markerArray.markers, marker)
 		return markerArray
 
-	def updateNamedRegions(self, timeNanoSecs: int, regions: List[SymbolRegion]) -> None:
-		return
+	def __mergeWithRegularRegion(self, regions: List[RegionTypeX], regularRegion: RegularAffineRegion[RegionTypeX]) -> Tuple[Dict[str, List[RegionTypeX]], int]:
+		regionsDict: Dict[str, List[RegionTypeX]] = {}
+		maxT = 0
+		for r1 in regions:
+			if r1.shortName not in regionsDict: regionsDict[r1.shortName] = []
+			regionsDict[r1.shortName].append(r1)
+			maxT = maxT if maxT > r1.timeNanoSecs else r1.timeNanoSecs
+		if len(regularRegion) > 0:
+			for r2ExtendedName in regularRegion:
+				r2 = regularRegion[r2ExtendedName]
+				if r2.shortName not in regionsDict: regionsDict[r2.shortName] = []
+				if r2.regionType == SymbolRegion.RegionType.SYMBOL:
+					r2 = SymbolRegion(centerOfRotation=r2.centerOfRotation, idNum=r2.idNum, envelope=r2.envelope, timeNanoSecs=r2.timeNanoSecs, overlappingRegionId=0, overlappingRegionType=SymbolRegion.RegionType.BASE)
+				regionsDict[r2.shortName].append(r2) # type: ignore
+				maxT = maxT if maxT > regularRegion[r2ExtendedName].timeNanoSecs else regularRegion[r2ExtendedName].timeNanoSecs
+		for r in regionsDict:
+			regionsDict[r] = sorted(regionsDict[r], key=lambda r: r.timeNanoSecs)
+		return (regionsDict, maxT)
 
-	def updateSensors(self, timeNanoSecs: int, regions: List[SensorRegion]) -> None:
+	def updateAffineRegions(self, sensors: List[SensorRegion], symbols: List[SymbolRegion]) -> None:
 		if self.length == 0:
-			Logger().error("Initial CGraph cannot be created from from sensors.")
+			Logger().error("Initial CGraph must be created from map.")
 			return
 
+		Log("=================================================================================================")
 		lastCGraph = self.history[-1]
 		# There are there possibilities for sensor names. We have decided to require specific messages for S1.
 		# 1. S1 is in pastSensors but not in nowSensors ----> S1 has turned off -> the shadows around S1 have merged.
 		# 2. S2 is not in pastSensors but is in nowSensors -> S2 has turned on --> the shadows around S2 have splitted.
 		# 3. S3 is in pastSensors but not in nowSensors ----> S3 has moved ------> the shadows around S3 have evolved.
 
-		if len(lastCGraph.fieldOfView) > 0:
-			fovRegions = FieldOfView(regions)
-			for rName in lastCGraph.fieldOfView:
-				fovRegions.addConnectedComponent(lastCGraph.fieldOfView[rName])
-		else:
-			fovRegions = regions
-
-		nowCGraph = ConnectivityGraph(
-			timeNanoSecs=timeNanoSecs,
-			mapRegions=lastCGraph.mapPerimeter,
-			fovRegions=fovRegions,
-			rvizPublisher=self.__rvizPublishers["connectivity_graph"]
-		)
-		checked: Set[Tuple[str, str]] = set()
-		intervals: List[CollisionInterval] = []
-		for r1Now in regions:
-			r1Past = lastCGraph.getRegion(r1Now)
-			if r1Past is None:
-				Logger().error("Past sensor was not found for %s" % repr(r1Now))
-				r1Past = r1Now
-
-			r2Past = MapRegion(RegisterRegionId(repr(nowCGraph.mapPerimeter)), Geometry.getGeometryCoords(nowCGraph.mapPerimeter.interior), timeNanoSecs=lastCGraph.timeNanoSecs)
-			r2Now = MapRegion(RegisterRegionId(repr(nowCGraph.mapPerimeter)), Geometry.getGeometryCoords(nowCGraph.mapPerimeter.interior), timeNanoSecs=nowCGraph.timeNanoSecs)
-			intervals += CtCd.estimateCollisionsIntervals((r1Past, r1Now), (r2Past, r2Now), self.__rvizPublishers["continuous_time_collision_detection"])
-			intervals += self.__iterateRegularRegion(lastCGraph, nowCGraph.fieldOfView, r1Past, r1Now, checked)
-			intervals += self.__iterateRegularRegion(lastCGraph, nowCGraph.symbols, r1Past, r1Now, checked)
-
+		(sensorRegions, maxT1) = self.__mergeWithRegularRegion(sensors, lastCGraph.fieldOfView)
+		(symbolRegions, maxT2) = self.__mergeWithRegularRegion(symbols, lastCGraph.symbols)
+		maxTimeNanoSecs = max(maxT1, maxT2)
+		intervals = CtCd.estimateCollisionIntervals(sensorRegions, symbolRegions, lastCGraph.mapRegions, maxTimeNanoSecs, self.__rvizPublishers["continuous_time_collision_detection"])
 		intervals = CtCd.refineCollisionIntervals(intervals)
-		eventGraphs = EventAggregator.aggregateCollisionEvents(intervals, lastCGraph, nowCGraph)
-		Logger().info("Intervals = %d, Graphs = %d" % (len(intervals), len(eventGraphs)))
+		Log(f"Intervals = {len(intervals)}")
+		eventGraphs = EventAggregator.aggregateCollisionEvents(intervals, lastCGraph, lastCGraph.mapRegions)
+		if len(eventGraphs) == 0:
+			nowCGraph = ConnectivityGraph(maxTimeNanoSecs, lastCGraph.mapRegions, [sensorRegions[r][-1] for r in sensorRegions], [symbolRegions[r][-1] for r in symbolRegions])
+			eventGraphs = [nowCGraph]
+		Log(f"Aggregated = {repr(eventGraphs)}")
 		for graph in eventGraphs: self.__appendToHistory(graph)
 		return
 
@@ -410,12 +394,5 @@ class ShadowTree(nx.DiGraph):
 		markerArray = self.__getTextMarkers(markerArray)
 		markerArray = self.__getNodeMarkers(markerArray)
 		markerArray = self.__getEdgeMarkers(markerArray)
-
-		Logger().info("Rendering %d ShadowTree markers." % len(markerArray.markers))
 		publisher.publish(markerArray)
-		return
-
-	@staticmethod
-	def shallowCopyNode(frm: dict, to: dict) -> None:
-		for key in frm: to[key] = frm[key]
 		return

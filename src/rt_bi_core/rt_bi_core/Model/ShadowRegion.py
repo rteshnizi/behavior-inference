@@ -1,4 +1,4 @@
-from typing import Sequence, Set, Union
+from typing import Literal, Sequence, Set, Union
 
 from visualization_msgs.msg import Marker
 
@@ -33,13 +33,16 @@ class ShadowRegion(AffineRegion):
 			idNum=idNum,
 			envelope=envelope,
 			envelopeColor=ColorNames.BLACK,
-			regionType=self.RegionType.SHADOW,
 			timeNanoSecs=kwArgs.pop("timeNanoSecs", 0),
 			renderLineWidth=2,
 			**kwArgs,
 		)
-		self.centerOfRotation = Geometry.toPose(self.interior.centroid, timeNanoSecs=self.timeNanoSecs)
+		self.centerOfRotation = Geometry.toCoords(self.interior.centroid)
 		self.__neighboringSensors: Set[str] = set()
+
+	@property
+	def regionType(self) -> Literal[AffineRegion.RegionType.SHADOW]:
+		return self.RegionType.SHADOW
 
 	def isNeighboringSensor(self, sensorRegionName: str) -> bool:
 		return sensorRegionName in self.__neighboringSensors

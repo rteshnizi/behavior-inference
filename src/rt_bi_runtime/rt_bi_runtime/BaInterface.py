@@ -29,12 +29,8 @@ class BaInterface(RtBiNode):
 		if self.__shouldRender: self.render()
 		return
 
-	def __repr__(self) -> str:
-		return self.__name
-
 	def declareParameters(self) -> None:
 		self.log("%s is setting node parameters." % self.get_fully_qualified_name())
-		self.declare_parameter("name", Parameter.Type.STRING)
 		self.declare_parameter("render", Parameter.Type.BOOL)
 		self.declare_parameter("states", Parameter.Type.STRING_ARRAY)
 		self.declare_parameter("transitions", Parameter.Type.STRING_ARRAY)
@@ -44,7 +40,7 @@ class BaInterface(RtBiNode):
 
 	def parseConfigFileParameters(self) -> None:
 		self.log("%s is parsing parameters." % self.get_fully_qualified_name())
-		self.__name = self.get_parameter("name").get_parameter_value().string_value
+		self.__name = self.get_fully_qualified_name()
 		self.__shouldRender = self.get_parameter("render").get_parameter_value().bool_value
 		self.__states = list(self.get_parameter("states").get_parameter_value().string_array_value)
 		for transition in list(self.get_parameter("transitions").get_parameter_value().string_array_value):

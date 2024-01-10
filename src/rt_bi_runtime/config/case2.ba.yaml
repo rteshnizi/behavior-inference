@@ -1,8 +1,7 @@
 rt_bi_runtime:
   ba1:
     ros__parameters:
-      name: "spec1"
-      render: True
+      render: False
       states:
         - "Q0"
         - "Q1"

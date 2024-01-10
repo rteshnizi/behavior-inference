@@ -44,7 +44,7 @@ class FieldOfView(RegularAffineRegion[SensorRegion]):
 		return tracks
 
 	def addConnectedComponent(self, region: SensorRegion) -> None:
-		if region.regionType != SensorRegion.RegionType.SENSING: return
+		if region.regionType != SensorRegion.RegionType.SENSING: raise TypeError(f"Incorrect region type {region.regionType}")
 		return super().addConnectedComponent(region)
 
 	def intersection(self, other: "FieldOfView") -> Set[str]:

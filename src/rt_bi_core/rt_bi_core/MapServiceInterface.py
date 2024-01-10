@@ -3,7 +3,7 @@ from typing import List, Sequence
 
 import rclpy
 from rclpy.clock import Duration
-from rclpy.node import Client, Node
+from rclpy.node import Client
 from sa_msgs.msg import FeatureInfoIndividual
 from sa_msgs.srv import QueryFeature
 from visualization_msgs.msg import MarkerArray
@@ -63,7 +63,7 @@ class MapServiceInterface(RtBiNode):
 			poseArray = individualFeature.polygon_shape_list
 			coords = SaMsgs.convertSaPoseListToCoordsList(poseArray.traj)
 			idNum = RosUtils.RegisterRegionId(fName)
-			region = MapRegion(idNum=idNum, envelope=coords, timeNanoSecs=-1)
+			region = MapRegion(idNum=idNum, envelope=coords)
 			regions.append(region)
 			if queryFeatures:
 				subRequest = QueryFeature.Request()

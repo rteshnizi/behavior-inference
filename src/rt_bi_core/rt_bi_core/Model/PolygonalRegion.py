@@ -1,3 +1,4 @@
+from abc import ABC
 from enum import Enum
 from typing import Dict, Sequence, Union
 
@@ -5,11 +6,12 @@ from visualization_msgs.msg import Marker
 
 import rt_bi_utils.Ros as RosUtils
 from rt_bi_utils.Color import RGBA, ColorNames, ColorUtils
-from rt_bi_utils.Geometry import AffineTransform, Geometry, LineString, MultiPolygon, Polygon
+from rt_bi_utils.Geometry import AffineTransform, Geometry, LineString, Polygon
 from rt_bi_utils.RViz import RViz
 
 
-class PolygonalRegion:
+class PolygonalRegion(ABC):
+
 	"""
 		The base class for all polygonal regions.
 		Provides much of the structure and functionality.
@@ -22,7 +24,6 @@ class PolygonalRegion:
 	class RegionType(Enum):
 		"""All the types of `PolygonalRegion`."""
 		BASE = "B"
-		ESTIMATION = "E"
 		MAP = "M"
 		SENSING = "Z"
 		SHADOW = "S"
@@ -35,8 +36,7 @@ class PolygonalRegion:
 		envelope: Geometry.CoordsList,
 		envelopeColor: RGBA,
 		interiorColor: RGBA = ColorNames.DARK_GREY,
-		interior: Union[Polygon, MultiPolygon, None] = None,
-		regionType: RegionType = RegionType.BASE,
+		interior: Union[Polygon, None] = None,
 		renderLineWidth = 1,
 		**kwArgs
 	):
@@ -53,7 +53,7 @@ class PolygonalRegion:
 			The color of the envelope when/if rendered.
 		interiorColor: Color, default `White`
 			The color of the interior of the region when/if rendered.
-		interior: Union[Polygon, MultiPolygon, None], default `None`
+		interior: Union[Polygon, None], default `None`
 			The interior of the region, if it is separate from its envelope, default forces construction.
 		regionType: RegionType, default `RegionType.BASE`
 			The type of this region.
@@ -61,11 +61,9 @@ class PolygonalRegion:
 			The width of the rendered lines.
 		"""
 		self.__idNum = idNum
-		self.__name = "%s-%d" % (regionType.value, idNum)
 		self.__RENDER_LINE_WIDTH = renderLineWidth
 		self.__interiorPolygon = Polygon(envelope) if interior is None else interior
-		self.__envelope = envelope if interior is None else Geometry.getGeometryCoords(self.__interiorPolygon)
-		self.__regionType = regionType
+		self.__envelope = Geometry.getGeometryCoords(self.__interiorPolygon) if len(envelope) == 0 else envelope
 		self.__DEFAULT_ENVELOPE_COLOR = envelopeColor
 		self.__INTERIOR_COLOR = interiorColor
 		self.__TEXT_COLOR = ColorNames.BLACK if ColorUtils.isLightColor(interiorColor) else ColorNames.WHITE
@@ -73,7 +71,8 @@ class PolygonalRegion:
 		self.__edges: PolygonalRegion.Edges = self.__buildEdges()
 
 	def __repr__(self) -> str:
-		return self.name
+		"""Returns `self.name`"""
+		return self.shortName
 
 	def __buildEdges(self) -> Edges:
 		d = {}
@@ -85,14 +84,23 @@ class PolygonalRegion:
 		return d
 
 	@property
+	def regionType(self) -> RegionType:
+		return self.RegionType.BASE
+
+	@property
 	def envelope(self) -> Geometry.CoordsList:
 		"""The list of the coordinates of the vertices ."""
 		return self.__envelope
 
 	@property
-	def name(self) -> str:
+	def shortName(self) -> str:
 		"""A pre-designed string identifier, in the following format: `"%s-%d" % (regionType, idNum)`"""
-		return self.__name
+		return "%s-%d" % (self.regionType.value, self.idNum)
+
+	@property
+	def name(self) -> str:
+		"""Same as `self.name`"""
+		return self.shortName
 
 	@property
 	def envelopeColor(self) -> RGBA:
@@ -113,11 +121,6 @@ class PolygonalRegion:
 	def interiorColor(self) -> RGBA:
 		"""The color used for rendering the background of this polygon (to fill)."""
 		return self.__INTERIOR_COLOR
-
-	@property
-	def regionType(self) -> RegionType:
-		"""A short string identifier for the type of the polygon."""
-		return self.__regionType
 
 	@property
 	def edges(self) -> Edges:

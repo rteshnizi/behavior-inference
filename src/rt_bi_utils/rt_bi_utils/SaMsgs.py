@@ -2,18 +2,19 @@ from collections import UserList
 from math import nan
 from typing import AbstractSet, Any, Callable, Sequence, Tuple, Union
 
-from rclpy.node import Client, Node, Publisher, Service, Timer
+from rclpy.node import Client, Publisher, Service, Timer
 from sa_msgs.msg import EstimationMsg, FeatureInfo, Fov as SaFovMsg, Pose as SaPoseMsg, PoseArray as SaPoseArray, RobotState
 from sa_msgs.srv import QueryFeature
 
 import rt_bi_utils.Ros as RosUtils
 from rt_bi_utils.Geometry import Geometry
 from rt_bi_utils.Pose import Pose
+from rt_bi_utils.RtBiNode import RtBiNode
 
 
 class SaMsgs:
 	"""
-		This class only prepares the messages defined in the TAMU AGC SA project.
+		This class provides utilities for the messages defined in the TAMU AGC SA project.
 	"""
 	__MAP_UPDATE_TOPIC = "/sa_map/FeatureMap_BIL"
 	__MAP_SERVICE_NAME = "/sa_map/feature_query"
@@ -97,29 +98,29 @@ class SaMsgs:
 		return message
 
 	@staticmethod
-	def subscribeToMapUpdateTopic(node: Node, callbackFunc: Callable[[FeatureInfo], None]) -> None:
+	def subscribeToMapUpdateTopic(node: RtBiNode, callbackFunc: Callable[[FeatureInfo], None]) -> None:
 		RosUtils.CreateSubscriber(node, FeatureInfo, SaMsgs.__MAP_UPDATE_TOPIC, callbackFunc) # type: ignore - "type[Metaclass_FeatureInfo]" is incompatible with "type[FeatureInfo]"
 
 	@staticmethod
-	def createRobotStatePublisher(node: Node, callbackFunc: Callable = lambda: None, intervalSecs: float = nan) -> Tuple[Publisher, Union[Timer, None]]:
+	def createRobotStatePublisher(node: RtBiNode, callbackFunc: Callable = lambda: None, intervalSecs: float = nan) -> Tuple[Publisher, Union[Timer, None]]:
 		return RosUtils.CreatePublisher(node, RobotState, SaMsgs.__ROBOT_STATE_TOPIC, callbackFunc, intervalSecs)
 
 	@staticmethod
-	def subscribeToRobotStateTopic(node: Node, callbackFunc: Callable[[RobotState], Any]) -> None:
+	def subscribeToRobotStateTopic(node: RtBiNode, callbackFunc: Callable[[RobotState], Any]) -> None:
 		RosUtils.CreateSubscriber(node, RobotState, SaMsgs.__ROBOT_STATE_TOPIC, callbackFunc) # type: ignore - "type[Metaclass_RobotState]" is incompatible with "type[RobotState]"
 
 	@staticmethod
-	def createEstimationPublisher(node: Node, callbackFunc: Callable = lambda: None, intervalSecs: float = nan) -> Tuple[Publisher, Union[Timer, None]]:
+	def createEstimationPublisher(node: RtBiNode, callbackFunc: Callable = lambda: None, intervalSecs: float = nan) -> Tuple[Publisher, Union[Timer, None]]:
 		return RosUtils.CreatePublisher(node, EstimationMsg, SaMsgs.__ESTIMATION_TOPIC, callbackFunc, intervalSecs)
 
 	@staticmethod
-	def subscribeToEstimationTopic(node: Node, callbackFunc: Callable[[EstimationMsg], None]) -> None:
+	def subscribeToEstimationTopic(node: RtBiNode, callbackFunc: Callable[[EstimationMsg], None]) -> None:
 		RosUtils.CreateSubscriber(node, EstimationMsg, SaMsgs.__ESTIMATION_TOPIC, callbackFunc) # type: ignore - "type[Metaclass_EstimationMsg]" is incompatible with "type[EstimationMsg]"
 
 	@staticmethod
-	def createSaFeatureQueryService(node: Node, callbackFunc: Callable[[QueryFeature.Request, QueryFeature.Response], QueryFeature.Response]) -> Service:
+	def createSaFeatureQueryService(node: RtBiNode, callbackFunc: Callable[[QueryFeature.Request, QueryFeature.Response], QueryFeature.Response]) -> Service:
 		return node.create_service(QueryFeature, SaMsgs.__MAP_SERVICE_NAME, callbackFunc)
 
 	@staticmethod
-	def createSaFeatureQueryClient(node: Node) -> Client:
+	def createSaFeatureQueryClient(node: RtBiNode) -> Client:
 		return node.create_client(QueryFeature, SaMsgs.__MAP_SERVICE_NAME)

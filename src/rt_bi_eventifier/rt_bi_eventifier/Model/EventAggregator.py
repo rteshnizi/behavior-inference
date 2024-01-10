@@ -12,6 +12,7 @@ from rt_bi_core.Model.Tracklet import Tracklet
 from rt_bi_eventifier.Model.ConnectivityGraph import ConnectivityGraph
 from rt_bi_eventifier.Model.ContinuousTimeCollisionDetection import CollisionInterval
 from rt_bi_eventifier.Model.ContinuousTimeRegion import ContinuousTimeRegion
+from rt_bi_eventifier.Model.MapRegions import MapRegions
 
 RegionTypeX = TypeVar("RegionTypeX", SensorRegion, SymbolRegion, MapRegion)
 RegionTypeY = TypeVar("RegionTypeY", SensorRegion, SymbolRegion, MapRegion)
@@ -72,12 +73,12 @@ class EventAggregator:
 		return Tracklet(nowTracklet.id, eventTimeNs, x, y, psi)
 
 	@classmethod
-	def __addRegionToList(cls, region: RegionTypeX, mapRegions: List[MapRegion], fovRegions: List[SensorRegion], symbolRegions: List[SymbolRegion]) -> None:
-		if region.regionType == AffineRegion.RegionType.SENSING:
+	def __addRegionToList(cls, region: RegionTypeX, fovRegions: List[SensorRegion], symbolRegions: List[SymbolRegion]) -> None:
+		if region.regionType == SensorRegion.RegionType.SENSING:
 			fovRegions.append(region) # type: ignore
-		elif region.regionType == AffineRegion.RegionType.MAP:
-			mapRegions.append(region) # type: ignore
-		elif region.regionType == AffineRegion.RegionType.SYMBOL:
+		elif region.regionType == MapRegion.RegionType.MAP:
+			pass
+		elif region.regionType == SymbolRegion.RegionType.SYMBOL:
 			symbolRegions.append(region) # type: ignore
 		else:
 			raise TypeError("Unexpected region type: %s" % repr(region.regionType))
@@ -91,34 +92,32 @@ class EventAggregator:
 			if rName not in nowRegions.regionNames: continue
 			lastRegion = lastRegions[rName]
 			nowRegion = nowRegions[rName]
-			ctRegion = ContinuousTimeRegion[RegionTypeX](lastRegion, nowRegion)
+			ctRegion = ContinuousTimeRegion[RegionTypeX]((lastRegion, nowRegion), lastRegion.regionType)
 			region = ctRegion[eventTimeNs]
-			if region.regionType == AffineRegion.RegionType.SENSING:
+			if region.regionType == SensorRegion.RegionType.SENSING:
 				for track in tracklets: region.tracklets.append(track) # type: ignore
 			regions.append(region)
 		return regions
 
 	@classmethod
-	def __obtainEventCGraphs(cls, eventIntervals: List[CollisionInterval[RegionTypeX, RegionTypeY]], lastCGraph: ConnectivityGraph, nowCGraph: ConnectivityGraph) -> List[ConnectivityGraph]:
+	def __obtainEventCGraphs(cls, sortedEventIntervals: List[CollisionInterval[RegionTypeX, RegionTypeY]], lastCGraph: ConnectivityGraph, mapRegions: MapRegions) -> List[ConnectivityGraph]:
+		if len(sortedEventIntervals) == 0: return []
+
 		graphs: List[ConnectivityGraph] = []
-		startTime = lastCGraph.timeNanoSecs
-		endTime = nowCGraph.timeNanoSecs
-		for interval in eventIntervals:
+		fovRegions = [lastCGraph.fieldOfView[i] for i in lastCGraph.fieldOfView]
+		symbolRegions= [lastCGraph.symbols[i] for i in lastCGraph.symbols]
+		for interval in sortedEventIntervals:
 			(ctRegion1, _, ctRegion2, _, _, eventTimeNs) = interval
-			interpolatedTracks: List[Tracklet] = []
-			for tracklet in nowCGraph.fieldOfView.tracks.values():
-				previousTracklet = [tracklet for prevTracklet in lastCGraph.fieldOfView.tracks.values() if prevTracklet.id == tracklet.id]
-				if len(previousTracklet) == 1:
-					interpolatedTracks.append(cls.__interpolateTrack(previousTracklet[0], tracklet, eventTimeNs, startTime, endTime))
-				if len(previousTracklet) > 1: raise RuntimeError("How does this happen?")
-			excludeList = [ctRegion1.name, ctRegion2.name]
-			mapRegions = cls.__interpolateRegion(lastCGraph.mapPerimeter, nowCGraph.mapPerimeter, eventTimeNs, excludeList)
-			fovRegions = cls.__interpolateRegion(lastCGraph.fieldOfView, nowCGraph.fieldOfView, eventTimeNs, excludeList, interpolatedTracks)
-			symbolRegions = cls.__interpolateRegion(lastCGraph.symbols, nowCGraph.symbols, eventTimeNs, excludeList)
+			# interpolatedTracks: List[Tracklet] = []
+			# for tracklet in nowCGraph.fieldOfView.tracks.values():
+			# 	previousTracklet = [tracklet for prevTracklet in lastCGraph.fieldOfView.tracks.values() if prevTracklet.id == tracklet.id]
+			# 	if len(previousTracklet) == 1:
+			# 		interpolatedTracks.append(cls.__interpolateTrack(previousTracklet[0], tracklet, eventTimeNs, startTime, endTime))
+			# 	if len(previousTracklet) > 1: raise RuntimeError("How does this happen?")
 			region1 = ctRegion1[eventTimeNs]
 			region2 = ctRegion2[eventTimeNs]
-			cls.__addRegionToList(region1, mapRegions, fovRegions, symbolRegions)
-			cls.__addRegionToList(region2, mapRegions, fovRegions, symbolRegions)
+			cls.__addRegionToList(region1, fovRegions, symbolRegions)
+			cls.__addRegionToList(region2, fovRegions, symbolRegions)
 			graph = ConnectivityGraph(timeNanoSecs=eventTimeNs, mapRegions=mapRegions, fovRegions=fovRegions, symbols=symbolRegions)
 			graphs.append(graph)
 		return graphs
@@ -132,9 +131,9 @@ class EventAggregator:
 		return filtered
 
 	@classmethod
-	def aggregateCollisionEvents(cls, events: List[CollisionInterval[RegionTypeX, RegionTypeY]], lastCGraph: ConnectivityGraph, nowCGraph: ConnectivityGraph) -> List[ConnectivityGraph]:
+	def aggregateCollisionEvents(cls, events: List[CollisionInterval[RegionTypeX, RegionTypeY]], lastCGraph: ConnectivityGraph, mapRegions: MapRegions) -> List[ConnectivityGraph]:
 		events.sort(key=lambda e: e[-1]) # Sort events by their end time
-		RosUtils.Logger().info("[1] EventAggregator: Aggregating for events @ %s" % repr([(e[4], e[5]) for e in events]))
-		graphs: List[ConnectivityGraph] = cls.__obtainEventCGraphs(events, lastCGraph, nowCGraph)
+		RosUtils.Log("Aggregating for events @ %s" % repr([(e[4], e[5]) for e in events]))
+		graphs: List[ConnectivityGraph] = cls.__obtainEventCGraphs(events, lastCGraph, mapRegions)
 		graphs = cls.__aggregateIsomorphicGraphs(graphs)
 		return graphs

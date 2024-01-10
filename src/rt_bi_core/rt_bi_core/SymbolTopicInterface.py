@@ -1,40 +1,38 @@
-from typing import Dict, List, Union
+from typing import Any, Dict, List, Union
 
 import rclpy
 from rclpy.logging import LoggingSeverity
 from visualization_msgs.msg import MarkerArray
 
 import rt_bi_utils.Ros as RosUtils
-from rt_bi_core.Model.TargetRegion import TargetRegion
+from rt_bi_core.Model.SymbolRegion import SymbolRegion
 from rt_bi_interfaces.msg import DynamicRegion
 from rt_bi_utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_utils.RtBiNode import RtBiNode
-from rt_bi_utils.RViz import ColorNames, RViz
+from rt_bi_utils.RViz import RViz
 
 
-class TargetTopicInterface(RtBiNode):
-	""" This Node listens to all the messages published on the topics related to targets and renders them. """
+class SymbolTopicInterface(RtBiNode):
+	""" This Node listens to all the messages published on the topics related to dynamic symbols and renders them. """
 	def __init__(self, **kwArgs):
-		newKw = { "node_name": "rt_bi_core_target", **kwArgs}
-		super().__init__(loggingSeverity=LoggingSeverity.INFO, **newKw)
-		self.__targets: Union[Dict[int, TargetRegion], None] = None
-		RtBiInterfaces.subscribeToTargetTopic(self, self.__onTargetUpdate)
+		newKw = { "node_name": "rt_bi_core_dy", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
+		super().__init__(**newKw)
+		self.__regions: Union[Dict[int, SymbolRegion], None] = None
+		RtBiInterfaces.subscribeToSymbolTopic(self, self.__onTargetUpdate)
 		(self.__rvizPublisher, _) = RViz.createRVizPublisher(self, RosUtils.CreateTopicName("map"))
-		self.__renderColor = ColorNames.ORANGE
 
 	def __onTargetUpdate(self, update: DynamicRegion) -> None:
 		if update is None:
 			self.log("Skipping None update.")
 			return
-		if self.__targets is None:
-			self.__targets = {}
+		if self.__regions is None: self.__regions = {}
 
 		timeNanoSecs = self.get_clock().now().nanoseconds
-		self.log(f"Updating region type {TargetRegion.RegionType.TARGET} id {update.id} definition @{timeNanoSecs}.")
+		self.log(f"Updating region type {SymbolRegion.RegionType.SYMBOL} id {update.id} definition @{timeNanoSecs}.")
 		coords = RtBiInterfaces.fromStdPoints32ToCoordsList(update.region.points) # type: ignore
 		cor = RtBiInterfaces.fromStdPointToCoords(update.center_of_rotation)
-		target = TargetRegion(centerOfRotation=cor, idNum=update.id, envelope=coords, envelopeColor=self.__renderColor, timeNanoSecs=timeNanoSecs)
-		self.__targets[update.id] = target
+		target = SymbolRegion(centerOfRotation=cor, idNum=update.id, envelope=coords, timeNanoSecs=timeNanoSecs, overlappingRegionId=0, overlappingRegionType=SymbolRegion.RegionType.SYMBOL, index=0)
+		self.__regions[update.id] = target
 		self.render([target])
 		return
 
@@ -44,7 +42,7 @@ class TargetTopicInterface(RtBiNode):
 	def parseConfigFileParameters(self) -> None:
 		return super().parseConfigFileParameters()
 
-	def render(self, regions: List[TargetRegion]) -> None:
+	def render(self, regions: List[Any]) -> None:
 		if not RViz.isRVizReady(self, self.__rvizPublisher):
 			self.log("Skipping map render... RViz is not ready yet to receive messages.")
 			return
@@ -56,7 +54,7 @@ class TargetTopicInterface(RtBiNode):
 
 def main(args=None):
 	rclpy.init(args=args)
-	node = TargetTopicInterface()
+	node = SymbolTopicInterface()
 	rclpy.spin(node)
 	node.destroy_node()
 	rclpy.shutdown()

@@ -5,7 +5,7 @@ from visualization_msgs.msg import Marker
 import rt_bi_utils.Ros as RosUtils
 from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
 from rt_bi_utils.Geometry import Geometry, LineString, MultiPolygon, Polygon
-from rt_bi_utils.RViz import RGBA, RViz
+from rt_bi_utils.RViz import RGBA
 
 RegionType = TypeVar("RegionType", bound=PolygonalRegion)
 
@@ -86,6 +86,11 @@ class RegularSpatialRegion(Generic[RegionType]):
 	@property
 	def edges(self) -> Dict[str, LineString]:
 		raise NotImplementedError()
+
+	@property
+	def regionType(self) -> PolygonalRegion.RegionType:
+		for rName in self: return self[rName].regionType
+		return PolygonalRegion.RegionType.BASE
 
 	def addConnectedComponent(self, region: RegionType) -> None:
 		if region.name in self.__regions:

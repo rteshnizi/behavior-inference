@@ -1,21 +1,19 @@
 from typing import Union
 
 from rt_bi_core.Model.DynamicRegion import DynamicRegion
-from rt_bi_utils.Geometry import Geometry, MultiPolygon, Polygon
-from rt_bi_utils.Pose import Pose
+from rt_bi_utils.Geometry import Geometry, Polygon
 from rt_bi_utils.RViz import RGBA
 
 
 class AffineRegion(DynamicRegion):
 	def __init__(
 			self,
-			centerOfRotation: Pose,
+			centerOfRotation: Geometry.Coords,
 			idNum: int,
 			envelope: Geometry.CoordsList,
 			envelopeColor: RGBA,
-			regionType: DynamicRegion.RegionType,
 			timeNanoSecs: int,
-			interior: Union[Polygon, MultiPolygon, None]=None,
+			interior: Union[Polygon, None]=None,
 			**kwArgs
 		) -> None:
 		"""
@@ -35,21 +33,20 @@ class AffineRegion(DynamicRegion):
 			The type of this region.
 		timeNanoSecs: int
 			A timestamp representing absolute value of time in nanosecond (ns).
-		interior: Union[Polygon, MultiPolygon, None], default `None`
+		interior: Union[Polygon, None], default `None`
 			The interior of the region, if it is separate from its envelope, default forces construction.
 		"""
 		super().__init__(
 			idNum=idNum,
 			envelope=envelope,
 			envelopeColor=envelopeColor,
-			regionType=regionType,
 			timeNanoSecs=timeNanoSecs,
 			interior=interior,
 			**kwArgs
 		)
-		self.centerOfRotation = centerOfRotation
+		self.centerOfRotation: Geometry.Coords = centerOfRotation
 
 	@property
-	def name(self) -> str:
-		"""Attaches: `AFF-` to super `super().name`."""
-		return "AFF-%s" % super().name
+	def shortName(self) -> str:
+		"""`AFF-super().name`."""
+		return f"AFF-{super().shortName}"

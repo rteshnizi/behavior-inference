@@ -28,7 +28,7 @@ class Shadows(RegularAffineRegion[ShadowRegion]):
 		return super().__getitem__(regionName)
 
 	def addConnectedComponent(self, region: ShadowRegion) -> None:
-		if region.regionType != ShadowRegion.RegionType.SHADOW: return
+		if region.regionType != ShadowRegion.RegionType.SHADOW: raise TypeError(f"Incorrect region type {region.regionType}")
 		return super().addConnectedComponent(region)
 
 	def intersection(self, others: "Shadows") -> Set[str]:

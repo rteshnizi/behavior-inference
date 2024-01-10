@@ -7,25 +7,27 @@ from rclpy.parameter import Parameter
 from sa_msgs.msg import RobotState
 
 from rt_bi_emulator.Model.Shared import Body
+from rt_bi_interfaces.msg import DynamicRegion as DynamicRegionMsg
 from rt_bi_utils.Geometry import AffineTransform, Geometry, Polygon
 from rt_bi_utils.Pose import Pose
+from rt_bi_utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_utils.RtBiNode import RtBiNode
 from rt_bi_utils.SaMsgs import SaMsgs
 
 
-class DynamicRegionBase(RtBiNode):
+class DynamicRegionNode(RtBiNode):
 	NANO_CONVERSION_CONSTANT = 10 ** 9
-	def __init__(self, loggingLevel: LoggingSeverity = LoggingSeverity.DEBUG, **kwArgs):
-		newKw = { "node_name": "rt_bi_emulator_dyn_region_base", **kwArgs}
-		super().__init__(loggingLevel=loggingLevel, **newKw)
+	def __init__(self, loggingSeverity: LoggingSeverity, **kwArgs):
+		newKw = { "node_name": "rt_bi_emulator_dyn_region_base", "loggingSeverity": loggingSeverity, **kwArgs}
+		super().__init__(**newKw)
 		self.declareParameters()
-		self.__id = -1
+		self.id = -1
 		self.updateInterval = 1
 		self.__initTime = float(self.get_clock().now().nanoseconds)
 		self.__cutOffTime: float = inf
 		self.__centersOfRotation: Geometry.CoordsList = []
-		self.__targetPositions: List[Body] = []
-		self.__initRegionPoly = Polygon()
+		self.regionPositions: List[Body] = []
+		self.__initialRegionPoly = Polygon()
 		self.__totalTimeNanoSecs = 0.0
 		self.__transformationMatrix: List[AffineTransform] = []
 		self.parseConfigFileParameters()
@@ -45,7 +47,7 @@ class DynamicRegionBase(RtBiNode):
 
 	def parseConfigFileParameters(self) -> None:
 		self.log("%s is parsing parameters." % self.get_fully_qualified_name())
-		self.__id = self.get_parameter("id").get_parameter_value().integer_value
+		self.id = self.get_parameter("id").get_parameter_value().integer_value
 		self.updateInterval = self.get_parameter("updateInterval").get_parameter_value().double_value
 		try: self.__cutOffTime = self.get_parameter("cutOffTime").get_parameter_value().double_value
 		except: self.__cutOffTime = inf
@@ -61,18 +63,18 @@ class DynamicRegionBase(RtBiNode):
 			parsedFov.append(fov)
 			pose = json.loads(saPoses[i])
 			timeNanoSecs = int(timePoints[i] * self.NANO_CONVERSION_CONSTANT)
-			body = Body(self.__id, Pose(timeNanoSecs, *(pose)), parsedFov[i])
+			body = Body(self.id, Pose(timeNanoSecs, *(pose)), self.__centersOfRotation[i], parsedFov[i])
 			self.log("parsed %s" % repr(body))
-			self.__targetPositions.append(body)
+			self.regionPositions.append(body)
 			if i > 0:
-				matrix = Geometry.getAffineTransformation(self.__targetPositions[i - 1].spatialRegion, self.__targetPositions[i].spatialRegion)
+				matrix = Geometry.getAffineTransformation(self.regionPositions[i - 1].spatialRegion, self.regionPositions[i].spatialRegion)
 				self.__transformationMatrix.append(matrix)
-		self.__initRegionPoly = Polygon(self.__targetPositions[0].spatialRegion)
+		self.__initialRegionPoly = Polygon(self.regionPositions[0].spatialRegion)
 		self.__totalTimeNanoSecs = timePoints[-1] * self.NANO_CONVERSION_CONSTANT
 		return
 
-	def __getPoseAtTime(self, timeNanoSecs: int) -> Pose:
-		if self.__passedCutOffTime < 0 and ((timeNanoSecs - self.__initTime) / DynamicRegionBase.NANO_CONVERSION_CONSTANT) > self.__cutOffTime:
+	def getRegionAtTime(self, timeNanoSecs: int) -> Polygon:
+		if self.__passedCutOffTime < 0 and ((timeNanoSecs - self.__initTime) / DynamicRegionNode.NANO_CONVERSION_CONSTANT) > self.__cutOffTime:
 			self.__passedCutOffTime = timeNanoSecs
 		elif self.__passedCutOffTime > 0:
 			timeNanoSecs = self.__passedCutOffTime
@@ -80,14 +82,51 @@ class DynamicRegionBase(RtBiNode):
 		elapsedTimeRatio = 1 if elapsedTimeRatio > 1 else elapsedTimeRatio
 		if elapsedTimeRatio < 1:
 			matrix = Geometry.getParameterizedAffineTransformation(self.__transformationMatrix[0], elapsedTimeRatio)
-			transformed = Geometry.applyMatrixTransformToPose(matrix, self.__targetPositions[0].location)
+			return Geometry.applyMatrixTransformToPolygon(matrix, self.__initialRegionPoly)
+		return Polygon(self.regionPositions[-1].spatialRegion)
+
+	def getPoseAtTime(self, timeNanoSecs: int) -> Pose:
+		if self.__passedCutOffTime < 0 and ((timeNanoSecs - self.__initTime) / DynamicRegionNode.NANO_CONVERSION_CONSTANT) > self.__cutOffTime:
+			self.__passedCutOffTime = timeNanoSecs
+		elif self.__passedCutOffTime > 0:
+			timeNanoSecs = self.__passedCutOffTime
+		elapsedTimeRatio = (timeNanoSecs - self.__initTime) / self.__totalTimeNanoSecs
+		elapsedTimeRatio = 1 if elapsedTimeRatio > 1 else elapsedTimeRatio
+		if elapsedTimeRatio < 1:
+			matrix = Geometry.getParameterizedAffineTransformation(self.__transformationMatrix[0], elapsedTimeRatio)
+			transformed = Geometry.applyMatrixTransformToPose(matrix, self.regionPositions[0].location)
 			transformed.timeNanoSecs = timeNanoSecs
 			return transformed
-		return Pose(timeNanoSecs, self.__targetPositions[-1].location.x, self.__targetPositions[-1].location.y, self.__targetPositions[-1].location.angleFromX)
+		return Pose(timeNanoSecs, self.regionPositions[-1].location.x, self.regionPositions[-1].location.y, self.regionPositions[-1].location.angleFromX)
+
+	def __getCenterOfRotationAtTime(self, timeNanoSecs: int) -> Pose:
+		if self.__passedCutOffTime < 0 and ((timeNanoSecs - self.__initTime) / DynamicRegionNode.NANO_CONVERSION_CONSTANT) > self.__cutOffTime:
+			self.__passedCutOffTime = timeNanoSecs
+		elif self.__passedCutOffTime > 0:
+			timeNanoSecs = self.__passedCutOffTime
+		elapsedTimeRatio = (timeNanoSecs - self.__initTime) / self.__totalTimeNanoSecs
+		elapsedTimeRatio = 1 if elapsedTimeRatio > 1 else elapsedTimeRatio
+		if elapsedTimeRatio < 1:
+			return Pose(timeNanoSecs, self.regionPositions[0].location.x, self.regionPositions[0].location.y, self.regionPositions[0].location.angleFromX)
+		return Pose(timeNanoSecs, self.regionPositions[-1].location.x, self.regionPositions[-1].location.y, self.regionPositions[-1].location.angleFromX)
+
+	def createDynamicRegionMsg(self) -> DynamicRegionMsg:
+		timeOfPublish = self.get_clock().now()
+		region = self.getRegionAtTime(timeOfPublish.nanoseconds)
+		currentPose = self.getPoseAtTime(timeOfPublish.nanoseconds)
+		currentCor = self.__getCenterOfRotationAtTime(timeOfPublish.nanoseconds)
+		msg = DynamicRegionMsg(
+			id=self.id,
+			stamp=timeOfPublish.to_msg(),
+			pose=RtBiInterfaces.toStdPose(currentPose),
+			center_of_rotation=RtBiInterfaces.toStdPoint(currentCor),
+			region=RtBiInterfaces.toPolygonMsg(region),
+		)
+		return msg
 
 	def createRobotStateMsg(self) -> RobotState:
 		timeOfPublish = self.get_clock().now().nanoseconds
-		if self.__passedCutOffTime < 0 and ((timeOfPublish - self.__initTime) / DynamicRegionBase.NANO_CONVERSION_CONSTANT) > self.__cutOffTime:
+		if self.__passedCutOffTime < 0 and ((timeOfPublish - self.__initTime) / DynamicRegionNode.NANO_CONVERSION_CONSTANT) > self.__cutOffTime:
 			self.__passedCutOffTime = timeOfPublish
 		elif self.__passedCutOffTime > 0:
 			timeOfPublish = self.__passedCutOffTime
@@ -95,12 +134,12 @@ class DynamicRegionBase(RtBiNode):
 		elapsedTimeRatio = 1 if elapsedTimeRatio > 1 else elapsedTimeRatio
 		if elapsedTimeRatio < 1:
 			matrix = Geometry.getParameterizedAffineTransformation(self.__transformationMatrix[0], elapsedTimeRatio)
-			fov = Geometry.applyMatrixTransformToPolygon(matrix, self.__initRegionPoly)
+			fov = Geometry.applyMatrixTransformToPolygon(matrix, self.__initialRegionPoly)
 		else:
-			fov = Polygon(self.__targetPositions[-1].spatialRegion)
+			fov = Polygon(self.regionPositions[-1].spatialRegion)
 		msg = RobotState()
-		msg.robot_id = self.__id
-		currentPose = self.__getPoseAtTime(timeOfPublish)
+		msg.robot_id = self.id
+		currentPose = self.getPoseAtTime(timeOfPublish)
 		msg.pose = SaMsgs.createSaPoseMsg(currentPose.x, currentPose.y, currentPose.angleFromX)
 		msg.fov = SaMsgs.createSaFovMsg(list(fov.exterior.coords))
 		return msg

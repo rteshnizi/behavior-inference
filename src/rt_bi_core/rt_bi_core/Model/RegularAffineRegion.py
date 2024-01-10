@@ -30,8 +30,15 @@ class RegularAffineRegion(Generic[RegionType], RegularDynamicRegion[RegionType])
 		if self.isEmpty: return -1
 		else: return self[next(iter(self))].timeNanoSecs
 
+	@timeNanoSec.setter
+	def timeNanoSec(self, t: int) -> None:
+		for rName in self.regionNames:
+			self[rName].timeNanoSecs = t
+		return
+
 	def addConnectedComponent(self, region: RegionType) -> None:
-		return super().addConnectedComponent(region)
+		super().addConnectedComponent(region)
+		return
 
 	def intersection(self, other: "RegularAffineRegion") -> Set[str]:
 		return super().intersection(other)

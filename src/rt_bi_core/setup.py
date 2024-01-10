@@ -28,7 +28,7 @@ setup(
 			"MI = rt_bi_core.MapServiceInterface:main",
 			"SI = rt_bi_core.SensorTopicInterface:main",
 			"TI = rt_bi_core.TargetTopicInterface:main",
-			"DI = rt_bi_core.DyRegTopicInterface:main",
+			"SYI = rt_bi_core.SymbolTopicInterface:main",
 		],
 	},
 )

@@ -1,16 +1,16 @@
-import random
 from ctypes import c_int32
-from math import cos, sin, sqrt
+from math import cos, sin
 from typing import Tuple, Union
 from zlib import adler32
 
 from geometry_msgs.msg import Point as PointMsg
-from rclpy.node import Node, Publisher, Timer
+from rclpy.node import Publisher, Timer
 from visualization_msgs.msg import Marker, MarkerArray
 
 import rt_bi_utils.Ros as RosUtils
 from rt_bi_utils.Color import RGBA, ColorNames
 from rt_bi_utils.Geometry import Geometry
+from rt_bi_utils.RtBiNode import RtBiNode
 
 
 class RViz:
@@ -25,7 +25,7 @@ class RViz:
 	FRAME_ID = "map"
 
 	@staticmethod
-	def isRVizReady(node: Node, publisher: Publisher) -> bool:
+	def isRVizReady(node: RtBiNode, publisher: Publisher) -> bool:
 		if node.executor is None:
 			node.get_logger().error("No Executor.")
 			return False
@@ -38,7 +38,7 @@ class RViz:
 		return True
 
 	@staticmethod
-	def createRVizPublisher(node: Node, topic: str) -> Tuple[Publisher, Union[Timer, None]]:
+	def createRVizPublisher(node: RtBiNode, topic: str) -> Tuple[Publisher, Union[Timer, None]]:
 		return RosUtils.CreatePublisher(node, MarkerArray, topic)
 
 	@staticmethod

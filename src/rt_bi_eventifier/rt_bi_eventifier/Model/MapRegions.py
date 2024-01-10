@@ -4,7 +4,7 @@ from rt_bi_core.Model.MapRegion import MapRegion
 from rt_bi_core.Model.RegularAffineRegion import RegularAffineRegion
 
 
-class MapPerimeter(RegularAffineRegion[MapRegion]):
+class MapRegions(RegularAffineRegion[MapRegion]):
 	"""A Class to model Shadows."""
 	def __init__(self, regions: List[MapRegion] = []):
 		"""
@@ -12,27 +12,27 @@ class MapPerimeter(RegularAffineRegion[MapRegion]):
 		"""
 		super().__init__(regions=regions)
 
-	def __and__(self, other: "MapPerimeter") -> Set[str]:
+	def __and__(self, other: "MapRegions") -> Set[str]:
 		return super().__and__(other)
 
-	def __add__(self, other: "MapPerimeter") -> Set[str]:
+	def __add__(self, other: "MapRegions") -> Set[str]:
 		return super().__add__(other)
 
-	def __sub__(self, other: "MapPerimeter") -> Set[str]:
+	def __sub__(self, other: "MapRegions") -> Set[str]:
 		return super().__sub__(other)
 
 	def __getitem__(self, regionName: str) -> MapRegion:
 		return super().__getitem__(regionName)
 
 	def addConnectedComponent(self, region: MapRegion) -> None:
-		if region.regionType != MapRegion.RegionType.MAP: return
+		if region.regionType != MapRegion.RegionType.MAP: raise TypeError(f"Incorrect region type {region.regionType}")
 		return super().addConnectedComponent(region)
 
-	def intersection(self, other: "MapPerimeter") -> Set[str]:
+	def intersection(self, other: "MapRegions") -> Set[str]:
 		return super().intersection(other)
 
-	def union(self, other: "MapPerimeter") -> Set[str]:
+	def union(self, other: "MapRegions") -> Set[str]:
 		return super().union(other)
 
-	def difference(self, other: "MapPerimeter") -> Set[str]:
+	def difference(self, other: "MapRegions") -> Set[str]:
 		return super().difference(other)

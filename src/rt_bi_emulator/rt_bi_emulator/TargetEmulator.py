@@ -1,18 +1,18 @@
 import rclpy
 from rclpy.logging import LoggingSeverity
 
-from rt_bi_emulator.Model.DynamicRegionNode import DynamicRegionBase
-from rt_bi_utils.RtBiEmulator import RtBiEmulator
+from rt_bi_emulator.Model.DynamicRegionNode import DynamicRegionNode
+from rt_bi_utils.RtBiInterfaces import RtBiInterfaces
 
 
-class TargetEmulator(DynamicRegionBase):
+class TargetEmulator(DynamicRegionNode):
 	def __init__(self):
-		super().__init__(loggingLevel=LoggingSeverity.DEBUG, node_name="rt_bi_emulator_target")
-		(self.__publisher, _) = RtBiEmulator.createTargetPublisher(self, self.publishUpdate, self.updateInterval)
+		super().__init__(loggingSeverity=LoggingSeverity.DEBUG, node_name="rt_bi_emulator_target")
+		(self.__publisher, _) = RtBiInterfaces.createTargetPublisher(self, self.publishUpdate, self.updateInterval)
 
 	def publishUpdate(self) -> None:
-		msg = self.createRobotStateMsg()
-		self.__publisher.publish(msg)
+		msgDy = self.createDynamicRegionMsg()
+		self.__publisher.publish(msgDy)
 
 def main(args=None):
 	rclpy.init(args=args)

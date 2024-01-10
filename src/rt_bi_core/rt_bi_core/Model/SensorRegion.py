@@ -1,4 +1,4 @@
-from typing import Dict, List, Sequence, Union
+from typing import Dict, Literal, Sequence, Union
 
 from visualization_msgs.msg import Marker
 
@@ -6,7 +6,6 @@ import rt_bi_utils.Ros as RosUtils
 from rt_bi_core.Model.AffineRegion import AffineRegion
 from rt_bi_core.Model.Tracklet import Tracklet
 from rt_bi_utils.Geometry import Geometry, MultiPolygon, Polygon
-from rt_bi_utils.Pose import Pose
 from rt_bi_utils.RViz import RGBA, ColorNames
 
 
@@ -16,7 +15,7 @@ class SensorRegion(AffineRegion):
 	"""
 	def __init__(
 			self,
-			centerOfRotation: Pose,
+			centerOfRotation: Geometry.Coords,
 			idNum: int,
 			envelope: Geometry.CoordsList,
 			timeNanoSecs: int,
@@ -52,7 +51,6 @@ class SensorRegion(AffineRegion):
 			idNum=idNum,
 			envelope=envelope,
 			envelopeColor=ColorNames.GREEN,
-			regionType=AffineRegion.RegionType.SENSING,
 			timeNanoSecs=timeNanoSecs,
 			interior=interior,
 			**kwArgs
@@ -79,6 +77,10 @@ class SensorRegion(AffineRegion):
 			`True` if there is any tracklets information, `False` otherwise.
 		"""
 		return len(self.__tracklets) > 0
+
+	@property
+	def regionType(self) -> Literal[AffineRegion.RegionType.SENSING]:
+		return self.RegionType.SENSING
 
 	def render(self, renderTracklet = False, envelopeColor: Union[RGBA, None] = None) -> Sequence[Marker]:
 		msgs = super().render(renderText=False, envelopeColor=envelopeColor)

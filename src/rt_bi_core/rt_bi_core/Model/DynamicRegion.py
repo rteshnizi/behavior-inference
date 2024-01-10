@@ -1,8 +1,8 @@
 from typing import Union
 
 from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
-from rt_bi_utils.Geometry import Geometry, MultiPolygon, Polygon
-from rt_bi_utils.RViz import RGBA, ColorNames
+from rt_bi_utils.Geometry import Geometry, Polygon
+from rt_bi_utils.RViz import RGBA
 
 
 class DynamicRegion(PolygonalRegion):
@@ -19,9 +19,8 @@ class DynamicRegion(PolygonalRegion):
 			idNum: int,
 			envelope: Geometry.CoordsList,
 			envelopeColor: RGBA,
-			regionType: PolygonalRegion.RegionType,
 			timeNanoSecs: int,
-			interior: Union[Polygon, MultiPolygon, None] = None,
+			interior: Union[Polygon, None] = None,
 			**kwArgs
 		) -> None:
 		"""
@@ -39,7 +38,7 @@ class DynamicRegion(PolygonalRegion):
 			The type of this region.
 		timeNanoSecs: int
 			A timestamp representing absolute value of time in nanosecond (ns).
-		interior: Union[Polygon, MultiPolygon, None], default `None`
+		interior: Union[Polygon, None], default `None`
 			The interior of the region, if it is separate from its envelope, default forces construction.
 		"""
 		super().__init__(
@@ -47,7 +46,6 @@ class DynamicRegion(PolygonalRegion):
 			envelope=envelope,
 			envelopeColor=envelopeColor,
 			interior=interior,
-			regionType=regionType,
 			**kwArgs
 		)
 		self.__timeNanoSecs = timeNanoSecs
@@ -56,3 +54,8 @@ class DynamicRegion(PolygonalRegion):
 	def timeNanoSecs(self) -> int:
 		"""The timestamp associated with the region in NanoSeconds."""
 		return self.__timeNanoSecs
+
+	@timeNanoSecs.setter
+	def timeNanoSecs(self, t: int) -> None:
+		self.__timeNanoSecs = t
+		return

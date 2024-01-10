@@ -1,15 +1,13 @@
-from functools import partial
-from typing import Dict, List, Union
+from typing import Dict, List
 
 import rclpy
-from sa_msgs.msg import RobotState
 from visualization_msgs.msg import MarkerArray
 
 import rt_bi_utils.Ros as RosUtils
 from rt_bi_core.Model.SensorRegion import SensorRegion
 from rt_bi_core.Model.Tracklet import Tracklet
-from rt_bi_interfaces.msg import EstimationMsg
-from rt_bi_utils.RtBiEmulator import RtBiEmulator
+from rt_bi_interfaces.msg import DynamicRegion, EstimationMsg
+from rt_bi_utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_utils.RtBiNode import RtBiNode
 from rt_bi_utils.RViz import RViz
 from rt_bi_utils.SaMsgs import SaMsgs
@@ -21,24 +19,24 @@ class SensorTopicInterface(RtBiNode):
 		newKw = { "node_name": "rt_bi_core_sensor", **kwArgs}
 		super().__init__(**newKw)
 		self.__sensors: Dict[int, SensorRegion] = {}
-		SaMsgs.subscribeToRobotStateTopic(self, partial(self.__onRobotStateUpdate, render=True))
-		RtBiEmulator.subscribeToEstimationTopic(self, self.__onEstimation)
+		RtBiInterfaces.subscribeToSensorTopic(self, self.__onRegionUpdate)
+		RtBiInterfaces.subscribeToEstimationTopic(self, self.__onEstimation)
 		(self.__rvizPublisher, _) = RViz.createRVizPublisher(self, RosUtils.CreateTopicName("map"))
 
-	def __onRobotStateUpdate(self, update: RobotState, render = False) -> Union[SensorRegion, None]:
+	def __onRegionUpdate(self, update: DynamicRegion) -> None:
 		if update is None:
-			self.get_logger().warn("Received empty RobotState!")
+			self.log("Skipping None update.")
 			return
 
-		self.get_logger().debug("Updating sensor %d definition." % update.robot_id)
-		coords = SaMsgs.convertSaPoseListToCoordsList(update.fov.corners)
 		timeNanoSecs = self.get_clock().now().nanoseconds
-		tracklets = self.__sensors[update.robot_id].tracklets if update.robot_id in self.__sensors else {}
-		pose = SaMsgs.convertSaPoseToPose(update.pose, timeNanoSecs)
-		sensor = SensorRegion(centerOfRotation=pose, idNum=update.robot_id, envelope=coords, timeNanoSecs=timeNanoSecs, tracklets=tracklets)
-		self.__sensors[update.robot_id] = sensor
-		if render: self.render([sensor], sensor.tracklets)
-		return sensor
+		self.log(f"Updating region type {SensorRegion.RegionType.SENSING} id {update.id} definition @{timeNanoSecs}.")
+		coords = RtBiInterfaces.fromStdPoints32ToCoordsList(update.region.points) # type: ignore
+		cor = RtBiInterfaces.fromStdPointToCoords(update.center_of_rotation)
+		tracklets = self.__sensors[update.id].tracklets if update.id in self.__sensors else {}
+		sensor = SensorRegion(centerOfRotation=cor, idNum=update.id, envelope=coords, timeNanoSecs=timeNanoSecs, tracklets=tracklets)
+		self.__sensors[update.id] = sensor
+		self.render([sensor], sensor.tracklets)
+		return
 
 	def __onEstimation(self, msg: EstimationMsg) -> None:
 		if msg is None:

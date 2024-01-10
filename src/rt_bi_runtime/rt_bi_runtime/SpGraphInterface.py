@@ -9,13 +9,13 @@ class SpGraphInterface(RtBiNode):
 		return
 
 	def declareParameters(self) -> None:
-		return
+		return super().declareParameters()
 
 	def parseConfigFileParameters(self) -> None:
-		return
+		return super().parseConfigFileParameters()
 
 	def render(self) -> None:
-		return
+		return super().render()
 
 def main(args=None):
 	rclpy.init(args=args)

@@ -1,10 +1,12 @@
 import logging
+from functools import partial
 from math import isnan, nan
 from typing import AbstractSet, Any, Callable, Dict, List, Sequence, Tuple, TypeVar, Union
 
 import rclpy
 from builtin_interfaces.msg import Time
 from rclpy.impl.rcutils_logger import RcutilsLogger
+from rclpy.logging import LoggingSeverity
 from rclpy.node import Client, Node, Publisher, Subscription, Timer
 
 Topic = TypeVar("Topic")
@@ -14,14 +16,17 @@ NAMESPACE = "rt_bi_core"
 __LOGGER: Union[RcutilsLogger, None] = None
 # In case of failure to obtain a ROS logger, the default Python logger will be used, which most likely will log to std stream.
 logging.basicConfig(format="[+][%(levelname)s]: %(message)s", force=True)
-
+__rtBiLog: Callable[[str], bool] = lambda m: False
 __strNameToIdNum: Dict[str, int] = dict()
 """This map helps us assume nothing about the meaning of the names assigned to any regions."""
+NANO_CONVERSION_CONSTANT = 10 ** 9
 
 
-def SetLogger(logger: RcutilsLogger) -> None:
+def SetLogger(logger: RcutilsLogger, defaultSeverity: LoggingSeverity) -> None:
 	global __LOGGER
+	global __rtBiLog
 	__LOGGER = logger
+	__rtBiLog = partial(__LOGGER.log, severity=defaultSeverity)
 	return
 
 def Logger() -> Union[RcutilsLogger, logging.Logger]:
@@ -41,11 +46,18 @@ def Logger() -> Union[RcutilsLogger, logging.Logger]:
 		__LOGGER = rosNodes[0].get_logger()
 	return __LOGGER
 
+def Log(msg: str) -> bool:
+	global __rtBiLog
+	return __rtBiLog(msg)
+
 def RosTimeStamp() -> Time:
 	context = rclpy.get_default_context()
 	if not context.ok():
 		raise RuntimeError("ROS context not OK!")
 	return rclpy.get_global_executor()._clock.now().to_msg()
+
+def TimeToInt(t: Time) -> int:
+	return ((t.sec * NANO_CONVERSION_CONSTANT) + t.nanosec) # CSpell: ignore nanosec
 
 def CreatePublisher(node: Node, topic: Topic, topicName: str, callbackFunc: Callable[[Topic], None] = lambda _: None, intervalSecs: float = nan) -> Tuple[Publisher, Union[Timer, None]]:
 	"""
@@ -75,7 +87,7 @@ def CreatePublisher(node: Node, topic: Topic, topicName: str, callbackFunc: Call
 		freq = " @ %.2fHz" % (1 / intervalSecs)
 	except:
 		freq = ""
-	node.get_logger().debug("%s publishes topic \"%s\"%s" % (node.get_fully_qualified_name(), topicName, freq))
+	node.get_logger().debug(f"{node.get_fully_qualified_name()} publishes topic \"{topicName}\"{freq}")
 	return (publisher, timer)
 
 def CreateSubscriber(node: Node, topic: Topic, topicName: str, callbackFunc: Callable[[Topic], None]) -> Subscription:
@@ -171,3 +183,6 @@ def RegisterRegionId(featureName: str) -> int:
 	idNum = len(__strNameToIdNum)
 	__strNameToIdNum[featureName] = idNum
 	return idNum
+
+def CreateTimer(node: Node, callback: Callable, intervalNs = 1000) -> Timer:
+	return Timer(callback, None, intervalNs, node.get_clock(), context=node.context)

@@ -10,7 +10,7 @@ from rt_bi_utils.SaMsgs import SaMsgs
 
 class MapEmulator(RtBiNode):
 	def __init__(self):
-		super().__init__(node_name="rt_bi_emulator_map")
+		super().__init__(node_name="rt_bi_emulator_sa_map")
 		SaMsgs.createSaFeatureQueryService(self, self.__featureInfoQueryCallback)
 
 	def __featureInfoQueryCallback(self, request: QueryFeature.Request, response: QueryFeature.Response) -> QueryFeature.Response:
