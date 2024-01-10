@@ -48,4 +48,4 @@ class MapRegion(AffineRegion):
 
 	def render(self, renderText = False) -> Sequence[Marker]:
 		self.BACKGROUND_COLOR = self.resolvedBgColor
-		return super().render(renderText, fill=True)
+		return super().render(renderText)

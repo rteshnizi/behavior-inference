@@ -13,7 +13,7 @@ class SymbolRegion(AffineRegion):
 		AffineRegion.RegionType.BASE: ColorNames.DARK_RED,
 		AffineRegion.RegionType.MAP: ColorNames.YELLOW,
 		AffineRegion.RegionType.SENSING: ColorNames.CYAN,
-		AffineRegion.RegionType.SHADOW: ColorNames.DARK_BLUE,
+		AffineRegion.RegionType.SHADOW: ColorNames.BLUE,
 		AffineRegion.RegionType.SYMBOL: ColorNames.DARK_MAGENTA,
 		AffineRegion.RegionType.TARGET: ColorNames.RED,
 	}
@@ -48,5 +48,5 @@ class SymbolRegion(AffineRegion):
 	def name(self) -> str:
 		return f"{super().shortName}-{self.overlappingRegionType.value}-{self.__overlappingRegionId}"
 
-	def render(self, envelopeColor: Union[RGBA, None] = None) -> Sequence[Marker]:
-		return super().render(renderText=True, envelopeColor=envelopeColor)
+	def render(self, envelopeColor: Union[RGBA, None] = None, durationNs: int = -1) -> Sequence[Marker]:
+		return super().render(renderText=True, envelopeColor=envelopeColor, durationNs=durationNs)

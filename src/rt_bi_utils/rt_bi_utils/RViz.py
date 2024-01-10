@@ -12,6 +12,7 @@ from rt_bi_utils.Color import RGBA, ColorNames
 from rt_bi_utils.Geometry import Geometry
 from rt_bi_utils.RtBiNode import RtBiNode
 
+NANO_CONVERSION_CONSTANT = 10 ** 9
 
 class RViz:
 	"""
@@ -83,19 +84,21 @@ class RViz:
 		return marker
 
 	@staticmethod
-	def __setMarkerHeader(marker: Marker) -> Marker:
+	def __setMarkerHeader(marker: Marker, durationNs: int) -> Marker:
 		marker.ns = RosUtils.NAMESPACE
 		marker.action = Marker.ADD
+		if durationNs > 0:
+			marker.lifetime = RosUtils.DurationMsg(int(durationNs / NANO_CONVERSION_CONSTANT), durationNs % NANO_CONVERSION_CONSTANT)
 		marker.pose.orientation.w = 1.0
 		marker.header.frame_id = RViz.FRAME_ID
-		marker.header.stamp = RosUtils.RosTimeStamp()
+		marker.header.stamp = RosUtils.TimeStamp()
 		return marker
 
 	@staticmethod
-	def createCircle(strId: str, centerX: float, centerY: float, radius: float, outline: RGBA, width = 1.0) -> Marker:
+	def createCircle(strId: str, centerX: float, centerY: float, radius: float, outline: RGBA, width = 1.0, durationNs: int = -1) -> Marker:
 		RosUtils.Logger().debug("Render circle id %s." % strId)
 		circle = Marker()
-		circle = RViz.__setMarkerHeader(circle)
+		circle = RViz.__setMarkerHeader(circle, durationNs)
 		circle = RViz.__setMarkerId(circle, strId)
 		circle.type = Marker.LINE_STRIP
 		circle = RViz.__setMarkerColor(circle, outline)
@@ -109,7 +112,7 @@ class RViz:
 		return circle
 
 	@staticmethod
-	def createPolygon(strId: str, coords: Geometry.CoordsList, outline: RGBA, width: float) -> Marker:
+	def createPolygon(strId: str, coords: Geometry.CoordsList, outline: RGBA, width: float, durationNs: int = -1) -> Marker:
 		"""Create a polygon Marker message.
 
 		Parameters
@@ -130,7 +133,7 @@ class RViz:
 		"""
 		RosUtils.Logger().debug("Render polygon id %s." % strId)
 		polygon = Marker()
-		polygon = RViz.__setMarkerHeader(polygon)
+		polygon = RViz.__setMarkerHeader(polygon, durationNs)
 		polygon = RViz.__setMarkerId(polygon, strId)
 		polygon.type = Marker.LINE_STRIP
 		polygon = RViz.__setMarkerColor(polygon, outline)
@@ -145,7 +148,7 @@ class RViz:
 		return polygon
 
 	@staticmethod
-	def createLine(strId: str, coords: Geometry.CoordsList, outline: RGBA, width: float, arrow = False) -> Marker:
+	def createLine(strId: str, coords: Geometry.CoordsList, outline: RGBA, width: float, arrow = False, durationNs: int = -1) -> Marker:
 		"""Create a line Marker message.
 
 		Parameters
@@ -168,7 +171,7 @@ class RViz:
 		"""
 		RosUtils.Logger().debug("Render line strip id %s." % strId)
 		lineSeg = Marker()
-		lineSeg = RViz.__setMarkerHeader(lineSeg)
+		lineSeg = RViz.__setMarkerHeader(lineSeg, durationNs)
 		lineSeg = RViz.__setMarkerId(lineSeg, strId)
 		lineSeg.type = Marker.LINE_STRIP
 		lineSeg = RViz.__setMarkerColor(lineSeg, outline)
@@ -185,7 +188,7 @@ class RViz:
 		return lineSeg
 
 	@staticmethod
-	def createText(strId: str, coords: Geometry.Coords, text: str, outline: RGBA = ColorNames.BLACK, fontSize = 10.0) -> Marker:
+	def createText(strId: str, coords: Geometry.Coords, text: str, outline: RGBA = ColorNames.BLACK, fontSize = 10.0, durationNs: int = -1) -> Marker:
 		"""Create a text Marker message.
 
 		Parameters
@@ -209,7 +212,7 @@ class RViz:
 		# RosUtils.Logger().info("Render text ID %s with content \"%s\"" % (strId, text))
 		RosUtils.Logger().debug("Render text id %s." % strId)
 		textMarker = Marker()
-		textMarker = RViz.__setMarkerHeader(textMarker)
+		textMarker = RViz.__setMarkerHeader(textMarker, durationNs)
 		textMarker = RViz.__setMarkerId(textMarker, strId)
 		textMarker.type = Marker.TEXT_VIEW_FACING
 		textMarker.text = text
@@ -225,7 +228,7 @@ class RViz:
 		"""
 		RosUtils.Logger().debug("Clear rendered RViz shape id %s." % strId)
 		marker = Marker()
-		marker = RViz.__setMarkerHeader(marker)
+		marker = RViz.__setMarkerHeader(marker, -1)
 		marker.action = Marker.DELETE # To remove shape
 		marker = RViz.__setMarkerId(marker, strId)
 		return marker
@@ -237,6 +240,6 @@ class RViz:
 		"""
 		RosUtils.Logger().debug("Clear all rendered shapes from RViz.")
 		marker = Marker()
-		marker = RViz.__setMarkerHeader(marker)
+		marker = RViz.__setMarkerHeader(marker, -1)
 		marker.action = Marker.DELETEALL # To remove shape # CSpell: disable-line
 		return marker

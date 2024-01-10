@@ -165,15 +165,13 @@ class PolygonalRegion(ABC):
 			if Geometry.lineSegmentsAreAlmostEqual(finalConfig, afterTransformation): return edge
 		return None
 
-	def render(self, renderText: bool = False, fill: bool = False, envelopeColor: Union[RGBA, None] = None) -> Sequence[Marker]:
+	def render(self, durationNs: int, renderText: bool = False, envelopeColor: Union[RGBA, None] = None) -> Sequence[Marker]:
 		msgs = []
-		if fill:
-			RosUtils.Logger().debug("Cannot fill polygons yet.")
 		envelopColor = envelopeColor if envelopeColor is not None else self.__DEFAULT_ENVELOPE_COLOR
-		msgs.append(RViz.createPolygon(self.name, Geometry.getGeometryCoords(self.interior), envelopColor, self.__RENDER_LINE_WIDTH))
+		msgs.append(RViz.createPolygon(self.name, Geometry.getGeometryCoords(self.interior), envelopColor, self.__RENDER_LINE_WIDTH, durationNs=durationNs))
 		if renderText:
 			textCoords = Geometry.getGeometryCoords(self.interior.centroid)[0]
-			msgs.append(RViz.createText("%s_txt" % self.name, textCoords, self.name, self.__TEXT_COLOR))
+			msgs.append(RViz.createText("%s_txt" % self.name, textCoords, self.name, self.__TEXT_COLOR, durationNs=durationNs))
 		return msgs
 
 	def clearRender(self) -> Sequence[Marker]:

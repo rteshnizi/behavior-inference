@@ -4,7 +4,7 @@ from math import isnan, nan
 from typing import AbstractSet, Any, Callable, Dict, List, Sequence, Tuple, TypeVar, Union
 
 import rclpy
-from builtin_interfaces.msg import Time
+from builtin_interfaces.msg import Duration, Time
 from rclpy.impl.rcutils_logger import RcutilsLogger
 from rclpy.logging import LoggingSeverity
 from rclpy.node import Client, Node, Publisher, Subscription, Timer
@@ -50,11 +50,17 @@ def Log(msg: str) -> bool:
 	global __rtBiLog
 	return __rtBiLog(msg)
 
-def RosTimeStamp() -> Time:
+def TimeStamp() -> Time:
 	context = rclpy.get_default_context()
 	if not context.ok():
 		raise RuntimeError("ROS context not OK!")
 	return rclpy.get_global_executor()._clock.now().to_msg()
+
+def DurationMsg(sec: int, nanoSec: int) -> Duration:
+	d = Duration()
+	d.sec = sec
+	d.nanosec = nanoSec
+	return d
 
 def TimeToInt(t: Time) -> int:
 	return ((t.sec * NANO_CONVERSION_CONSTANT) + t.nanosec) # CSpell: ignore nanosec

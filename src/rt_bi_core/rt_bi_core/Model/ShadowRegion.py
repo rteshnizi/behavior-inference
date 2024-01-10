@@ -50,5 +50,5 @@ class ShadowRegion(AffineRegion):
 	def addNeighboringSensors(self, sensorRegionName: str) -> None:
 		self.__neighboringSensors.add(sensorRegionName)
 
-	def render(self, renderText = False, envelopeColor: Union[RGBA, None] = None) -> Sequence[Marker]:
-		return super().render(renderText=renderText, fill=True, envelopeColor=envelopeColor)
+	def render(self, renderText = False, envelopeColor: Union[RGBA, None] = None, durationNs: int = -1) -> Sequence[Marker]:
+		return super().render(renderText=renderText, envelopeColor=envelopeColor, durationNs=durationNs)

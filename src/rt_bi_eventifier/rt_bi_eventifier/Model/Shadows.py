@@ -41,4 +41,4 @@ class Shadows(RegularAffineRegion[ShadowRegion]):
 		return super().difference(others)
 
 	def render(self) -> Sequence[Marker]:
-		return super().render(envelopeColor=ColorNames.DARK_RED)
+		return super().render(durationNs=ShadowRegion.DEFAULT_RENDER_DURATION, envelopeColor=ColorNames.DARK_RED)

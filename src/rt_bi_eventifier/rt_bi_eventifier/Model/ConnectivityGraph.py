@@ -224,3 +224,14 @@ class ConnectivityGraph(nx.DiGraph):
 		message = self.__getShadowAreaMarkers(message)
 		self.__rvizPublisher.publish(message)
 		return
+
+	def clearRender(self, rvizPublisher: Publisher | None = None) -> None:
+		if rvizPublisher is not None: self.__rvizPublisher = rvizPublisher
+		if self.__rvizPublisher is None: return
+		markers: List[Marker] = []
+		ConcatMessageArray(markers, self.shadows.clearRender())
+		ConcatMessageArray(markers, self.symbols.clearRender())
+		message = MarkerArray()
+		for marker in markers: AppendMessage(message.markers, marker)
+		self.__rvizPublisher.publish(message)
+		return

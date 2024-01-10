@@ -69,7 +69,7 @@ class SensorTopicInterface(RtBiNode):
 			return
 		msg = MarkerArray()
 		for region in regions: RosUtils.ConcatMessageArray(msg.markers, region.render())
-		for i in tracklets: RosUtils.ConcatMessageArray(msg.markers, tracklets[i].render())
+		for i in tracklets: RosUtils.ConcatMessageArray(msg.markers, tracklets[i].render(SensorRegion.DEFAULT_RENDER_DURATION))
 		self.__rvizPublisher.publish(msg)
 		return
 

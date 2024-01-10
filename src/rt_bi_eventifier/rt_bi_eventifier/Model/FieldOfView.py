@@ -57,4 +57,4 @@ class FieldOfView(RegularAffineRegion[SensorRegion]):
 		return super().difference(other)
 
 	def render(self) -> Sequence[Marker]:
-		return super().render(envelopeColor=ColorNames.GREEN)
+		return super().render(durationNs=SensorRegion.DEFAULT_RENDER_DURATION, envelopeColor=ColorNames.GREEN)

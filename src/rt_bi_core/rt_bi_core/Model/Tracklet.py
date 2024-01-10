@@ -20,12 +20,12 @@ class Tracklet(Pose):
 		if self.vanished: return "%s%s" % ("[-]", s)
 		return s
 
-	def render(self) -> Sequence[Marker]:
+	def render(self, durationNs: int = -1) -> Sequence[Marker]:
 		msgs = []
-		if self.spawned: msgs.append(RViz.createCircle("TK#%d-circle" % self.id, self.x, self.y, radius=13, outline=ColorNames.GREEN, width=3.0))
-		elif self.vanished: msgs.append(RViz.createCircle("TK#%d-circle" % self.id, self.x, self.y, radius=13, outline=ColorNames.RED, width=3.0))
-		else: msgs.append(RViz.createCircle("TK#%d-circle" % self.id, self.x, self.y, radius=10, outline=ColorNames.PURPLE, width=3.0))
-		msgs.append(RViz.createText("TK#%d-txt" % self.id, (self.x, self.y), repr(self), ColorNames.WHITE))
+		if self.spawned: msgs.append(RViz.createCircle("TK#%d-circle" % self.id, self.x, self.y, radius=13, outline=ColorNames.GREEN, width=3.0, durationNs=durationNs))
+		elif self.vanished: msgs.append(RViz.createCircle("TK#%d-circle" % self.id, self.x, self.y, radius=13, outline=ColorNames.RED, width=3.0, durationNs=durationNs))
+		else: msgs.append(RViz.createCircle("TK#%d-circle" % self.id, self.x, self.y, radius=10, outline=ColorNames.PURPLE, width=3.0, durationNs=durationNs))
+		msgs.append(RViz.createText("TK#%d-txt" % self.id, (self.x, self.y), repr(self), ColorNames.WHITE, durationNs=durationNs))
 		return msgs
 
 	def clearRender(self) -> Sequence[Marker]:

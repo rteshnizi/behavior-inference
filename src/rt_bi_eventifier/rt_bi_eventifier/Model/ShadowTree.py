@@ -11,11 +11,8 @@ from rt_bi_core.Model.SensorRegion import SensorRegion
 from rt_bi_core.Model.ShadowRegion import ShadowRegion
 from rt_bi_core.Model.SymbolRegion import SymbolRegion
 from rt_bi_eventifier.Model.ConnectivityGraph import ConnectivityGraph
-from rt_bi_eventifier.Model.ContinuousTimeCollisionDetection import CollisionInterval, ContinuousTimeCollisionDetection as CtCd
-from rt_bi_eventifier.Model.ContinuousTimeRegion import ContinuousTimeRegion
+from rt_bi_eventifier.Model.ContinuousTimeCollisionDetection import ContinuousTimeCollisionDetection as CtCd
 from rt_bi_eventifier.Model.EventAggregator import EventAggregator
-from rt_bi_eventifier.Model.FieldOfView import FieldOfView
-from rt_bi_eventifier.Model.SymbolRegions import SymbolRegions
 from rt_bi_interfaces.msg import Adjacency, ComponentEvent, Events, Graph
 from rt_bi_utils.Geometry import AffineTransform, Geometry, Polygon
 from rt_bi_utils.NetworkX import NxUtils
@@ -170,13 +167,6 @@ class ShadowTree(nx.DiGraph):
 				Log("Older graph than latest in history --> %d vs %d" % ((graph.timeNanoSecs, self.__history[-1].timeNanoSecs)))
 				return
 
-		for node in graph.nodes:
-			self.__addNode(node, graph.timeNanoSecs)
-		for edge in graph.edges:
-			frm = self.__generateTemporalName(edge[0], graph.timeNanoSecs)
-			to = self.__generateTemporalName(edge[1], graph.timeNanoSecs)
-			self.__addEdge(frm, to, isTemporal=False)
-
 		graph.render(self.__rvizPublishers["connectivity_graph"])
 		if self.length > 0 and EventAggregator.isIsomorphic(self.__history[-1], graph):
 			# if graph.timeNanoSecs == self.__history[-1].timeNanoSecs:
@@ -188,6 +178,14 @@ class ShadowTree(nx.DiGraph):
 			self.__history.append(graph)
 			self.__timeToCGraph[graph.timeNanoSecs] = self.length - 1
 			# self.__publishGraphEvent()
+
+		for node in graph.nodes:
+			self.__addNode(node, graph.timeNanoSecs)
+		for edge in graph.edges:
+			frm = self.__generateTemporalName(edge[0], graph.timeNanoSecs)
+			to = self.__generateTemporalName(edge[1], graph.timeNanoSecs)
+			self.__addEdge(frm, to, isTemporal=False)
+
 		if self.length > 1: self.__connectGraphsTemporally(self.__history[-2], self.__history[-1])
 		self.render()
 

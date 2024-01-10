@@ -14,6 +14,9 @@ class DynamicRegion(PolygonalRegion):
 	"""### Constant
 	10 to the power of 9. Used in time conversion.
 	"""
+
+	DEFAULT_RENDER_DURATION = int(1.75 * NANO_CONSTANT)
+
 	def __init__(
 			self,
 			idNum: int,

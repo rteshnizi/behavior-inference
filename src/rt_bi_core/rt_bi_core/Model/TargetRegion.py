@@ -32,10 +32,6 @@ class TargetRegion(AffineRegion):
 	def regionType(self) -> Literal[AffineRegion.RegionType.TARGET]:
 		return self.RegionType.TARGET
 
-	def render(self, envelopeColor: Union[RGBA, None] = None) -> Sequence[Marker]:
-		msgs = super().render(renderText=False, envelopeColor=envelopeColor)
-		return msgs
-
-	def clearRender(self) -> Sequence[Marker]:
-		msgs = super().clearRender()
+	def render(self, envelopeColor: Union[RGBA, None] = None, durationNs: int = -1) -> Sequence[Marker]:
+		msgs = super().render(renderText=False, envelopeColor=envelopeColor, durationNs=durationNs)
 		return msgs

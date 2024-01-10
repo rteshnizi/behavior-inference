@@ -65,5 +65,5 @@ class RegularDynamicRegion(Generic[RegionType], RegularSpatialRegion[RegionType]
 	def difference(self, other: "RegularDynamicRegion") -> Set[str]:
 		return super().difference(other)
 
-	def render(self, envelopeColor: Union[RGBA, None] = None) -> Sequence[Marker]:
-		return super().render(envelopeColor)
+	def render(self, durationNs: int, envelopeColor: Union[RGBA, None] = None) -> Sequence[Marker]:
+		return super().render(durationNs, envelopeColor)

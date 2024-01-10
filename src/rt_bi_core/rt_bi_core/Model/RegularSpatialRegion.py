@@ -107,8 +107,14 @@ class RegularSpatialRegion(Generic[RegionType]):
 	def difference(self, others: "RegularSpatialRegion") -> Set[str]:
 		return self.__sub__(others)
 
-	def render(self, envelopeColor: Union[RGBA, None] = None) -> Sequence[Marker]:
+	def render(self, durationNs: int, envelopeColor: Union[RGBA, None] = None) -> List[Marker]:
 		markers = []
 		for region in self.__regions.values():
-			RosUtils.ConcatMessageArray(markers, region.render(envelopeColor=envelopeColor))
+			RosUtils.ConcatMessageArray(markers, region.render(envelopeColor=envelopeColor, durationNs=durationNs))
+		return markers
+
+	def clearRender(self) -> List[Marker]:
+		markers = []
+		for region in self.__regions.values():
+			RosUtils.ConcatMessageArray(markers, region.clearRender())
 		return markers
