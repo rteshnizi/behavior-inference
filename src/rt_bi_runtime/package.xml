@@ -2,15 +2,15 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
 	<name>rt_bi_runtime</name>
-	<version>0.0.9</version>
+	<version>0.0.10</version>
 	<description>The runtime environment of the Behavior Inference project.</description>
 	<maintainer email="reza.teshnizi@gmail.com">Reza Teshnizi</maintainer>
 	<license>UNLICENSED</license>
 
 	<depend>rclpy</depend>
-	<depend version_eq="0.0.9">rt_bi_eventifier</depend>
-	<depend version_eq="0.0.9">rt_bi_interfaces</depend>
-	<depend version_eq="0.0.9">rt_bi_utils</depend>
+	<depend version_eq="0.0.10">rt_bi_eventifier</depend>
+	<depend version_eq="0.0.10">rt_bi_interfaces</depend>
+	<depend version_eq="0.0.10">rt_bi_utils</depend>
 
 	<export>
 		<build_type>ament_python</build_type>

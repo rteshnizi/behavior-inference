@@ -4,7 +4,7 @@ package_name = "rt_bi_utils"
 
 setup(
 	name=package_name,
-	version="0.0.9",
+	version="0.0.10",
 	packages=[package_name],
 	data_files=[
 		("share/ament_index/resource_index/packages",
