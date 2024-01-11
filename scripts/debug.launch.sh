@@ -34,14 +34,14 @@ concurrently\
 	--prefix "[{name}-{time}]"\
 	-c "bgWhite.black,bgWhite.black,bgGrey.inverse,bgBlue,bgRed,bgCyan,bgMagenta,bgBlue.inverse,bgCyan.inverse,bgRed.inverse,bgGreen"\
 	--timestamp-format "HH:mm:ss"\
-	"ros2 launch rt_bi_core syi.launch.py"\
-	"ros2 launch rt_bi_core mi.launch.py"\
-	"ros2 launch rt_bi_core rviz.launch.py"\
-	"ros2 launch rt_bi_core si.launch.py"\
 	"ros2 launch rt_bi_emulator c2.avs.launch.py"\
 	"ros2 launch rt_bi_emulator c2.sys.launch.py"\
 	"ros2 launch rt_bi_emulator c2.targets.launch.py"\
 	"ros2 launch rt_bi_emulator map.launch.py"\
+	"ros2 launch rt_bi_emulator mi.launch.py"\
+	"ros2 launch rt_bi_emulator si.launch.py"\
+	"ros2 launch rt_bi_emulator syi.launch.py"\
+	"ros2 launch rt_bi_emulator rviz.launch.py"\
 	"ros2 launch rt_bi_eventifier ev.launch.py"\
 	"ros2 launch rt_bi_eventifier rviz.launch.py"\
 	"ros2 launch rt_bi_runtime c2.all.launch.py"\

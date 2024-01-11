@@ -29,6 +29,10 @@ setup(
 			"AV = rt_bi_emulator.AvEmulator:main",
 			"TG = rt_bi_emulator.TargetEmulator:main",
 			"SY = rt_bi_emulator.SymbolRegionEmulator:main",
+			"MI = rt_bi_emulator.MapServiceInterface:main",
+			"SI = rt_bi_emulator.SensorTopicInterface:main",
+			"TI = rt_bi_emulator.TargetTopicInterface:main",
+			"SYI = rt_bi_emulator.SymbolTopicInterface:main",
 		],
 	},
 )

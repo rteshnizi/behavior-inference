@@ -7,10 +7,10 @@ from rclpy.node import Client, Publisher
 from rclpy.parameter import Parameter
 from sa_msgs.srv import QueryFeature
 
-from rt_bi_core.MapServiceInterface import MapServiceInterface
 from rt_bi_core.Model.MapRegion import MapRegion
 from rt_bi_core.Model.SensorRegion import SensorRegion
 from rt_bi_core.Model.SymbolRegion import SymbolRegion
+from rt_bi_emulator.MapServiceInterface import MapServiceInterface
 from rt_bi_eventifier.Model.ShadowTree import ShadowTree
 from rt_bi_interfaces.msg import DynamicRegion, Events, Graph
 from rt_bi_utils.MinQueue import MinQueue
@@ -30,7 +30,7 @@ class Eventifier(MapServiceInterface):
 		"""
 		Create a Shadow Tree Interface node.
 		"""
-		super().__init__(loggingSeverity=LoggingSeverity.INFO, node_name="rt_bi_eventifier")
+		super().__init__(loggingSeverity=LoggingSeverity.DEBUG, node_name="rt_bi_eventifier")
 		self.declareParameters()
 		self.__liveRender: bool = False
 		self.__renderModules: List[ShadowTree.SUBMODULE_TYPES] = []
