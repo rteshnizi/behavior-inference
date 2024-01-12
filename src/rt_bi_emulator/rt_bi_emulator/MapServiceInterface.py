@@ -9,8 +9,8 @@ from sa_msgs.srv import QueryFeature
 from visualization_msgs.msg import MarkerArray
 
 import rt_bi_utils.Ros as RosUtils
-from rt_bi_core.Model.FeatureMap import Feature
-from rt_bi_core.Model.MapRegion import MapRegion
+from rt_bi_core.FeatureMap import Feature
+from rt_bi_core.MapRegion import MapRegion
 from rt_bi_utils.RtBiNode import RtBiNode
 from rt_bi_utils.RViz import RViz
 from rt_bi_utils.SaMsgs import SaMsgs

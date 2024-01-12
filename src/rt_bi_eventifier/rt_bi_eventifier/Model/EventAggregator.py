@@ -3,12 +3,12 @@ from typing import List, TypeVar
 from networkx.algorithms.isomorphism import is_isomorphic
 
 import rt_bi_utils.Ros as RosUtils
-from rt_bi_core.Model.AffineRegion import AffineRegion
-from rt_bi_core.Model.MapRegion import MapRegion
-from rt_bi_core.Model.RegularAffineRegion import RegularAffineRegion
-from rt_bi_core.Model.SensorRegion import SensorRegion
-from rt_bi_core.Model.SymbolRegion import SymbolRegion
-from rt_bi_core.Model.Tracklet import Tracklet
+from rt_bi_core.AffineRegion import AffineRegion
+from rt_bi_core.MapRegion import MapRegion
+from rt_bi_core.RegularAffineRegion import RegularAffineRegion
+from rt_bi_core.SensorRegion import SensorRegion
+from rt_bi_core.SymbolRegion import SymbolRegion
+from rt_bi_core.Tracklet import Tracklet
 from rt_bi_eventifier.Model.ConnectivityGraph import ConnectivityGraph
 from rt_bi_eventifier.Model.ContinuousTimeCollisionDetection import CollisionInterval
 from rt_bi_eventifier.Model.ContinuousTimeRegion import ContinuousTimeRegion

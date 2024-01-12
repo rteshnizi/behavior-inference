@@ -1,7 +1,7 @@
 from typing import List, Set
 
-from rt_bi_core.Model.MapRegion import MapRegion
-from rt_bi_core.Model.RegularAffineRegion import RegularAffineRegion
+from rt_bi_core.MapRegion import MapRegion
+from rt_bi_core.RegularAffineRegion import RegularAffineRegion
 
 
 class MapRegions(RegularAffineRegion[MapRegion]):

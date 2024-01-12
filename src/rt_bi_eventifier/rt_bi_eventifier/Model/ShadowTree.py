@@ -4,12 +4,12 @@ import networkx as nx
 from networkx.classes.reportviews import OutEdgeView
 from visualization_msgs.msg import MarkerArray
 
-from rt_bi_core.Model.AffineRegion import AffineRegion
-from rt_bi_core.Model.MapRegion import MapRegion
-from rt_bi_core.Model.RegularAffineRegion import RegularAffineRegion
-from rt_bi_core.Model.SensorRegion import SensorRegion
-from rt_bi_core.Model.ShadowRegion import ShadowRegion
-from rt_bi_core.Model.SymbolRegion import SymbolRegion
+from rt_bi_core.AffineRegion import AffineRegion
+from rt_bi_core.MapRegion import MapRegion
+from rt_bi_core.RegularAffineRegion import RegularAffineRegion
+from rt_bi_core.SensorRegion import SensorRegion
+from rt_bi_core.ShadowRegion import ShadowRegion
+from rt_bi_core.SymbolRegion import SymbolRegion
 from rt_bi_eventifier.Model.ConnectivityGraph import ConnectivityGraph
 from rt_bi_eventifier.Model.ContinuousTimeCollisionDetection import ContinuousTimeCollisionDetection as CtCd
 from rt_bi_eventifier.Model.EventAggregator import EventAggregator

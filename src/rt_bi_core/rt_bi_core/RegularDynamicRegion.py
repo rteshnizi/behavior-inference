@@ -3,8 +3,8 @@ from typing import Generic, Sequence, Set, TypeVar, Union
 from visualization_msgs.msg import Marker
 
 import rt_bi_utils.Ros as RosUtils
-from rt_bi_core.Model.DynamicRegion import DynamicRegion
-from rt_bi_core.Model.RegularSpatialRegion import RegularSpatialRegion
+from rt_bi_core.DynamicRegion import DynamicRegion
+from rt_bi_core.RegularSpatialRegion import RegularSpatialRegion
 from rt_bi_utils.RViz import RGBA
 
 RegionType = TypeVar("RegionType", bound=DynamicRegion)

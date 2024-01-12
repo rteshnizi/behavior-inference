@@ -1,6 +1,6 @@
 from typing import Union
 
-from rt_bi_core.Model.DynamicRegion import DynamicRegion
+from rt_bi_core.DynamicRegion import DynamicRegion
 from rt_bi_utils.Geometry import Geometry, Polygon
 from rt_bi_utils.RViz import RGBA
 

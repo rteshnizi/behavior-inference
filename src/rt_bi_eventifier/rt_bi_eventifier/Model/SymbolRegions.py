@@ -2,8 +2,8 @@ from typing import List, Sequence, Set
 
 from visualization_msgs.msg import Marker
 
-from rt_bi_core.Model.RegularAffineRegion import RegularAffineRegion
-from rt_bi_core.Model.SymbolRegion import SymbolRegion
+from rt_bi_core.RegularAffineRegion import RegularAffineRegion
+from rt_bi_core.SymbolRegion import SymbolRegion
 
 
 class SymbolRegions(RegularAffineRegion[SymbolRegion]):

@@ -5,7 +5,7 @@ from rclpy.logging import LoggingSeverity
 from visualization_msgs.msg import MarkerArray
 
 import rt_bi_utils.Ros as RosUtils
-from rt_bi_core.Model.TargetRegion import TargetRegion
+from rt_bi_core.TargetRegion import TargetRegion
 from rt_bi_interfaces.msg import DynamicRegion
 from rt_bi_utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_utils.RtBiNode import RtBiNode

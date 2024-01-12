@@ -1,7 +1,7 @@
 from typing import Generic, List, Set, TypeVar
 
-from rt_bi_core.Model.AffineRegion import AffineRegion
-from rt_bi_core.Model.RegularDynamicRegion import RegularDynamicRegion
+from rt_bi_core.AffineRegion import AffineRegion
+from rt_bi_core.RegularDynamicRegion import RegularDynamicRegion
 
 RegionType = TypeVar("RegionType", bound=AffineRegion)
 

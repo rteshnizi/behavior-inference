@@ -2,7 +2,7 @@ from typing import Dict, Literal, Sequence, Union
 
 from visualization_msgs.msg import Marker
 
-from rt_bi_core.Model.AffineRegion import AffineRegion
+from rt_bi_core.AffineRegion import AffineRegion
 from rt_bi_utils.Color import RGBA
 from rt_bi_utils.Geometry import Geometry, Polygon
 from rt_bi_utils.RViz import ColorNames

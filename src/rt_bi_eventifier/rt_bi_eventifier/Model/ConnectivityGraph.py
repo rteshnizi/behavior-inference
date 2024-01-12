@@ -3,10 +3,10 @@ from typing import Callable, Dict, List, Literal, Sequence, Set, TypeVar, Union
 import networkx as nx
 from visualization_msgs.msg import Marker, MarkerArray
 
-from rt_bi_core.Model.MapRegion import MapRegion
-from rt_bi_core.Model.SensorRegion import SensorRegion
-from rt_bi_core.Model.ShadowRegion import ShadowRegion
-from rt_bi_core.Model.SymbolRegion import SymbolRegion
+from rt_bi_core.MapRegion import MapRegion
+from rt_bi_core.SensorRegion import SensorRegion
+from rt_bi_core.ShadowRegion import ShadowRegion
+from rt_bi_core.SymbolRegion import SymbolRegion
 from rt_bi_eventifier.Model.FieldOfView import FieldOfView
 from rt_bi_eventifier.Model.MapRegions import MapRegions
 from rt_bi_eventifier.Model.Shadows import Shadows

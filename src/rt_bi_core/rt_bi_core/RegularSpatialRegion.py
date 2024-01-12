@@ -3,7 +3,7 @@ from typing import Dict, Generic, Iterator, List, Sequence, Set, TypeVar, Union
 from visualization_msgs.msg import Marker
 
 import rt_bi_utils.Ros as RosUtils
-from rt_bi_core.Model.PolygonalRegion import PolygonalRegion
+from rt_bi_core.PolygonalRegion import PolygonalRegion
 from rt_bi_utils.Geometry import Geometry, LineString, MultiPolygon, Polygon
 from rt_bi_utils.RViz import RGBA
 

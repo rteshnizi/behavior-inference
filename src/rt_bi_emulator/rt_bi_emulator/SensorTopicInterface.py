@@ -4,8 +4,8 @@ import rclpy
 from visualization_msgs.msg import MarkerArray
 
 import rt_bi_utils.Ros as RosUtils
-from rt_bi_core.Model.SensorRegion import SensorRegion
-from rt_bi_core.Model.Tracklet import Tracklet
+from rt_bi_core.SensorRegion import SensorRegion
+from rt_bi_core.Tracklet import Tracklet
 from rt_bi_interfaces.msg import DynamicRegion, EstimationMsg
 from rt_bi_utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_utils.RtBiNode import RtBiNode

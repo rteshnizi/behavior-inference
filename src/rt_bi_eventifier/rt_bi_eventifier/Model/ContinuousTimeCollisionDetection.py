@@ -3,10 +3,10 @@ from typing import Dict, List, Set, Tuple, TypeVar, Union
 from rclpy.clock import Duration
 from visualization_msgs.msg import MarkerArray
 
-from rt_bi_core.Model.AffineRegion import AffineRegion
-from rt_bi_core.Model.MapRegion import MapRegion
-from rt_bi_core.Model.SensorRegion import SensorRegion
-from rt_bi_core.Model.SymbolRegion import SymbolRegion
+from rt_bi_core.AffineRegion import AffineRegion
+from rt_bi_core.MapRegion import MapRegion
+from rt_bi_core.SensorRegion import SensorRegion
+from rt_bi_core.SymbolRegion import SymbolRegion
 from rt_bi_eventifier.Model.ContinuousTimeRegion import ContinuousTimeRegion
 from rt_bi_eventifier.Model.MapRegions import MapRegions
 from rt_bi_utils.Color import RGBA

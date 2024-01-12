@@ -1,6 +1,6 @@
 from typing import Union
 
-from rt_bi_core.Model.TimeRegion import TimeRegion
+from rt_bi_core.TimeRegion import TimeRegion
 from rt_bi_utils.Geometry import Geometry, Polygon
 
 
