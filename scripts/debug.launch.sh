@@ -44,6 +44,6 @@ concurrently\
 	"ros2 launch rt_bi_emulator rviz.launch.py"\
 	"ros2 launch rt_bi_eventifier ev.launch.py"\
 	"ros2 launch rt_bi_eventifier rviz.launch.py"\
-	"ros2 launch rt_bi_runtime c2.all.launch.py"\
-	--hide "0,1,2,3,4,6,7,8,9,10"
+	"ros2 launch rt_bi_runtime c2.all.launch.py"
+	# --hide "0,1,2,3,4,6,7,8,9,10"
 exit 0

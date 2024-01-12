@@ -10,7 +10,7 @@ from sa_msgs.srv import QueryFeature
 from rt_bi_core.MapRegion import MapRegion
 from rt_bi_core.SensorRegion import SensorRegion
 from rt_bi_core.SymbolRegion import SymbolRegion
-from rt_bi_emulator.MapServiceInterface import MapServiceInterface
+from rt_bi_emulator.Renderers.MapServiceInterface import MapServiceInterface
 from rt_bi_eventifier.Model.ShadowTree import ShadowTree
 from rt_bi_interfaces.msg import DynamicRegion, Events, Graph
 from rt_bi_utils.MinQueue import MinQueue
