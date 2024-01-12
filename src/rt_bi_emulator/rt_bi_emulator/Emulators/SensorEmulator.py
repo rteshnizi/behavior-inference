@@ -3,8 +3,8 @@ from rclpy.logging import LoggingSeverity
 from sa_msgs.msg import RobotState
 
 import rt_bi_utils.Ros as RosUtils
+from rt_bi_emulator.Model.Body import Body
 from rt_bi_emulator.Model.DynamicRegionNode import DynamicRegionNode
-from rt_bi_emulator.Model.Shared import Body
 from rt_bi_interfaces.msg import DynamicRegion, EstimationMsg, PoseEstimation
 from rt_bi_utils.Geometry import Geometry, Polygon
 from rt_bi_utils.Pose import Pose

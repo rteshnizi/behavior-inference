@@ -6,7 +6,7 @@ from rclpy.logging import LoggingSeverity
 from rclpy.parameter import Parameter
 from sa_msgs.msg import RobotState
 
-from rt_bi_emulator.Model.Shared import Body
+from rt_bi_emulator.Model.Body import Body
 from rt_bi_interfaces.msg import DynamicRegion as DynamicRegionMsg
 from rt_bi_utils.Geometry import AffineTransform, Geometry, Polygon
 from rt_bi_utils.Pose import Pose
