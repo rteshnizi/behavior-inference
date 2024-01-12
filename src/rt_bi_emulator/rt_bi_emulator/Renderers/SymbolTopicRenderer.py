@@ -12,7 +12,7 @@ from rt_bi_utils.RtBiNode import RtBiNode
 from rt_bi_utils.RViz import RViz
 
 
-class SymbolTopicInterface(RtBiNode):
+class SymbolTopicRenderer(RtBiNode):
 	""" This Node listens to all the messages published on the topics related to dynamic symbols and renders them. """
 	def __init__(self, **kwArgs):
 		newKw = { "node_name": "rt_bi_emulator_isy", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
@@ -54,7 +54,7 @@ class SymbolTopicInterface(RtBiNode):
 
 def main(args=None):
 	rclpy.init(args=args)
-	node = SymbolTopicInterface()
+	node = SymbolTopicRenderer()
 	rclpy.spin(node)
 	node.destroy_node()
 	rclpy.shutdown()

@@ -10,7 +10,7 @@ from sa_msgs.srv import QueryFeature
 from rt_bi_core.MapRegion import MapRegion
 from rt_bi_core.SensorRegion import SensorRegion
 from rt_bi_core.SymbolRegion import SymbolRegion
-from rt_bi_emulator.Renderers.MapServiceRenderer import MapServiceInterface
+from rt_bi_emulator.Renderers.MapServiceRenderer import MapServiceRenderer
 from rt_bi_eventifier.Model.ShadowTree import ShadowTree
 from rt_bi_interfaces.msg import DynamicRegion, Events, Graph
 from rt_bi_utils.MinQueue import MinQueue
@@ -20,7 +20,7 @@ from rt_bi_utils.RViz import RViz
 from rt_bi_utils.SaMsgs import SaMsgs
 
 
-class Eventifier(MapServiceInterface):
+class Eventifier(MapServiceRenderer):
 	"""
 	This Node listens to all the messages published on the topics related to the Shadow Tree.
 	This node combines topic listeners and service clients.

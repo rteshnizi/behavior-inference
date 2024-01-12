@@ -13,7 +13,7 @@ from rt_bi_utils.RViz import RViz
 from rt_bi_utils.SaMsgs import SaMsgs
 
 
-class SensorTopicInterface(RtBiNode):
+class SensorTopicRenderer(RtBiNode):
 	""" This Node listens to all the messages published on the topics related to sensors and renders them. """
 	def __init__(self, **kwArgs):
 		newKw = { "node_name": "rt_bi_emulator_sensor", **kwArgs}
@@ -75,7 +75,7 @@ class SensorTopicInterface(RtBiNode):
 
 def main(args=None):
 	rclpy.init(args=args)
-	node = SensorTopicInterface()
+	node = SensorTopicRenderer()
 	rclpy.spin(node)
 	node.destroy_node()
 	rclpy.shutdown()

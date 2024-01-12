@@ -12,7 +12,7 @@ from rt_bi_utils.RtBiNode import RtBiNode
 from rt_bi_utils.RViz import ColorNames, RViz
 
 
-class TargetTopicInterface(RtBiNode):
+class TargetTopicRenderer(RtBiNode):
 	""" This Node listens to all the messages published on the topics related to targets and renders them. """
 	def __init__(self, **kwArgs):
 		newKw = { "node_name": "rt_bi_emulator_target", **kwArgs}
@@ -56,7 +56,7 @@ class TargetTopicInterface(RtBiNode):
 
 def main(args=None):
 	rclpy.init(args=args)
-	node = TargetTopicInterface()
+	node = TargetTopicRenderer()
 	rclpy.spin(node)
 	node.destroy_node()
 	rclpy.shutdown()

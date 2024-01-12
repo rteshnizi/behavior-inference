@@ -16,7 +16,7 @@ from rt_bi_utils.RViz import RViz
 from rt_bi_utils.SaMsgs import SaMsgs
 
 
-class MapServiceInterface(RtBiNode):
+class MapServiceRenderer(RtBiNode):
 	""" This Node listens to all the messages published on the topics related to the map and renders them. """
 	def __init__(self, **kwArgs):
 		newKw = { "node_name": "rt_bi_emulator_map", **kwArgs}
@@ -73,7 +73,7 @@ class MapServiceInterface(RtBiNode):
 				RosUtils.SendClientRequest(self, self.mapClient, subRequest, boundParser)
 
 		self.get_logger().debug("Parsed %d items." % len(regions))
-		if isinstance(self, MapServiceInterface):
+		if isinstance(self, MapServiceRenderer):
 			self.__regions= regions
 		return regions
 
@@ -101,7 +101,7 @@ class MapServiceInterface(RtBiNode):
 
 def main(args=None):
 	rclpy.init(args=args)
-	node = MapServiceInterface()
+	node = MapServiceRenderer()
 	node.requestMap(node.mapClient)
 	while node.context.ok():
 		node.get_clock().sleep_for(Duration(seconds=2, nanoseconds=0))
