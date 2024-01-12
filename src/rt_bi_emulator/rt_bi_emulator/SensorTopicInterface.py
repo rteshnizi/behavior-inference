@@ -16,7 +16,7 @@ from rt_bi_utils.SaMsgs import SaMsgs
 class SensorTopicInterface(RtBiNode):
 	""" This Node listens to all the messages published on the topics related to sensors and renders them. """
 	def __init__(self, **kwArgs):
-		newKw = { "node_name": "rt_bi_core_sensor", **kwArgs}
+		newKw = { "node_name": "rt_bi_emulator_sensor", **kwArgs}
 		super().__init__(**newKw)
 		self.__sensors: Dict[int, SensorRegion] = {}
 		RtBiInterfaces.subscribeToSensorTopic(self, self.__onRegionUpdate)

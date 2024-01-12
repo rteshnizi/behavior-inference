@@ -25,14 +25,15 @@ setup(
 	license="UNLICENSED",
 	entry_points={
 		"console_scripts": [
-			"MP = rt_bi_emulator.MapEmulator:main",
-			"AV = rt_bi_emulator.AvEmulator:main",
-			"TG = rt_bi_emulator.TargetEmulator:main",
-			"SY = rt_bi_emulator.SymbolRegionEmulator:main",
-			"MI = rt_bi_emulator.MapServiceInterface:main",
-			"SI = rt_bi_emulator.SensorTopicInterface:main",
-			"TI = rt_bi_emulator.TargetTopicInterface:main",
-			"SYI = rt_bi_emulator.SymbolTopicInterface:main",
+			"EMP = rt_bi_emulator.MapEmulator:main",
+			"ESE = rt_bi_emulator.AvEmulator:main",
+			"ESY = rt_bi_emulator.SymbolRegionEmulator:main",
+			"ETG = rt_bi_emulator.TargetEmulator:main",
+			"IMP = rt_bi_emulator.MapServiceInterface:main",
+			"ISE = rt_bi_emulator.SensorTopicInterface:main",
+			"ISY = rt_bi_emulator.SymbolTopicInterface:main",
+			"ITG = rt_bi_emulator.TargetTopicInterface:main",
+			"SMP = rt_bi_emulator.SaMapEmulator:main",
 		],
 	},
 )

@@ -30,24 +30,20 @@ echo
 
 concurrently\
 	--kill-others\
-	--names "SYI,MI ,CVZ,SI ,AV ,SY ,TG ,MAP,EV ,EVZ,RUN"\
+	--names "ESE,ESY,ETG,IMP,ISE,ISY,SMP,EVZ,EV ,EVZ,RUN"\
 	--prefix "[{name}-{time}]"\
-	-c "bgWhite.black,bgWhite.black,bgGrey.inverse,bgBlue,bgRed,bgCyan,bgMagenta,bgBlue.inverse,bgCyan.inverse,bgRed.inverse,bgGreen"\
+	-c "bgGreen,bgBlue,bgRed,bgWhite.black.underline,bgGreen.inverse,bgBlue.inverse,bgWhite.black,bgYellow.black,bgMagenta,bgYellow.black,bgCyan.black"\
 	--timestamp-format "HH:mm:ss"\
-	"ros2 launch rt_bi_emulator c2.avs.launch.py"\
-	"ros2 launch rt_bi_emulator c2.sys.launch.py"\
-	"ros2 launch rt_bi_emulator c2.targets.launch.py"\
-	"ros2 launch rt_bi_emulator map.launch.py"\
-	"ros2 launch rt_bi_emulator mi.launch.py"\
-	"ros2 launch rt_bi_emulator si.launch.py"\
-	"ros2 launch rt_bi_emulator syi.launch.py"\
+	"ros2 launch rt_bi_emulator c2.ese.launch.py"\
+	"ros2 launch rt_bi_emulator c2.esy.launch.py"\
+	"ros2 launch rt_bi_emulator c2.etg.launch.py"\
+	"ros2 launch rt_bi_emulator imp.launch.py"\
+	"ros2 launch rt_bi_emulator ise.launch.py"\
+	"ros2 launch rt_bi_emulator isy.launch.py"\
+	"ros2 launch rt_bi_emulator smp.launch.py"\
 	"ros2 launch rt_bi_emulator rviz.launch.py"\
 	"ros2 launch rt_bi_eventifier ev.launch.py"\
 	"ros2 launch rt_bi_eventifier rviz.launch.py"\
 	"ros2 launch rt_bi_runtime c2.all.launch.py"\
-	--hide "0,1,2,3,4,6,7,9,10" # Only Ev on
-	# --hide "2,7,9" # RViz and MapEm off
-	# --hide "2,9" # Only RViz off
-	# --hide "0,1,2,3,4,7,9,10" # Debug Emulator
-	# "ros2 launch rt_bi_core ti.launch.py"\
+	--hide "0,1,2,3,4,6,7,8,9,10"
 exit 0

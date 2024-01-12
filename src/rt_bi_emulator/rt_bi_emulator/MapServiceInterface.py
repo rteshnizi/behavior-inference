@@ -19,7 +19,7 @@ from rt_bi_utils.SaMsgs import SaMsgs
 class MapServiceInterface(RtBiNode):
 	""" This Node listens to all the messages published on the topics related to the map and renders them. """
 	def __init__(self, **kwArgs):
-		newKw = { "node_name": "rt_bi_core_map", **kwArgs}
+		newKw = { "node_name": "rt_bi_emulator_map", **kwArgs}
 		super().__init__(**newKw)
 		self.MAP_QUERY_NAME = "map"
 		self.__regions: List[MapRegion] = []

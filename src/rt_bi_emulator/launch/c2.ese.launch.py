@@ -15,14 +15,14 @@ def generate_launch_description():
 		Node(
 			package=packageName,
 			namespace=packageName,
-			executable="AV",
+			executable="ESE",
 			name="av1",
 			parameters=[yamlPath]
 		),
 		Node(
 			package=packageName,
 			namespace=packageName,
-			executable="AV",
+			executable="ESE",
 			name="av2",
 			parameters=[yamlPath]
 		),

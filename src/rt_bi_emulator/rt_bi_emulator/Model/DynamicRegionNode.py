@@ -18,7 +18,7 @@ from rt_bi_utils.SaMsgs import SaMsgs
 class DynamicRegionNode(RtBiNode):
 	NANO_CONVERSION_CONSTANT = 10 ** 9
 	def __init__(self, loggingSeverity: LoggingSeverity, **kwArgs):
-		newKw = { "node_name": "rt_bi_emulator_dyn_region_base", "loggingSeverity": loggingSeverity, **kwArgs}
+		newKw = { "node_name": "rt_bi_emulator_dynamic_region_base", "loggingSeverity": loggingSeverity, **kwArgs}
 		super().__init__(**newKw)
 		self.declareParameters()
 		self.id = -1

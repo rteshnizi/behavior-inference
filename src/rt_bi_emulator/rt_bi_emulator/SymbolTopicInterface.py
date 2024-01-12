@@ -15,7 +15,7 @@ from rt_bi_utils.RViz import RViz
 class SymbolTopicInterface(RtBiNode):
 	""" This Node listens to all the messages published on the topics related to dynamic symbols and renders them. """
 	def __init__(self, **kwArgs):
-		newKw = { "node_name": "rt_bi_core_dy", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
+		newKw = { "node_name": "rt_bi_emulator_isy", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
 		super().__init__(**newKw)
 		self.__regions: Union[Dict[int, SymbolRegion], None] = None
 		RtBiInterfaces.subscribeToSymbolTopic(self, self.__onTargetUpdate)

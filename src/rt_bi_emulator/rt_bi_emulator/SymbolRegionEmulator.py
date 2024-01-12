@@ -7,7 +7,7 @@ from rt_bi_utils.RtBiInterfaces import RtBiInterfaces
 
 class SymbolRegionEmulator(DynamicRegionNode):
 	def __init__(self, loggingLevel: LoggingSeverity, **kwArgs):
-		newKw = { "node_name": "rt_bi_emulator_dy", "loggingSeverity": loggingLevel, **kwArgs}
+		newKw = { "node_name": "rt_bi_emulator_esy", "loggingSeverity": loggingLevel, **kwArgs}
 		super().__init__(**newKw)
 		(self.__publisher, _) = RtBiInterfaces.createSymbolPublisher(self, self.publishUpdate, self.updateInterval)
 

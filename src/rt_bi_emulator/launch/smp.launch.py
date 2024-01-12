@@ -11,7 +11,7 @@ def generate_launch_description():
 		Node(
 			package=packageName,
 			namespace=packageName,
-			executable="MP",
+			executable="SMP",
 			name="map"
 		),
 	])

@@ -15,7 +15,7 @@ from rt_bi_utils.RViz import ColorNames, RViz
 class TargetTopicInterface(RtBiNode):
 	""" This Node listens to all the messages published on the topics related to targets and renders them. """
 	def __init__(self, **kwArgs):
-		newKw = { "node_name": "rt_bi_core_target", **kwArgs}
+		newKw = { "node_name": "rt_bi_emulator_target", **kwArgs}
 		super().__init__(loggingSeverity=LoggingSeverity.INFO, **newKw)
 		self.__targets: Union[Dict[int, TargetRegion], None] = None
 		RtBiInterfaces.subscribeToTargetTopic(self, self.__onTargetUpdate)
