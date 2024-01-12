@@ -31,7 +31,7 @@ class SymbolTopicInterface(RtBiNode):
 		self.log(f"Updating region type {SymbolRegion.RegionType.SYMBOL} id {update.id} definition @{timeNanoSecs}.")
 		coords = RtBiInterfaces.fromStdPoints32ToCoordsList(update.region.points) # type: ignore
 		cor = RtBiInterfaces.fromStdPointToCoords(update.center_of_rotation)
-		target = SymbolRegion(centerOfRotation=cor, idNum=update.id, envelope=coords, timeNanoSecs=timeNanoSecs, overlappingRegionId=0, overlappingRegionType=SymbolRegion.RegionType.SYMBOL, index=0)
+		target = SymbolRegion(centerOfRotation=cor, idNum=update.id, envelope=coords, timeNanoSecs=timeNanoSecs, overlappingRegionId=0, overlappingRegionType=SymbolRegion.RegionType.SYMBOL)
 		self.__regions[update.id] = target
 		self.render([target])
 		return
