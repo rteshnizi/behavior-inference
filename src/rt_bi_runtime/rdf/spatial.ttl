@@ -1,0 +1,208 @@
+@base <https://rezateshnizi.com/rt-bi-ontology/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xml: <http://www.w3.org/2001/XMLSchema#> .
+@prefix x: <coords/xs#> .
+@prefix y: <coords/ys#> .
+
+############## DEFINITIONS ##############
+@prefix spatial: <spatial/> .
+
+@prefix pt: <spatial/pts#> .
+pt:0 rdf:value (x:0 y:0) .
+pt:1 rdf:value (x:0 y:1) .
+pt:2 rdf:value (x:0 y:2) .
+pt:3 rdf:value (x:0 y:3) .
+pt:4 rdf:value (x:1 y:2) .
+pt:5 rdf:value (x:1 y:3) .
+pt:6 rdf:value (x:2 y:2) .
+pt:7 rdf:value (x:2 y:3) .
+pt:8 rdf:value (x:3 y:0) .
+pt:9 rdf:value (x:3 y:1) .
+pt:10 rdf:value (x:3 y:2) .
+pt:11 rdf:value (x:3 y:3) .
+pt:12 rdf:value (x:4 y:0) .
+pt:13 rdf:value (x:4 y:1) .
+pt:14 rdf:value (x:4 y:2) .
+pt:15 rdf:value (x:4 y:3) .
+pt:16 rdf:value (x:5 y:0) .
+pt:17 rdf:value (x:5 y:1) .
+pt:18 rdf:value (x:5 y:2) .
+pt:19 rdf:value (x:5 y:3) .
+
+pt:20 rdf:value (x:6 y:4) .
+pt:21 rdf:value (x:6 y:5) .
+pt:22 rdf:value (x:7 y:4) .
+pt:23 rdf:value (x:7 y:5) .
+
+pt:24 rdf:value (x:8 y:6) .
+pt:25 rdf:value (x:8 y:7) .
+pt:26 rdf:value (x:9 y:6) .
+pt:27 rdf:value (x:9 y:7) .
+
+
+spatial:vertex_ind a rdf:predicate ;
+	rdfs:range xml:integer ;
+	rdfs:comment "The ordered 0-based index of the vertex in line-string." .
+spatial:vertex_coords a rdf:predicate ;
+	rdfs:range xml:integer ;
+	rdfs:comment "The ordered 0-based index of the vertex in the polygon." .
+
+@prefix polygon: <spatial/polygons#> .
+polygon:0 rdf:value (
+						[	spatial:vertex_ind 0;
+							spatial:vertex_coords pt:0;
+						]
+						[	spatial:vertex_ind 1;
+							spatial:vertex_coords pt:8
+						]
+						[	spatial:vertex_ind 2;
+							spatial:vertex_coords pt:12;
+						]
+						[	spatial:vertex_ind 3;
+							spatial:vertex_coords pt:16;
+						]
+						[	spatial:vertex_ind 4;
+							spatial:vertex_coords pt:17;
+						]
+						[	spatial:vertex_ind 5;
+							spatial:vertex_coords pt:13;
+						]
+						[	spatial:vertex_ind 6;
+							spatial:vertex_coords pt:9;
+						]
+						[	spatial:vertex_ind 7;
+							spatial:vertex_coords pt:1;
+						]
+					) .
+polygon:1 rdf:value (
+						[	spatial:vertex_ind 0;
+							spatial:vertex_coords pt:1;
+						]
+						[	spatial:vertex_ind 1;
+							spatial:vertex_coords pt:9;
+						]
+						[	spatial:vertex_ind 2;
+							spatial:vertex_coords pt:10;
+						]
+						[	spatial:vertex_ind 3;
+							spatial:vertex_coords pt:6;
+						]
+						[	spatial:vertex_ind 4;
+							spatial:vertex_coords pt:4;
+						]
+						[	spatial:vertex_ind 5;
+							spatial:vertex_coords pt:2;
+						]
+					) .
+polygon:2 rdf:value (
+						[	spatial:vertex_ind 0;
+							spatial:vertex_coords pt:2;
+						]
+						[	spatial:vertex_ind 1;
+							spatial:vertex_coords pt:4;
+						]
+						[	spatial:vertex_ind 2;
+							spatial:vertex_coords pt:5;
+						]
+						[	spatial:vertex_ind 3;
+							spatial:vertex_coords pt:3;
+						]
+					) .
+polygon:3 rdf:value (
+						[	spatial:vertex_ind 0;
+							spatial:vertex_coords pt:4;
+						]
+						[	spatial:vertex_ind 1;
+							spatial:vertex_coords pt:6;
+						]
+						[	spatial:vertex_ind 2;
+							spatial:vertex_coords pt:7;
+						]
+						[	spatial:vertex_ind 3;
+							spatial:vertex_coords pt:5;
+						]
+					) .
+polygon:4 rdf:value (
+						[	spatial:vertex_ind 0;
+							spatial:vertex_coords pt:6;
+						]
+						[	spatial:vertex_ind 1;
+							spatial:vertex_coords pt:10;
+						]
+						[	spatial:vertex_ind 2;
+							spatial:vertex_coords pt:14;
+						]
+						[	spatial:vertex_ind 3;
+							spatial:vertex_coords pt:18;
+						]
+						[	spatial:vertex_ind 4;
+							spatial:vertex_coords pt:19;
+						]
+						[	spatial:vertex_ind 5;
+							spatial:vertex_coords pt:15;
+						]
+						[	spatial:vertex_ind 6;
+							spatial:vertex_coords pt:11;
+						]
+						[	spatial:vertex_ind 7;
+							spatial:vertex_coords pt:7;
+						]
+					) .
+polygon:5 rdf:value (
+						[	spatial:vertex_ind 0;
+							spatial:vertex_coords pt:9;
+						]
+						[	spatial:vertex_ind 1;
+							spatial:vertex_coords pt:13;
+						]
+						[	spatial:vertex_ind 2;
+							spatial:vertex_coords pt:14;
+						]
+						[	spatial:vertex_ind 3;
+							spatial:vertex_coords pt:10;
+						]
+					) .
+polygon:6 rdf:value (
+						[	spatial:vertex_ind 0;
+							spatial:vertex_coords pt:13;
+						]
+						[	spatial:vertex_ind 1;
+							spatial:vertex_coords pt:17;
+						]
+						[	spatial:vertex_ind 2;
+							spatial:vertex_coords pt:18;
+						]
+						[	spatial:vertex_ind 3;
+							spatial:vertex_coords pt:14;
+						]
+					) .
+
+polygon:south_bank rdf:value (
+						[	spatial:vertex_ind 0;
+							spatial:vertex_coords pt:20;
+						]
+						[	spatial:vertex_ind 1;
+							spatial:vertex_coords pt:21;
+						]
+						[	spatial:vertex_ind 2;
+							spatial:vertex_coords pt:22;
+						]
+						[	spatial:vertex_ind 3;
+							spatial:vertex_coords pt:23;
+						]
+					) .
+polygon:north_shore rdf:value (
+						[	spatial:vertex_ind 0;
+							spatial:vertex_coords pt:24;
+						]
+						[	spatial:vertex_ind 1;
+							spatial:vertex_coords pt:25;
+						]
+						[	spatial:vertex_ind 2;
+							spatial:vertex_coords pt:26;
+						]
+						[	spatial:vertex_ind 3;
+							spatial:vertex_coords pt:27;
+						]
+					) .

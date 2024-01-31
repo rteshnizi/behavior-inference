@@ -17,6 +17,9 @@ def generate_launch_description():
 			arguments=[
 				"-d",
 				[os.path.join(shareDir, "config", "rviz.cg.rviz")],
+				"--ros-args",
+				"--log-level",
+				"warn",
 			]
 		),
 		# Node(
@@ -27,6 +30,9 @@ def generate_launch_description():
 		# 	arguments=[
 		# 		"-d",
 		# 		[os.path.join(shareDir, "config", "rviz.ctcd.rviz")], # cspell: disable-line
+		# 		"--ros-args",
+		# 		"--log-level",
+		# 		"warn",
 		# 	]
 		# ),
 		Node(
@@ -37,6 +43,9 @@ def generate_launch_description():
 			arguments=[
 				"-d",
 				[os.path.join(shareDir, "config", "rviz.str.rviz")], # cspell: disable-line
+				"--ros-args",
+				"--log-level",
+				"warn",
 			]
 		),
 	])

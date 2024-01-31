@@ -1,0 +1,16 @@
+rt_bi_runtime:
+  dd_region1:
+    ros__parameters:
+      param_src: "{'traversabilitys': 'rt_bi_runtime/dd_agent1/symbols'}"
+      symbols:
+        - "bridge"
+        - "street"
+        - "river"
+      colors:
+        - "GREY_LIGHT"
+        - "GREY_DARK"
+        - "BLUE"
+      traversabilitys:
+        - "[0]"
+        - "[0, 1]"
+        - "[2]"

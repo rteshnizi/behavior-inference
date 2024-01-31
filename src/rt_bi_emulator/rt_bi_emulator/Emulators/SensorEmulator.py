@@ -2,14 +2,14 @@ import rclpy
 from rclpy.logging import LoggingSeverity
 from sa_msgs.msg import RobotState
 
-import rt_bi_utils.Ros as RosUtils
-from rt_bi_emulator.Model.Body import Body
-from rt_bi_emulator.Model.DynamicRegionNode import DynamicRegionNode
+import rt_bi_commons.Utils.Ros as RosUtils
+from rt_bi_commons.Shared.Pose import Pose
+from rt_bi_commons.Utils.Geometry import Geometry, Polygon
+from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
+from rt_bi_commons.Utils.SaMsgs import SaMsgs
+from rt_bi_emulator.Shared.Body import Body
+from rt_bi_emulator.Shared.DynamicRegionNode import DynamicRegionNode
 from rt_bi_interfaces.msg import DynamicRegion, EstimationMsg, PoseEstimation
-from rt_bi_utils.Geometry import Geometry, Polygon
-from rt_bi_utils.Pose import Pose
-from rt_bi_utils.RtBiInterfaces import RtBiInterfaces
-from rt_bi_utils.SaMsgs import SaMsgs
 
 
 class Av(Body):
@@ -18,11 +18,11 @@ class Av(Body):
 
 class AvEmulator(DynamicRegionNode):
 	def __init__(self):
-		super().__init__(loggingSeverity=LoggingSeverity.DEBUG, node_name="rt_bi_emulator_av")
+		super().__init__(loggingSeverity=LoggingSeverity.DEBUG, node_name="em_av")
 		self.__targetIds = set()
 		(self.__regionPublisher, _) = RtBiInterfaces.createSensorPublisher(self, self.__publishUpdate, self.updateInterval)
 		(self.__estPublisher, _) = RtBiInterfaces.createEstimationPublisher(self)
-		RtBiInterfaces.subscribeToTargetTopic(self, self.__onTargetUpdate)
+		RtBiInterfaces.subscribeToTarget(self, self.__onTargetUpdate)
 
 	def __publishUpdate(self) -> None:
 		msgDy = self.createDynamicRegionMsg()
@@ -34,7 +34,7 @@ class AvEmulator(DynamicRegionNode):
 			return
 
 		timeNanoSecs = self.get_clock().now().nanoseconds
-		coordsList = RtBiInterfaces.fromStdPoints32ToCoordsList(msg.region.points) # type: ignore
+		coordsList = RtBiInterfaces.fromStdPoints32ToCoordsList(msg.region.points)
 		cor = RtBiInterfaces.fromStdPointToCoords(msg.center_of_rotation)
 		angleRad = Geometry.quatToAngle((msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w))
 		target = Body(msg.id, Pose(timeNanoSecs, msg.pose.position.x, msg.pose.position.y, angleRad), cor, coordsList)
@@ -83,9 +83,6 @@ class AvEmulator(DynamicRegionNode):
 		return super().render()
 
 def main(args=None):
-	"""
-	Start the Behavior Inference Run-time.
-	"""
 	rclpy.init(args=args)
 	avNode = AvEmulator()
 	rclpy.spin(avNode)

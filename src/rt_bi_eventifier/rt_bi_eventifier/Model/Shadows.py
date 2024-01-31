@@ -2,9 +2,9 @@ from typing import List, Sequence, Set
 
 from visualization_msgs.msg import Marker
 
+from rt_bi_commons.Utils.RViz import ColorNames
 from rt_bi_core.RegularAffineRegion import RegularAffineRegion
 from rt_bi_core.ShadowRegion import ShadowRegion
-from rt_bi_utils.RViz import ColorNames
 
 
 class Shadows(RegularAffineRegion[ShadowRegion]):
@@ -41,4 +41,4 @@ class Shadows(RegularAffineRegion[ShadowRegion]):
 		return super().difference(others)
 
 	def render(self) -> Sequence[Marker]:
-		return super().render(durationNs=ShadowRegion.DEFAULT_RENDER_DURATION, envelopeColor=ColorNames.DARK_RED)
+		return super().render(durationNs=ShadowRegion.DEFAULT_RENDER_DURATION, envelopeColor=ColorNames.RED_DARK)

@@ -1,0 +1,28 @@
+rt_bi_runtime:
+  dd_temporal1:
+    ros__parameters:
+      param_src: "{'intervals': 'rt_bi_runtime/dd_time1/ts_sec'}"
+      symbols:
+        - "early-morning"
+        - "morning"
+        - "mid-day"
+        - "afternoon"
+        - "evening"
+      intervals:
+        - "[0, 1]"
+        - "[1, 2]"
+        - "[2, 3]"
+        - "[3, 4]"
+        - "[4, 5]"
+      include_left:
+        - True
+        - True
+        - True
+        - True
+        - True
+      include_right:
+        - False
+        - False
+        - False
+        - False
+        - False

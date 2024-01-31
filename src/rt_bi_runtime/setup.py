@@ -14,10 +14,13 @@ setup(
 		("share/" + packageName, ["package.xml"]),
 		(os.path.join("share", packageName, "launch"), glob("launch/*")),
 		(os.path.join("share", packageName, "config"), glob("config/*")),
+		(os.path.join("share", packageName, "rdf"), glob("rdf/*")),
+		(os.path.join("share", packageName, "sparql"), glob("sparql/*")),
 	],
 	install_requires= [
 		"matplotlib~=3.5",
 		"networkx~=3.2",
+		"requests~=2.25",
 		"setuptools==58.2.0",
 	],
 	zip_safe=True,
@@ -27,8 +30,10 @@ setup(
 	license="UNLICENSED",
 	entry_points={
 		"console_scripts": [
-			"BA = rt_bi_runtime.BaInterface:main",
-			"DD = rt_bi_runtime.DataDictionary:main",
+			"BA = rt_bi_runtime.BaNode:main",
+			"DD_RDF = rt_bi_runtime.Data.RdfStoreNode:main",
+			"DD_COORD = rt_bi_runtime.Data.CoordsDictNode:main",
+			"DD_AGENT = rt_bi_runtime.Data.AgentDictNode:main",
 		],
 	},
 )

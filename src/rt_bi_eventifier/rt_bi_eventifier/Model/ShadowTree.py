@@ -4,6 +4,10 @@ import networkx as nx
 from networkx.classes.reportviews import OutEdgeView
 from visualization_msgs.msg import MarkerArray
 
+from rt_bi_commons.Utils.Geometry import AffineTransform, Geometry, Polygon
+from rt_bi_commons.Utils.NetworkX import NxUtils
+from rt_bi_commons.Utils.Ros import AppendMessage, Log, Logger, Publisher
+from rt_bi_commons.Utils.RViz import ColorNames, RViz
 from rt_bi_core.AffineRegion import AffineRegion
 from rt_bi_core.MapRegion import MapRegion
 from rt_bi_core.RegularAffineRegion import RegularAffineRegion
@@ -14,10 +18,6 @@ from rt_bi_eventifier.Model.ConnectivityGraph import ConnectivityGraph
 from rt_bi_eventifier.Model.ContinuousTimeCollisionDetection import ContinuousTimeCollisionDetection as CtCd
 from rt_bi_eventifier.Model.EventAggregator import EventAggregator
 from rt_bi_interfaces.msg import Adjacency, ComponentEvent, Events, Graph
-from rt_bi_utils.Geometry import AffineTransform, Geometry, Polygon
-from rt_bi_utils.NetworkX import NxUtils
-from rt_bi_utils.Ros import AppendMessage, Log, Logger, Publisher
-from rt_bi_utils.RViz import ColorNames, RViz
 
 # CSpell: ignore reportviews
 
@@ -301,7 +301,7 @@ class ShadowTree(nx.DiGraph):
 			regionName: str = self.nodes[n]["regionName"]
 			region: AffineRegion = cGraph.nodes[regionName]["region"]
 			if region.regionType == AffineRegion.RegionType.SHADOW:
-				outlineColor = ColorNames.LIGHT_GREY
+				outlineColor = ColorNames.GREY_LIGHT
 			elif region.regionType == AffineRegion.RegionType.SENSING:
 				outlineColor = ColorNames.GREEN
 			elif region.regionType == AffineRegion.RegionType.SYMBOL:
@@ -322,7 +322,7 @@ class ShadowTree(nx.DiGraph):
 		for (frm, to) in outEdgeView:
 			edgeData = outEdgeView[frm, to]
 			strId = repr((frm, to))
-			color = ColorNames.DARK_CYAN if ("isTemporal" in edgeData and edgeData["isTemporal"]) else ColorNames.DARK_MAGENTA
+			color = ColorNames.CYAN_DARK if ("isTemporal" in edgeData and edgeData["isTemporal"]) else ColorNames.MAGENTA_DARK
 			(dx, dy) = Geometry.subtractCoords(nodePositions[to], nodePositions[frm])
 			dVect = Geometry.getUnitVector(dx, dy)
 			dVect = Geometry.scaleCoords(dVect, self.RENDER_RADIUS)

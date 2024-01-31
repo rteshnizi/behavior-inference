@@ -2,8 +2,8 @@ from typing import Sequence
 
 from visualization_msgs.msg import Marker
 
-from rt_bi_utils.Pose import Pose
-from rt_bi_utils.RViz import ColorNames, RViz
+from rt_bi_commons.Shared.Pose import Pose
+from rt_bi_commons.Utils.RViz import ColorNames, RViz
 
 
 class Tracklet(Pose):

@@ -1,0 +1,7 @@
+rt_bi_runtime:
+  dd_rdf_1:
+    ros__parameters:
+      fuseki_server: "http://192.168.1.164:8090"
+      rdf_store: "rt-bi-ontology"
+      rdf_directory_name: "rdf"
+      sparql_directory_name: "sparql"

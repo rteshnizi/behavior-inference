@@ -29,21 +29,17 @@ echo
 echo
 
 concurrently\
-	--kill-others\
-	--names "ESE,ESY,ETG,IMP,ISE,ISY,SMP,EVZ,EV ,EVZ,RUN"\
+	--kill-others-on-fail\
+	--names "MAP,SEN,SYM,TRG,EMZ,EV ,EVZ,RUN"\
 	--prefix "[{name}-{time}]"\
-	-c "bgGreen,bgBlue,bgRed,bgWhite.black.underline,bgGreen.inverse,bgBlue.inverse,bgWhite.black,bgYellow.black,bgMagenta,bgYellow.black,bgCyan.black"\
+	-c "bgWhite.black,bgGreen,bgBlue,bgRed.inverse,bgYellow.black,bgMagenta,bgYellow.black,bgCyan.black"\
 	--timestamp-format "HH:mm:ss"\
-	"ros2 launch rt_bi_emulator c2.ese.launch.py"\
-	"ros2 launch rt_bi_emulator c2.esy.launch.py"\
-	"ros2 launch rt_bi_emulator c2.etg.launch.py"\
-	"ros2 launch rt_bi_emulator imp.launch.py"\
-	"ros2 launch rt_bi_emulator ise.launch.py"\
-	"ros2 launch rt_bi_emulator isy.launch.py"\
-	"ros2 launch rt_bi_emulator smp.launch.py"\
+	"ros2 launch rt_bi_emulator map.launch.py"\
+	"ros2 launch rt_bi_emulator sensor.launch.py"\
+	"ros2 launch rt_bi_emulator symbol.launch.py"\
+	"ros2 launch rt_bi_emulator target.launch.py"\
 	"ros2 launch rt_bi_emulator rviz.launch.py"\
 	"ros2 launch rt_bi_eventifier ev.launch.py"\
 	"ros2 launch rt_bi_eventifier rviz.launch.py"\
-	"ros2 launch rt_bi_runtime c2.all.launch.py"\
-	--hide "0,1,2,3,4,6,7,8,9,10"
+	"ros2 launch rt_bi_runtime c3.all.launch.py"
 exit 0

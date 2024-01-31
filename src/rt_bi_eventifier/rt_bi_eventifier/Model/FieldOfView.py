@@ -2,11 +2,11 @@ from typing import Dict, List, Sequence, Set, Union
 
 from visualization_msgs.msg import Marker
 
+from rt_bi_commons.Utils.Geometry import MultiPolygon, Polygon
+from rt_bi_commons.Utils.RViz import ColorNames
 from rt_bi_core.RegularAffineRegion import RegularAffineRegion
 from rt_bi_core.SensorRegion import SensorRegion
 from rt_bi_core.Tracklet import Tracklet
-from rt_bi_utils.Geometry import MultiPolygon, Polygon
-from rt_bi_utils.RViz import ColorNames
 
 
 class FieldOfView(RegularAffineRegion[SensorRegion]):

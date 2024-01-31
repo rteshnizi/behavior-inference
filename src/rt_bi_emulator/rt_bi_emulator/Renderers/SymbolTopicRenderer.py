@@ -4,21 +4,21 @@ import rclpy
 from rclpy.logging import LoggingSeverity
 from visualization_msgs.msg import MarkerArray
 
-import rt_bi_utils.Ros as RosUtils
+import rt_bi_commons.Utils.Ros as RosUtils
+from rt_bi_commons.Base.RtBiNode import RtBiNode
+from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
+from rt_bi_commons.Utils.RViz import RViz
 from rt_bi_core.SymbolRegion import SymbolRegion
 from rt_bi_interfaces.msg import DynamicRegion
-from rt_bi_utils.RtBiInterfaces import RtBiInterfaces
-from rt_bi_utils.RtBiNode import RtBiNode
-from rt_bi_utils.RViz import RViz
 
 
 class SymbolTopicRenderer(RtBiNode):
 	""" This Node listens to all the messages published on the topics related to dynamic symbols and renders them. """
 	def __init__(self, **kwArgs):
-		newKw = { "node_name": "rt_bi_emulator_isy", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
+		newKw = { "node_name": "renderer_symbol", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
 		super().__init__(**newKw)
 		self.__regions: Union[Dict[int, SymbolRegion], None] = None
-		RtBiInterfaces.subscribeToSymbolTopic(self, self.__onTargetUpdate)
+		RtBiInterfaces.subscribeToSymbol(self, self.__onTargetUpdate)
 		(self.__rvizPublisher, _) = RViz.createRVizPublisher(self, RosUtils.CreateTopicName("map"))
 
 	def __onTargetUpdate(self, update: DynamicRegion) -> None:
@@ -29,7 +29,7 @@ class SymbolTopicRenderer(RtBiNode):
 
 		timeNanoSecs = self.get_clock().now().nanoseconds
 		self.log(f"Updating region type {SymbolRegion.RegionType.SYMBOL} id {update.id} definition @{timeNanoSecs}.")
-		coords = RtBiInterfaces.fromStdPoints32ToCoordsList(update.region.points) # type: ignore
+		coords = RtBiInterfaces.fromStdPoints32ToCoordsList(update.region.points)
 		cor = RtBiInterfaces.fromStdPointToCoords(update.center_of_rotation)
 		target = SymbolRegion(centerOfRotation=cor, idNum=update.id, envelope=coords, timeNanoSecs=timeNanoSecs, overlappingRegionId=0, overlappingRegionType=SymbolRegion.RegionType.SYMBOL)
 		self.__regions[update.id] = target
@@ -39,8 +39,8 @@ class SymbolTopicRenderer(RtBiNode):
 	def declareParameters(self) -> None:
 		return super().declareParameters()
 
-	def parseConfigFileParameters(self) -> None:
-		return super().parseConfigFileParameters()
+	def parseParameters(self) -> None:
+		return super().parseParameters()
 
 	def render(self, regions: List[Any]) -> None:
 		if not RViz.isRVizReady(self, self.__rvizPublisher):

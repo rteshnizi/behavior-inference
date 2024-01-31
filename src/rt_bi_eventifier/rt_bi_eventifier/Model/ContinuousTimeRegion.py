@@ -1,12 +1,11 @@
 from math import isnan, nan
-from typing import Dict, Generic, List, Sequence, Set, TypeVar, Union
+from typing import Dict, Generic, List, Sequence, TypeVar, Union
 
+from rt_bi_commons.Utils.Geometry import AffineTransform, Geometry, LineString, Polygon
 from rt_bi_core.MapRegion import MapRegion
 from rt_bi_core.SensorRegion import SensorRegion
 from rt_bi_core.SymbolRegion import SymbolRegion
 from rt_bi_core.Tracklet import Tracklet
-from rt_bi_utils.Geometry import AffineTransform, Geometry, LineString, Polygon
-from rt_bi_utils.Ros import Logger
 
 RegionType = TypeVar("RegionType", SensorRegion, SymbolRegion, MapRegion)
 

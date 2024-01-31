@@ -1,0 +1,35 @@
+@base <https://rezateshnizi.com/rt-bi-ontology/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix agents: <agents/> .
+
+############## DEFINITIONS ##############
+@prefix region: <regions/> .
+region:color a rdf:predicate ;
+	rdfs:range rdfs:Literal ;
+	rdfs:comment "Color to use in rendering." .
+region:traversability a rdf:predicate ;
+	rdfs:comment "The properties required to be able to move on this region." .
+
+@prefix region_type: <regions/types#> .
+region_type:0 rdfs:label "bridge" ;
+	region:color "WHITE" ;
+	region:traversability [
+		agents:legs true ;
+		agents:wheels false ;
+		agents:swims false ;
+	] .
+region_type:1 rdfs:label "street" ;
+	region:color "GREY" ;
+	region:traversability [
+		agents:legs true ;
+		agents:wheels true ;
+		agents:swims false ;
+	] .
+region_type:2 rdfs:label "river" ;
+	region:color "BLUE_LIGHT" ;
+	region:traversability [
+		agents:legs false ;
+		agents:wheels false ;
+		agents:swims true ;
+	] .

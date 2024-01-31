@@ -1,0 +1,34 @@
+@base <https://rezateshnizi.com/rt-bi-ontology/> .
+@prefix xml: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix t_sec: <coords/ts_sec#> .
+
+############## DEFINITIONS ##############
+@prefix time: <times/> .
+time:include_left a rdf:predicate ;
+	rdfs:range xml:boolean .
+time:include_right a rdf:predicate ;
+	rdfs:range xml:boolean .
+
+@prefix time_interval: <times/time-intervals#> .
+time_interval:early_morning rdfs:label "early morning" ;
+	rdf:value (t_sec:0 t_sec:1) ;
+	time:include_left true ;
+	time:include_right false .
+time_interval:morning rdfs:label "morning" ;
+	rdf:value (t_sec:1 t_sec:2) ;
+	time:include_left true ;
+	time:include_right false .
+time_interval:mid_day rdfs:label "mid-day" ;
+	rdf:value (t_sec:2 t_sec:3) ;
+	time:include_left true ;
+	time:include_right false .
+time_interval:afternoon rdfs:label "afternoon" ;
+	rdf:value (t_sec:3 t_sec:4) ;
+	time:include_left true ;
+	time:include_right false .
+time_interval:evening rdfs:label "evening" ;
+	rdf:value (t_sec:4 t_sec:5) ;
+	time:include_left true ;
+	time:include_right false .

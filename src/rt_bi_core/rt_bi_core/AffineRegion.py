@@ -1,8 +1,8 @@
 from typing import Union
 
+from rt_bi_commons.Utils.Geometry import Geometry, Polygon
+from rt_bi_commons.Utils.RViz import RGBA
 from rt_bi_core.DynamicRegion import DynamicRegion
-from rt_bi_utils.Geometry import Geometry, Polygon
-from rt_bi_utils.RViz import RGBA
 
 
 class AffineRegion(DynamicRegion):

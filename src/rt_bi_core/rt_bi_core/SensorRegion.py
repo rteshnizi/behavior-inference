@@ -2,11 +2,11 @@ from typing import Dict, Literal, Sequence, Union
 
 from visualization_msgs.msg import Marker
 
-import rt_bi_utils.Ros as RosUtils
+import rt_bi_commons.Utils.Ros as RosUtils
+from rt_bi_commons.Utils.Geometry import Geometry, MultiPolygon, Polygon
+from rt_bi_commons.Utils.RViz import RGBA, ColorNames
 from rt_bi_core.AffineRegion import AffineRegion
 from rt_bi_core.Tracklet import Tracklet
-from rt_bi_utils.Geometry import Geometry, MultiPolygon, Polygon
-from rt_bi_utils.RViz import RGBA, ColorNames
 
 
 class SensorRegion(AffineRegion):
@@ -51,6 +51,7 @@ class SensorRegion(AffineRegion):
 			idNum=idNum,
 			envelope=envelope,
 			envelopeColor=ColorNames.GREEN,
+			interiorColor=ColorNames.GREEN_LIGHT,
 			timeNanoSecs=timeNanoSecs,
 			interior=interior,
 			**kwArgs

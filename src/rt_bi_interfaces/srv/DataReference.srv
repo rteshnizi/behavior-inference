@@ -1,0 +1,6 @@
+string src_param_name
+uint32 src_param_index
+string service_name
+rt_bi_interfaces/DataRefRequest[] references
+---
+rt_bi_interfaces/DataRefResponse[] resolutions

@@ -1,8 +1,8 @@
-from typing import Generator, List, Set, Union
+from typing import Generator
 
 import networkx as nx
 
-from rt_bi_utils.NetworkX import NxUtils
+from rt_bi_commons.Utils.NetworkX import NxUtils
 
 
 class BehaviorAutomaton(nx.DiGraph):
@@ -34,16 +34,16 @@ class BehaviorAutomaton(nx.DiGraph):
 		def __eq__(self, other: "BehaviorAutomaton.Transition") -> bool:
 			return self.symbolName == other.symbolName
 
-	def __init__(self, specName: str, states: List[str], transitions: List[List[List[str]]], start: str, accepting: List[str]):
+	def __init__(self, specName: str, states: list[str], transitions: list[tuple[str, str]], start: str, accepting: list[str]):
 		super().__init__()
 		self.__specName: str = specName
 		self.name = "NFA(%s)" % self.__specName
-		self.__states: List[str] = states
-		self.__transitions: List[List[List[str]]] = transitions
+		self.__states: list[str] = states
+		self.__transitions: list[tuple[str, str]] = transitions
 		self.__start: str = start
-		self.__accepting: Set[str] = set(accepting)
+		self.__accepting: set[str] = set(accepting)
 		self.__buildGraph()
-		self.renderLayout: Union[NxUtils.GraphLayout, NxUtils.NxDefaultLayout] = nx.circular_layout(self)
+		self.renderLayout: NxUtils.GraphLayout | NxUtils.NxDefaultLayout = nx.circular_layout(self)
 		return
 
 	def __repr__(self):
@@ -73,13 +73,13 @@ class BehaviorAutomaton(nx.DiGraph):
 		return
 
 	@property
-	def acceptingStates(self) -> Set[str]:
+	def acceptingStates(self) -> set[str]:
 		return self.__accepting
 
-	def activeStates(self) -> Set[str]:
+	def activeStates(self) -> set[str]:
 		return set()
 
-	def nonActiveStates(self) -> Set[str]:
+	def nonActiveStates(self) -> set[str]:
 		return (set(self.__states) - self.activeStates())
 
 	def baGenerator(self) -> Generator["BehaviorAutomaton", None, None]:

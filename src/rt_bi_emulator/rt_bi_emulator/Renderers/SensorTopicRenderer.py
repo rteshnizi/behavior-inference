@@ -3,24 +3,24 @@ from typing import Dict, List
 import rclpy
 from visualization_msgs.msg import MarkerArray
 
-import rt_bi_utils.Ros as RosUtils
+import rt_bi_commons.Utils.Ros as RosUtils
+from rt_bi_commons.Base.RtBiNode import RtBiNode
+from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
+from rt_bi_commons.Utils.RViz import RViz
+from rt_bi_commons.Utils.SaMsgs import SaMsgs
 from rt_bi_core.SensorRegion import SensorRegion
 from rt_bi_core.Tracklet import Tracklet
 from rt_bi_interfaces.msg import DynamicRegion, EstimationMsg
-from rt_bi_utils.RtBiInterfaces import RtBiInterfaces
-from rt_bi_utils.RtBiNode import RtBiNode
-from rt_bi_utils.RViz import RViz
-from rt_bi_utils.SaMsgs import SaMsgs
 
 
 class SensorTopicRenderer(RtBiNode):
 	""" This Node listens to all the messages published on the topics related to sensors and renders them. """
 	def __init__(self, **kwArgs):
-		newKw = { "node_name": "rt_bi_emulator_sensor", **kwArgs}
+		newKw = { "node_name": "renderer_sensor", **kwArgs}
 		super().__init__(**newKw)
 		self.__sensors: Dict[int, SensorRegion] = {}
-		RtBiInterfaces.subscribeToSensorTopic(self, self.__onRegionUpdate)
-		RtBiInterfaces.subscribeToEstimationTopic(self, self.__onEstimation)
+		RtBiInterfaces.subscribeToSensor(self, self.__onRegionUpdate)
+		RtBiInterfaces.subscribeToEstimation(self, self.__onEstimation)
 		(self.__rvizPublisher, _) = RViz.createRVizPublisher(self, RosUtils.CreateTopicName("map"))
 
 	def __onRegionUpdate(self, update: DynamicRegion) -> None:
@@ -30,7 +30,7 @@ class SensorTopicRenderer(RtBiNode):
 
 		timeNanoSecs = self.get_clock().now().nanoseconds
 		self.log(f"Updating region type {SensorRegion.RegionType.SENSING} id {update.id} definition @{timeNanoSecs}.")
-		coords = RtBiInterfaces.fromStdPoints32ToCoordsList(update.region.points) # type: ignore
+		coords = RtBiInterfaces.fromStdPoints32ToCoordsList(update.region.points)
 		cor = RtBiInterfaces.fromStdPointToCoords(update.center_of_rotation)
 		tracklets = self.__sensors[update.id].tracklets if update.id in self.__sensors else {}
 		sensor = SensorRegion(centerOfRotation=cor, idNum=update.id, envelope=coords, timeNanoSecs=timeNanoSecs, tracklets=tracklets)
@@ -60,8 +60,8 @@ class SensorTopicRenderer(RtBiNode):
 	def declareParameters(self) -> None:
 		return super().declareParameters()
 
-	def parseConfigFileParameters(self) -> None:
-		return super().parseConfigFileParameters()
+	def parseParameters(self) -> None:
+		return super().parseParameters()
 
 	def render(self, regions: List[SensorRegion], tracklets: Dict[int, Tracklet]) -> None:
 		if not RViz.isRVizReady(self, self.__rvizPublisher):

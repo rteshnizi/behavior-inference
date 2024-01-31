@@ -1,0 +1,41 @@
+@base <https://rezateshnizi.com/rt-bi-ontology/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xml: <http://www.w3.org/2001/XMLSchema#> .
+@prefix polygon: <spatial/polygons#> .
+@prefix time_interval: <times/time-intervals#> .
+
+############## DEFINITIONS ##############
+@prefix alphabet: <alphabet/> .
+alphabet:types a rdfs:Class ;
+	rdfs:comment "The class of the alphabet letter types." .
+
+alphabet:spatial a rdfs:Resource;
+	rdfs:subClassOf alphabet:types ;
+	rdfs:comment "The class of spatial alphabet letters." .
+
+alphabet:temporal a rdfs:Resource;
+	rdfs:subClassOf alphabet:types ;
+	rdfs:comment "The class of temporal alphabet letters." .
+
+alphabet:dynamic a rdfs:Resource;
+	rdfs:subClassOf alphabet:types ;
+	rdfs:comment "The class of dynamic alphabet letters." .
+
+alphabet:type a rdf:predicate ;
+	rdfs:range alphabet:types ;
+	rdfs:comment "The predicate to show alphabet type" .
+
+@prefix alphabet_letter: <alphabet/letter#> .
+alphabet_letter:0 rdfs:label "south bank" ;
+	alphabet:type alphabet:spatial ;
+	rdf:value polygon:south_bank .
+alphabet_letter:1 rdfs:label "north shore" ;
+	alphabet:type alphabet:spatial ;
+	rdf:value polygon:north_shore .
+alphabet_letter:2 rdfs:label "mid-day" ;
+	alphabet:type alphabet:temporal ;
+	rdf:value time_interval:mid_day .
+alphabet_letter:3 rdfs:label "truck" ;
+	alphabet:type alphabet:dynamic ;
+	rdf:value "rt_bi_emulator/em_tg1" .

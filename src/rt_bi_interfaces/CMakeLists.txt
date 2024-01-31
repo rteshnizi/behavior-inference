@@ -14,15 +14,28 @@ find_package(rosidl_default_generators REQUIRED)
 
 find_package(sa_msgs REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
+  # Messages
   "msg/Adjacency.msg"
   "msg/ComponentEvent.msg"
+  "msg/DataRefRequest.msg"
+  "msg/DataRefResponse.msg"
   "msg/DynamicRegion.msg"
-  "msg/EstimationMsg.msg"
   "msg/Estimation.msg"
+  "msg/EstimationMsg.msg"
   "msg/Events.msg"
   "msg/Graph.msg"
+  "msg/MapRegion.msg"
+  "msg/MapRegions.msg"
+  "msg/MapRegionState.msg"
   "msg/PoseEstimation.msg"
+  "msg/RegionSpec.msg"
+  "msg/TimeInterval.msg"
   "msg/Tracklet.msg"
+  "msg/Traversability.msg"
+  # Services
+  "srv/DataReference.srv"
+  "srv/RegionSpec.srv"
+  "srv/StaticReachability.srv"
   DEPENDENCIES builtin_interfaces
   DEPENDENCIES geometry_msgs
   DEPENDENCIES sa_msgs

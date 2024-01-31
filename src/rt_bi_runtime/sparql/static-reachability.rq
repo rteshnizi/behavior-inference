@@ -1,0 +1,70 @@
+PREFIX agent_type:    <https://rezateshnizi.com/rt-bi-ontology/agents/types#>
+PREFIX agents:        <https://rezateshnizi.com/rt-bi-ontology/agents/>
+PREFIX map:           <https://rezateshnizi.com/rt-bi-ontology/maps/>
+PREFIX map_part:      <https://rezateshnizi.com/rt-bi-ontology/maps/parts#>
+PREFIX polygon:       <https://rezateshnizi.com/rt-bi-ontology/spatial/polygons#>
+PREFIX pt:            <https://rezateshnizi.com/rt-bi-ontology/spatial/pts#>
+PREFIX rdf:           <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs:          <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX region:        <https://rezateshnizi.com/rt-bi-ontology/regions/>
+PREFIX region_type:   <https://rezateshnizi.com/rt-bi-ontology/regions/types#>
+PREFIX spatial:       <https://rezateshnizi.com/rt-bi-ontology/spatial/>
+PREFIX t_sec:         <https://rezateshnizi.com/rt-bi-ontology/coords/ts_sec#>
+PREFIX time:          <https://rezateshnizi.com/rt-bi-ontology/times/>
+PREFIX time_interval: <https://rezateshnizi.com/rt-bi-ontology/times/time-intervals#>
+PREFIX vertex:        <https://rezateshnizi.com/rt-bi-ontology/spatial/vertex#>
+PREFIX x:             <https://rezateshnizi.com/rt-bi-ontology/coords/xs#>
+PREFIX xml:           <http://www.w3.org/2001/XMLSchema#>
+PREFIX y:             <https://rezateshnizi.com/rt-bi-ontology/coords/ys#>
+
+
+SELECT
+	(STRAFTER(STR(?mapPart), STR(map_part:)) AS ?regionId)
+	?regionColor ?needsLegs ?needsWheels ?needsSwim
+	?vertInd ?xVal ?yVal
+WHERE {
+	?mapPart map:region_types ?regionTypeList ;
+		map:polygons ?polygonList .
+	{
+		SELECT ?regionType ?regionColor ?needsLegs ?needsWheels ?needsSwim
+		WHERE {
+			?regionType rdfs:label ?regionLabel;
+				region:color ?regionColor;
+				region:traversability [
+					agents:legs ?needsLegs ;
+					agents:wheels ?needsWheels ;
+					agents:swims ?needsSwim ;
+				] .
+			?agent_type rdfs:label ?agent_label ;
+				agents:legs ?hasLegs ;
+				agents:wheels ?hasWheels ;
+				agents:swims ?canSwim .
+			filter (
+				(?needsLegs && ?hasLegs && ?inputHasLegs) ||
+				(?needsWheels && ?hasWheels && ?inputHasWheels) ||
+				(?needsSwim && ?canSwim && ?inputCanSwim)
+			)
+		}
+	}
+	{
+		SELECT ?polygon ?vertInd ?xVal ?yVal
+		WHERE {
+			?polygon rdf:value ?vertList .
+			?vertList rdf:rest*/rdf:first ?vertPair .
+			?vertPair spatial:vertex_ind ?vertInd .
+			?vertPair spatial:vertex_coords ?ptId .
+			?ptId rdf:value/rdf:rest*/rdf:first ?xId .
+			?xId rdf:value ?xVal .
+			?ptId rdf:value/rdf:rest*/rdf:first ?yId .
+			?yId rdf:value ?yVal .
+			filter STRSTARTS(STR(?polygon), STR(polygon:)) .
+			filter STRSTARTS(STR(?xId), STR(x:)) .
+			filter STRSTARTS(STR(?yId), STR(y:)) .
+		}
+	}
+	filter exists {
+		?regionTypeList rdf:rest*/rdf:first ?regionType .
+		?polygonList rdf:rest*/rdf:first ?polygon .
+	}
+}
+ORDER BY ?mapPart ?vertInd

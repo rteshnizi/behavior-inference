@@ -2,10 +2,10 @@ from typing import Dict, Generic, Iterator, List, Sequence, Set, TypeVar, Union
 
 from visualization_msgs.msg import Marker
 
-import rt_bi_utils.Ros as RosUtils
+import rt_bi_commons.Utils.Ros as RosUtils
+from rt_bi_commons.Utils.Geometry import Geometry, LineString, MultiPolygon, Polygon
+from rt_bi_commons.Utils.RViz import RGBA
 from rt_bi_core.PolygonalRegion import PolygonalRegion
-from rt_bi_utils.Geometry import Geometry, LineString, MultiPolygon, Polygon
-from rt_bi_utils.RViz import RGBA
 
 RegionType = TypeVar("RegionType", bound=PolygonalRegion)
 

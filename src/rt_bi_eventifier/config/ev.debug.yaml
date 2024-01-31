@@ -1,7 +1,7 @@
 rt_bi_eventifier:
   ev:
     ros__parameters:
-      liveRender: False
+      render: True
       renderModules:
         - connectivity_graph
         - continuous_time_collision_detection

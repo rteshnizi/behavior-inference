@@ -2,7 +2,7 @@ from typing import List, TypeVar
 
 from networkx.algorithms.isomorphism import is_isomorphic
 
-import rt_bi_utils.Ros as RosUtils
+import rt_bi_commons.Utils.Ros as RosUtils
 from rt_bi_core.AffineRegion import AffineRegion
 from rt_bi_core.MapRegion import MapRegion
 from rt_bi_core.RegularAffineRegion import RegularAffineRegion

@@ -2,19 +2,19 @@ from typing import Dict, Literal, Sequence, Union
 
 from visualization_msgs.msg import Marker
 
+from rt_bi_commons.Shared.Color import RGBA
+from rt_bi_commons.Utils.Geometry import Geometry, Polygon
+from rt_bi_commons.Utils.RViz import ColorNames
 from rt_bi_core.AffineRegion import AffineRegion
-from rt_bi_utils.Color import RGBA
-from rt_bi_utils.Geometry import Geometry, Polygon
-from rt_bi_utils.RViz import ColorNames
 
 
 class SymbolRegion(AffineRegion):
 	__colors: Dict[AffineRegion.RegionType, RGBA] = {
-		AffineRegion.RegionType.BASE: ColorNames.DARK_RED,
+		AffineRegion.RegionType.BASE: ColorNames.RED_DARK,
 		AffineRegion.RegionType.MAP: ColorNames.YELLOW,
 		AffineRegion.RegionType.SENSING: ColorNames.CYAN,
 		AffineRegion.RegionType.SHADOW: ColorNames.BLUE,
-		AffineRegion.RegionType.SYMBOL: ColorNames.DARK_MAGENTA,
+		AffineRegion.RegionType.SYMBOL: ColorNames.MAGENTA_DARK,
 		AffineRegion.RegionType.TARGET: ColorNames.RED,
 	}
 	def __init__(

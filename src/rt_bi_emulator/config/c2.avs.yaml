@@ -1,6 +1,7 @@
 rt_bi_emulator:
-  av1:
+  em_av1:
     ros__parameters:
+      render: True
       id: 1
       updateInterval: 0.75
       timesSecs:
@@ -16,8 +17,9 @@ rt_bi_emulator:
       fovs:
         - "[[283.602, 65.354], [296.297, 119.257], [120.804, 134.190]]"
         - "[[200.612, -24.140], [244.985, 8.992], [120.804, 134.190]]"
-  av2:
+  em_av2:
     ros__parameters:
+      render: True
       id: 2
       updateInterval: 0.75
       timesSecs:

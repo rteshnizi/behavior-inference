@@ -4,21 +4,21 @@ import rclpy
 from rclpy.logging import LoggingSeverity
 from visualization_msgs.msg import MarkerArray
 
-import rt_bi_utils.Ros as RosUtils
+import rt_bi_commons.Utils.Ros as RosUtils
+from rt_bi_commons.Base.RtBiNode import RtBiNode
+from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
+from rt_bi_commons.Utils.RViz import ColorNames, RViz
 from rt_bi_core.TargetRegion import TargetRegion
 from rt_bi_interfaces.msg import DynamicRegion
-from rt_bi_utils.RtBiInterfaces import RtBiInterfaces
-from rt_bi_utils.RtBiNode import RtBiNode
-from rt_bi_utils.RViz import ColorNames, RViz
 
 
 class TargetTopicRenderer(RtBiNode):
 	""" This Node listens to all the messages published on the topics related to targets and renders them. """
 	def __init__(self, **kwArgs):
-		newKw = { "node_name": "rt_bi_emulator_target", **kwArgs}
+		newKw = { "node_name": "renderer_target", **kwArgs}
 		super().__init__(loggingSeverity=LoggingSeverity.INFO, **newKw)
 		self.__targets: Union[Dict[int, TargetRegion], None] = None
-		RtBiInterfaces.subscribeToTargetTopic(self, self.__onTargetUpdate)
+		RtBiInterfaces.subscribeToTarget(self, self.__onTargetUpdate)
 		(self.__rvizPublisher, _) = RViz.createRVizPublisher(self, RosUtils.CreateTopicName("map"))
 		self.__renderColor = ColorNames.ORANGE
 
@@ -31,18 +31,18 @@ class TargetTopicRenderer(RtBiNode):
 
 		timeNanoSecs = self.get_clock().now().nanoseconds
 		self.log(f"Updating region type {TargetRegion.RegionType.TARGET} id {update.id} definition @{timeNanoSecs}.")
-		coords = RtBiInterfaces.fromStdPoints32ToCoordsList(update.region.points) # type: ignore
+		coords = RtBiInterfaces.fromStdPoints32ToCoordsList(update.region.points)
 		cor = RtBiInterfaces.fromStdPointToCoords(update.center_of_rotation)
 		target = TargetRegion(centerOfRotation=cor, idNum=update.id, envelope=coords, envelopeColor=self.__renderColor, timeNanoSecs=timeNanoSecs)
 		self.__targets[update.id] = target
-		self.render([target])
+		if self.shouldRender: self.render([target])
 		return
 
 	def declareParameters(self) -> None:
 		return super().declareParameters()
 
-	def parseConfigFileParameters(self) -> None:
-		return super().parseConfigFileParameters()
+	def parseParameters(self) -> None:
+		return super().parseParameters()
 
 	def render(self, regions: List[TargetRegion]) -> None:
 		if not RViz.isRVizReady(self, self.__rvizPublisher):

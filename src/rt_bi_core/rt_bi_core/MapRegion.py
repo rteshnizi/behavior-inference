@@ -2,26 +2,37 @@ from typing import Literal, Sequence, Union
 
 from visualization_msgs.msg import Marker
 
+from rt_bi_commons.Shared.TimeInterval import TimeInterval
+from rt_bi_commons.Utils import Ros
+from rt_bi_commons.Utils.Geometry import Geometry, MultiPolygon, Polygon
+from rt_bi_commons.Utils.RViz import RGBA, ColorNames
 from rt_bi_core.AffineRegion import AffineRegion
-from rt_bi_core.FeatureMap import Feature
-from rt_bi_utils.Geometry import Geometry, MultiPolygon, Polygon
-from rt_bi_utils.RViz import RGBA, ColorNames
+from rt_bi_interfaces.msg import MapRegion as MapRegionMsg, RegionSpec, TimeInterval as TimeIntervalMsg
 
 
 class MapRegion(AffineRegion):
-	def __init__(self, idNum: int, envelope: Geometry.CoordsList, timeNanoSecs: int = 0, interior: Union[Polygon, MultiPolygon, None] = None,**kwArgs) -> None:
-		self.__featureDefinition: Union[Feature, None] = None
+	def __init__(self,
+		idNum: int,
+		envelope: Geometry.CoordsList,
+		timeNanoSecs: int = 0,
+		interior: Union[Polygon, MultiPolygon, None] = None,
+		offIntervals: list[TimeInterval] = [],
+		spec: RegionSpec = RegionSpec(),
+		**kwArgs,
+	) -> None:
 		super().__init__(
 			centerOfRotation=(0.0, 0.0),
 			idNum=idNum,
 			envelope=envelope,
-			envelopeColor=kwArgs.pop("envelopeColor", ColorNames.GREY),
+			envelopeColor=kwArgs.pop("envelopeColor", ColorNames.WHITE),
 			timeNanoSecs=timeNanoSecs,
 			interior=interior,
-			interiorColor=kwArgs.pop("interiorColor", self.resolvedBgColor),
 			**kwArgs
 		)
 		self.centerOfRotation = Geometry.toCoords(self.interior.centroid)
+		self.offIntervals: list[TimeInterval] = offIntervals
+		self.spec: RegionSpec = spec
+		return
 
 	@property
 	def regionType(self) -> Literal[AffineRegion.RegionType.MAP]:
@@ -29,22 +40,18 @@ class MapRegion(AffineRegion):
 
 	@property
 	def resolvedBgColor(self) -> RGBA:
-		return ColorNames.BLACK if self.isObstacle else ColorNames.TRANSPARENT
+		return ColorNames.fromString(self.spec.color)
 
-	@property
-	def isObstacle(self) -> bool:
-		return self.featureDefinition.traversability.car < 100
-
-	@property
-	def featureDefinition(self) -> Feature:
-		if self.__featureDefinition is None:
-			return Feature("Undefined")
-		return self.__featureDefinition
-
-	@featureDefinition.setter
-	def featureDefinition(self, val: Feature) -> None:
-		self.__featureDefinition = val
-		return
+	def toMsg(self) -> MapRegionMsg:
+		msg = MapRegionMsg()
+		msg.id = self.idNum
+		msg.region = self.toPolygonMsg()
+		msg.spec.color = ColorNames.toStr(self.envelopeColor)
+		msg.spec.off_intervals = []
+		for interval in self.offIntervals:
+			intervalMsg = TimeIntervalMsg()
+			intervalMsg.start = Ros.NanoSecToTimeMsg(interval.startNanoSecs)
+		return msg
 
 	def render(self, renderText = False) -> Sequence[Marker]:
 		self.BACKGROUND_COLOR = self.resolvedBgColor

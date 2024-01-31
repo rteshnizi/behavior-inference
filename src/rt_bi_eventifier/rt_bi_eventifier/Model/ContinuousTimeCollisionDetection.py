@@ -3,16 +3,16 @@ from typing import Dict, List, Set, Tuple, TypeVar, Union
 from rclpy.clock import Duration
 from visualization_msgs.msg import MarkerArray
 
+from rt_bi_commons.Shared.Color import RGBA
+from rt_bi_commons.Utils.Geometry import Geometry, LineString
+from rt_bi_commons.Utils.Ros import AppendMessage, Log, Publisher
+from rt_bi_commons.Utils.RViz import RViz
 from rt_bi_core.AffineRegion import AffineRegion
 from rt_bi_core.MapRegion import MapRegion
 from rt_bi_core.SensorRegion import SensorRegion
 from rt_bi_core.SymbolRegion import SymbolRegion
 from rt_bi_eventifier.Model.ContinuousTimeRegion import ContinuousTimeRegion
 from rt_bi_eventifier.Model.MapRegions import MapRegions
-from rt_bi_utils.Color import RGBA
-from rt_bi_utils.Geometry import Geometry, LineString
-from rt_bi_utils.Ros import AppendMessage, Log, Publisher
-from rt_bi_utils.RViz import RViz
 
 RegionTypeX = TypeVar("RegionTypeX", SensorRegion, SymbolRegion, MapRegion)
 RegionTypeY = TypeVar("RegionTypeY", SensorRegion, SymbolRegion, MapRegion)

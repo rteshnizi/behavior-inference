@@ -2,12 +2,14 @@ from abc import ABC
 from enum import Enum
 from typing import Dict, Sequence, Union
 
+from geometry_msgs.msg import Polygon as PolygonMsg
 from visualization_msgs.msg import Marker
 
-import rt_bi_utils.Ros as RosUtils
-from rt_bi_utils.Color import RGBA, ColorNames, ColorUtils
-from rt_bi_utils.Geometry import AffineTransform, Geometry, LineString, Polygon
-from rt_bi_utils.RViz import RViz
+import rt_bi_commons.Utils.Ros as RosUtils
+from rt_bi_commons.Shared.Color import RGBA, ColorNames, ColorUtils
+from rt_bi_commons.Utils.Geometry import AffineTransform, Geometry, LineString, Polygon
+from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
+from rt_bi_commons.Utils.RViz import RViz
 
 
 class PolygonalRegion(ABC):
@@ -35,7 +37,7 @@ class PolygonalRegion(ABC):
 		idNum: int,
 		envelope: Geometry.CoordsList,
 		envelopeColor: RGBA,
-		interiorColor: RGBA = ColorNames.DARK_GREY,
+		interiorColor: RGBA = ColorNames.GREY_DARK,
 		interior: Union[Polygon, None] = None,
 		renderLineWidth = 1,
 		**kwArgs
@@ -179,3 +181,6 @@ class PolygonalRegion(ABC):
 		msgs.append(RViz.removeMarker(self.name))
 		msgs.append(RViz.removeMarker("%s_txt" % self.name))
 		return msgs
+
+	def toPolygonMsg(self) -> PolygonMsg:
+		return RtBiInterfaces.toPolygonMsg(self.interior)

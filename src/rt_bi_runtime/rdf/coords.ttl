@@ -1,0 +1,35 @@
+@base <https://rezateshnizi.com/rt-bi-ontology/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+
+############## DEFINITIONS ##############
+@prefix x: <coords/xs#> .
+x:0 rdf:value 0.0 .
+x:1 rdf:value 120.0 .
+x:2 rdf:value 140.0 .
+x:3 rdf:value 200.0 .
+x:4 rdf:value 400.0 .
+x:5 rdf:value 600.0 .
+
+x:6 rdf:value 10.0 .
+x:7 rdf:value 110.0 .
+x:8 rdf:value 410.0 .
+x:9 rdf:value 590.0 .
+
+@prefix y: <coords/ys#> .
+y:0 rdf:value 0.0 .
+y:1 rdf:value 30.0 .
+y:2 rdf:value 90.0 .
+y:3 rdf:value 120.0 .
+
+y:4 rdf:value 20.0 .
+y:5 rdf:value 40.0 .
+y:6 rdf:value 80.0 .
+y:7 rdf:value 100.0 .
+
+@prefix t_sec: <coords/ts_sec#> .
+t_sec:0 rdf:value 0.0 .
+t_sec:1 rdf:value 20.0 .
+t_sec:2 rdf:value 29.0 .
+t_sec:3 rdf:value 31.0 .
+t_sec:4 rdf:value 40.0 .
+t_sec:5 rdf:value 50.0 .

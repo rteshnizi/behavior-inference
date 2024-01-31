@@ -9,8 +9,8 @@ from matplotlib.figure import Figure
 from matplotlib.markers import MarkerStyle
 from rclpy.node import Node
 
+from rt_bi_commons.Shared.Color import RGBA, ColorNames, ColorUtils
 from rt_bi_runtime.Model.BehaviorAutomaton import BehaviorAutomaton
-from rt_bi_utils.Color import RGBA, ColorNames, ColorUtils
 
 use("QtAgg")
 # CSpell: ignore: mpl_toolkits, set_facecolor, facecolor, edgecolor, LINETO, dtype, edgecolors

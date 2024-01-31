@@ -9,7 +9,7 @@
 
 	<depend>rclpy</depend>
 
-	<depend version_eq="0.0.10">rt_bi_utils</depend>
+	<depend version_eq="0.0.10">rt_bi_commons</depend>
 	<depend>sa_msgs</depend>
 
 	<export>

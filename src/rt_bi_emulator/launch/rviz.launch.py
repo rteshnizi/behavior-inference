@@ -17,6 +17,9 @@ def generate_launch_description():
 			arguments=[
 				"-d",
 				[os.path.join(shareDir, "config", "rviz.live.rviz")],
+				"--ros-args",
+				"--log-level",
+				"warn",
 			]
 		),
 	])

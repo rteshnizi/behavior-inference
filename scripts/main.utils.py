@@ -4,8 +4,8 @@ from json import loads
 from math import degrees, radians
 from typing import List
 
-from rt_bi_utils.Geometry import AffineTransform, Geometry
-from rt_bi_utils.Pose import Pose
+from rt_bi_commons.Shared.Pose import Pose
+from rt_bi_commons.Utils.Geometry import AffineTransform, Geometry
 
 logging.basicConfig(format="[%(levelname)s]: %(message)s", force=True, level=logging.INFO)
 

@@ -1,58 +1,60 @@
 import rclpy
-from sa_msgs.msg import FeatureInfoIndividual
-from sa_msgs.srv import QueryFeature
+from rclpy.logging import LoggingSeverity
+from typing_extensions import cast
 
-import rt_bi_utils.Ros as RosUtils
-from rt_bi_emulator.Map.FeatureInfoIndividual import Case1
-from rt_bi_utils.RtBiNode import RtBiNode
-from rt_bi_utils.SaMsgs import SaMsgs
+from rt_bi_commons.Base.RtBiNode import RtBiNode
+from rt_bi_commons.Shared.Color import ColorNames
+from rt_bi_commons.Shared.TimeInterval import TimeInterval
+from rt_bi_commons.Utils import Ros
+from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
+from rt_bi_core.MapRegion import MapRegion
+from rt_bi_interfaces.msg import MapRegion as MapRegionMsg, MapRegions as MapRegionsMsg
+from rt_bi_interfaces.srv import StaticReachability
 
 
 class DynamicMapEmulator(RtBiNode):
-	def __init__(self):
-		super().__init__(node_name="rt_bi_emulator_map")
-		SaMsgs.createSaFeatureQueryService(self, self.__featureInfoQueryCallback)
+	def __init__(self, **kwArgs) -> None:
+		newKw = { "node_name": "em_dynamic_map", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
+		super().__init__(**newKw)
+		self.mapRegions: dict[str, MapRegion] = {}
+		self.rdfClient = RtBiInterfaces.createRdfClient(self, "static_reachability")
+		self.__mapRegionsPublisher = RtBiInterfaces.createMapRegionsPublisher(self)
+		Ros.WaitForServicesToStart(self, self.rdfClient)
+		self.__coldStart()
 
-	def __featureInfoQueryCallback(self, request: QueryFeature.Request, response: QueryFeature.Response) -> QueryFeature.Response:
-		self.log("Received QueryFeature \"%s\" request." % request.name)
-		if request.name == "map":
-			# The response to this query is all the map regions without their feature definitions
-			for feature in Case1.FeatureIndividuals:
-				responseFeature = FeatureInfoIndividual()
-				responseFeature.feature_name = feature.feature_name
-				responseFeature.type = feature.type
-				responseFeature.polygon_shape_list = feature.polygon_shape_list
-				RosUtils.AppendMessage(response.feature_info_individual, responseFeature)
-		else:
-			# The response to this query is the feature definition of the given map feature
-			for individual in Case1.FeatureIndividuals:
-				if individual.feature_name == request.name:
-					responseFeature = FeatureInfoIndividual()
-					responseFeature.feature_name = individual.feature_name
-					responseFeature.traversability_gv_car = individual.traversability_gv_car
-					responseFeature.traversability_gv_tank = individual.traversability_gv_tank
-					responseFeature.visibility_av= individual.visibility_av
-					RosUtils.AppendMessage(response.feature_info_individual, responseFeature)
-					break
-			if len(response.feature_info_individual) == 0:
-				self.get_logger().error("Feature name \"%s\" not in Map Dictionary. **Returning empty feature**" % request.name)
-				return response
-		self.log("Response has %d features." % len(response.feature_info_individual))
-		return response
+	def __coldStart(self) -> None:
+		req = StaticReachability.Request()
+		req.include_type.legs = True
+		req.include_type.swim = False
+		req.include_type.wheels = False
+		Ros.SendClientRequest(self, self.rdfClient, req, self.__onStaticReachabilityResponse)
+		return
+
+	def __onStaticReachabilityResponse(self, req: StaticReachability.Request, res: StaticReachability.Response) -> StaticReachability.Response:
+		mapRegionsMsg = MapRegionsMsg()
+		for regionMsg in res.regions:
+			regionMsg = cast(MapRegionMsg, regionMsg)
+			region = MapRegion(
+				idNum=Ros.RegisterRegionId(regionMsg.id),
+				envelope=RtBiInterfaces.fromStdPoints32ToCoordsList(regionMsg.region.points),
+				envelopeColor=ColorNames.fromString(regionMsg.spec.color),
+				offIntervals=[TimeInterval.fromMsg(interval) for interval in regionMsg.spec.off_intervals]
+			)
+			self.mapRegions[region.name] = region
+			Ros.AppendMessage(mapRegionsMsg.regions, regionMsg)
+		self.__mapRegionsPublisher.publish(mapRegionsMsg)
+		return res
 
 	def declareParameters(self) -> None:
-		return super().declareParameters()
+		return
 
-	def parseConfigFileParameters(self) -> None:
-		return super().parseConfigFileParameters()
+	def parseParameters(self) -> None:
+		return
 
 	def render(self) -> None:
 		return super().render()
 
 def main(args=None):
-	"""
-	Start the Behavior Inference Run-time.
-	"""
 	rclpy.init(args=args)
 	node = DynamicMapEmulator()
 	rclpy.spin(node)
