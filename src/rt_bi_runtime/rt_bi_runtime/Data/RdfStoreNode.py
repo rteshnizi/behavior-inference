@@ -32,10 +32,14 @@ class RdfStoreNode(DataDictionaryNode[_K]):
 		super().__init__(parsers, **newKw)
 		sparqlDir = str(Path(get_package_share_directory(package_name), self["sparql_directory_name"][0]).resolve())
 		self.__httpInterface = HttpInterface(self["fuseki_server"][0], self["rdf_store"][0], sparqlDir)
-		self.reachabilityService = RtBiInterfaces.createRdfService(self, "static_reachability", self.__onStaticReachabilityQuery)
+		RtBiInterfaces.createStaticReachabilityService(self, self.__onStaticReachability)
+		RtBiInterfaces.createStaticReachabilityService(self, self.__onSymbolInterpretation)
 
-	def __onStaticReachabilityQuery(self, req: StaticReachability.Request, res: StaticReachability.Response) -> StaticReachability.Response:
+	def __onStaticReachability(self, req: StaticReachability.Request, res: StaticReachability.Response) -> StaticReachability.Response:
 		return self.__httpInterface.staticReachability(req, res)
+
+	def __onSymbolInterpretation(self, req: StaticReachability.Request, res: StaticReachability.Response) -> StaticReachability.Response:
+		return res
 
 	def render(self) -> None:
 		return super().render()

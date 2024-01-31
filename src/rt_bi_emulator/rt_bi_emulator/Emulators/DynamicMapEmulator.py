@@ -8,7 +8,7 @@ from rt_bi_commons.Shared.TimeInterval import TimeInterval
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_core.MapRegion import MapRegion
-from rt_bi_interfaces.msg import MapRegion as MapRegionMsg, MapRegions as MapRegionsMsg
+from rt_bi_interfaces.msg import MapRegion as MapRegionMsg, RegularSpatialRegion as RegularSpatialRegionMsg
 from rt_bi_interfaces.srv import StaticReachability
 
 
@@ -17,7 +17,7 @@ class DynamicMapEmulator(RtBiNode):
 		newKw = { "node_name": "em_dynamic_map", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
 		super().__init__(**newKw)
 		self.mapRegions: dict[str, MapRegion] = {}
-		self.rdfClient = RtBiInterfaces.createRdfClient(self, "static_reachability")
+		self.rdfClient = RtBiInterfaces.createStaticReachabilityClient(self)
 		self.__mapRegionsPublisher = RtBiInterfaces.createMapRegionsPublisher(self)
 		Ros.WaitForServicesToStart(self, self.rdfClient)
 		self.__coldStart()
@@ -31,7 +31,7 @@ class DynamicMapEmulator(RtBiNode):
 		return
 
 	def __onStaticReachabilityResponse(self, req: StaticReachability.Request, res: StaticReachability.Response) -> StaticReachability.Response:
-		mapRegionsMsg = MapRegionsMsg()
+		mapRegionsMsg = RegularSpatialRegionMsg()
 		for regionMsg in res.regions:
 			regionMsg = cast(MapRegionMsg, regionMsg)
 			region = MapRegion(

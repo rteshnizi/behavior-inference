@@ -1,7 +1,0 @@
-rt_bi_runtime:
-  dd_agent1:
-    ros__parameters:
-      symbols:
-        - "pedestrian"
-        - "vehicle"
-        - "boat"

@@ -84,3 +84,8 @@ class BehaviorAutomaton(nx.DiGraph):
 
 	def baGenerator(self) -> Generator["BehaviorAutomaton", None, None]:
 		yield self
+
+	def allSymbols(self) -> list[str]:
+		transitionsDict: dict[tuple[str, str], BehaviorAutomaton.Transition] = nx.get_edge_attributes(self, "descriptor")
+		transitions = transitionsDict.values()
+		return [t.symbolName for t in transitions]

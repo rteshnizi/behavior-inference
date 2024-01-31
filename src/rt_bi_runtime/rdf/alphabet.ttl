@@ -27,10 +27,10 @@ alphabet:type a rdf:predicate ;
 	rdfs:comment "The predicate to show alphabet type" .
 
 @prefix alphabet_letter: <alphabet/letter#> .
-alphabet_letter:0 rdfs:label "south bank" ;
+alphabet_letter:0 rdfs:label "south-bank" ;
 	alphabet:type alphabet:spatial ;
 	rdf:value polygon:south_bank .
-alphabet_letter:1 rdfs:label "north shore" ;
+alphabet_letter:1 rdfs:label "north-shore" ;
 	alphabet:type alphabet:spatial ;
 	rdf:value polygon:north_shore .
 alphabet_letter:2 rdfs:label "mid-day" ;

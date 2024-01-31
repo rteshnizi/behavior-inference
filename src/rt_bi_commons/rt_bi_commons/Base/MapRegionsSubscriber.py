@@ -11,7 +11,7 @@ from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_commons.Utils.RViz import RViz
 from rt_bi_core.MapRegion import MapRegion
-from rt_bi_interfaces.msg import MapRegion as MapRegionMsg, MapRegions as MapRegionsMsg
+from rt_bi_interfaces.msg import MapRegion as MapRegionMsg, RegularSpatialRegion as RegularSpatialRegionMsg
 
 
 class MapRegionsSubscriber(RtBiNode, ABC):
@@ -23,7 +23,7 @@ class MapRegionsSubscriber(RtBiNode, ABC):
 		(self.__rvizPublisher, _) = RViz.createRVizPublisher(self, Ros.CreateTopicName("map"))
 		RtBiInterfaces.subscribeToMapRegions(self, self.parseMapRegions)
 
-	def parseMapRegions(self, msg: MapRegionsMsg) -> None:
+	def parseMapRegions(self, msg: RegularSpatialRegionMsg) -> None:
 		for regionMsg in msg.regions:
 			regionMsg = cast(MapRegionMsg, regionMsg)
 			region = MapRegion(

@@ -32,8 +32,6 @@ setup(
 		"console_scripts": [
 			"BA = rt_bi_runtime.BaNode:main",
 			"DD_RDF = rt_bi_runtime.Data.RdfStoreNode:main",
-			"DD_COORD = rt_bi_runtime.Data.CoordsDictNode:main",
-			"DD_AGENT = rt_bi_runtime.Data.AgentDictNode:main",
 		],
 	},
 )

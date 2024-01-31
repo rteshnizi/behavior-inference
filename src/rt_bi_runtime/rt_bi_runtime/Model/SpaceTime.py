@@ -1,5 +1,3 @@
-from typing import Union
-
 from rt_bi_commons.Shared.TimeInterval import TimeInterval
 from rt_bi_commons.Utils.Geometry import Geometry, Polygon
 
@@ -9,7 +7,7 @@ class ProjectiveSpaceTimeSet:
 		A projective space time set. That is, the set is space x time.
 		If `space` is `None`, there is no space requirement.
 	"""
-	def __init__(self, space: Union[Polygon, None], time: TimeInterval):
+	def __init__(self, space: Polygon | None, time: TimeInterval):
 		self.spaceRegion = space
 		self.timeRegion = time
 
