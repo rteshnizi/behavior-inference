@@ -1,19 +1,19 @@
 {
 	"python.autoComplete.extraPaths": [
+		"${workspaceFolder}/src/rt_bi_commons",
 		"${workspaceFolder}/src/rt_bi_core",
 		"${workspaceFolder}/src/rt_bi_emulator",
 		"${workspaceFolder}/src/rt_bi_eventifier",
 		"${workspaceFolder}/src/rt_bi_runtime",
-		"${workspaceFolder}/src/rt_bi_commons",
 		"${workspaceFolder}/install/rt_bi_interfaces/lib/python3.10/site-packages",
 		"${workspaceFolder}/install/sa_msgs/lib/python3.10/site-packages",
 	],
 	"python.analysis.extraPaths": [
+		"${workspaceFolder}/src/rt_bi_commons",
 		"${workspaceFolder}/src/rt_bi_core",
 		"${workspaceFolder}/src/rt_bi_emulator",
 		"${workspaceFolder}/src/rt_bi_eventifier",
 		"${workspaceFolder}/src/rt_bi_runtime",
-		"${workspaceFolder}/src/rt_bi_commons",
 		"${workspaceFolder}/install/rt_bi_interfaces/lib/python3.10/site-packages",
 		"${workspaceFolder}/install/sa_msgs/lib/python3.10/site-packages",
 	],
@@ -141,6 +141,7 @@
 	"python.analysis.typeCheckingMode": "basic",
 	"python.analysis.exclude": [
 		"**/build",
-		"**/install"
+		"**/install",
+		"**/test",
 	],
 }
