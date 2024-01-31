@@ -7,10 +7,9 @@ from rclpy.parameter import Parameter
 
 from rt_bi_commons.Base.MapRegionsSubscriber import MapRegionsSubscriber
 from rt_bi_commons.Shared.MinQueue import MinQueue
-from rt_bi_commons.Utils.Ros import CreatePublisher, CreateTimer, CreateTopicName, Timer, TimeToInt
+from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_commons.Utils.RViz import RViz
-from rt_bi_core.MapRegion import MapRegion
 from rt_bi_core.SensorRegion import SensorRegion
 from rt_bi_core.SymbolRegion import SymbolRegion
 from rt_bi_eventifier.Model.ShadowTree import ShadowTree
@@ -27,20 +26,20 @@ class Eventifier(MapRegionsSubscriber):
 		self.parseParameters()
 		modulePublishers: dict[ShadowTree.SUBMODULE_TYPES, Publisher | None] = {}
 		for module in ShadowTree.SUBMODULES:
-			if module in self.__renderModules: (publisher, _) = RViz.createRVizPublisher(self, CreateTopicName(module))
+			if module in self.__renderModules: (publisher, _) = RViz.createRVizPublisher(self, Ros.CreateTopicName(module))
 			else: publisher = None
 			modulePublishers[module] = publisher
-		(self.__topicPublishers["eventifier_graph"], _) = CreatePublisher(self, Graph, CreateTopicName("eventifier_graph"))
-		(self.__topicPublishers["eventifier_event"], _) = CreatePublisher(self, Events, CreateTopicName("eventifier_event"))
+		(self.__topicPublishers["eventifier_graph"], _) = Ros.CreatePublisher(self, Graph, Ros.CreateTopicName("eventifier_graph"))
+		(self.__topicPublishers["eventifier_event"], _) = Ros.CreatePublisher(self, Events, Ros.CreateTopicName("eventifier_event"))
 		self.__shadowTree: ShadowTree = ShadowTree(self.__topicPublishers, modulePublishers)
 		self.__eventPQueue: MinQueue[tuple[SensorRegion.RegionType, DynamicRegion]] = MinQueue(key=self.__eventPqKey)
-		self.__processingTimer: Timer | None = None
+		self.__processingTimer: Ros.Timer | None = None
 		RtBiInterfaces.subscribeToSensor(self, partial(self.__onDynamicRegionUpdate, SensorRegion.RegionType.SENSING))
 		RtBiInterfaces.subscribeToSymbol(self, partial(self.__onDynamicRegionUpdate, SymbolRegion.RegionType.SYMBOL))
 
 	def __eventPqKey(self, val: tuple[SensorRegion.RegionType, DynamicRegion]) -> float:
 		(_, region) = val
-		return float(TimeToInt(region.stamp))
+		return float(Ros.TimeToInt(region.stamp))
 
 	def __processDynamicRegionUpdate(self) -> None:
 		if self.__processingTimer is not None: self.__processingTimer.destroy()
@@ -49,7 +48,7 @@ class Eventifier(MapRegionsSubscriber):
 		symbols: list[SymbolRegion] = []
 		while not self.__eventPQueue.isEmpty:
 			(regionType, update) = self.__eventPQueue.dequeue()
-			timeNanoSecs = TimeToInt(update.stamp)
+			timeNanoSecs = Ros.TimeToInt(update.stamp)
 			self.log(f"Updating region type {regionType} id {update.id} definition @{timeNanoSecs}.")
 			coords = RtBiInterfaces.fromStdPoints32ToCoordsList(update.region.points)
 			cor = RtBiInterfaces.fromStdPointToCoords(update.center_of_rotation)
@@ -62,7 +61,7 @@ class Eventifier(MapRegionsSubscriber):
 			else:
 				raise TypeError(f"Unexpected region type: {regionType}")
 		self.__updateAffineRegions(sensors, symbols)
-		self.__processingTimer = CreateTimer(self, self.__processDynamicRegionUpdate)
+		self.__processingTimer = Ros.CreateTimer(self, self.__processDynamicRegionUpdate)
 		return
 
 	def __onDynamicRegionUpdate(self, regionType: SensorRegion.RegionType, update: DynamicRegion) -> None:
