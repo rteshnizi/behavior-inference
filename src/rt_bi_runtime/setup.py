@@ -18,6 +18,7 @@ setup(
 		(os.path.join("share", packageName, "sparql"), glob("sparql/*")),
 	],
 	install_requires= [
+		"agraph-python~=102.1",
 		"matplotlib~=3.5",
 		"networkx~=3.2",
 		"requests~=2.25",
@@ -31,7 +32,7 @@ setup(
 	entry_points={
 		"console_scripts": [
 			"BA = rt_bi_runtime.BaNode:main",
-			"DD_RDF = rt_bi_runtime.Data.RdfStoreNode:main",
+			"DD_RDF = rt_bi_runtime.Data.Fuseki.RdfStoreNode:main",
 		],
 	},
 )

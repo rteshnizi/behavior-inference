@@ -18,6 +18,7 @@
 		"${workspaceFolder}/install/sa_msgs/lib/python3.10/site-packages",
 	],
 	"cSpell.words": [
+		"agraph",
 		"anant",
 		"eventifier",
 		"fovs",
