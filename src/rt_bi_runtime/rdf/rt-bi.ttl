@@ -1,0 +1,132 @@
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+@prefix rt_bi: <https://rezateshnizi.com/rt-bi#> .
+
+<https://rezateshnizi.com/rt-bi#> a owl:Ontology ;
+	dc:title "The vocabulary used in RT Behavior Inference." ;
+	dc:date "2024-02-06" ;
+	dc:description "This is the RDF Schema for the terms in RT Behavior Automata, defined in the dissertation of Reza Teshnizi." .
+
+######################### ABSTRACT ########################
+# region: abstract
+rt_bi:Subject a rdfs:Resource ;
+	rdfs:isDefinedBy <https://rezateshnizi.com/rt-bi#> ;
+	rdfs:label "Subject" ;
+	rdfs:comment "An instance of a class." .
+
+rt_bi:Property a rdf:Property ;
+	rdfs:isDefinedBy <https://rezateshnizi.com/rt-bi#> ;
+	rdfs:label "Property" ;
+	rdfs:comment "Properties of subjects." ;
+	rdfs:domain rt_bi:Subject ;
+	rdfs:range rdfs:Resource .
+
+# endregion
+####################### THE SUBJECTS ######################
+# region: subjects
+rt_bi:Agent a rt_bi:Subject ;
+	rdfs:isDefinedBy <https://rezateshnizi.com/rt-bi#> ;
+	rdfs:label "Agent" ;
+	rdfs:comment "A term describing an agent." .
+
+rt_bi:Space a rt_bi:Subject ;
+	rdfs:isDefinedBy <https://rezateshnizi.com/rt-bi#> ;
+	rdfs:label "Space" ;
+	rdfs:comment "A term describing a spatial region." .
+
+rt_bi:Time a rt_bi:Subject ;
+	rdfs:isDefinedBy <https://rezateshnizi.com/rt-bi#> ;
+	rdfs:label "Time" ;
+	rdfs:comment "A term describing a temporal region." .
+
+# endregion
+###################### THE PROPERTIES #####################
+# region: properties
+rt_bi:symbol a rt_bi:Property ;
+	rdfs:isDefinedBy <https://rezateshnizi.com/rt-bi#> ;
+	rdfs:label "symbol" ;
+	rdfs:comment "Symbol to show in Alphabet." ;
+	rdfs:domain rt_bi:Subject ;
+	rdfs:range xsd:string .
+
+rt_bi:walks a rt_bi:Property ;
+	rdfs:isDefinedBy <https://rezateshnizi.com/rt-bi#> ;
+	rdfs:label "walks" ;
+	rdfs:domain rt_bi:Agent ;
+	rdfs:domain rt_bi:Space ;
+	rdfs:range xsd:boolean .
+
+rt_bi:drives a rt_bi:Property ;
+	rdfs:isDefinedBy <https://rezateshnizi.com/rt-bi#> ;
+	rdfs:label "drives" ;
+	rdfs:domain rt_bi:Agent ;
+	rdfs:domain rt_bi:Space ;
+	rdfs:range xsd:boolean .
+
+rt_bi:swims a rt_bi:Property ;
+	rdfs:isDefinedBy <https://rezateshnizi.com/rt-bi#> ;
+	rdfs:label "swims" ;
+	rdfs:domain rt_bi:Agent ;
+	rdfs:domain rt_bi:Space ;
+	rdfs:range xsd:boolean .
+
+rt_bi:color a rt_bi:Property ;
+	rdfs:isDefinedBy <https://rezateshnizi.com/rt-bi#> ;
+	rdfs:label "color" ;
+	rdfs:comment "The visible color of the object." ;
+	rdfs:domain rt_bi:Subject ;
+	rdfs:range xsd:string .
+
+rt_bi:business_hours a rt_bi:Property ;
+	rdfs:isDefinedBy <https://rezateshnizi.com/rt-bi#> ;
+	rdfs:label "business_hours" ;
+	rdfs:comment "Indicator of whether this is a business hour time." ;
+	rdfs:domain rt_bi:Time ;
+	rdfs:range xsd:boolean .
+
+# endregion
+############## BEHAVIOR AUTOMATON VOCABULARY ##############
+# region: behavior automaton
+rt_bi:Automaton a rdfs:Class ;
+	rdfs:isDefinedBy <https://rezateshnizi.com/rt-bi#> ;
+	rdfs:label "Automaton" ;
+	rdfs:comment "The class of Behavior Automata." .
+
+rt_bi:Statement a rdfs:Container ;
+.
+
+rt_bi:state a rdf:Property ;
+	rdfs:isDefinedBy <https://rezateshnizi.com/rt-bi#> ;
+	rdfs:label "state" ;
+	rdfs:comment "The subject is a BA and object a string." ;
+	rdfs:domain rt_bi:Automaton ;
+	rdfs:range xsd:string .
+
+rt_bi:transition a rdf:Property ;
+	rdfs:isDefinedBy <https://rezateshnizi.com/rt-bi#> ;
+	rdfs:label "transition" ;
+	rdfs:comment "The class of BA transitions." ;
+	rdfs:domain rt_bi:Automaton ;
+	rdfs:range rt_bi:Subject .
+
+rt_bi:from a rdf:Property ;
+	rdfs:isDefinedBy <https://rezateshnizi.com/rt-bi#> ;
+	rdfs:label "from" ;
+	rdfs:comment "The subject is a rt_bi:transition and object a state." ;
+	rdfs:subPropertyOf rt_bi:transition ;
+	rdfs:domain rt_bi:transition ;
+	rdfs:range rt_bi:state .
+
+rt_bi:to a rdf:Property ;
+	rdfs:isDefinedBy <https://rezateshnizi.com/rt-bi#> ;
+	rdfs:label "to" ;
+	rdfs:comment "The subject is a rt_bi:transition and object a state." ;
+	rdfs:subPropertyOf rt_bi:transition ;
+	rdfs:domain rt_bi:transition ;
+	rdfs:range rt_bi:state .
+
+# endregion
