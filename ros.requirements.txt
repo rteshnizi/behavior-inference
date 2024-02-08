@@ -1,6 +1,0 @@
-##### ROS Dependecies
-# These are dependcies that should be installed locally to override Ubunut's apt packages
-catkin_pkg~=1.0.0
-empy~=3.3.4
-lark~=1.1.1
-setuptools==58.2.0

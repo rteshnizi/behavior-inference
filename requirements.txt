@@ -1,4 +1,0 @@
-networkx~=3.2
-scikit-image~=0.19.3
-shapely~=2.0.1
-matplotlib~=3.5
