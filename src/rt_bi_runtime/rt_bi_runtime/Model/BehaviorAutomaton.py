@@ -89,3 +89,6 @@ class BehaviorAutomaton(nx.DiGraph):
 		transitionsDict: dict[tuple[str, str], BehaviorAutomaton.Transition] = nx.get_edge_attributes(self, "descriptor")
 		transitions = transitionsDict.values()
 		return [t.symbolName for t in transitions]
+
+	def spatialSymbols(self) -> list[str]: ...
+	def temporalSymbols(self) -> list[str]: ...

@@ -1,0 +1,352 @@
+############## NAMESPACES ###############
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+############## REFERENCES ###############
+@prefix rt_bi: <https://rezateshnizi.com/rt-bi/> .
+@prefix spatial_props: <https://rezateshnizi.com/rt-bi/spatial/props#> .
+@prefix temporal_props: <https://rezateshnizi.com/rt-bi/temporal/props#> .
+@prefix world_props: <https://rezateshnizi.com/rt-bi/world/props#> .
+
+############## THE GRAPHS ##############
+@prefix tower_bridge: <https://rezateshnizi.com/rt-bi/tower_bridge/> .
+
+@prefix x: <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/xs#> .
+@prefix y: <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/ys#> .
+@prefix pt: <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/pts#> .
+@prefix polygon: <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/polygons#> .
+GRAPH tower_bridge:spatial
+{
+	# XS
+	x:0 a rt_bi:X ;
+		spatial_props:x_val 0.0 .
+	x:1 a rt_bi:X ;
+		spatial_props:x_val 120.0 .
+	x:2 a rt_bi:X ;
+		spatial_props:x_val 140.0 .
+	x:3 a rt_bi:X ;
+		spatial_props:x_val 200.0 .
+	x:4 a rt_bi:X ;
+		spatial_props:x_val 400.0 .
+	x:5 a rt_bi:X ;
+		spatial_props:x_val 600.0 .
+	x:6 a rt_bi:X ;
+		spatial_props:x_val 10.0 .
+	x:7 a rt_bi:X ;
+		spatial_props:x_val 110.0 .
+	x:8 a rt_bi:X ;
+		spatial_props:x_val 410.0 .
+	x:9 a rt_bi:X ;
+		spatial_props:x_val 590.0 .
+	# YS
+	y:0 a rt_bi:Y ;
+		spatial_props:y_val 0.0 .
+	y:1 a rt_bi:Y ;
+		spatial_props:y_val 30.0 .
+	y:2 a rt_bi:Y ;
+		spatial_props:y_val 90.0 .
+	y:3 a rt_bi:Y ;
+		spatial_props:y_val 120.0 .
+	y:4 a rt_bi:Y ;
+		spatial_props:y_val 20.0 .
+	y:5 a rt_bi:Y ;
+		spatial_props:y_val 40.0 .
+	y:6 a rt_bi:Y ;
+		spatial_props:y_val 80.0 .
+	y:7 a rt_bi:Y ;
+		spatial_props:y_val 100.0 .
+	# PTS
+	pt:0 a rt_bi:Vertex ;
+		spatial_props:x x:0 ;
+		spatial_props:y y:0 .
+	pt:1 a rt_bi:Vertex ;
+		spatial_props:x x:0 ;
+		spatial_props:y y:1 .
+	pt:2 a rt_bi:Vertex ;
+		spatial_props:x x:0 ;
+		spatial_props:y y:2 .
+	pt:3 a rt_bi:Vertex ;
+		spatial_props:x x:0 ;
+		spatial_props:y y:3 .
+	pt:4 a rt_bi:Vertex ;
+		spatial_props:x x:1 ;
+		spatial_props:y y:2 .
+	pt:5 a rt_bi:Vertex ;
+		spatial_props:x x:1 ;
+		spatial_props:y y:3 .
+	pt:6 a rt_bi:Vertex ;
+		spatial_props:x x:2 ;
+		spatial_props:y y:2 .
+	pt:7 a rt_bi:Vertex ;
+		spatial_props:x x:2 ;
+		spatial_props:y y:3 .
+	pt:8 a rt_bi:Vertex ;
+		spatial_props:x x:3 ;
+		spatial_props:y y:0 .
+	pt:9 a rt_bi:Vertex ;
+		spatial_props:x x:3 ;
+		spatial_props:y y:1 .
+	pt:10 a rt_bi:Vertex ;
+		spatial_props:x x:3 ;
+		spatial_props:y y:2 .
+	pt:11 a rt_bi:Vertex ;
+		spatial_props:x x:3 ;
+		spatial_props:y y:3 .
+	pt:12 a rt_bi:Vertex ;
+		spatial_props:x x:4 ;
+		spatial_props:y y:0 .
+	pt:13 a rt_bi:Vertex ;
+		spatial_props:x x:4 ;
+		spatial_props:y y:1 .
+	pt:14 a rt_bi:Vertex ;
+		spatial_props:x x:4 ;
+		spatial_props:y y:2 .
+	pt:15 a rt_bi:Vertex ;
+		spatial_props:x x:4 ;
+		spatial_props:y y:3 .
+	pt:16 a rt_bi:Vertex ;
+		spatial_props:x x:5 ;
+		spatial_props:y y:0 .
+	pt:17 a rt_bi:Vertex ;
+		spatial_props:x x:5 ;
+		spatial_props:y y:1 .
+	pt:18 a rt_bi:Vertex ;
+		spatial_props:x x:5 ;
+		spatial_props:y y:2 .
+	pt:19 a rt_bi:Vertex ;
+		spatial_props:x x:5 ;
+		spatial_props:y y:3 .
+	# SOUTH-BANK
+	pt:20 a rt_bi:Vertex ;
+		spatial_props:x x:6 ;
+		spatial_props:y y:4 .
+	pt:21 a rt_bi:Vertex ;
+		spatial_props:x x:6 ;
+		spatial_props:y y:5 .
+	pt:22 a rt_bi:Vertex ;
+		spatial_props:x x:7 ;
+		spatial_props:y y:4 .
+	pt:23 a rt_bi:Vertex ;
+		spatial_props:x x:7 ;
+		spatial_props:y y:5 .
+	# NORTH-SHORE
+	pt:24 a rt_bi:Vertex ;
+		spatial_props:x x:8 ;
+		spatial_props:y y:6 .
+	pt:25 a rt_bi:Vertex ;
+		spatial_props:x x:8 ;
+		spatial_props:y y:7 .
+	pt:26 a rt_bi:Vertex ;
+		spatial_props:x x:9 ;
+		spatial_props:y y:6 .
+	pt:27 a rt_bi:Vertex ;
+		spatial_props:x x:9 ;
+		spatial_props:y y:7 .
+	# POLYGONS
+	polygon:0 a rt_bi:Polygon ;
+		spatial_props:vertices [ a rt_bi:VertexSeq ;
+			rdf:_1 pt:0 ;
+			rdf:_2 pt:8 ;
+			rdf:_3 pt:12;
+			rdf:_4 pt:16;
+			rdf:_5 pt:17;
+			rdf:_6 pt:13;
+			rdf:_7 pt:9;
+			rdf:_8 pt:1;
+		] .
+	polygon:1 a rt_bi:Polygon ;
+		spatial_props:vertices [ a rt_bi:VertexSeq ;
+			rdf:_1 pt:1;
+			rdf:_2 pt:9;
+			rdf:_3 pt:10;
+			rdf:_4 pt:6;
+			rdf:_5 pt:4;
+			rdf:_6 pt:2;
+		] .
+	polygon:2 a rt_bi:Polygon ;
+		spatial_props:vertices [ a rt_bi:VertexSeq ;
+			rdf:_1 pt:2;
+			rdf:_2 pt:4;
+			rdf:_3 pt:5;
+			rdf:_4 pt:3;
+		] .
+	polygon:3 a rt_bi:Polygon ;
+		spatial_props:vertices [ a rt_bi:VertexSeq ;
+			rdf:_1 pt:4;
+			rdf:_2 pt:6;
+			rdf:_3 pt:7;
+			rdf:_4 pt:5;
+		] .
+	polygon:4 a rt_bi:Polygon ;
+		spatial_props:vertices [ a rt_bi:VertexSeq ;
+			rdf:_1 pt:6;
+			rdf:_2 pt:10;
+			rdf:_3 pt:14;
+			rdf:_4 pt:18;
+			rdf:_5 pt:19;
+			rdf:_6 pt:15;
+			rdf:_7 pt:11;
+			rdf:_8 pt:7;
+		] .
+	polygon:5 a rt_bi:Polygon ;
+		spatial_props:vertices [ a rt_bi:VertexSeq ;
+			rdf:_1 pt:9;
+			rdf:_2 pt:13;
+			rdf:_3 pt:14;
+			rdf:_4 pt:10;
+		] .
+	polygon:6 a rt_bi:Polygon ;
+		spatial_props:vertices [ a rt_bi:VertexSeq ;
+			rdf:_1 pt:13;
+			rdf:_2 pt:17;
+			rdf:_3 pt:18;
+			rdf:_4 pt:14;
+		] .
+	polygon:south_bank a rt_bi:Polygon ;
+		spatial_props:vertices [ a rt_bi:VertexSeq ;
+			rdf:_1 pt:20;
+			rdf:_2 pt:21;
+			rdf:_3 pt:22;
+			rdf:_4 pt:23;
+		] .
+	polygon:north_shore a rt_bi:Polygon ;
+		spatial_props:vertices [ a rt_bi:VertexSeq ;
+			rdf:_1 pt:24;
+			rdf:_2 pt:25;
+			rdf:_3 pt:26;
+			rdf:_4 pt:27;
+		] .
+}
+
+@prefix t: <https://rezateshnizi.com/rt-bi/tower_bridge/temporal/ts#> .
+@prefix interval: <https://rezateshnizi.com/rt-bi/tower_bridge/temporal/intervals#> .
+GRAPH tower_bridge:temporal
+{
+	# TS
+	t:0 a rt_bi:Time ;
+		temporal_props:secs 0.0 .
+	t:1 a rt_bi:Time ;
+		temporal_props:secs 20.0 .
+	t:2 a rt_bi:Time ;
+		temporal_props:secs 29.0 .
+	t:3 a rt_bi:Time ;
+		temporal_props:secs 31.0 .
+	t:4 a rt_bi:Time ;
+		temporal_props:secs 40.0 .
+	t:5 a rt_bi:Time ;
+		temporal_props:secs 50.0 .
+	# INTERVALS
+	interval:early_morning a rt_bi:Interval ;
+		temporal_props:min t:0 ;
+		temporal_props:max t:1 ;
+		temporal_props:include_min true ;
+		temporal_props:include_max false .
+	interval:morning a rt_bi:Interval ;
+		temporal_props:min t:1 ;
+		temporal_props:max t:2 ;
+		temporal_props:include_min true ;
+		temporal_props:include_max false .
+	interval:mid_day a rt_bi:Interval ;
+		temporal_props:min t:2 ;
+		temporal_props:max t:3 ;
+		temporal_props:include_min true ;
+		temporal_props:include_max false .
+	interval:afternoon a rt_bi:Interval ;
+		temporal_props:min t:3 ;
+		temporal_props:max t:4 ;
+		temporal_props:include_min true ;
+		temporal_props:include_max false .
+	interval:evening a rt_bi:Interval ;
+		temporal_props:min t:4 ;
+		temporal_props:max t:5 ;
+		temporal_props:include_min true ;
+		temporal_props:include_max false .
+}
+
+@prefix traversability: <https://rezateshnizi.com/rt-bi/tower_bridge/traversability#> .
+GRAPH tower_bridge:traversabilities
+{
+	traversability:bridge a rt_bi:Traversability ;
+		world_props:legs true ;
+		world_props:wheels false ;
+		world_props:swims false .
+	traversability:street a rt_bi:Traversability ;
+		world_props:legs true ;
+		world_props:wheels true ;
+		world_props:swims false .
+	traversability:river a rt_bi:Traversability ;
+		world_props:legs false ;
+		world_props:wheels false ;
+		world_props:swims true .
+}
+
+GRAPH tower_bridge:world
+{
+	[ a rt_bi:RegularSpace ;
+		world_props:name "street" ;
+		world_props:traversability traversability:street ;
+		world_props:color "GREY" ;
+		world_props:polygons [ a rt_bi:PolygonSet ;
+			rdf:member polygon:0 ;
+			rdf:member polygon:2 ;
+			rdf:member polygon:4 ;
+		] ;
+	] .
+	[ a rt_bi:RegularSpace ;
+		world_props:name "bridge" ;
+		world_props:traversability traversability:bridge ;
+		world_props:color "WHITE" ;
+		world_props:polygons [ a rt_bi:PolygonSet ;
+			rdf:member polygon:3 ;
+		] ;
+	] .
+	[ a rt_bi:RegularSpace ;
+		world_props:name "bridge" ;
+		world_props:traversability traversability:bridge ;
+		world_props:color "WHITE" ;
+		world_props:polygons [ a rt_bi:PolygonSet ;
+			rdf:member polygon:5 ;
+		] ;
+		world_props:off_times [ a rt_bi:IntervalSet ;
+			rdf:member interval:early_morning ;
+			rdf:member interval:afternoon ;
+		] ;
+	] .
+	[ a rt_bi:RegularSpace ;
+		world_props:name "river" ;
+		world_props:traversability traversability:river ;
+		world_props:color "BLUE_LIGHT" ;
+		world_props:polygons [ a rt_bi:PolygonSet ;
+			rdf:member polygon:1 ;
+			rdf:member polygon:6 ;
+		] ;
+		world_props:traversability traversability:river ;
+	] .
+	[ a rt_bi:RegularSpace ;
+		world_props:name "river" ;
+		world_props:traversability traversability:river ;
+		world_props:color "BLUE_LIGHT" ;
+		world_props:polygons [ a rt_bi:PolygonSet ;
+			rdf:member polygon:5 ;
+		] ;
+		world_props:off_times [ a rt_bi:IntervalSet ;
+			rdf:member interval:morning ;
+			rdf:member interval:mid_day ;
+			rdf:member interval:evening ;
+		] ;
+	] .
+	[ a rt_bi:RegularSpace ;
+		world_props:name "south-bank" ;
+		world_props:color "PURPLE" ;
+		world_props:polygons [ a rt_bi:PolygonSet ;
+			rdf:member polygon:south_bank ;
+		] ;
+	] .
+	[ a rt_bi:RegularSpace ;
+		world_props:name "north-shore" ;
+		world_props:color "PURPLE" ;
+		world_props:polygons [ a rt_bi:PolygonSet ;
+			rdf:member polygon:north_shore ;
+		] ;
+	] .
+}

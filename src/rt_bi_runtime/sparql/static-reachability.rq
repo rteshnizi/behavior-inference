@@ -1,70 +1,59 @@
-PREFIX agent_type:    <https://rezateshnizi.com/rt-bi-ontology/agents/types#>
-PREFIX agents:        <https://rezateshnizi.com/rt-bi-ontology/agents/>
-PREFIX map:           <https://rezateshnizi.com/rt-bi-ontology/maps/>
-PREFIX map_part:      <https://rezateshnizi.com/rt-bi-ontology/maps/parts#>
-PREFIX polygon:       <https://rezateshnizi.com/rt-bi-ontology/spatial/polygons#>
-PREFIX pt:            <https://rezateshnizi.com/rt-bi-ontology/spatial/pts#>
-PREFIX rdf:           <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX rdfs:          <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX region:        <https://rezateshnizi.com/rt-bi-ontology/regions/>
-PREFIX region_type:   <https://rezateshnizi.com/rt-bi-ontology/regions/types#>
-PREFIX spatial:       <https://rezateshnizi.com/rt-bi-ontology/spatial/>
-PREFIX t_sec:         <https://rezateshnizi.com/rt-bi-ontology/coords/ts_sec#>
-PREFIX time:          <https://rezateshnizi.com/rt-bi-ontology/times/>
-PREFIX time_interval: <https://rezateshnizi.com/rt-bi-ontology/times/time-intervals#>
-PREFIX vertex:        <https://rezateshnizi.com/rt-bi-ontology/spatial/vertex#>
-PREFIX x:             <https://rezateshnizi.com/rt-bi-ontology/coords/xs#>
-PREFIX xml:           <http://www.w3.org/2001/XMLSchema#>
-PREFIX y:             <https://rezateshnizi.com/rt-bi-ontology/coords/ys#>
-
+PREFIX dc:             <http://purl.org/dc/elements/1.1/>
+PREFIX interval:       <https://rezateshnizi.com/rt-bi/tower_bridge/temporal/intervals#>
+PREFIX owl:            <http://www.w3.org/2002/07/owl#>
+PREFIX polygon:        <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/polygons#>
+PREFIX pt:             <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/pts#>
+PREFIX rdf:            <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs:           <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX rt_bi:          <https://rezateshnizi.com/rt-bi/>
+PREFIX spatial_props:  <https://rezateshnizi.com/rt-bi/spatial/props#>
+PREFIX t:              <https://rezateshnizi.com/rt-bi/tower_bridge/temporal/ts#>
+PREFIX temporal_props: <https://rezateshnizi.com/rt-bi/temporal/props#>
+PREFIX tower_bridge:   <https://rezateshnizi.com/rt-bi/tower_bridge/>
+PREFIX traversability: <https://rezateshnizi.com/rt-bi/tower_bridge/traversability#>
+PREFIX world_props:    <https://rezateshnizi.com/rt-bi/world/props#>
+PREFIX x:              <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/xs#>
+PREFIX xsd:            <http://www.w3.org/2001/XMLSchema#>
+PREFIX y:              <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/ys#>
 
 SELECT
-	(STRAFTER(STR(?mapPart), STR(map_part:)) AS ?regionId)
-	?regionColor ?needsLegs ?needsWheels ?needsSwim
-	?vertInd ?xVal ?yVal
+	?bNode ?polygonId ?vertInd ?x ?y
+	?name ?color
+	?needsLegs ?needsWheels ?needsSwim
+	?t1 ?t2 ?minInclusive ?maxInclusive
 WHERE {
-	?mapPart map:region_types ?regionTypeList ;
-		map:polygons ?polygonList .
-	{
-		SELECT ?regionType ?regionColor ?needsLegs ?needsWheels ?needsSwim
-		WHERE {
-			?regionType rdfs:label ?regionLabel;
-				region:color ?regionColor;
-				region:traversability [
-					agents:legs ?needsLegs ;
-					agents:wheels ?needsWheels ;
-					agents:swims ?needsSwim ;
-				] .
-			?agent_type rdfs:label ?agent_label ;
-				agents:legs ?hasLegs ;
-				agents:wheels ?hasWheels ;
-				agents:swims ?canSwim .
-			filter (
-				(?needsLegs && ?hasLegs && ?inputHasLegs) ||
-				(?needsWheels && ?hasWheels && ?inputHasWheels) ||
-				(?needsSwim && ?canSwim && ?inputCanSwim)
-			)
+	GRAPH tower_bridge:world {
+		?bNode a rt_bi:RegularSpace ;
+			world_props:polygons/rdf:member ?polygonId .
+		GRAPH tower_bridge:spatial {
+			?polygonId spatial_props:vertices ?vertexSeq .
+			?vertexSeq ?vertInd ?vertex .
+			?vertex
+				spatial_props:x/spatial_props:x_val ?x ;
+				spatial_props:y/spatial_props:y_val ?y .
+		}
+		OPTIONAL { ?bNode world_props:color ?color . }
+		OPTIONAL { ?bNode world_props:name ?name . }
+		OPTIONAL { ?bNode world_props:traversability ?traversability .
+			GRAPH tower_bridge:traversabilities {
+				?traversability
+					world_props:legs ?needsLegs ;
+					world_props:wheels ?needsWheels ;
+					world_props:swims ?needsSwim .
+			}
+		}
+		OPTIONAL { ?bNode world_props:off_times/rdf:member ?intervalId .
+			GRAPH tower_bridge:temporal {
+				?intervalId
+					temporal_props:min/temporal_props:secs ?t1 ;
+					temporal_props:max/temporal_props:secs ?t2 ;
+					temporal_props:include_min ?minInclusive ;
+					temporal_props:include_max ?maxInclusive .
+			}
 		}
 	}
-	{
-		SELECT ?polygon ?vertInd ?xVal ?yVal
-		WHERE {
-			?polygon rdf:value ?vertList .
-			?vertList rdf:rest*/rdf:first ?vertPair .
-			?vertPair spatial:vertex_ind ?vertInd .
-			?vertPair spatial:vertex_coords ?ptId .
-			?ptId rdf:value/rdf:rest*/rdf:first ?xId .
-			?xId rdf:value ?xVal .
-			?ptId rdf:value/rdf:rest*/rdf:first ?yId .
-			?yId rdf:value ?yVal .
-			filter STRSTARTS(STR(?polygon), STR(polygon:)) .
-			filter STRSTARTS(STR(?xId), STR(x:)) .
-			filter STRSTARTS(STR(?yId), STR(y:)) .
-		}
-	}
-	filter exists {
-		?regionTypeList rdf:rest*/rdf:first ?regionType .
-		?polygonList rdf:rest*/rdf:first ?polygon .
-	}
+	############################
+	#### FILTER PLACEHOLDER ####
+	############################
 }
-ORDER BY ?mapPart ?vertInd
+ORDER BY ?bNode ?polygonId ?vertInd

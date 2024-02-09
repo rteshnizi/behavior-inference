@@ -4,129 +4,109 @@
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
-@prefix rt_bi: <https://rezateshnizi.com/rt-bi#> .
-
-<https://rezateshnizi.com/rt-bi#> a owl:Ontology ;
+<https://rezateshnizi.com/rt-bi/> a owl:Ontology ;
 	dc:title "The vocabulary used in RT Behavior Inference." ;
-	dc:date "2024-02-06" ;
+	dc:date "2024-02-08" ;
 	dc:description "This is the RDF Schema for the terms in RT Behavior Automata, defined in the dissertation of Reza Teshnizi." .
 
-######################### ABSTRACT ########################
-# region: abstract
-rt_bi:Subject a rdfs:Resource ;
-	rdfs:isDefinedBy <https://rezateshnizi.com/rt-bi#> ;
-	rdfs:label "Subject" ;
-	rdfs:comment "An instance of a class." .
+@prefix rt_bi: <https://rezateshnizi.com/rt-bi/> .
+rt_bi:X a rdf:Class .
+rt_bi:Y a rdf:Class .
+rt_bi:Vertex a rdf:Class .
+rt_bi:VertexSeq a rdf:Seq .
+rt_bi:Polygon a rdf:Class .
+rt_bi:PolygonSet a rdf:Bag .
 
-rt_bi:Property a rdf:Property ;
-	rdfs:isDefinedBy <https://rezateshnizi.com/rt-bi#> ;
-	rdfs:label "Property" ;
-	rdfs:comment "Properties of subjects." ;
-	rdfs:domain rt_bi:Subject ;
-	rdfs:range rdfs:Resource .
+rt_bi:Time a rdf:Class .
+rt_bi:Interval a rdf:Class .
+rt_bi:IntervalSet a rdf:Bag .
 
-# endregion
-####################### THE SUBJECTS ######################
-# region: subjects
-rt_bi:Agent a rt_bi:Subject ;
-	rdfs:isDefinedBy <https://rezateshnizi.com/rt-bi#> ;
-	rdfs:label "Agent" ;
-	rdfs:comment "A term describing an agent." .
+rt_bi:Subject a rdf:Class .
+rt_bi:RegularSpace a rdf:Class ;
+	rdfs:subClassOf rt_bi:Subject ;
+	rdfs:comment "The class of RegularSpace specifications." .
+rt_bi:RegularTime a rdf:Class ;
+	rdfs:subClassOf rt_bi:Subject ;
+	rdfs:comment "The class of RegularTime specifications." .
+rt_bi:Traversability a rdf:Class ;
+	rdfs:comment "The class of traversability specifications." .
 
-rt_bi:Space a rt_bi:Subject ;
-	rdfs:isDefinedBy <https://rezateshnizi.com/rt-bi#> ;
-	rdfs:label "Space" ;
-	rdfs:comment "A term describing a spatial region." .
-
-rt_bi:Time a rt_bi:Subject ;
-	rdfs:isDefinedBy <https://rezateshnizi.com/rt-bi#> ;
-	rdfs:label "Time" ;
-	rdfs:comment "A term describing a temporal region." .
-
-# endregion
-###################### THE PROPERTIES #####################
-# region: properties
-rt_bi:symbol a rt_bi:Property ;
-	rdfs:isDefinedBy <https://rezateshnizi.com/rt-bi#> ;
-	rdfs:label "symbol" ;
-	rdfs:comment "Symbol to show in Alphabet." ;
-	rdfs:domain rt_bi:Subject ;
-	rdfs:range xsd:string .
-
-rt_bi:walks a rt_bi:Property ;
-	rdfs:isDefinedBy <https://rezateshnizi.com/rt-bi#> ;
-	rdfs:label "walks" ;
-	rdfs:domain rt_bi:Agent ;
-	rdfs:domain rt_bi:Space ;
-	rdfs:range xsd:boolean .
-
-rt_bi:drives a rt_bi:Property ;
-	rdfs:isDefinedBy <https://rezateshnizi.com/rt-bi#> ;
-	rdfs:label "drives" ;
-	rdfs:domain rt_bi:Agent ;
-	rdfs:domain rt_bi:Space ;
-	rdfs:range xsd:boolean .
-
-rt_bi:swims a rt_bi:Property ;
-	rdfs:isDefinedBy <https://rezateshnizi.com/rt-bi#> ;
-	rdfs:label "swims" ;
-	rdfs:domain rt_bi:Agent ;
-	rdfs:domain rt_bi:Space ;
-	rdfs:range xsd:boolean .
-
-rt_bi:color a rt_bi:Property ;
-	rdfs:isDefinedBy <https://rezateshnizi.com/rt-bi#> ;
-	rdfs:label "color" ;
-	rdfs:comment "The visible color of the object." ;
-	rdfs:domain rt_bi:Subject ;
-	rdfs:range xsd:string .
-
-rt_bi:business_hours a rt_bi:Property ;
-	rdfs:isDefinedBy <https://rezateshnizi.com/rt-bi#> ;
-	rdfs:label "business_hours" ;
-	rdfs:comment "Indicator of whether this is a business hour time." ;
+@prefix temporal_props: <https://rezateshnizi.com/rt-bi/temporal/props#> .
+# region temporal
+temporal_props:secs a rdf:value ;
 	rdfs:domain rt_bi:Time ;
-	rdfs:range xsd:boolean .
-
-# endregion
-############## BEHAVIOR AUTOMATON VOCABULARY ##############
-# region: behavior automaton
-rt_bi:Automaton a rdfs:Class ;
-	rdfs:isDefinedBy <https://rezateshnizi.com/rt-bi#> ;
-	rdfs:label "Automaton" ;
-	rdfs:comment "The class of Behavior Automata." .
-
-rt_bi:Statement a rdfs:Container ;
-.
-
-rt_bi:state a rdf:Property ;
-	rdfs:isDefinedBy <https://rezateshnizi.com/rt-bi#> ;
-	rdfs:label "state" ;
-	rdfs:comment "The subject is a BA and object a string." ;
-	rdfs:domain rt_bi:Automaton ;
-	rdfs:range xsd:string .
-
-rt_bi:transition a rdf:Property ;
-	rdfs:isDefinedBy <https://rezateshnizi.com/rt-bi#> ;
-	rdfs:label "transition" ;
-	rdfs:comment "The class of BA transitions." ;
-	rdfs:domain rt_bi:Automaton ;
-	rdfs:range rt_bi:Subject .
-
-rt_bi:from a rdf:Property ;
-	rdfs:isDefinedBy <https://rezateshnizi.com/rt-bi#> ;
-	rdfs:label "from" ;
-	rdfs:comment "The subject is a rt_bi:transition and object a state." ;
-	rdfs:subPropertyOf rt_bi:transition ;
-	rdfs:domain rt_bi:transition ;
-	rdfs:range rt_bi:state .
-
-rt_bi:to a rdf:Property ;
-	rdfs:isDefinedBy <https://rezateshnizi.com/rt-bi#> ;
-	rdfs:label "to" ;
-	rdfs:comment "The subject is a rt_bi:transition and object a state." ;
-	rdfs:subPropertyOf rt_bi:transition ;
-	rdfs:domain rt_bi:transition ;
-	rdfs:range rt_bi:state .
-
-# endregion
+	rdfs:range xsd:double ;
+	rdfs:comment "A time value in Seconds." .
+temporal_props:min a rdf:Property ;
+	rdfs:domain rt_bi:Interval ;
+	rdfs:range rt_bi:Time ;
+	rdfs:comment "The min bound of a time interval." .
+temporal_props:max a rdf:Property ;
+	rdfs:domain rt_bi:Interval ;
+	rdfs:range rt_bi:Time ;
+	rdfs:comment "The max bound of a time interval." .
+temporal_props:include_min a rdf:Property ;
+	rdfs:domain rt_bi:Interval ;
+	rdfs:range xsd:boolean ;
+	rdfs:comment "Whether the min bound is included in the interval" .
+temporal_props:include_max a rdf:Property ;
+	rdfs:domain rt_bi:Interval ;
+	rdfs:range xsd:boolean ;
+	rdfs:comment "Whether the max bound is included in the interval" .
+# endregion temporal
+@prefix spatial_props: <https://rezateshnizi.com/rt-bi/spatial/props#> .
+# region spatial
+spatial_props:vertices a rdf:Property ;
+	rdfs:domain rt_bi:Polygon ;
+	rdfs:range rt_bi:VertexSet ;
+	rdfs:comment "The vertices of a polygon." .
+spatial_props:x a rdf:Property ;
+	rdfs:domain rt_bi:Vertex ;
+	rdfs:range rt_bi:X ;
+	rdfs:comment "The x Coordinate." .
+spatial_props:y a rdf:Property ;
+	rdfs:domain rt_bi:Vertex ;
+	rdfs:range rt_bi:Y ;
+	rdfs:comment "The y Coordinate." .
+spatial_props:x_val a rdf:value ;
+	rdfs:domain rt_bi:X ;
+	rdfs:range xsd:double ;
+	rdfs:comment "Some x value." .
+spatial_props:y_val a rdf:value ;
+	rdfs:domain rt_bi:Y ;
+	rdfs:range xsd:double ;
+	rdfs:comment "Some y value." .
+# endregion spatial
+@prefix world_props: <https://rezateshnizi.com/rt-bi/world/props#> .
+# region world
+world_props:name a rdfs:label ;
+	rdfs:domain rt_bi:Subject ;
+	rdfs:range xsd:string ;
+	rdfs:comment "The name of this subject." .
+world_props:color a rdf:Property ;
+	rdfs:domain rt_bi:Subject ;
+	rdfs:range xsd:string ;
+	rdfs:comment "Color to describe this area (and use in render)." .
+world_props:polygons a rdf:Property ;
+	rdfs:domain rt_bi:RegularSpace ;
+	rdfs:range rt_bi:PolygonSet .
+world_props:off_times a rdf:Property ;
+	rdfs:domain rt_bi:RegularSpace ;
+	rdfs:range rt_bi:IntervalSet .
+world_props:traversability a rdf:Property ;
+	rdfs:domain rt_bi:RegularSpace ;
+	rdfs:range rt_bi:Traversability ;
+	rdfs:comment "The range of this property is a traversability specification." .
+world_props:legs a rdf:Property ;
+	rdfs:domain rt_bi:Traversability ;
+	rdfs:range xsd:boolean ;
+	rdfs:comment "Whether the agent moves on legs." .
+world_props:wheels a rdf:Property ;
+	rdfs:domain rt_bi:Traversability ;
+	rdfs:range xsd:boolean ;
+	rdfs:comment "Whether the agent moves on wheels." .
+world_props:swims a rdf:Property ;
+	rdfs:domain rt_bi:Traversability ;
+	rdfs:range xsd:boolean ;
+	rdfs:comment "Whether the agent moves through water." .
+# endregion world

@@ -1,5 +1,4 @@
-from pathlib import Path
-from typing import Final, TypedDict
+from typing import TypedDict
 
 import requests
 from geometry_msgs.msg import Point as PointMsg, Point32 as Point32Msg, Polygon as PolygonMsg, Pose as PoseMsg, Quaternion as QuaternionMsg
@@ -31,22 +30,17 @@ class SparqlResponseParser:
 		return repr(self.results)
 
 class HttpInterface:
-	def __init__(self, fusekiServerAdr: str, rdfStoreName: str, sparqlDir: str) -> None:
+	def __init__(self, fusekiServerAdr: str, rdfStoreName: str) -> None:
 		self.__fusekiServerAdr = fusekiServerAdr
 		self.__rdfStoreName = rdfStoreName
-		self.__sparqlDir = sparqlDir
-		self.STATIC_REACHABILITY_SPARQL: Final = Path(self.__sparqlDir, "static-reachability.rq").read_text()
+		return
 
 	@property
 	def sparqlUrl(self) -> str:
 		"""http://192.168.1.164:8090/rt-bi-ontology/sparql"""
 		return f"{self.__fusekiServerAdr}/{self.__rdfStoreName}/sparql"
 
-	def staticReachability(self, req: StaticReachability.Request, res: StaticReachability.Response) -> StaticReachability.Response:
-		queryStr = self.STATIC_REACHABILITY_SPARQL
-		queryStr = queryStr.replace("?inputHasLegs", str(req.include_type.legs).lower())
-		queryStr = queryStr.replace("?inputHasWheels", str(req.include_type.wheels).lower())
-		queryStr = queryStr.replace("?inputCanSwim", str(req.include_type.swim).lower())
+	def staticReachability(self, queryStr: str, res: StaticReachability.Response) -> StaticReachability.Response:
 		r = requests.post(self.sparqlUrl, data={ "query": queryStr })
 		try:
 			parsedResponse = SparqlResponseParser(r)

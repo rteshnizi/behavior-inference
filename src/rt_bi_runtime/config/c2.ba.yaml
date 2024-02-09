@@ -8,9 +8,9 @@ rt_bi_runtime:
         - "Q2"
         - "Q3"
       transitions:
-        - "[[\"south-bank\", \"Q1\"]]"
-        - "[[\"mid-day\", \"Q2\"]]"
-        - "[[\"north-shore\", \"Q3\"]]"
+        - "[['south-bank', 'Q1']]"
+        - "[['mid-day', 'Q2']]"
+        - "[['north-shore', 'Q3']]"
         - "[]"
       start: "Q0"
       accepting:

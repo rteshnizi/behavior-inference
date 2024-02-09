@@ -18,7 +18,6 @@ setup(
 		(os.path.join("share", packageName, "sparql"), glob("sparql/*")),
 	],
 	install_requires= [
-		"agraph-python~=102.1",
 		"matplotlib~=3.5",
 		"networkx~=3.2",
 		"requests~=2.25",

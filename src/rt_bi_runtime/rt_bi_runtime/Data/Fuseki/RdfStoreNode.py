@@ -15,6 +15,7 @@ from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_interfaces.srv import StaticReachability
 from rt_bi_runtime import package_name
 from rt_bi_runtime.Data.Fuseki.HttpInterface import HttpInterface
+from rt_bi_runtime.Data.SparqlHelper import SparqlHelper
 
 _K = Literal["fuseki_server", "rdf_store", "rdf_directory_name", "sparql_directory_name"]
 class RdfStoreNode(DataDictionaryNode[_K]):
@@ -31,15 +32,13 @@ class RdfStoreNode(DataDictionaryNode[_K]):
 		newKw = { "node_name": "dd_rdf", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
 		super().__init__(parsers, **newKw)
 		sparqlDir = str(Path(get_package_share_directory(package_name), self["sparql_directory_name"][0]).resolve())
-		self.__httpInterface = HttpInterface(self["fuseki_server"][0], self["rdf_store"][0], sparqlDir)
+		self.__httpInterface = HttpInterface(self["fuseki_server"][0], self["rdf_store"][0])
+		self.__sparqlHelper = SparqlHelper(sparqlDir)
 		RtBiInterfaces.createStaticReachabilityService(self, self.__onStaticReachability)
-		RtBiInterfaces.createStaticReachabilityService(self, self.__onSymbolInterpretation)
 
 	def __onStaticReachability(self, req: StaticReachability.Request, res: StaticReachability.Response) -> StaticReachability.Response:
-		return self.__httpInterface.staticReachability(req, res)
-
-	def __onSymbolInterpretation(self, req: StaticReachability.Request, res: StaticReachability.Response) -> StaticReachability.Response:
-		return res
+		queryStr = self.__sparqlHelper.query("reachability", req)
+		return self.__httpInterface.staticReachability(queryStr, res)
 
 	def render(self) -> None:
 		return super().render()

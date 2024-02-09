@@ -1,4 +1,4 @@
-from typing import Dict, Literal, Set, Union
+from typing import Literal
 
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -12,14 +12,15 @@ from rclpy.node import Node
 from rt_bi_commons.Shared.Color import RGBA, ColorNames, ColorUtils
 from rt_bi_runtime.Model.BehaviorAutomaton import BehaviorAutomaton
 
-use("QtAgg")
 # CSpell: ignore: mpl_toolkits, set_facecolor, facecolor, edgecolor, LINETO, dtype, edgecolors
 
+use("QtAgg")
+KnownMarkers = Literal["o", "v", "^", "<", ">", "8", "s", "p", "*", "h", "H", "D", "d", "P", "X"]
+
 class BaMatplotlibRenderer:
-	__graphToFigs: Dict[str, Figure] = {}
-	__graphToAxes: Dict[str, Axes] = {}
-	__graphToAnimation: Dict[str, FuncAnimation] = {}
-	KnownMarkers = Union[Literal["o"], Literal["v"], Literal["^"], Literal["<"], Literal[">"], Literal["8"], Literal["s"], Literal["p"], Literal["*"], Literal["h"], Literal["H"], Literal["D"], Literal["d"], Literal["P"], Literal["X"]]
+	__graphToFigs: dict[str, Figure] = {}
+	__graphToAxes: dict[str, Axes] = {}
+	__graphToAnimation: dict[str, FuncAnimation] = {}
 
 	class PredefinedMarkerStyles:
 		import numpy as np
@@ -35,8 +36,8 @@ class BaMatplotlibRenderer:
 		doubleCircle = MarkerStyle(__markerPath)
 
 	class NodeStyle:
-		def __init__(self, marker: Union["BaMatplotlibRenderer.KnownMarkers", MarkerStyle], nodeColor: RGBA, boundaryColor: RGBA, boundaryWidth: float = 1.0, size: int = 600) -> None:
-			self.marker: Union["BaMatplotlibRenderer.KnownMarkers", MarkerStyle] = marker
+		def __init__(self, marker: KnownMarkers | MarkerStyle, nodeColor: RGBA, boundaryColor: RGBA, boundaryWidth: float = 1.0, size: int = 600) -> None:
+			self.marker: KnownMarkers | MarkerStyle = marker
 			self.size: int = size
 			self.nodeColor: str = ColorUtils.toHexStr(nodeColor)
 			self.boundaryColor: str = ColorUtils.toHexStr(boundaryColor)
@@ -68,7 +69,7 @@ class BaMatplotlibRenderer:
 		return
 
 	@classmethod
-	def __drawNodes(cls, ba: BehaviorAutomaton, nodes: Set[str], style: NodeStyle) -> None:
+	def __drawNodes(cls, ba: BehaviorAutomaton, nodes: set[str], style: NodeStyle) -> None:
 		ax = cls.__graphToAxes[ba.name]
 		nx.draw_networkx_nodes(
 			ba,
@@ -108,7 +109,7 @@ class BaMatplotlibRenderer:
 		return plt.figure(ba.name)
 
 	@classmethod
-	def createBehaviorAutomatonFigure(cls, ba: BehaviorAutomaton, rosNode: Union[Node, None] = None) -> None:
+	def createBehaviorAutomatonFigure(cls, ba: BehaviorAutomaton, rosNode: Node | None = None) -> None:
 		if ba.name in cls.__graphToFigs: cls.closeFig(ba)
 
 		fig = cls.activateFigure(ba)

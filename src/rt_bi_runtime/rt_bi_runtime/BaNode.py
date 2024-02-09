@@ -25,7 +25,12 @@ class BaNode(RtBiNode):
 		self.__accepting: List[str] = []
 		self.parseParameters()
 		self.__ba = BehaviorAutomaton(self.__name, self.__states, self.__transitions, self.__start, self.__accepting)
+		self.__coldStart()
 		if self.shouldRender: self.render()
+		return
+
+	def __coldStart(self) -> None:
+
 		return
 
 	def declareParameters(self) -> None:

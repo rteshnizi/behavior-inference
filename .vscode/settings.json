@@ -42,6 +42,7 @@
 		"tracklet",
 		"tracklets",
 		"traj",
+		"traversabilities",
 		"traversability",
 		"traversabilitys",
 		"vect",
@@ -52,6 +53,7 @@
 		"ros.msg",
 		"shellscript",
 		"sparql",
+		"trig",
 		"turtle"
 	],
 	"files.associations": {
