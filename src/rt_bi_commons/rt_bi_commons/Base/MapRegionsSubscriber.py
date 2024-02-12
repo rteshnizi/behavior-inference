@@ -11,7 +11,8 @@ from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_commons.Utils.RViz import RViz
 from rt_bi_core.MapRegion import MapRegion
-from rt_bi_interfaces.msg import MapRegion as MapRegionMsg, RegularSpatialRegion as RegularSpatialRegionMsg
+from rt_bi_interfaces.msg import Polygon as RtBiPolygonMsg, RegularSpace
+from rt_bi_interfaces.srv import SpaceTime
 
 
 class MapRegionsSubscriber(RtBiNode, ABC):
@@ -21,18 +22,21 @@ class MapRegionsSubscriber(RtBiNode, ABC):
 		super().__init__(**newKw)
 		self.mapRegions: list[MapRegion] = []
 		(self.__rvizPublisher, _) = RViz.createRVizPublisher(self, Ros.CreateTopicName("map"))
-		RtBiInterfaces.subscribeToMapRegions(self, self.parseMapRegions)
+		RtBiInterfaces.subscribeToMapRegions(self, self.parseSpaceTimeResponse)
 
-	def parseMapRegions(self, msg: RegularSpatialRegionMsg) -> None:
-		for regionMsg in msg.regions:
-			regionMsg = cast(MapRegionMsg, regionMsg)
-			region = MapRegion(
-				idNum=Ros.RegisterRegionId(regionMsg.id),
-				envelope=RtBiInterfaces.fromStdPoints32ToCoordsList(regionMsg.region.points),
-				envelopeColor=ColorNames.fromString(regionMsg.spec.color),
-				offIntervals=[TimeInterval.fromMsg(interval) for interval in regionMsg.spec.off_intervals]
-			)
-			self.mapRegions.append(region)
+	def parseSpaceTimeResponse(self, res: SpaceTime.Response) -> None:
+		for match in res.spatial_matches:
+			match = cast(RegularSpace, match)
+			for polyMsg in match.polygons:
+				polyMsg = cast(RtBiPolygonMsg, polyMsg)
+				polyStrId = f"{match.id}/{polyMsg.id}"
+				region = MapRegion(
+					idNum=Ros.RegisterRegionId(polyStrId),
+					envelope=RtBiInterfaces.fromStdPoints32ToCoordsList(polyMsg.region.points),
+					envelopeColor=ColorNames.fromString(match.spec.color),
+					offIntervals=[TimeInterval.fromMsg(interval) for interval in match.spec.off_intervals]
+				)
+				self.mapRegions.append(region)
 		self.onMapUpdated()
 		return
 

@@ -8,8 +8,8 @@ from rt_bi_commons.Shared.TimeInterval import TimeInterval
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_core.MapRegion import MapRegion
-from rt_bi_interfaces.msg import MapRegion as MapRegionMsg, RegularSpatialRegion as RegularSpatialRegionMsg
-from rt_bi_interfaces.srv import StaticReachability
+from rt_bi_interfaces.msg import Polygon as RtBiPolygonMsg, RegularSpace, Traversability
+from rt_bi_interfaces.srv import SpaceTime as SpaceTimeSvc
 
 
 class DynamicMapEmulator(RtBiNode):
@@ -17,32 +17,20 @@ class DynamicMapEmulator(RtBiNode):
 		newKw = { "node_name": "em_dynamic_map", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
 		super().__init__(**newKw)
 		self.mapRegions: dict[str, MapRegion] = {}
-		self.rdfClient = RtBiInterfaces.createStaticReachabilityClient(self)
+		self.rdfClient = RtBiInterfaces.createSpaceTimeClient(self)
 		self.__mapRegionsPublisher = RtBiInterfaces.createMapRegionsPublisher(self)
 		Ros.WaitForServicesToStart(self, self.rdfClient)
 		self.__coldStart()
 
 	def __coldStart(self) -> None:
-		req = StaticReachability.Request()
-		req.include_type.legs = True
-		req.include_type.swim = False
-		req.include_type.wheels = False
-		Ros.SendClientRequest(self, self.rdfClient, req, self.__onStaticReachabilityResponse)
+		req = SpaceTimeSvc.Request()
+		req.filter.traversability.legs = Traversability.TRUE
+		Ros.SendClientRequest(self, self.rdfClient, req, self.__onSpaceTimeResponse)
 		return
 
-	def __onStaticReachabilityResponse(self, req: StaticReachability.Request, res: StaticReachability.Response) -> StaticReachability.Response:
-		mapRegionsMsg = RegularSpatialRegionMsg()
-		for regionMsg in res.regions:
-			regionMsg = cast(MapRegionMsg, regionMsg)
-			region = MapRegion(
-				idNum=Ros.RegisterRegionId(regionMsg.id),
-				envelope=RtBiInterfaces.fromStdPoints32ToCoordsList(regionMsg.region.points),
-				envelopeColor=ColorNames.fromString(regionMsg.spec.color),
-				offIntervals=[TimeInterval.fromMsg(interval) for interval in regionMsg.spec.off_intervals]
-			)
-			self.mapRegions[region.name] = region
-			Ros.AppendMessage(mapRegionsMsg.regions, regionMsg)
-		self.__mapRegionsPublisher.publish(mapRegionsMsg)
+	def __onSpaceTimeResponse(self, req: SpaceTimeSvc.Request, res: SpaceTimeSvc.Response) -> SpaceTimeSvc.Response:
+		self.get_logger().warn(f"SPARQL LEN = {repr(res)}")
+		self.__mapRegionsPublisher.publish(res)
 		return res
 
 	def declareParameters(self) -> None:

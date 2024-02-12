@@ -10,16 +10,15 @@
 	dc:description "This is the RDF Schema for the terms in RT Behavior Automata, defined in the dissertation of Reza Teshnizi." .
 
 @prefix rt_bi: <https://rezateshnizi.com/rt-bi/> .
+# region Class definitions
 rt_bi:X a rdf:Class .
 rt_bi:Y a rdf:Class .
 rt_bi:Vertex a rdf:Class .
 rt_bi:VertexSeq a rdf:Seq .
 rt_bi:Polygon a rdf:Class .
-rt_bi:PolygonSet a rdf:Bag .
 
 rt_bi:Time a rdf:Class .
 rt_bi:Interval a rdf:Class .
-rt_bi:IntervalSet a rdf:Bag .
 
 rt_bi:Subject a rdf:Class .
 rt_bi:RegularSpace a rdf:Class ;
@@ -31,6 +30,7 @@ rt_bi:RegularTime a rdf:Class ;
 rt_bi:Traversability a rdf:Class ;
 	rdfs:comment "The class of traversability specifications." .
 
+# endregion Class definitions
 @prefix temporal_props: <https://rezateshnizi.com/rt-bi/temporal/props#> .
 # region temporal
 temporal_props:secs a rdf:value ;
@@ -89,10 +89,13 @@ world_props:color a rdf:Property ;
 	rdfs:comment "Color to describe this area (and use in render)." .
 world_props:polygons a rdf:Property ;
 	rdfs:domain rt_bi:RegularSpace ;
-	rdfs:range rt_bi:PolygonSet .
+	rdfs:range rt_bi:Polygon .
+world_props:intervals a rdf:Property ;
+	rdfs:domain rt_bi:RegularTime ;
+	rdfs:range rt_bi:Interval .
 world_props:off_times a rdf:Property ;
 	rdfs:domain rt_bi:RegularSpace ;
-	rdfs:range rt_bi:IntervalSet .
+	rdfs:range rt_bi:Interval .
 world_props:traversability a rdf:Property ;
 	rdfs:domain rt_bi:RegularSpace ;
 	rdfs:range rt_bi:Traversability ;

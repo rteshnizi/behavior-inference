@@ -280,73 +280,69 @@ GRAPH tower_bridge:traversabilities
 		world_props:swims true .
 }
 
-GRAPH tower_bridge:world
+GRAPH tower_bridge:definition
 {
 	[ a rt_bi:RegularSpace ;
 		world_props:name "street" ;
 		world_props:traversability traversability:street ;
 		world_props:color "GREY" ;
-		world_props:polygons [ a rt_bi:PolygonSet ;
-			rdf:member polygon:0 ;
-			rdf:member polygon:2 ;
-			rdf:member polygon:4 ;
-		] ;
+		world_props:polygons
+			polygon:0 ,
+			polygon:2 ,
+			polygon:4 ;
 	] .
 	[ a rt_bi:RegularSpace ;
 		world_props:name "bridge" ;
 		world_props:traversability traversability:bridge ;
 		world_props:color "WHITE" ;
-		world_props:polygons [ a rt_bi:PolygonSet ;
-			rdf:member polygon:3 ;
-		] ;
+		world_props:polygons
+			polygon:3 ;
 	] .
 	[ a rt_bi:RegularSpace ;
 		world_props:name "bridge" ;
 		world_props:traversability traversability:bridge ;
 		world_props:color "WHITE" ;
-		world_props:polygons [ a rt_bi:PolygonSet ;
-			rdf:member polygon:5 ;
-		] ;
-		world_props:off_times [ a rt_bi:IntervalSet ;
-			rdf:member interval:early_morning ;
-			rdf:member interval:afternoon ;
-		] ;
+		world_props:polygons
+			polygon:5 ;
+		world_props:off_times
+			interval:early_morning ,
+			interval:afternoon ;
 	] .
 	[ a rt_bi:RegularSpace ;
 		world_props:name "river" ;
 		world_props:traversability traversability:river ;
 		world_props:color "BLUE_LIGHT" ;
-		world_props:polygons [ a rt_bi:PolygonSet ;
-			rdf:member polygon:1 ;
-			rdf:member polygon:6 ;
-		] ;
+		world_props:polygons
+			polygon:1 ,
+			polygon:6 ;
 		world_props:traversability traversability:river ;
 	] .
 	[ a rt_bi:RegularSpace ;
 		world_props:name "river" ;
 		world_props:traversability traversability:river ;
 		world_props:color "BLUE_LIGHT" ;
-		world_props:polygons [ a rt_bi:PolygonSet ;
-			rdf:member polygon:5 ;
-		] ;
-		world_props:off_times [ a rt_bi:IntervalSet ;
-			rdf:member interval:morning ;
-			rdf:member interval:mid_day ;
-			rdf:member interval:evening ;
-		] ;
+		world_props:polygons
+			polygon:5 ;
+		world_props:off_times
+			interval:morning,
+			interval:mid_day,
+			interval:evening ;
 	] .
 	[ a rt_bi:RegularSpace ;
 		world_props:name "south-bank" ;
 		world_props:color "PURPLE" ;
-		world_props:polygons [ a rt_bi:PolygonSet ;
-			rdf:member polygon:south_bank ;
-		] ;
+		world_props:polygons
+			polygon:south_bank ;
 	] .
 	[ a rt_bi:RegularSpace ;
 		world_props:name "north-shore" ;
 		world_props:color "PURPLE" ;
-		world_props:polygons [ a rt_bi:PolygonSet ;
-			rdf:member polygon:north_shore ;
-		] ;
+		world_props:polygons
+			polygon:north_shore ;
+	] .
+	[ a rt_bi:RegularTime ;
+		world_props:name "mid-day" ;
+		world_props:intervals
+			interval:mid_day ;
 	] .
 }

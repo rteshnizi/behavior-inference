@@ -25,18 +25,16 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Events.msg"
   "msg/Graph.msg"
   "msg/MapRegion.msg"
-  "msg/MapRegionState.msg"
+  "msg/Polygon.msg"
   "msg/PoseEstimation.msg"
-  "msg/RegionSpec.msg"
-  "msg/RegularSpatialRegion.msg"
-  "msg/RegularTemporalRegion.msg"
+  "msg/RegularSpace.msg"
+  "msg/SpaceSpec.msg"
   "msg/TimeInterval.msg"
   "msg/Tracklet.msg"
   "msg/Traversability.msg"
   # Services
   "srv/DataReference.srv"
-  "srv/SymbolResolver.srv"
-  "srv/StaticReachability.srv"
+  "srv/SpaceTime.srv"
   DEPENDENCIES builtin_interfaces
   DEPENDENCIES geometry_msgs
   DEPENDENCIES sa_msgs

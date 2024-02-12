@@ -7,7 +7,7 @@ from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Geometry import Geometry, MultiPolygon, Polygon
 from rt_bi_commons.Utils.RViz import RGBA, ColorNames
 from rt_bi_core.AffineRegion import AffineRegion
-from rt_bi_interfaces.msg import MapRegion as MapRegionMsg, RegionSpec, TimeInterval as TimeIntervalMsg
+from rt_bi_interfaces.msg import MapRegion as MapRegionMsg, SpaceSpec, TimeInterval as TimeIntervalMsg
 
 
 class MapRegion(AffineRegion):
@@ -17,7 +17,7 @@ class MapRegion(AffineRegion):
 		timeNanoSecs: int = 0,
 		interior: Union[Polygon, MultiPolygon, None] = None,
 		offIntervals: list[TimeInterval] = [],
-		spec: RegionSpec = RegionSpec(),
+		spec: SpaceSpec = SpaceSpec(),
 		**kwArgs,
 	) -> None:
 		super().__init__(
@@ -31,7 +31,7 @@ class MapRegion(AffineRegion):
 		)
 		self.centerOfRotation = Geometry.toCoords(self.interior.centroid)
 		self.offIntervals: list[TimeInterval] = offIntervals
-		self.spec: RegionSpec = spec
+		self.spec: SpaceSpec = spec
 		return
 
 	@property

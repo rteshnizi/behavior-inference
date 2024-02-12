@@ -9,8 +9,8 @@ from rt_bi_commons.Base.RtBiNode import RtBiNode
 from rt_bi_commons.Shared.Pose import Coords, CoordsList, Pose
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Geometry import Geometry, Polygon
-from rt_bi_interfaces.msg import DynamicRegion, EstimationMsg, RegularSpatialRegion as RegularSpatialRegionMsg
-from rt_bi_interfaces.srv import DataReference, StaticReachability
+from rt_bi_interfaces.msg import DynamicRegion, EstimationMsg
+from rt_bi_interfaces.srv import DataReference, SpaceTime
 
 
 class ReferenceDescriptor(NamedTuple):
@@ -118,33 +118,22 @@ class RtBiInterfaces:
 		return Ros.CreateClient(node, DataReference, ref.serviceName)
 
 	@staticmethod
-	def createStaticReachabilityService(node: RtBiNode, callbackFunc: Callable[[StaticReachability.Request, StaticReachability.Response], StaticReachability.Response]) -> Service:
-		svcName = f"{RtBiInterfaces.ServiceNames.RT_BI_RUNTIME_DD_RDF.value}/static_reachability"
-		svc = Ros.CreateService(node, StaticReachability, svcName, callbackFunc)
+	def createSpaceTimeService(node: RtBiNode, callbackFunc: Callable[[SpaceTime.Request, SpaceTime.Response], SpaceTime.Response]) -> Service:
+		svcName = f"{RtBiInterfaces.ServiceNames.RT_BI_RUNTIME_DD_RDF.value}/space_time"
+		svc = Ros.CreateService(node, SpaceTime, svcName, callbackFunc)
 		return svc
 
 	@staticmethod
-	def createStaticReachabilityClient(node: RtBiNode) -> Client:
-		svcName = f"{RtBiInterfaces.ServiceNames.RT_BI_RUNTIME_DD_RDF.value}/static_reachability"
-		return Ros.CreateClient(node, StaticReachability, svcName)
-
-	@staticmethod
-	def createResolveSymbolService(node: RtBiNode, callbackFunc: Callable[[StaticReachability.Request, StaticReachability.Response], StaticReachability.Response]) -> Service:
-		svcName = f"{RtBiInterfaces.ServiceNames.RT_BI_RUNTIME_DD_RDF.value}/resolve_symbol"
-		svc = Ros.CreateService(node, StaticReachability, svcName, callbackFunc)
-		return svc
-
-	@staticmethod
-	def createResolveSymbolClient(node: RtBiNode) -> Client:
-		svcName = f"{RtBiInterfaces.ServiceNames.RT_BI_RUNTIME_DD_RDF.value}/resolve_symbol"
-		return Ros.CreateClient(node, StaticReachability, svcName)
+	def createSpaceTimeClient(node: RtBiNode) -> Client:
+		svcName = f"{RtBiInterfaces.ServiceNames.RT_BI_RUNTIME_DD_RDF.value}/space_time"
+		return Ros.CreateClient(node, SpaceTime, svcName)
 
 	@staticmethod
 	def createMapRegionsPublisher(node: RtBiNode) -> Publisher:
-		(publisher, _) = Ros.CreatePublisher(node, RegularSpatialRegionMsg, RtBiInterfaces.TopicNames.RT_BI_RUNTIME_MAP_REGIONS.value)
+		(publisher, _) = Ros.CreatePublisher(node, SpaceTime.Response, RtBiInterfaces.TopicNames.RT_BI_RUNTIME_MAP_REGIONS.value)
 		return publisher
 
 	@staticmethod
-	def subscribeToMapRegions(node: RtBiNode, callbackFunc: Callable[[RegularSpatialRegionMsg], None]) -> None:
-		Ros.CreateSubscriber(node, RegularSpatialRegionMsg, RtBiInterfaces.TopicNames.RT_BI_RUNTIME_MAP_REGIONS.value, callbackFunc) # type: ignore
+	def subscribeToMapRegions(node: RtBiNode, callbackFunc: Callable[[SpaceTime.Response], None]) -> None:
+		Ros.CreateSubscriber(node, SpaceTime.Response, RtBiInterfaces.TopicNames.RT_BI_RUNTIME_MAP_REGIONS.value, callbackFunc) # type: ignore
 		return

@@ -12,7 +12,7 @@ from rt_bi_commons.RosParamParsers.ReferenceParser import ListReferenceParser
 from rt_bi_commons.Shared.Pose import CoordsList
 from rt_bi_commons.Shared.TimeInterval import TimeInterval
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
-from rt_bi_interfaces.srv import StaticReachability
+from rt_bi_interfaces.srv import SpaceTime
 from rt_bi_runtime import package_name
 from rt_bi_runtime.Data.Fuseki.HttpInterface import HttpInterface
 from rt_bi_runtime.Data.SparqlHelper import SparqlHelper
@@ -34,11 +34,11 @@ class RdfStoreNode(DataDictionaryNode[_K]):
 		sparqlDir = str(Path(get_package_share_directory(package_name), self["sparql_directory_name"][0]).resolve())
 		self.__httpInterface = HttpInterface(self["fuseki_server"][0], self["rdf_store"][0])
 		self.__sparqlHelper = SparqlHelper(sparqlDir)
-		RtBiInterfaces.createStaticReachabilityService(self, self.__onStaticReachability)
+		RtBiInterfaces.createSpaceTimeService(self, self.__querySpaceTime)
 
-	def __onStaticReachability(self, req: StaticReachability.Request, res: StaticReachability.Response) -> StaticReachability.Response:
-		queryStr = self.__sparqlHelper.query("reachability", req)
-		return self.__httpInterface.staticReachability(queryStr, res)
+	def __querySpaceTime(self, req: SpaceTime.Request, res: SpaceTime.Response) -> SpaceTime.Response:
+		queryStr = self.__sparqlHelper.queryStr("resolve", req)
+		return self.__httpInterface.filterSpaceTime(queryStr, res)
 
 	def render(self) -> None:
 		return super().render()

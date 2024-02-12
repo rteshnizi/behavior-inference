@@ -1,5 +1,0 @@
-string[] symbols
----
-# symbols[i] resolves to become the union of regularRegions[i].regions
-rt_bi_interfaces/RegularSpatialRegion[] spatial
-rt_bi_interfaces/RegularTemporalRegion[] temporal

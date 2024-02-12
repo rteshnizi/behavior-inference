@@ -17,24 +17,31 @@ PREFIX xsd:            <http://www.w3.org/2001/XMLSchema#>
 PREFIX y:              <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/ys#>
 
 SELECT
-	?bNode ?polygonId ?vertInd ?x ?y
+	?regularSpaceId
+	?polygonId ?vertInd ?x ?y
+	# Optionals
 	?name ?color
 	?needsLegs ?needsWheels ?needsSwim
-	?t1 ?t2 ?minInclusive ?maxInclusive
+	?minT ?maxT ?minInclusive ?maxInclusive
 WHERE {
-	GRAPH tower_bridge:world {
-		?bNode a rt_bi:RegularSpace ;
-			world_props:polygons/rdf:member ?polygonId .
-		GRAPH tower_bridge:spatial {
-			?polygonId spatial_props:vertices ?vertexSeq .
-			?vertexSeq ?vertInd ?vertex .
-			?vertex
-				spatial_props:x/spatial_props:x_val ?x ;
-				spatial_props:y/spatial_props:y_val ?y .
+	GRAPH tower_bridge:definition {
+		{
+			?regularSpaceId a rt_bi:RegularSpace ;
+				world_props:polygons ?polygonId .
+			GRAPH tower_bridge:spatial {
+				?polygonId spatial_props:vertices ?vertexSeq .
+				?vertexSeq ?vertInd ?vertex .
+				?vertex
+					spatial_props:x/spatial_props:x_val ?x ;
+					spatial_props:y/spatial_props:y_val ?y .
+			}
 		}
-		OPTIONAL { ?bNode world_props:color ?color . }
-		OPTIONAL { ?bNode world_props:name ?name . }
-		OPTIONAL { ?bNode world_props:traversability ?traversability .
+		UNION
+		{ ?regularSpaceId world_props:color ?color . }
+		UNION
+		{ ?regularSpaceId world_props:name ?name . }
+		UNION
+		{ ?regularSpaceId world_props:traversability ?traversability .
 			GRAPH tower_bridge:traversabilities {
 				?traversability
 					world_props:legs ?needsLegs ;
@@ -42,15 +49,21 @@ WHERE {
 					world_props:swims ?needsSwim .
 			}
 		}
-		OPTIONAL { ?bNode world_props:off_times/rdf:member ?intervalId .
+		UNION
+		{ ?regularSpaceId world_props:off_times ?intervalId .
 			GRAPH tower_bridge:temporal {
 				?intervalId
-					temporal_props:min/temporal_props:secs ?t1 ;
-					temporal_props:max/temporal_props:secs ?t2 ;
+					temporal_props:min/temporal_props:secs ?minT ;
+					temporal_props:max/temporal_props:secs ?maxT ;
 					temporal_props:include_min ?minInclusive ;
 					temporal_props:include_max ?maxInclusive .
 			}
 		}
+		############################
+		FILTER (
+			true #### FILTER PLACEHOLDER ####
+		)
+		############################
 	}
 }
-ORDER BY ?bNode ?polygonId ?vertInd
+ORDER BY ?regularSpaceId ?polygonId ?vertInd
