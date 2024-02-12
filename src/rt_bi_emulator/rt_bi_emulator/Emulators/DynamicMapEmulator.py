@@ -8,7 +8,7 @@ from rt_bi_commons.Shared.TimeInterval import TimeInterval
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_core.MapRegion import MapRegion
-from rt_bi_interfaces.msg import Polygon as RtBiPolygonMsg, RegularSpace, Traversability
+from rt_bi_interfaces.msg import Polygon as RtBiPolygonMsg, RegularSpace, RegularSpaceArray, Traversability
 from rt_bi_interfaces.srv import SpaceTime as SpaceTimeSvc
 
 
@@ -29,8 +29,8 @@ class DynamicMapEmulator(RtBiNode):
 		return
 
 	def __onSpaceTimeResponse(self, req: SpaceTimeSvc.Request, res: SpaceTimeSvc.Response) -> SpaceTimeSvc.Response:
-		self.get_logger().warn(f"SPARQL LEN = {repr(res)}")
-		self.__mapRegionsPublisher.publish(res)
+		msg = RegularSpaceArray(spaces=res.spatial_matches)
+		self.__mapRegionsPublisher.publish(msg)
 		return res
 
 	def declareParameters(self) -> None:

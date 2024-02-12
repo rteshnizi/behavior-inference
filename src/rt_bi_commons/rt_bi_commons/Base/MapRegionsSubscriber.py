@@ -11,8 +11,7 @@ from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_commons.Utils.RViz import RViz
 from rt_bi_core.MapRegion import MapRegion
-from rt_bi_interfaces.msg import Polygon as RtBiPolygonMsg, RegularSpace
-from rt_bi_interfaces.srv import SpaceTime
+from rt_bi_interfaces.msg import Polygon as RtBiPolygonMsg, RegularSpace, RegularSpaceArray
 
 
 class MapRegionsSubscriber(RtBiNode, ABC):
@@ -24,8 +23,8 @@ class MapRegionsSubscriber(RtBiNode, ABC):
 		(self.__rvizPublisher, _) = RViz.createRVizPublisher(self, Ros.CreateTopicName("map"))
 		RtBiInterfaces.subscribeToMapRegions(self, self.parseSpaceTimeResponse)
 
-	def parseSpaceTimeResponse(self, res: SpaceTime.Response) -> None:
-		for match in res.spatial_matches:
+	def parseSpaceTimeResponse(self, res: RegularSpaceArray) -> None:
+		for match in res.spaces:
 			match = cast(RegularSpace, match)
 			for polyMsg in match.polygons:
 				polyMsg = cast(RtBiPolygonMsg, polyMsg)

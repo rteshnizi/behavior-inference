@@ -71,6 +71,12 @@ def NanoSecToTimeMsg(nanoSec: int) -> TimeMsg:
 	msg.nanosec = nanoSec % NANO_CONVERSION_CONSTANT
 	return msg
 
+def SecToTimeMsg(sec: float) -> TimeMsg:
+	msg = TimeMsg()
+	msg.sec = int(sec)
+	msg.nanosec = int((sec % 1) * NANO_CONVERSION_CONSTANT)
+	return msg
+
 def TimeToInt(t: TimeMsg | Time) -> int:
 	if isinstance(t, TimeMsg):
 		(sec, nanoSecs) = (t.sec, t.nanosec) # CSpell: ignore nanosec

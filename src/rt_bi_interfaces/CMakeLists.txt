@@ -27,6 +27,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/MapRegion.msg"
   "msg/Polygon.msg"
   "msg/PoseEstimation.msg"
+  "msg/RegularSpaceArray.msg"
   "msg/RegularSpace.msg"
   "msg/SpaceSpec.msg"
   "msg/TimeInterval.msg"

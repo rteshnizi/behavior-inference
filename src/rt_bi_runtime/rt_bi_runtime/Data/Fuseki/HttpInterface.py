@@ -1,3 +1,4 @@
+import json
 from math import nan
 from typing import TypedDict, cast
 
@@ -66,12 +67,12 @@ class HttpInterface:
 
 	def parseInterval(self, helper: SparqlResultHelper, i: int) -> tuple[TimeInterval, int]:
 		msg = TimeInterval(
-			start=helper.floatVarValue(i, "t1"),
-			end=helper.floatVarValue(i, "t2"),
-			include_left=helper.floatVarValue(i, "minInclusive"),
-			include_right=helper.floatVarValue(i, "maxInclusive"),
+			start=Ros.SecToTimeMsg(helper.floatVarValue(i, "minT")),
+			end=Ros.SecToTimeMsg(helper.floatVarValue(i, "maxT")),
+			include_left=json.loads(helper.boolVarValue(i, "minInclusive")),
+			include_right=json.loads(helper.boolVarValue(i, "maxInclusive")),
 		)
-		i =+ 1
+		i += 1
 		return (msg, i)
 
 	def parsePolygon(self, helper: SparqlResultHelper, i: int) -> tuple[RtBiPolygonMsg, int]:
@@ -91,7 +92,7 @@ class HttpInterface:
 			wheels=helper.boolVarValue(i, "needsWheels"),
 			swim=helper.boolVarValue(i, "needsSwim"),
 		)
-		i =+ 1
+		i += 1
 		return (msg, i)
 
 	def filterSpaceTime(self, queryStr: str, res: SpaceTime.Response) -> SpaceTime.Response:
