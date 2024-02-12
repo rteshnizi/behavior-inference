@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
 	<name>rt_bi_eventifier</name>
-	<version>0.0.10</version>
+	<version>0.1.0</version>
 	<description>The Eventifier package of the Behavior Inference project.</description>
 	<maintainer email="reza.teshnizi@gmail.com">Reza Teshnizi</maintainer>
 	<license>UNLICENSED</license>
@@ -10,9 +10,9 @@
 	<depend>rclpy</depend>
 	<depend>visualization_msgs</depend>
 
-	<depend version_eq="0.0.10">rt_bi_core</depend>
-	<depend version_eq="0.0.10">rt_bi_interfaces</depend>
-	<depend version_eq="0.0.10">rt_bi_commons</depend>
+	<depend version_eq="0.1.0">rt_bi_core</depend>
+	<depend version_eq="0.1.0">rt_bi_interfaces</depend>
+	<depend version_eq="0.1.0">rt_bi_commons</depend>
 	<depend>sa_msgs</depend>
 
 	<export>
