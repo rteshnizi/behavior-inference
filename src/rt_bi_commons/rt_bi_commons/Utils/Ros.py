@@ -1,6 +1,6 @@
 import logging
 from functools import partial
-from math import isnan, nan
+from math import inf, isnan, nan
 from typing import AbstractSet, Any, Callable, Sequence, TypeVar, cast
 
 import rclpy
@@ -233,6 +233,24 @@ def SendClientRequest(node: Node, client: Client, request: __ServiceInterface_Re
 	rclpy.spin_until_future_complete(node, future)
 	responseCallback(request, cast(__ServiceInterface_Response, future.result()))
 	return None
+
+def GetSubscriberNames(node: Node, topic: str) -> set[str]:
+	subs = node.get_subscriptions_info_by_topic(topic)
+	return {f"{s.node_namespace}/{s.node_name}" for s in subs}
+
+def Wait(node: Node, timeoutSec: float = inf) -> None:
+	sleepTime = 0.05
+	while node.context.ok() and timeoutSec > 0.0:
+		rclpy.spin_once(node, timeout_sec=sleepTime)
+		timeoutSec -= sleepTime
+	return
+
+def WaitForSubscriber(node: Node, topic: str, fullNodeName: str) -> None:
+	subsName = GetSubscriberNames(node, topic)
+	while fullNodeName not in subsName:
+		Wait(node, 1.0)
+		subsName = GetSubscriberNames(node, topic)
+	return
 
 def WaitForServicesToStart(node: Node, client: Client) -> None:
 	while not client.wait_for_service():

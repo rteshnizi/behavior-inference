@@ -342,6 +342,7 @@ GRAPH tower_bridge:definition
 	] .
 	[ a rt_bi:RegularTime ;
 		world_props:name "mid-day" ;
+		world_props:color "YELLOW" ;
 		world_props:intervals
 			interval:mid_day ;
 	] .

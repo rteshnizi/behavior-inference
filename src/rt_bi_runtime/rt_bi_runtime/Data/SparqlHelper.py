@@ -4,7 +4,7 @@ from typing_extensions import Any, Final, Literal, LiteralString, NamedTuple, ca
 
 from rt_bi_commons.Utils.Ros import Logger
 from rt_bi_interfaces.msg import SpaceSpec, Traversability
-from rt_bi_interfaces.srv import SpaceTime as SpaceTimeSvc
+from rt_bi_interfaces.srv import SpaceTime
 
 
 class _QueriesStrings(NamedTuple):
@@ -25,7 +25,7 @@ class SparqlHelper:
 		return stripped
 
 	def __appendExists(self, filterStr: str, statements: str) -> str:
-		if statements == "": return ""
+		if statements == "": return filterStr
 		return f"{filterStr} EXISTS {{ {statements} }} &&"
 
 	def __stripVarName(self, propName: str) -> str:
@@ -61,14 +61,14 @@ class SparqlHelper:
 		return self.__stripFilter(filterStr)
 
 	@overload
-	def queryStr(self, queryName: Literal["resolve"], req: SpaceTimeSvc.Request) -> str: ...
+	def queryStr(self, queryName: Literal["resolve"], req: SpaceTime.Request) -> str: ...
 
 	@overload
 	def queryStr(self, queryName: LiteralString, req: Any) -> str: ...
 
 	def queryStr(self, queryName: _Q | LiteralString, req: Any) -> str:
 		if queryName == "resolve":
-			reqST = cast(SpaceTimeSvc.Request, req)
+			reqST = cast(SpaceTime.Request, req)
 			filterStr = self.__specToSparqlFilter(reqST.filter)
 			queryStr = self.__queries.RESOLVE_SYMBOL.replace(_FILTER_PLACEHOLDER_MARKER, filterStr)
 			return queryStr

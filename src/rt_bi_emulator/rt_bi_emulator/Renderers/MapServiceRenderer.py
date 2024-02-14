@@ -17,6 +17,7 @@ class MapServiceRenderer(MapRegionsSubscriber):
 def main(args=None):
 	rclpy.init(args=args)
 	node = MapServiceRenderer()
+	rclpy.spin(node)
 	node.destroy_node()
 	rclpy.shutdown()
 	return

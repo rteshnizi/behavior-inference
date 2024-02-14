@@ -32,6 +32,7 @@ setup(
 		"console_scripts": [
 			"BA = rt_bi_runtime.BaNode:main",
 			"DD_RDF = rt_bi_runtime.Data.Fuseki.RdfStoreNode:main",
+			"RUNTIME_MGR = rt_bi_runtime.RuntimeManager:main"
 		],
 	},
 )

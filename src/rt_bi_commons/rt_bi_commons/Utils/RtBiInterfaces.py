@@ -9,7 +9,7 @@ from rt_bi_commons.Base.RtBiNode import RtBiNode
 from rt_bi_commons.Shared.Pose import Coords, CoordsList, Pose
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Geometry import Geometry, Polygon
-from rt_bi_interfaces.msg import DynamicRegion, EstimationMsg, RegularSpaceArray
+from rt_bi_interfaces.msg import ColdStart, DynamicRegion, EstimationMsg, RegularSpaceArray
 from rt_bi_interfaces.srv import DataReference, SpaceTime
 
 
@@ -40,6 +40,8 @@ class RtBiInterfaces:
 		RT_BI_EMULATOR_TARGET = "/__rt_bi_emulator/target"
 		RT_BI_EMULATOR_ESTIMATION = "/__rt_bi_emulator/estimation"
 		RT_BI_RUNTIME_MAP_REGIONS = "/__rt_bi_runtime/map_regions"
+		RT_BI_RUNTIME_SYM_REGIONS = "/__rt_bi_runtime/symbol_regions"
+		RT_BI_RUNTIME_COLD_START = "/__rt_bi_runtime/cold_start"
 
 	class ServiceNames(Enum):
 		RT_BI_RUNTIME_DD_RDF = "/__rt_bi_runtime/dd_rdf"
@@ -136,4 +138,24 @@ class RtBiInterfaces:
 	@staticmethod
 	def subscribeToMapRegions(node: RtBiNode, callbackFunc: Callable[[RegularSpaceArray], None]) -> None:
 		Ros.CreateSubscriber(node, RegularSpaceArray, RtBiInterfaces.TopicNames.RT_BI_RUNTIME_MAP_REGIONS.value, callbackFunc) # type: ignore
+		return
+
+	@staticmethod
+	def createSymbolRegionsPublisher(node: RtBiNode) -> Publisher:
+		(publisher, _) = Ros.CreatePublisher(node, RegularSpaceArray, RtBiInterfaces.TopicNames.RT_BI_RUNTIME_SYM_REGIONS.value)
+		return publisher
+
+	@staticmethod
+	def subscribeToSymbolRegions(node: RtBiNode, callbackFunc: Callable[[RegularSpaceArray], None]) -> None:
+		Ros.CreateSubscriber(node, RegularSpaceArray, RtBiInterfaces.TopicNames.RT_BI_RUNTIME_SYM_REGIONS.value, callbackFunc) # type: ignore
+		return
+
+	@staticmethod
+	def createColdStartPublisher(node: RtBiNode) -> Publisher:
+		(publisher, _) = Ros.CreatePublisher(node, ColdStart, RtBiInterfaces.TopicNames.RT_BI_RUNTIME_COLD_START.value)
+		return publisher
+
+	@staticmethod
+	def subscribeToColdStart(node: RtBiNode, callbackFunc: Callable[[ColdStart], None]) -> None:
+		Ros.CreateSubscriber(node, ColdStart, RtBiInterfaces.TopicNames.RT_BI_RUNTIME_COLD_START.value, callbackFunc) # type: ignore
 		return

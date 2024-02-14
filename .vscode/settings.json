@@ -36,6 +36,7 @@
 		"scipy",
 		"skimage",
 		"slerp",
+		"Startable",
 		"STRAFTER",
 		"STRSTARTS",
 		"tamu",

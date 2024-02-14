@@ -65,7 +65,7 @@ class SensorTopicRenderer(RtBiNode):
 
 	def render(self, regions: List[SensorRegion], tracklets: Dict[int, Tracklet]) -> None:
 		if not RViz.isRVizReady(self, self.__rvizPublisher):
-			self.get_logger().info("Skipping map render... RViz is not ready yet to receive messages.")
+			self.log("Skipping map render... RViz is not ready yet to receive messages.")
 			return
 		msg = MarkerArray()
 		for region in regions: RosUtils.ConcatMessageArray(msg.markers, region.render())

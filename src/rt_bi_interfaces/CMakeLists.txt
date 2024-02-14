@@ -16,6 +16,7 @@ find_package(sa_msgs REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   # Messages
   "msg/Adjacency.msg"
+  "msg/ColdStart.msg"
   "msg/ComponentEvent.msg"
   "msg/DataRefRequest.msg"
   "msg/DataRefResponse.msg"
@@ -27,8 +28,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/MapRegion.msg"
   "msg/Polygon.msg"
   "msg/PoseEstimation.msg"
-  "msg/RegularSpaceArray.msg"
   "msg/RegularSpace.msg"
+  "msg/RegularSpaceArray.msg"
   "msg/SpaceSpec.msg"
   "msg/TimeInterval.msg"
   "msg/Tracklet.msg"

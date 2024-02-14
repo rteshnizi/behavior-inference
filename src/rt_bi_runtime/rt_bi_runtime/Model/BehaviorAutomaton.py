@@ -2,8 +2,29 @@ from typing import Generator
 
 import networkx as nx
 
+from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.NetworkX import NxUtils
+from rt_bi_interfaces.srv import SpaceTime
 
+
+class Transitions:
+	@staticmethod
+	def SouthBank() -> SpaceTime.Request:
+		req = SpaceTime.Request()
+		req.filter.name = "south-bank"
+		return req
+
+	@staticmethod
+	def MidDay() -> SpaceTime.Request:
+		req = SpaceTime.Request()
+		req.filter.name = "mid-day"
+		return req
+
+	@staticmethod
+	def NorthShore() -> SpaceTime.Request:
+		req = SpaceTime.Request()
+		req.filter.name = "north-shore"
+		return req
 
 class BehaviorAutomaton(nx.DiGraph):
 	class State:
@@ -33,6 +54,14 @@ class BehaviorAutomaton(nx.DiGraph):
 
 		def __eq__(self, other: "BehaviorAutomaton.Transition") -> bool:
 			return self.symbolName == other.symbolName
+
+		def spaceTimeRequest(self) -> SpaceTime.Request:
+			try:
+				req: SpaceTime.Request = eval(self.symbolName)
+				return req
+			except Exception as e:
+				Ros.Logger().error(f"Failed to evaluate transition function: {repr(e)}")
+				return SpaceTime.Request()
 
 	def __init__(self, specName: str, states: list[str], transitions: list[tuple[str, str]], start: str, accepting: list[str]):
 		super().__init__()
@@ -85,10 +114,10 @@ class BehaviorAutomaton(nx.DiGraph):
 	def baGenerator(self) -> Generator["BehaviorAutomaton", None, None]:
 		yield self
 
-	def allSymbols(self) -> list[str]:
+	def allSymbols(self) -> list[SpaceTime.Request]:
 		transitionsDict: dict[tuple[str, str], BehaviorAutomaton.Transition] = nx.get_edge_attributes(self, "descriptor")
 		transitions = transitionsDict.values()
-		return [t.symbolName for t in transitions]
+		return [t.spaceTimeRequest() for t in transitions]
 
 	def spatialSymbols(self) -> list[str]: ...
 	def temporalSymbols(self) -> list[str]: ...
