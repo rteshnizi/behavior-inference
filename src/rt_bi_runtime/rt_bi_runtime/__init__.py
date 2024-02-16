@@ -1,3 +1,4 @@
 from pathlib import Path
+from typing import Final
 
-package_name = Path(__file__).parent.name
+package_name: Final = Path(__file__).parent.name
