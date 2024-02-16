@@ -5,7 +5,7 @@ from rclpy.logging import LoggingSeverity
 from rclpy.node import Publisher
 from rclpy.parameter import Parameter
 
-from rt_bi_commons.Base.MapRegionsSubscriber import MapRegionsSubscriber
+from rt_bi_commons.Base.RegionsSubscriber import RegionsSubscriberBase
 from rt_bi_commons.Shared.MinQueue import MinQueue
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
@@ -16,7 +16,7 @@ from rt_bi_eventifier.Model.ShadowTree import ShadowTree
 from rt_bi_interfaces.msg import DynamicRegion, Events, Graph
 
 
-class Eventifier(MapRegionsSubscriber):
+class Eventifier(RegionsSubscriberBase):
 	def __init__(self, **kwArgs) -> None:
 		newKw = { "node_name": "eventifier", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
 		super().__init__(**newKw)
@@ -95,6 +95,9 @@ class Eventifier(MapRegionsSubscriber):
 		self.log(f"Update map region @{timeNanoSecs}")
 		self.__shadowTree.updateMap(timeNanoSecs, self.mapRegions)
 		if self.shouldRender: self.render()
+		return
+
+	def onSymbolUpdated(self) -> None:
 		return
 
 def main(args=None) -> None:

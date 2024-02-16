@@ -20,7 +20,7 @@ rt_bi_runtime:
         - "Q1"
         - "Q2"
       transitions_predicate:
-        - 'S[name == "south-bank"]'
+        - 'S[name == "south-bank"] AND S[traversability.legs == true]'
         - 'T[name == "mid-day"]'
         - 'S[name == "north-shore"]'
       transitions_to:

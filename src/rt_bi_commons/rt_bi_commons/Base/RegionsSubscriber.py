@@ -42,17 +42,17 @@ class RegionsSubscriberBase(RtBiNode, ABC):
 					)
 					self.mapRegions.append(region)
 					self.onMapUpdated()
-				elif regionType == SymbolRegion.RegionType.SYMBOL:
-					pass
-				self.allRegions.append(region)
+					self.allRegions.append(region)
+				# elif regionType == SymbolRegion.RegionType.SYMBOL:
+				# 	pass
 		return
 
 	def parseSymbolRegionResponse(self, res: RegularSpaceArray) -> None:
-		self.__parseSpaceTimeResponse(MapRegion.RegionType.MAP, res)
+		self.__parseSpaceTimeResponse(MapRegion.RegionType.SYMBOL, res)
 		return
 
 	def parseMapRegionResponse(self, res: RegularSpaceArray) -> None:
-		self.__parseSpaceTimeResponse(SymbolRegion.RegionType.SYMBOL, res)
+		self.__parseSpaceTimeResponse(SymbolRegion.RegionType.MAP, res)
 		return
 
 	def declareParameters(self) -> None:

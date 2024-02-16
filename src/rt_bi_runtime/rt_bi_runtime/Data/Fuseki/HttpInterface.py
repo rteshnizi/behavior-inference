@@ -133,4 +133,5 @@ class HttpInterface:
 			res.spatial_matches = list(regSpaceMsgs.values())
 		except Exception as e:
 			Logger().error(f"SPARQL request failed with the following message: {repr(e)}")
+			raise e
 		return res

@@ -23,7 +23,7 @@ class DynamicMapEmulator(ColdStartableNode):
 
 	def __coldStart(self) -> None:
 		req = SpaceTime.Request()
-		req.filter.traversability.legs = Traversability.TRUE
+		req.filter = "EXISTS { ?regularSpaceId world_props:traversability ?traversability . GRAPH tower_bridge:traversabilities { ?traversability world_props:legs true . } }"
 		Ros.SendClientRequest(self, self.rdfClient, req, self.__onSpaceTimeResponse)
 		return
 

@@ -1,30 +1,26 @@
-?start:					expression
+?start: expression
 
-?expression:			_simple_expression
-						| _negated_expression
-						| "(" expression ")"
-						| expression connector expression
+?expression:	simple_expression
+				| negated_expression
+				| ("(" expression ")")
+				| (expression _connector expression)
 
-_negated_expression:	NOT _simple_expression
+_connector: AND | OR
 
-_simple_expression:		namespace "[" _statement "]"
+negated_expression: NOT simple_expression
 
-namespace:				NAMESPACE
+// This turns into an EXIST statement in SPARQL
+simple_expression: NAMESPACE "[" property_seq test value "]"
 
-_statement:				_boolean
-						| property test value
+property_seq: VARIABLE ("." VARIABLE)*
 
-property:				VARIABLE ("." VARIABLE)*
+test: EQ
 
-test:					EQ
+value:	_boolean
+		| ESCAPED_STRING
+		| NUMBER
 
-value:					_boolean
-						| ESCAPED_STRING
-						| NUMBER
-
-connector:	AND | OR
-
-_boolean:	TRUE | FALSE
+_boolean: TRUE | FALSE
 
 NAMESPACE:	"S" | "T"
 
