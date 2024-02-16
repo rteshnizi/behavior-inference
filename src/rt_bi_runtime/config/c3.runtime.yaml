@@ -8,16 +8,25 @@ rt_bi_runtime:
   ba1:
     ros__parameters:
       render: True
+      grammar_dir: "rdf"
+      grammar_file: "transition.lark"
       states:
         - "Q0"
         - "Q1"
         - "Q2"
         - "Q3"
-      transitions:
-        - '[["Transitions.SouthBank()", "Q1"]]'
-        - '[["Transitions.MidDay()", "Q2"]]'
-        - '[["Transitions.NorthShore()", "Q3"]]'
-        - '[]'
+      transitions_from:
+        - "Q0"
+        - "Q1"
+        - "Q2"
+      transitions_predicate:
+        - 'S[name == "south-bank"]'
+        - 'T[name == "mid-day"]'
+        - 'S[name == "north-shore"]'
+      transitions_to:
+        - "Q1"
+        - "Q2"
+        - "Q3"
       start: "Q0"
       accepting:
         - "Q3"

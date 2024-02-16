@@ -1,0 +1,44 @@
+?start:					expression
+
+?expression:			_simple_expression
+						| _negated_expression
+						| "(" expression ")"
+						| expression connector expression
+
+_negated_expression:	NOT _simple_expression
+
+_simple_expression:		namespace "[" _statement "]"
+
+namespace:				NAMESPACE
+
+_statement:				_boolean
+						| property test value
+
+property:				VARIABLE ("." VARIABLE)*
+
+test:					EQ
+
+value:					_boolean
+						| ESCAPED_STRING
+						| NUMBER
+
+connector:	AND | OR
+
+_boolean:	TRUE | FALSE
+
+NAMESPACE:	"S" | "T"
+
+EQ:			"=="
+AND:		"AND"
+OR:			"OR"
+NOT:		"NOT"
+
+TRUE:		"true"
+FALSE:		"false"
+
+%import common.CNAME -> VARIABLE
+%import common.NUMBER
+%import common.WS_INLINE
+%import common.ESCAPED_STRING
+
+%ignore WS_INLINE
