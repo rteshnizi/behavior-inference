@@ -11,32 +11,48 @@ from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_commons.Utils.RViz import RViz
 from rt_bi_core.MapRegion import MapRegion
+from rt_bi_core.SymbolRegion import SymbolRegion
 from rt_bi_interfaces.msg import Polygon as RtBiPolygonMsg, RegularSpace, RegularSpaceArray
 
 
-class MapRegionsSubscriber(RtBiNode, ABC):
+class RegionsSubscriberBase(RtBiNode, ABC):
 	""" This Node listens to all the messages published on the topics related to the map and renders them. """
 	def __init__(self, **kwArgs):
 		newKw = { "node_name": "map_base", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
 		super().__init__(**newKw)
 		self.mapRegions: list[MapRegion] = []
+		self.symbolRegions: list[SymbolRegion] = []
+		self.allRegions: list[MapRegion | SymbolRegion] = []
 		(self.__rvizPublisher, _) = RViz.createRVizPublisher(self, Ros.CreateTopicName("map"))
-		RtBiInterfaces.subscribeToMapRegions(self, self.parseSpaceTimeResponse)
+		RtBiInterfaces.subscribeToMapRegions(self, self.parseMapRegionResponse)
+		RtBiInterfaces.subscribeToSymbolRegions(self, self.parseSymbolRegionResponse)
 
-	def parseSpaceTimeResponse(self, res: RegularSpaceArray) -> None:
+	def __parseSpaceTimeResponse(self, regionType: MapRegion.RegionType, res: RegularSpaceArray) -> None:
 		for match in res.spaces:
 			match = cast(RegularSpace, match)
 			for polyMsg in match.polygons:
 				polyMsg = cast(RtBiPolygonMsg, polyMsg)
 				polyStrId = f"{match.id}/{polyMsg.id}"
-				region = MapRegion(
-					idNum=Ros.RegisterRegionId(polyStrId),
-					envelope=RtBiInterfaces.fromStdPoints32ToCoordsList(polyMsg.region.points),
-					envelopeColor=ColorNames.fromString(match.spec.color),
-					offIntervals=[TimeInterval.fromMsg(interval) for interval in match.spec.off_intervals]
-				)
-				self.mapRegions.append(region)
-		self.onMapUpdated()
+				if regionType == MapRegion.RegionType.MAP:
+					region = MapRegion(
+						idNum=Ros.RegisterRegionId(polyStrId),
+						envelope=RtBiInterfaces.fromStdPoints32ToCoordsList(polyMsg.region.points),
+						envelopeColor=ColorNames.fromString(match.spec.color),
+						offIntervals=[TimeInterval.fromMsg(interval) for interval in match.spec.off_intervals]
+					)
+					self.mapRegions.append(region)
+					self.onMapUpdated()
+				elif regionType == SymbolRegion.RegionType.SYMBOL:
+					pass
+				self.allRegions.append(region)
+		return
+
+	def parseSymbolRegionResponse(self, res: RegularSpaceArray) -> None:
+		self.__parseSpaceTimeResponse(MapRegion.RegionType.MAP, res)
+		return
+
+	def parseMapRegionResponse(self, res: RegularSpaceArray) -> None:
+		self.__parseSpaceTimeResponse(SymbolRegion.RegionType.SYMBOL, res)
 		return
 
 	def declareParameters(self) -> None:
@@ -60,3 +76,6 @@ class MapRegionsSubscriber(RtBiNode, ABC):
 
 	@abstractmethod
 	def onMapUpdated(self) -> None: ...
+
+	@abstractmethod
+	def onSymbolUpdated(self) -> None: ...
