@@ -125,10 +125,10 @@ GRAPH tower_bridge:spatial
 		spatial_props:y y:5 .
 	pt:22 a rt_bi:Vertex ;
 		spatial_props:x x:7 ;
-		spatial_props:y y:4 .
+		spatial_props:y y:5 .
 	pt:23 a rt_bi:Vertex ;
 		spatial_props:x x:7 ;
-		spatial_props:y y:5 .
+		spatial_props:y y:4 .
 	# NORTH-SHORE
 	pt:24 a rt_bi:Vertex ;
 		spatial_props:x x:8 ;
@@ -138,10 +138,10 @@ GRAPH tower_bridge:spatial
 		spatial_props:y y:7 .
 	pt:26 a rt_bi:Vertex ;
 		spatial_props:x x:9 ;
-		spatial_props:y y:6 .
+		spatial_props:y y:7 .
 	pt:27 a rt_bi:Vertex ;
 		spatial_props:x x:9 ;
-		spatial_props:y y:7 .
+		spatial_props:y y:6 .
 	# POLYGONS
 	polygon:0 a rt_bi:Polygon ;
 		spatial_props:vertices [ a rt_bi:VertexSeq ;
@@ -283,7 +283,6 @@ GRAPH tower_bridge:traversabilities
 GRAPH tower_bridge:definition
 {
 	[ a rt_bi:RegularSpace ;
-		world_props:name "street" ;
 		world_props:traversability traversability:street ;
 		world_props:color "GREY" ;
 		world_props:polygons
@@ -292,14 +291,13 @@ GRAPH tower_bridge:definition
 			polygon:4 ;
 	] .
 	[ a rt_bi:RegularSpace ;
-		world_props:name "bridge" ;
 		world_props:traversability traversability:bridge ;
 		world_props:color "WHITE" ;
 		world_props:polygons
 			polygon:3 ;
 	] .
 	[ a rt_bi:RegularSpace ;
-		world_props:name "bridge" ;
+		world_props:name "tower-bridge" ;
 		world_props:traversability traversability:bridge ;
 		world_props:color "WHITE" ;
 		world_props:polygons
@@ -309,7 +307,6 @@ GRAPH tower_bridge:definition
 			interval:afternoon ;
 	] .
 	[ a rt_bi:RegularSpace ;
-		world_props:name "river" ;
 		world_props:traversability traversability:river ;
 		world_props:color "BLUE_LIGHT" ;
 		world_props:polygons
@@ -318,7 +315,6 @@ GRAPH tower_bridge:definition
 		world_props:traversability traversability:river ;
 	] .
 	[ a rt_bi:RegularSpace ;
-		world_props:name "river" ;
 		world_props:traversability traversability:river ;
 		world_props:color "BLUE_LIGHT" ;
 		world_props:polygons

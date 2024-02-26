@@ -19,7 +19,7 @@ class DynamicRegion(PolygonalRegion):
 
 	def __init__(
 			self,
-			idNum: int,
+			id: str,
 			envelope: Geometry.CoordsList,
 			envelopeColor: RGBA,
 			timeNanoSecs: int,
@@ -45,7 +45,7 @@ class DynamicRegion(PolygonalRegion):
 			The interior of the region, if it is separate from its envelope, default forces construction.
 		"""
 		super().__init__(
-			idNum=idNum,
+			id=id,
 			envelope=envelope,
 			envelopeColor=envelopeColor,
 			interior=interior,

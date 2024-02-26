@@ -12,7 +12,7 @@ from rt_bi_interfaces.msg import MapRegion as MapRegionMsg, SpaceSpec, TimeInter
 
 class MapRegion(AffineRegion):
 	def __init__(self,
-		idNum: int,
+		id: str,
 		envelope: Geometry.CoordsList,
 		timeNanoSecs: int = 0,
 		interior: Union[Polygon, MultiPolygon, None] = None,
@@ -22,7 +22,7 @@ class MapRegion(AffineRegion):
 	) -> None:
 		super().__init__(
 			centerOfRotation=(0.0, 0.0),
-			idNum=idNum,
+			id=id,
 			envelope=envelope,
 			envelopeColor=kwArgs.pop("envelopeColor", ColorNames.WHITE),
 			timeNanoSecs=timeNanoSecs,
@@ -44,7 +44,7 @@ class MapRegion(AffineRegion):
 
 	def toMsg(self) -> MapRegionMsg:
 		msg = MapRegionMsg()
-		msg.id = self.idNum
+		msg.id = self.id
 		msg.region = self.toPolygonMsg()
 		msg.spec.color = ColorNames.toStr(self.envelopeColor)
 		msg.spec.off_intervals = []

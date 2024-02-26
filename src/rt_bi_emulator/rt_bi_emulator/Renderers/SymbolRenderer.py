@@ -12,7 +12,7 @@ from rt_bi_core.SymbolRegion import SymbolRegion
 from rt_bi_interfaces.msg import DynamicRegion
 
 
-class SymbolTopicRenderer(RtBiNode):
+class SymbolRenderer(RtBiNode):
 	""" This Node listens to all the messages published on the topics related to dynamic symbols and renders them. """
 	def __init__(self, **kwArgs):
 		newKw = { "node_name": "renderer_symbol", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
@@ -31,7 +31,7 @@ class SymbolTopicRenderer(RtBiNode):
 		self.log(f"Updating region type {SymbolRegion.RegionType.SYMBOL} id {update.id} definition @{timeNanoSecs}.")
 		coords = RtBiInterfaces.fromStdPoints32ToCoordsList(update.region.points)
 		cor = RtBiInterfaces.fromStdPointToCoords(update.center_of_rotation)
-		target = SymbolRegion(centerOfRotation=cor, idNum=update.id, envelope=coords, timeNanoSecs=timeNanoSecs, overlappingRegionId=0, overlappingRegionType=SymbolRegion.RegionType.SYMBOL)
+		target = SymbolRegion(centerOfRotation=cor, id=update.id, envelope=coords, timeNanoSecs=timeNanoSecs, overlappingRegionId=0, overlappingRegionType=SymbolRegion.RegionType.SYMBOL)
 		self.__regions[update.id] = target
 		self.render([target])
 		return
@@ -54,7 +54,7 @@ class SymbolTopicRenderer(RtBiNode):
 
 def main(args=None):
 	rclpy.init(args=args)
-	node = SymbolTopicRenderer()
+	node = SymbolRenderer()
 	rclpy.spin(node)
 	node.destroy_node()
 	rclpy.shutdown()

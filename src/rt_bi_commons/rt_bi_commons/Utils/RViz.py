@@ -31,10 +31,10 @@ class RViz:
 			node.get_logger().error("No Executor.")
 			return False
 		if any(n for n in node.executor.get_nodes() if n.get_name().lower().find("rviz") > -1):
-			node.get_logger().warn("No node containing the name RViz was found.")
+			node.log("No node containing the name RViz was found.")
 			return False
 		if publisher.get_subscription_count() == 0:
-			node.get_logger().warn("No subscribers to visualization messages.")
+			node.log("No subscribers to visualization messages.")
 			return False
 		return True
 
@@ -209,7 +209,6 @@ class RViz:
 		Marker
 			The marker message.
 		"""
-		# RosUtils.Logger().info("Render text ID %s with content \"%s\"" % (strId, text))
 		RosUtils.Logger().debug("Render text id %s." % strId)
 		textMarker = Marker()
 		textMarker = RViz.__setMarkerHeader(textMarker, durationNs)

@@ -53,10 +53,10 @@ class Eventifier(RegionsSubscriberBase):
 			coords = RtBiInterfaces.fromStdPoints32ToCoordsList(update.region.points)
 			cor = RtBiInterfaces.fromStdPointToCoords(update.center_of_rotation)
 			if regionType == SensorRegion.RegionType.SENSING:
-				region = SensorRegion(centerOfRotation=cor, idNum=update.id, envelope=coords, timeNanoSecs=timeNanoSecs)
+				region = SensorRegion(centerOfRotation=cor, id=update.id, envelope=coords, timeNanoSecs=timeNanoSecs)
 				sensors.append(region)
 			elif regionType == SymbolRegion.RegionType.SYMBOL:
-				region = SymbolRegion(centerOfRotation=cor, idNum=update.id, envelope=coords, timeNanoSecs=timeNanoSecs, overlappingRegionId=0, overlappingRegionType=SymbolRegion.RegionType.BASE)
+				region = SymbolRegion(centerOfRotation=cor, id=update.id, envelope=coords, timeNanoSecs=timeNanoSecs, overlappingRegionId=0, overlappingRegionType=SymbolRegion.RegionType.BASE)
 				symbols.append(region)
 			else:
 				raise TypeError(f"Unexpected region type: {regionType}")
@@ -91,7 +91,6 @@ class Eventifier(RegionsSubscriberBase):
 
 	def onMapUpdated(self) -> None:
 		timeNanoSecs = self.get_clock().now().nanoseconds
-		self.get_logger().warn(f"{repr(self.mapRegions)}")
 		self.log(f"Update map region @{timeNanoSecs}")
 		self.__shadowTree.updateMap(timeNanoSecs, self.mapRegions)
 		if self.shouldRender: self.render()

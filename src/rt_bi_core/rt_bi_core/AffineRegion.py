@@ -9,7 +9,7 @@ class AffineRegion(DynamicRegion):
 	def __init__(
 			self,
 			centerOfRotation: Geometry.Coords,
-			idNum: int,
+			id: str,
 			envelope: Geometry.CoordsList,
 			envelopeColor: RGBA,
 			timeNanoSecs: int,
@@ -37,7 +37,7 @@ class AffineRegion(DynamicRegion):
 			The interior of the region, if it is separate from its envelope, default forces construction.
 		"""
 		super().__init__(
-			idNum=idNum,
+			id=id,
 			envelope=envelope,
 			envelopeColor=envelopeColor,
 			timeNanoSecs=timeNanoSecs,

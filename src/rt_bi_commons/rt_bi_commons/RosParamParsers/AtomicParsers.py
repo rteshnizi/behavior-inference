@@ -5,8 +5,8 @@ from typing import Generic, Literal, TypeVar, cast
 from rclpy.parameter import Parameter, ParameterValue
 from typing_extensions import LiteralString
 
-from rt_bi_commons.Base.ParamParserBase import ListParserBase, ParserBase, YamlParamDef
 from rt_bi_commons.Base.RtBiNode import RtBiNode
+from rt_bi_commons.RosParamParsers.ParamParser import ListParserBase, ParserBase, YamlParamDef
 
 _K = TypeVar("_K", bound=LiteralString)
 _V = TypeVar("_V", int, str, bool, float, bytes)

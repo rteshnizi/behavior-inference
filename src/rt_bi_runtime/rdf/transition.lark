@@ -3,18 +3,17 @@
 ?expression:	simple_expression
 				| negated_expression
 				| ("(" expression ")")
-				| (expression _connector expression)
-
-_connector: AND | OR
+				| (expression connector expression)
 
 negated_expression: NOT simple_expression
 
-// This turns into an EXIST statement in SPARQL
+connector: AND | OR
+
 simple_expression: NAMESPACE "[" property_seq test value "]"
 
 property_seq: VARIABLE ("." VARIABLE)*
 
-test: EQ
+test: EQ | NEQ
 
 value:	_boolean
 		| ESCAPED_STRING
@@ -25,6 +24,7 @@ _boolean: TRUE | FALSE
 NAMESPACE:	"S" | "T"
 
 EQ:			"=="
+NEQ:		"!="
 AND:		"AND"
 OR:			"OR"
 NOT:		"NOT"

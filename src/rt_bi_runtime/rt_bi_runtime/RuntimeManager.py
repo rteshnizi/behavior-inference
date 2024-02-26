@@ -1,8 +1,8 @@
 import rclpy
-from rclpy.clock import Duration
 from rclpy.logging import LoggingSeverity
 from rclpy.parameter import Parameter
 
+from rt_bi_commons.Base.ColdStartableNode import ColdStartPayload
 from rt_bi_commons.Base.RtBiNode import RtBiNode
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
@@ -11,10 +11,11 @@ from rt_bi_interfaces.msg import ColdStart
 
 class RuntimeManager(RtBiNode):
 	def __init__(self, **kwArgs) -> None:
-		newKw = { "node_name": "runtime_mgr", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
+		newKw = { "node_name": "runtime_mgr", "loggingSeverity": LoggingSeverity.WARN, **kwArgs}
 		super().__init__(**newKw)
 		self.declareParameters()
 		self.__awaitingColdStart: list[str] = []
+		self.__allPredicates: set[str] = set()
 		self.parseParameters()
 		self.__coldStartPublisher = RtBiInterfaces.createColdStartPublisher(self)
 		RtBiInterfaces.subscribeToColdStart(self, self.__onColdStartDone)
@@ -26,14 +27,22 @@ class RuntimeManager(RtBiNode):
 			nodeName = self.__awaitingColdStart.pop(0)
 			topic = RtBiInterfaces.TopicNames.RT_BI_RUNTIME_COLD_START.value
 			Ros.WaitForSubscriber(self, topic, nodeName)
-			self.log(f"Sending cold start for {nodeName}.")
-			msg = ColdStart(node_name=nodeName, done=False)
+			self.log(f"Sending cold start to node {nodeName}.")
+			if nodeName.startswith(RtBiInterfaces.BA_NODE_PREFIX):
+				payload = ColdStartPayload({}).stringify()
+			else:
+				payload = ColdStartPayload({ "predicates": list(self.__allPredicates) }).stringify()
+			msg = ColdStart(node_name=nodeName, json_payload=payload)
 			self.__coldStartPublisher.publish(msg)
 		return
 
 	def __onColdStartDone(self, msg: ColdStart) -> None:
-		if msg.done:
-			self.log(f"Cold start done for {msg.node_name}.")
+		if msg.json_payload:
+			payload = ColdStartPayload(msg.json_payload)
+			if not payload.done: return
+			self.log(f"Cold start done for node {msg.node_name}.")
+			if msg.node_name.startswith(RtBiInterfaces.BA_NODE_PREFIX):
+				self.__allPredicates |= payload.predicates
 			self.__triggerNextColdStart()
 		return
 

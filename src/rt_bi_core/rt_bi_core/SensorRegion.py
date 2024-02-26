@@ -16,7 +16,7 @@ class SensorRegion(AffineRegion):
 	def __init__(
 			self,
 			centerOfRotation: Geometry.Coords,
-			idNum: int,
+			id: str,
 			envelope: Geometry.CoordsList,
 			timeNanoSecs: int,
 			interior: Union[Polygon, MultiPolygon, None] = None,
@@ -48,7 +48,7 @@ class SensorRegion(AffineRegion):
 		"""
 		super().__init__(
 			centerOfRotation=centerOfRotation,
-			idNum=idNum,
+			id=id,
 			envelope=envelope,
 			envelopeColor=ColorNames.GREEN,
 			interiorColor=ColorNames.GREEN_LIGHT,

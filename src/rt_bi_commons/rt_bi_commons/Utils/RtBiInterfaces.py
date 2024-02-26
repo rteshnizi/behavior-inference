@@ -33,13 +33,14 @@ class ReferenceDescriptor(NamedTuple):
 		return ReferenceDescriptor(node=parts[1].lower(), param=parts[2].lower())
 
 class RtBiInterfaces:
+	BA_NODE_PREFIX = "/rt_bi_runtime/ba"
 	class TopicNames(Enum):
 		RT_BI_EMULATOR_MAP = "/__rt_bi_emulator/em_dynamic_map"
 		RT_BI_EMULATOR_SENSOR = "/__rt_bi_emulator/sensor"
 		RT_BI_EMULATOR_SYMBOL = "/__rt_bi_emulator/symbol"
 		RT_BI_EMULATOR_TARGET = "/__rt_bi_emulator/target"
 		RT_BI_EMULATOR_ESTIMATION = "/__rt_bi_emulator/estimation"
-		RT_BI_RUNTIME_MAP_REGIONS = "/__rt_bi_runtime/map_regions"
+		RT_BI_RUNTIME_MAP_COLD_START = "/__rt_bi_runtime/cold_start/map"
 		RT_BI_RUNTIME_SYM_REGIONS = "/__rt_bi_runtime/symbol_regions"
 		RT_BI_RUNTIME_COLD_START = "/__rt_bi_runtime/cold_start"
 
@@ -132,12 +133,12 @@ class RtBiInterfaces:
 
 	@staticmethod
 	def createMapRegionsPublisher(node: RtBiNode) -> Publisher:
-		(publisher, _) = Ros.CreatePublisher(node, RegularSpaceArray, RtBiInterfaces.TopicNames.RT_BI_RUNTIME_MAP_REGIONS.value)
+		(publisher, _) = Ros.CreatePublisher(node, RegularSpaceArray, RtBiInterfaces.TopicNames.RT_BI_RUNTIME_MAP_COLD_START.value)
 		return publisher
 
 	@staticmethod
-	def subscribeToMapRegions(node: RtBiNode, callbackFunc: Callable[[RegularSpaceArray], None]) -> None:
-		Ros.CreateSubscriber(node, RegularSpaceArray, RtBiInterfaces.TopicNames.RT_BI_RUNTIME_MAP_REGIONS.value, callbackFunc) # type: ignore
+	def subscribeToMapColdStart(node: RtBiNode, callbackFunc: Callable[[RegularSpaceArray], None]) -> None:
+		Ros.CreateSubscriber(node, RegularSpaceArray, RtBiInterfaces.TopicNames.RT_BI_RUNTIME_MAP_COLD_START.value, callbackFunc) # type: ignore
 		return
 
 	@staticmethod

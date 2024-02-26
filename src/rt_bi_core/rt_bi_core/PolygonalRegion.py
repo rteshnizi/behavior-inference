@@ -34,7 +34,7 @@ class PolygonalRegion(ABC):
 
 	def __init__(
 		self,
-		idNum: int,
+		id: str,
 		envelope: Geometry.CoordsList,
 		envelopeColor: RGBA,
 		interiorColor: RGBA = ColorNames.GREY_DARK,
@@ -62,7 +62,7 @@ class PolygonalRegion(ABC):
 		renderLineWidth: int, default `1`
 			The width of the rendered lines.
 		"""
-		self.__idNum = idNum
+		self.__id = id
 		self.__RENDER_LINE_WIDTH = renderLineWidth
 		self.__interiorPolygon = Polygon(envelope) if interior is None else interior
 		self.__envelope = Geometry.getGeometryCoords(self.__interiorPolygon) if len(envelope) == 0 else envelope
@@ -96,8 +96,8 @@ class PolygonalRegion(ABC):
 
 	@property
 	def shortName(self) -> str:
-		"""A pre-designed string identifier, in the following format: `"%s-%d" % (regionType, idNum)`"""
-		return "%s-%d" % (self.regionType.value, self.idNum)
+		"""A pre-designed string identifier, in the following format: `{self.regionType.value}-{self.id}`"""
+		return f"{self.regionType.value}-{self.id}"
 
 	@property
 	def name(self) -> str:
@@ -110,9 +110,9 @@ class PolygonalRegion(ABC):
 		return self.__DEFAULT_ENVELOPE_COLOR
 
 	@property
-	def idNum(self) -> int:
+	def id(self) -> str:
 		"""Id number of this polygonal region of this certain type."""
-		return self.__idNum
+		return self.__id
 
 	@property
 	def interior(self) -> Polygon:

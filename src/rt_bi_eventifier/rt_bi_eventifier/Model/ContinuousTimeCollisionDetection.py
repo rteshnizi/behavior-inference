@@ -163,7 +163,7 @@ class ContinuousTimeCollisionDetection:
 			allCtRegions.append(symbolCtRegion)
 		for r in mapRegions:
 			region = mapRegions[r]
-			updatedRegion = MapRegion(mapRegions[r].idNum, mapRegions[r].envelope, timeNanoSecs=maxTimeNanoSecs)
+			updatedRegion = MapRegion(mapRegions[r].id, mapRegions[r].envelope, timeNanoSecs=maxTimeNanoSecs)
 			mapCtRegion = ContinuousTimeRegion[MapRegion]([region, updatedRegion], MapRegion.RegionType.MAP)
 			allCtRegions.append(mapCtRegion)
 

@@ -3,8 +3,10 @@ rt_bi_runtime:
     ros__parameters:
       render: False
       await_cold_start:
-        - "/rt_bi_emulator/em_dynamic_map"
         - "/rt_bi_runtime/ba1"
+        - "/rt_bi_emulator/em_dynamic_map"
+        - "/rt_bi_emulator/renderer_map"
+        - "/rt_bi_eventifier/eventifier"
   ba1:
     ros__parameters:
       render: True
@@ -22,7 +24,7 @@ rt_bi_runtime:
       transitions_predicate:
         - 'S[name == "south-bank"] AND S[traversability.legs == true]'
         - 'T[name == "mid-day"]'
-        - 'S[name == "north-shore"]'
+        - 'S[name == "north-shore"] AND S[traversability.legs == true]'
       transitions_to:
         - "Q1"
         - "Q2"

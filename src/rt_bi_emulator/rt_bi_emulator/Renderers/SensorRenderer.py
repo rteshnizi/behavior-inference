@@ -13,7 +13,7 @@ from rt_bi_core.Tracklet import Tracklet
 from rt_bi_interfaces.msg import DynamicRegion, EstimationMsg
 
 
-class SensorTopicRenderer(RtBiNode):
+class SensorRenderer(RtBiNode):
 	""" This Node listens to all the messages published on the topics related to sensors and renders them. """
 	def __init__(self, **kwArgs):
 		newKw = { "node_name": "renderer_sensor", **kwArgs}
@@ -33,7 +33,7 @@ class SensorTopicRenderer(RtBiNode):
 		coords = RtBiInterfaces.fromStdPoints32ToCoordsList(update.region.points)
 		cor = RtBiInterfaces.fromStdPointToCoords(update.center_of_rotation)
 		tracklets = self.__sensors[update.id].tracklets if update.id in self.__sensors else {}
-		sensor = SensorRegion(centerOfRotation=cor, idNum=update.id, envelope=coords, timeNanoSecs=timeNanoSecs, tracklets=tracklets)
+		sensor = SensorRegion(centerOfRotation=cor, id=update.id, envelope=coords, timeNanoSecs=timeNanoSecs, tracklets=tracklets)
 		self.__sensors[update.id] = sensor
 		self.render([sensor], sensor.tracklets)
 		return
@@ -75,7 +75,7 @@ class SensorTopicRenderer(RtBiNode):
 
 def main(args=None):
 	rclpy.init(args=args)
-	node = SensorTopicRenderer()
+	node = SensorRenderer()
 	rclpy.spin(node)
 	node.destroy_node()
 	rclpy.shutdown()

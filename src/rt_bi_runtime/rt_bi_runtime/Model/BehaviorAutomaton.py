@@ -1,16 +1,24 @@
-from pathlib import Path
 from typing import Generator
 
 import networkx as nx
 
+from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.NetworkX import NxUtils
-from rt_bi_interfaces.srv import SpaceTime
 from rt_bi_runtime.Model.State import State
 from rt_bi_runtime.Model.Transition import Transition
 
 
 class BehaviorAutomaton(nx.DiGraph):
-	def __init__(self, specName: str, states: list[str], transitions: dict[str, dict[str, str]], start: str, accepting: list[str], larkFilePath: Path):
+	def __init__(self,
+			specName: str,
+			states: list[str],
+			transitions: dict[str, dict[str, str]],
+			start: str,
+			accepting: list[str],
+			baseDir: str,
+			transitionGrammarDir: str,
+			grammarFileName: str,
+		):
 		super().__init__()
 		self.__specName: str = specName
 		self.name = "NFA(%s)" % self.__specName
@@ -18,7 +26,10 @@ class BehaviorAutomaton(nx.DiGraph):
 		self.__transitions: dict[str, dict[str, str]] = transitions
 		self.__start: str = start
 		self.__accepting: set[str] = set(accepting)
-		self.__larkFilePath: Path = larkFilePath
+		self.__predicates: set[str] = set()
+		self.__baseDir: str = baseDir
+		self.__transitionGrammarDir: str = transitionGrammarDir
+		self.__grammarFileName: str = grammarFileName
 		self.__buildGraph()
 		self.renderLayout: NxUtils.GraphLayout | NxUtils.NxDefaultLayout = nx.circular_layout(self)
 		return
@@ -31,8 +42,9 @@ class BehaviorAutomaton(nx.DiGraph):
 		self.add_node(name, descriptor=state)
 		return
 
-	def __addEdge(self, source: str, symbolName: str, destination: str) -> None:
-		transition = Transition(symbolName, self.__larkFilePath)
+	def __addEdge(self, source: str, transitionStr: str, destination: str) -> None:
+		transition = Transition(transitionStr, self.__baseDir, self.__transitionGrammarDir, self.__grammarFileName)
+		self.__predicates |= transition.predicates
 		self.add_edge(source, destination, descriptor=transition)
 		return
 
@@ -48,10 +60,15 @@ class BehaviorAutomaton(nx.DiGraph):
 		return
 
 	@property
+	def predicates(self) -> list[str]:
+		return list(self.__predicates)
+
+	@property
 	def acceptingStates(self) -> set[str]:
 		return self.__accepting
 
 	def activeStates(self) -> set[str]:
+		Ros.Logger().warn(f"Not implemented.")
 		return set()
 
 	def nonActiveStates(self) -> set[str]:
@@ -59,12 +76,3 @@ class BehaviorAutomaton(nx.DiGraph):
 
 	def baGenerator(self) -> Generator["BehaviorAutomaton", None, None]:
 		yield self
-
-	def allSymbols(self) -> list[SpaceTime.Request]:
-		transitionsDict: dict[tuple[str, str], Transition] = nx.get_edge_attributes(self, "descriptor")
-		transitions = transitionsDict.values()
-		[t.toSparqlFilter for t in transitions]
-		return []
-
-	def spatialSymbols(self) -> list[str]: ...
-	def temporalSymbols(self) -> list[str]: ...

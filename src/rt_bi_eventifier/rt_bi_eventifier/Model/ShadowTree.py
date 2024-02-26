@@ -344,7 +344,7 @@ class ShadowTree(nx.DiGraph):
 				r2 = regularRegion[r2ExtendedName]
 				if r2.shortName not in regionsDict: regionsDict[r2.shortName] = []
 				if r2.regionType == SymbolRegion.RegionType.SYMBOL:
-					r2 = SymbolRegion(centerOfRotation=r2.centerOfRotation, idNum=r2.idNum, envelope=r2.envelope, timeNanoSecs=r2.timeNanoSecs, overlappingRegionId=0, overlappingRegionType=SymbolRegion.RegionType.BASE)
+					r2 = SymbolRegion(centerOfRotation=r2.centerOfRotation, id=r2.id, envelope=r2.envelope, timeNanoSecs=r2.timeNanoSecs, overlappingRegionId=0, overlappingRegionType=SymbolRegion.RegionType.BASE)
 				regionsDict[r2.shortName].append(r2) # type: ignore
 				maxT = maxT if maxT > regularRegion[r2ExtendedName].timeNanoSecs else regularRegion[r2ExtendedName].timeNanoSecs
 		for r in regionsDict:

@@ -9,6 +9,7 @@ from rclpy.clock import Time
 from rclpy.impl.rcutils_logger import RcutilsLogger
 from rclpy.logging import LoggingSeverity
 from rclpy.node import Client, Node, Publisher, Service, Subscription, Timer
+from typing_extensions import deprecated
 
 __Topic = TypeVar("__Topic")
 
@@ -200,6 +201,7 @@ def ConcatMessageArray(array: Sequence[__Topic] | AbstractSet[__Topic] | list[__
 	array += toConcat
 	return array
 
+@deprecated("IDs are now string, no need to register. Buggy behavior.")
 def RegisterRegionId(name: str) -> int:
 	if name in __strNameToIdNum:
 		idNum = __strNameToIdNum[name]

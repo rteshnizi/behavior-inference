@@ -15,6 +15,16 @@ def generate_launch_description():
 		Node(
 			package=packageName,
 			namespace=packageName,
+			executable="RSE",
+			arguments= [
+				"--ros-args",
+				"--log-level",
+				"warn",
+			],
+		),
+		Node(
+			package=packageName,
+			namespace=packageName,
 			executable="ESE",
 			name="em_av1",
 			arguments= [
@@ -35,16 +45,5 @@ def generate_launch_description():
 				"warn",
 			],
 			parameters=[yamlPath]
-		),
-		Node(
-			package=packageName,
-			namespace=packageName,
-			executable="ISE",
-			arguments= [
-				"--ros-args",
-				"--log-level",
-				"warn",
-			],
-			name="renderer_sensor"
 		),
 	])

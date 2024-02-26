@@ -11,7 +11,7 @@ from rt_bi_core.AffineRegion import AffineRegion
 class ShadowRegion(AffineRegion):
 	def __init__(
 		self,
-		idNum: int,
+		id: str,
 		envelope: Geometry.CoordsList,
 		**kwArgs,
 	):
@@ -30,7 +30,7 @@ class ShadowRegion(AffineRegion):
 
 		super().__init__(
 			centerOfRotation=kwArgs.pop("centerOfRotation", Pose(0, 0, 0, 0)),
-			idNum=idNum,
+			id=id,
 			envelope=envelope,
 			envelopeColor=ColorNames.BLACK,
 			timeNanoSecs=kwArgs.pop("timeNanoSecs", 0),

@@ -1,13 +1,13 @@
 import json
 from math import nan
-from typing import TypedDict, cast
+from typing import TypedDict, cast, overload
 
 import requests
 from geometry_msgs.msg import Point as PointMsg, Point32 as Point32Msg, Polygon as PolygonMsg, Pose as PoseMsg, Quaternion as QuaternionMsg
 
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Ros import Logger
-from rt_bi_interfaces.msg import Polygon as RtBiPolygonMsg, RegularSpace as RegularSpaceMsg, TimeInterval, Traversability
+from rt_bi_interfaces.msg import Polygon as RtBiPolygonMsg, Predicate, RegularSpace as RegularSpaceMsg, TimeInterval, Traversability
 from rt_bi_interfaces.srv import SpaceTime
 
 
@@ -25,6 +25,9 @@ class SparqlResultHelper:
 		self.variables = j["head"]["vars"]
 		self.results = j["results"]["bindings"]
 
+	def __getitem__(self, index: int) -> dict[str, SparqlData]:
+		return self.results[index]
+
 	def __len__(self) -> int:
 		return len(self.results)
 
@@ -34,8 +37,16 @@ class SparqlResultHelper:
 	def __isVariable(self, varName: str) -> bool:
 		return varName in self.variables
 
-	def variablesAreDefined(self, i: int, varNames: list[str]) -> bool:
-		return all(n in self.results[i] for n in varNames)
+	@overload
+	def contains(self, i: int, var: list[str]) -> bool: ...
+
+	@overload
+	def contains(self, i: int, var: str) -> bool: ...
+
+	def contains(self, i: int, var: str | list[str]) -> bool:
+		if isinstance(var, list):
+			return all(n in self[i] for n in var)
+		return var in self[i]
 
 	def boolVarValue(self, i: int, varName: str) -> str:
 		strVal = self.strVarValue(i, varName)
@@ -50,8 +61,8 @@ class SparqlResultHelper:
 	def strVarValue(self, i: int, varName: str) -> str:
 		if not self.__isVariable(varName):
 			raise KeyError(f"No variable with name\"{varName}\" defined.")
-		if varName in self.results[i]:
-			return self.results[i][varName]["value"]
+		if varName in self[i]:
+			return self[i][varName]["value"]
 		return ""
 
 class HttpInterface:
@@ -65,7 +76,7 @@ class HttpInterface:
 		"""http://192.168.1.164:8090/rt-bi/"""
 		return f"{self.__fusekiServerAdr}/{self.__rdfStoreName}/"
 
-	def parseInterval(self, helper: SparqlResultHelper, i: int) -> tuple[TimeInterval, int]:
+	def __parseInterval(self, helper: SparqlResultHelper, i: int) -> tuple[TimeInterval, int]:
 		msg = TimeInterval(
 			start=Ros.SecToTimeMsg(helper.floatVarValue(i, "minT")),
 			end=Ros.SecToTimeMsg(helper.floatVarValue(i, "maxT")),
@@ -75,62 +86,60 @@ class HttpInterface:
 		i += 1
 		return (msg, i)
 
-	def parsePolygon(self, helper: SparqlResultHelper, i: int) -> tuple[RtBiPolygonMsg, int]:
-		msg = RtBiPolygonMsg(id=helper.strVarValue(i, "polygonId"))
+	def __parsePolygons(self, helper: SparqlResultHelper, i: int, regularRegionId: str) -> tuple[list[RtBiPolygonMsg], int]:
+		polys = []
+		polyMsg = RtBiPolygonMsg()
+		polyMsg.id = helper.strVarValue(i, "polygonId")
 		while i < len(helper):
-			if not helper.variablesAreDefined(i, ["polygonId"]): return (msg, i)
-			if helper.strVarValue(i, "polygonId") != msg.id: return (msg, i)
+			if helper.strVarValue(i, "polygonId") != polyMsg.id:
+				polys.append(polyMsg)
+				if helper.strVarValue(i, "regularRegionId") != regularRegionId:
+					return (polys, i)
+				polyMsg = RtBiPolygonMsg()
+				polyMsg.id = helper.strVarValue(i, "polygonId")
 			x = helper.floatVarValue(i, "x")
 			y = helper.floatVarValue(i, "y")
-			Ros.AppendMessage(msg.region.points, Point32Msg(x=x, y=y, z=0.0))
+			Ros.AppendMessage(polyMsg.region.points, Point32Msg(x=x, y=y, z=0.0))
 			i += 1
-		return (msg, i)
+		polys.append(polyMsg)
+		return (polys, i)
 
-	def parseTraversability(self, helper: SparqlResultHelper, i: int) -> tuple[Traversability, int]:
+	def __parseTraversability(self, helper: SparqlResultHelper, i: int) -> tuple[Traversability, int]:
 		msg = Traversability(
-			legs=helper.boolVarValue(i, "needsLegs"),
-			wheels=helper.boolVarValue(i, "needsWheels"),
-			swim=helper.boolVarValue(i, "needsSwim"),
+			legs=helper.boolVarValue(i, "legs"),
+			wheels=helper.boolVarValue(i, "wheels"),
+			swim=helper.boolVarValue(i, "swims"),
 		)
 		i += 1
 		return (msg, i)
 
-	def filterSpaceTime(self, queryStr: str, res: SpaceTime.Response) -> SpaceTime.Response:
+	def __parsePredicates(self, helper: SparqlResultHelper, i: int) -> list[Predicate]:
+		predicates = []
+		for var in helper.variables:
+			if not var.startswith("p_"): continue
+			predicate = Predicate()
+			predicate.name = var
+			if helper.contains(i, var):
+				val = helper.strVarValue(i, var)
+				if val != Predicate.TRUE and val != Predicate.FALSE:
+					raise ValueError(f"Unexpected predicate value: {val}")
+				predicate.value = val
+			else:
+				predicate.value = Predicate.INHERIT
+			predicates.append(predicate)
+		return predicates
+
+	def staticReachability(self, queryStr: str, res: SpaceTime.Response) -> SpaceTime.Response:
 		r = requests.post(self.__SPARQL_URL, data={ "query": queryStr })
 		try:
 			helper = SparqlResultHelper(r)
-			regSpaceMsgs: dict[str, RegularSpaceMsg] = {}
-			# Assumes results are sorted by regular region's id
 			i = 0
 			while i < len(helper):
-				idStr = cast(str, helper.strVarValue(i, "regularSpaceId"))
-				if idStr not in regSpaceMsgs:
-					regularSpaceMsg = RegularSpaceMsg(id=idStr)
-					regSpaceMsgs[idStr] = regularSpaceMsg
-				else:
-					regularSpaceMsg = regSpaceMsgs[idStr]
-				if helper.variablesAreDefined(i, ["name"]):
-					regularSpaceMsg.spec.name = helper.strVarValue(i, "name")
-					i += 1
-					continue
-				if helper.variablesAreDefined(i, ["color"]):
-					regularSpaceMsg.spec.color = helper.strVarValue(i, "color")
-					i += 1
-					continue
-				if helper.variablesAreDefined(i, ["minT", "maxT", "minInclusive", "maxInclusive"]):
-					(interval, i) = self.parseInterval(helper, i)
-					Ros.AppendMessage(regularSpaceMsg.spec.off_intervals, interval)
-					continue
-				if helper.variablesAreDefined(i, ["needsLegs", "needsWheels", "needsSwim"]):
-					(regularSpaceMsg.spec.traversability, i) = self.parseTraversability(helper, i)
-					continue
-				if helper.variablesAreDefined(i, ["polygonId"]):
-					(polygonMsg, i) = self.parsePolygon(helper, i)
-					Ros.AppendMessage(regularSpaceMsg.polygons, polygonMsg)
-					continue
-				else:
-					Logger().warn(f"Irregular sparql response structure. Possible reason could be that rq file is updated but this parser is not.")
-			res.spatial_matches = list(regSpaceMsgs.values())
+				msg = RegularSpaceMsg()
+				msg.id = helper.strVarValue(i, "regularRegionId")
+				msg.predicates = self.__parsePredicates(helper, i)
+				(msg.polygons, i) = self.__parsePolygons(helper, i, msg.id)
+				Ros.AppendMessage(res.spatial_matches, msg)
 		except Exception as e:
 			Logger().error(f"SPARQL request failed with the following message: {repr(e)}")
 			raise e

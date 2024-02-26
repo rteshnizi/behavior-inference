@@ -5,3 +5,17 @@ rt_bi_runtime:
       rdf_store: "rt-bi"
       rdf_dir: "rdf"
       sparql_dir: "rdf"
+      sparql_query_template: "template.rq"
+      sparql_var_selectors:
+        - '["color", "var.color.rq"]'
+        - '["name", "var.name.rq"]'
+        - '["off-times", "var.off-times.rq"]'
+        - '["polygons", "var.polygons.rq"]'
+        - '["traversability", "var.traversability.rq"]'
+      placeholder_bind_comment: "# BIND END #################################"
+      placeholder_order_by_comment: "# OTHER ORDER VARS #######"
+      placeholder_selector_end_comment: "# SELECTOR END #############################"
+      placeholder_selector_start_comment: "# SELECTOR START ###########################"
+      placeholder_variable_comment: "# SELECTED VARIABLES ###########################"
+      transition_grammar_dir: "rdf"
+      transition_grammar_file: "transition.lark"

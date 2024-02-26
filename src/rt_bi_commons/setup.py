@@ -12,6 +12,7 @@ setup(
 		("share/" + package_name, ["package.xml"]),
 	],
 	install_requires=[
+		"lark~=1.1",
 		"networkx~=3.2.0",
 		"scikit-image~=0.19.3",
 		"scipy~=1.8.0",

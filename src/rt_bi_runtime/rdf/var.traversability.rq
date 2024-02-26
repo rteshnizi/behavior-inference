@@ -18,52 +18,19 @@ PREFIX y:              <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/ys#>
 
 SELECT
 	?regularRegionId
-	?polygonId ?vertInd ?x ?y
-	# Optionals
-	?name ?color
-	?needsLegs ?needsWheels ?needsSwims
-	?minT ?maxT ?minInclusive ?maxInclusive
+	?legs ?wheels ?swim
 WHERE {
 	GRAPH tower_bridge:definition {
-		{
-			?regularRegionId a rt_bi:RegularSpace .
-			?regularRegionId world_props:polygons ?polygonId .
-			GRAPH tower_bridge:spatial {
-				?polygonId spatial_props:vertices ?vertexSeq .
-				?vertexSeq ?vertInd ?vertex .
-				?vertex
-					spatial_props:x/spatial_props:x_val ?x ;
-					spatial_props:y/spatial_props:y_val ?y .
-			}
-		}
-		UNION
-		{ ?regularRegionId world_props:color ?color . }
-		UNION
-		{ ?regularRegionId world_props:name ?name . }
-		UNION
-		{ ?regularRegionId world_props:traversability ?traversability .
+		# SELECTOR START ###########################
+		OPTIONAL { ?regularRegionId a ?namespace ; world_props:traversability ?traversability ;
 			GRAPH tower_bridge:traversabilities {
 				?traversability
-					world_props:legs ?needsLegs ;
-					world_props:wheels ?needsWheels ;
-					world_props:swims ?needsSwims .
+					world_props:legs ?legs ;
+					world_props:wheels ?wheels ;
+					world_props:swims ?swims .
 			}
 		}
-		UNION
-		{ ?regularRegionId world_props:off_times ?intervalId .
-			GRAPH tower_bridge:temporal {
-				?intervalId
-					temporal_props:min/temporal_props:secs ?minT ;
-					temporal_props:max/temporal_props:secs ?maxT ;
-					temporal_props:include_min ?minInclusive ;
-					temporal_props:include_max ?maxInclusive .
-			}
-		}
-		############################
-		FILTER (
-			true #### FILTER PLACEHOLDER ####
-		)
-		############################
+		# SELECTOR END #############################
 	}
 }
-ORDER BY ?regularRegionId ?polygonId ?vertInd
+ORDER BY ?regularRegionId

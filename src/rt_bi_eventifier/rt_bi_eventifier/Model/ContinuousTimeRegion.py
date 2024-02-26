@@ -52,11 +52,11 @@ class ContinuousTimeRegion(Generic[RegionType]):
 		regionPoly = Geometry.applyMatrixTransformToPolygon(transform, self.configs[i - 1].interior)
 		if self.regionType == SensorRegion.RegionType.SENSING:
 			tracklets: Dict[int, Tracklet] = self.configs[i - 1].tracklets # type: ignore
-			region = SensorRegion(centerOfRotation=cor, idNum=self.idNum, envelope=[], timeNanoSecs=timeNanoSecs, interior=regionPoly, tracklets=tracklets)
+			region = SensorRegion(centerOfRotation=cor, id=self.id, envelope=[], timeNanoSecs=timeNanoSecs, interior=regionPoly, tracklets=tracklets)
 		elif self.configs[i - 1].regionType == MapRegion.RegionType.MAP:
-			region = MapRegion(0, [], timeNanoSecs, interior=regionPoly)
+			region = MapRegion(self.configs[i - 1].id, [], timeNanoSecs, interior=regionPoly)
 		elif self.configs[i - 1].regionType == SymbolRegion.RegionType.SYMBOL:
-			region = SymbolRegion(self.configs[i - 1].centerOfRotation, self.idNum, [], timeNanoSecs, overlappingRegionId=self.configs[i - 1].overlappingRegionId, overlappingRegionType=self.configs[i - 1].inFov, interior=regionPoly) # type: ignore
+			region = SymbolRegion(self.configs[i - 1].centerOfRotation, self.id, [], timeNanoSecs, overlappingRegionId=self.configs[i - 1].overlappingRegionId, overlappingRegionType=self.configs[i - 1].inFov, interior=regionPoly) # type: ignore
 		else:
 			raise TypeError("Unexpected region type: %s" % repr(self.regionType))
 		return region # type: ignore -- Type checker doesn't understand I have type-checked here via regionType.
@@ -74,10 +74,10 @@ class ContinuousTimeRegion(Generic[RegionType]):
 		return f"{self.regionType}" if self.length < 1 else self.configs[0].shortName
 
 	@property
-	def idNum(self) -> int:
+	def id(self) -> str:
 		if self.length == 0:
-			return -1
-		return self.configs[0].idNum
+			return ""
+		return self.configs[0].id
 
 	@property
 	def length(self) -> int:

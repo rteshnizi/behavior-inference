@@ -12,7 +12,7 @@ from rt_bi_core.TargetRegion import TargetRegion
 from rt_bi_interfaces.msg import DynamicRegion
 
 
-class TargetTopicRenderer(RtBiNode):
+class TargetRenderer(RtBiNode):
 	""" This Node listens to all the messages published on the topics related to targets and renders them. """
 	def __init__(self, **kwArgs):
 		newKw = { "node_name": "renderer_target", **kwArgs}
@@ -33,7 +33,7 @@ class TargetTopicRenderer(RtBiNode):
 		self.log(f"Updating region type {TargetRegion.RegionType.TARGET} id {update.id} definition @{timeNanoSecs}.")
 		coords = RtBiInterfaces.fromStdPoints32ToCoordsList(update.region.points)
 		cor = RtBiInterfaces.fromStdPointToCoords(update.center_of_rotation)
-		target = TargetRegion(centerOfRotation=cor, idNum=update.id, envelope=coords, envelopeColor=self.__renderColor, timeNanoSecs=timeNanoSecs)
+		target = TargetRegion(centerOfRotation=cor, id=update.id, envelope=coords, envelopeColor=self.__renderColor, timeNanoSecs=timeNanoSecs)
 		self.__targets[update.id] = target
 		if self.shouldRender: self.render([target])
 		return
@@ -56,7 +56,7 @@ class TargetTopicRenderer(RtBiNode):
 
 def main(args=None):
 	rclpy.init(args=args)
-	node = TargetTopicRenderer()
+	node = TargetRenderer()
 	rclpy.spin(node)
 	node.destroy_node()
 	rclpy.shutdown()

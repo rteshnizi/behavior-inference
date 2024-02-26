@@ -7,8 +7,8 @@ from rclpy.node import Service
 from rclpy.parameter import Parameter
 from typing_extensions import Any, Generic, Iterator, LiteralString, TypeVar, cast, final
 
-from rt_bi_commons.Base.ParamParserBase import ParserBase
 from rt_bi_commons.Base.RtBiNode import RtBiNode
+from rt_bi_commons.RosParamParsers.ParamParser import ParserBase
 from rt_bi_commons.RosParamParsers.ReferenceParser import REFERENCES_PARAM_NAME, ListReferenceParser
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces

@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import rclpy
 from ament_index_python.packages import get_package_share_directory
 from rclpy.logging import LoggingSeverity
@@ -8,7 +6,6 @@ from rclpy.parameter import Parameter
 from rt_bi_commons.Base.ColdStartableNode import ColdStartableNode
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
-from rt_bi_interfaces.srv import SpaceTime
 from rt_bi_runtime import package_name
 from rt_bi_runtime.Model.BaMatplotlibRenderer import BaMatplotlibRenderer
 from rt_bi_runtime.Model.BehaviorAutomaton import BehaviorAutomaton
@@ -21,7 +18,7 @@ class BaNode(ColdStartableNode):
 	"""
 	def __init__(self, **kwArgs) -> None:
 		""" Create a Behavior Automaton node. """
-		newKw = { "node_name": "ba", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
+		newKw = { "node_name": "ba", "loggingSeverity": LoggingSeverity.WARN, **kwArgs}
 		super().__init__(**newKw)
 		self.declareParameters()
 		self.__name: str = self.get_fully_qualified_name()
@@ -32,27 +29,29 @@ class BaNode(ColdStartableNode):
 		self.__start: str = ""
 		self.__accepting: list[str] = []
 		self.parseParameters()
-		grammarFilePath = Path(get_package_share_directory(package_name)).joinpath(self.__grammarDir, self.__grammarFile)
 		self.rdfClient = RtBiInterfaces.createSpaceTimeClient(self)
 		Ros.WaitForServicesToStart(self, self.rdfClient)
-		self.__ba = BehaviorAutomaton(self.__name, self.__states, self.__transitions, self.__start, self.__accepting, grammarFilePath)
-		self.__requests: list[SpaceTime.Request] = self.__ba.allSymbols()
-		self.waitForColdStartPermission(self.__sendNextRequest)
+		baseDir = get_package_share_directory(package_name)
+		self.__ba = BehaviorAutomaton(
+			self.__name,
+			self.__states,
+			self.__transitions,
+			self.__start,
+			self.__accepting,
+			baseDir,
+			self.__grammarDir,
+			self.__grammarFile
+		)
+		self.waitForColdStartPermission(self.onColdStartAllowed)
 		# if self.shouldRender: self.render()
 		return
 
-	def __sendNextRequest(self) -> None:
-		if len(self.__requests) > 0:
-			req = self.__requests.pop()
-			Ros.SendClientRequest(self, self.rdfClient, req, self.__onSpaceTimeResponse)
-		else:
-			self.coldStartCompleted()
+	def onColdStartAllowed(self, _) -> None:
+		super().coldStartCompleted({
+			"done": True,
+			"predicates": self.__ba.predicates,
+		})
 		return
-
-	def __onSpaceTimeResponse(self, req: SpaceTime.Request, res: SpaceTime.Response) -> SpaceTime.Response:
-		self.get_logger().error("Parsing of symbols is not implemented")
-		self.__sendNextRequest()
-		return res
 
 	def declareParameters(self) -> None:
 		self.log("%s is setting node parameters." % self.get_fully_qualified_name())

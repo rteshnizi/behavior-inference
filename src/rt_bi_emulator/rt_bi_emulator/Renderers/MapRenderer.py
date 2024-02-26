@@ -4,7 +4,7 @@ from rclpy.logging import LoggingSeverity
 from rt_bi_commons.Base.RegionsSubscriber import RegionsSubscriberBase
 
 
-class MapServiceRenderer(RegionsSubscriberBase):
+class MapRenderer(RegionsSubscriberBase):
 	""" This Node listens to all the messages published on the topics related to the map and renders them. """
 	def __init__(self, **kwArgs):
 		newKw = { "node_name": "renderer_map", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
@@ -19,7 +19,7 @@ class MapServiceRenderer(RegionsSubscriberBase):
 
 def main(args=None):
 	rclpy.init(args=args)
-	node = MapServiceRenderer()
+	node = MapRenderer()
 	rclpy.spin(node)
 	node.destroy_node()
 	rclpy.shutdown()

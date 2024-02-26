@@ -5,8 +5,6 @@ from rclpy.logging import LoggingSeverity
 from visualization_msgs.msg import MarkerArray
 
 from rt_bi_commons.Base.RtBiNode import RtBiNode
-from rt_bi_commons.Shared.Color import ColorNames
-from rt_bi_commons.Shared.TimeInterval import TimeInterval
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_commons.Utils.RViz import RViz
@@ -22,9 +20,8 @@ class RegionsSubscriberBase(RtBiNode, ABC):
 		super().__init__(**newKw)
 		self.mapRegions: list[MapRegion] = []
 		self.symbolRegions: list[SymbolRegion] = []
-		self.allRegions: list[MapRegion | SymbolRegion] = []
 		(self.__rvizPublisher, _) = RViz.createRVizPublisher(self, Ros.CreateTopicName("map"))
-		RtBiInterfaces.subscribeToMapRegions(self, self.parseMapRegionResponse)
+		RtBiInterfaces.subscribeToMapColdStart(self, self.parseMapColdStart)
 		RtBiInterfaces.subscribeToSymbolRegions(self, self.parseSymbolRegionResponse)
 
 	def __parseSpaceTimeResponse(self, regionType: MapRegion.RegionType, res: RegularSpaceArray) -> None:
@@ -32,26 +29,23 @@ class RegionsSubscriberBase(RtBiNode, ABC):
 			match = cast(RegularSpace, match)
 			for polyMsg in match.polygons:
 				polyMsg = cast(RtBiPolygonMsg, polyMsg)
-				polyStrId = f"{match.id}/{polyMsg.id}"
+				polyStrId = f"{match.id}-{polyMsg.id.split('#')[1]}"
 				if regionType == MapRegion.RegionType.MAP:
 					region = MapRegion(
-						idNum=Ros.RegisterRegionId(polyStrId),
+						id=polyStrId,
 						envelope=RtBiInterfaces.fromStdPoints32ToCoordsList(polyMsg.region.points),
-						envelopeColor=ColorNames.fromString(match.spec.color),
-						offIntervals=[TimeInterval.fromMsg(interval) for interval in match.spec.off_intervals]
 					)
 					self.mapRegions.append(region)
-					self.onMapUpdated()
-					self.allRegions.append(region)
 				# elif regionType == SymbolRegion.RegionType.SYMBOL:
 				# 	pass
+		self.onMapUpdated()
 		return
 
 	def parseSymbolRegionResponse(self, res: RegularSpaceArray) -> None:
 		self.__parseSpaceTimeResponse(MapRegion.RegionType.SYMBOL, res)
 		return
 
-	def parseMapRegionResponse(self, res: RegularSpaceArray) -> None:
+	def parseMapColdStart(self, res: RegularSpaceArray) -> None:
 		self.__parseSpaceTimeResponse(SymbolRegion.RegionType.MAP, res)
 		return
 

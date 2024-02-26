@@ -107,7 +107,7 @@ class ConnectivityGraph(nx.DiGraph):
 		return
 
 	def __addShadowNode(self, shadow: Polygon) -> None:
-		region = ShadowRegion(idNum=len(self.__shadows), envelope=[], timeNanoSecs=self.timeNanoSecs, interior=shadow)
+		region = ShadowRegion(id=len(self.__shadows), envelope=[], timeNanoSecs=self.timeNanoSecs, interior=shadow)
 		self.__addNode(region)
 		for fovName in self.fieldOfView:
 			fovComponent = self.fieldOfView[fovName]
@@ -152,11 +152,11 @@ class ConnectivityGraph(nx.DiGraph):
 				if not intersection.is_empty:
 					splitSymbol = SymbolRegion(
 						centerOfRotation=symbol.centerOfRotation,
-						idNum=symbol.idNum,
+						id=symbol.id,
 						envelope=symbol.envelope,
 						timeNanoSecs=symbol.timeNanoSecs,
 						overlappingRegionType=regularRegion.regionType,
-						overlappingRegionId=subRegion.idNum,
+						overlappingRegionId=subRegion.id,
 						interior=poly,
 					)
 					Log(f"Adding partition {splitSymbol.name}")

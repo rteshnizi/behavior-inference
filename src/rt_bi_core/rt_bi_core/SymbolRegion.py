@@ -20,7 +20,7 @@ class SymbolRegion(AffineRegion):
 	def __init__(
 			self,
 			centerOfRotation: Geometry.Coords,
-			idNum: int,
+			id: str,
 			envelope: Geometry.CoordsList,
 			timeNanoSecs: int,
 			overlappingRegionType: AffineRegion.RegionType,
@@ -30,7 +30,7 @@ class SymbolRegion(AffineRegion):
 		):
 		super().__init__(
 			centerOfRotation=centerOfRotation,
-			idNum=idNum,
+			id=id,
 			envelope=envelope,
 			envelopeColor=self.__colors[overlappingRegionType],
 			timeNanoSecs=timeNanoSecs,

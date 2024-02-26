@@ -11,7 +11,7 @@ class TargetRegion(AffineRegion):
 	def __init__(
 			self,
 			centerOfRotation: Geometry.Coords,
-			idNum: int,
+			id: str,
 			envelope: Geometry.CoordsList,
 			envelopeColor: RGBA,
 			timeNanoSecs: int,
@@ -20,7 +20,7 @@ class TargetRegion(AffineRegion):
 		) -> None:
 		super().__init__(
 			centerOfRotation=centerOfRotation,
-			idNum=idNum,
+			id=id,
 			envelope=envelope,
 			envelopeColor=envelopeColor,
 			timeNanoSecs=timeNanoSecs,

@@ -1,2 +1,5 @@
 string node_name
-bool done
+
+# json_payload is used to communicate options and results during cold start phase
+# json_payload = '{"done": true, "someVal": val }'
+string json_payload
