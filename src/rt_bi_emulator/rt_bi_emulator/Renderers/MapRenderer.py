@@ -5,7 +5,7 @@ from rt_bi_commons.Base.RegionsSubscriber import MapSubscriber
 
 
 class MapRenderer(MapSubscriber):
-	""" This Node listens to all the messages published on the topics related to the map and renders them. """
+	""" This Node listens to all static and dynamic map region updates and renders them. """
 	def __init__(self, **kwArgs):
 		newKw = { "node_name": "renderer_map", "loggingSeverity": LoggingSeverity.WARN, **kwArgs}
 		super().__init__(**newKw)

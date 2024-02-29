@@ -26,8 +26,8 @@ setup(
 	entry_points={
 		"console_scripts": [
 			"EMP = rt_bi_emulator.Emulators.MapEmulator:main",
+			"EKN = rt_bi_emulator.Emulators.KnownRegionEmulator:main",
 			"ESN = rt_bi_emulator.Emulators.SensorEmulator:main",
-			"EDY = rt_bi_emulator.Emulators.MapRegionEmulator:main",
 			"ETG = rt_bi_emulator.Emulators.TargetEmulator:main",
 			"RMP = rt_bi_emulator.Renderers.MapRenderer:main",
 			"RSN = rt_bi_emulator.Renderers.SensorRenderer:main",

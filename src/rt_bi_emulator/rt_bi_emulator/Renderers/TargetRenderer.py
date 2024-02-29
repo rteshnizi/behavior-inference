@@ -1,15 +1,7 @@
 import rclpy
 from rclpy.logging import LoggingSeverity
-from visualization_msgs.msg import MarkerArray
 
 from rt_bi_commons.Base.RegionsSubscriber import TargetSubscriber
-from rt_bi_commons.Base.RtBiNode import RtBiNode
-from rt_bi_commons.Utils import Ros
-from rt_bi_commons.Utils.Msgs import Msgs
-from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
-from rt_bi_commons.Utils.RViz import ColorNames, RViz
-from rt_bi_core.Polygons.TargetPolygon import TargetPolygon
-from rt_bi_interfaces.msg import RegularSpace
 
 
 class TargetRenderer(TargetSubscriber):

@@ -18,7 +18,7 @@ class BaNode(ColdStartableNode):
 	"""
 	def __init__(self, **kwArgs) -> None:
 		""" Create a Behavior Automaton node. """
-		newKw = { "node_name": "ba", "loggingSeverity": LoggingSeverity.WARN, **kwArgs}
+		newKw = { "node_name": "ba", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
 		super().__init__(**newKw)
 		self.declareParameters()
 		self.__name: str = self.get_fully_qualified_name()

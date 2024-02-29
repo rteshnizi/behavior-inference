@@ -27,7 +27,7 @@ class RegionsSubscriberBase(RtBiNode, ABC):
 	* Subclasses do not need to create a publisher to RViz. Just call :meth:`~RegionsSubscriberBase.render`
 	"""
 	def __init__(self, **kwArgs):
-		newKw = { "node_name": "map_base", "loggingSeverity": LoggingSeverity.WARN, **kwArgs}
+		newKw = { "node_name": "map_base", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
 		super().__init__(**newKw)
 		self.mapRegions: dict[str, SpatialRegion[DynamicPolygon | StaticPolygon]] = {}
 		self.sensors: dict[str, DynamicRegion[SensingPolygon]] = {}
@@ -136,8 +136,14 @@ class MapSubscriber(RegionsSubscriberBase):
 	def __init__(self, **kwArgs):
 		super().__init__(**kwArgs)
 		RtBiInterfaces.subscribeToMapColdStart(self, self.__parseMap)
+		RtBiInterfaces.subscribeToKnownRegions(self, self.__parseKnownRegion)
 
 	def __parseMap(self, regions: Msgs.RtBi.RegularSpaceArray) -> None:
+		super()._parseRegularSpaceArray(StaticPolygon.type, regions)
+		self.onMapUpdated()
+		return
+
+	def __parseKnownRegion(self, regions: Msgs.RtBi.RegularSpaceArray) -> None:
 		super()._parseRegularSpaceArray(DynamicPolygon.type, regions)
 		self.onMapUpdated()
 		return

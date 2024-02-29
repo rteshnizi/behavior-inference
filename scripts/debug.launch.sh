@@ -30,12 +30,12 @@ echo
 
 concurrently\
 	--kill-others-on-fail\
-	--names "MAP,DYN,SEN,TRG,EMZ,RUN"\
+	--names "MAP,KNR,SEN,TRG,EMZ,RUN"\
 	--prefix "[{name}-{time}]"\
 	-c "bgWhite.black,bgGreen,bgBlue,bgRed.inverse,bgYellow.black,bgMagenta,bgYellow.black,bgCyan.black"\
 	--timestamp-format "HH:mm:ss"\
 	"ros2 launch rt_bi_emulator map.launch.py"\
-	"ros2 launch rt_bi_emulator dynamic.launch.py"\
+	"ros2 launch rt_bi_emulator known.launch.py"\
 	"ros2 launch rt_bi_emulator sensor.launch.py"\
 	"ros2 launch rt_bi_emulator target.launch.py"\
 	"ros2 launch rt_bi_emulator rviz.launch.py"\

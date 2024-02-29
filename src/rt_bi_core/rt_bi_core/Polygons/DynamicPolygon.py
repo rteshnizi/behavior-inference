@@ -10,6 +10,6 @@ class DynamicPolygon(Polygon, ABC):
 	type = Polygon.Types.DYNAMIC
 	def __init__(self, **kwArgs) -> None:
 		super().__init__(
-			envelopeColor=kwArgs.pop("envelopeColor", ColorNames.WHITE),
+			envelopeColor=kwArgs.pop("envelopeColor", ColorNames.PURPLE),
 			**kwArgs
 		)

@@ -9,14 +9,14 @@ from launch import LaunchDescription
 packageName = pathlib.Path(__file__).parent.parent.name
 
 def generate_launch_description():
-	yamlPath = os.path.join(get_package_share_directory(packageName), "config", "c2.sys.yaml")
+	yamlPath = os.path.join(get_package_share_directory(packageName), "config", "c2.kns.yaml")
 
 	return LaunchDescription([
 		Node(
 			package=packageName,
 			namespace=packageName,
-			executable="EDY",
-			name="em_dy1",
+			executable="EKN",
+			name="em_kn1",
 			arguments= [
 				"--ros-args",
 				"--log-level",
