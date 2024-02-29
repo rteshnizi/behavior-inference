@@ -17,12 +17,13 @@ PREFIX xsd:            <http://www.w3.org/2001/XMLSchema#>
 PREFIX y:              <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/ys#>
 
 SELECT
-	?regularRegionId
+	# SELECTED #####################################
 	?color
+	# SELECTED #####################################
 WHERE {
 	GRAPH tower_bridge:definition {
 		# SELECTOR START ###########################
-		OPTIONAL { ?regularRegionId a ?namespace ; world_props:color ?color . }
+		OPTIONAL { ?regularRegionId world_props:color ?color . }
 		# SELECTOR END #############################
 	}
 }

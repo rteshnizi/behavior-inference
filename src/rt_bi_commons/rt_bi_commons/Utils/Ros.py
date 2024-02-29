@@ -4,12 +4,10 @@ from math import inf, isnan, nan
 from typing import AbstractSet, Any, Callable, Sequence, TypeVar, cast
 
 import rclpy
-from builtin_interfaces.msg import Duration, Time as TimeMsg
 from rclpy.clock import Time
 from rclpy.impl.rcutils_logger import RcutilsLogger
 from rclpy.logging import LoggingSeverity
 from rclpy.node import Client, Node, Publisher, Service, Subscription, Timer
-from typing_extensions import deprecated
 
 __Topic = TypeVar("__Topic")
 
@@ -20,7 +18,6 @@ logging.basicConfig(format="[+][%(levelname)s]: %(message)s", force=True)
 __rtBiLog: Callable[[str], bool] = lambda m: False
 __strNameToIdNum: dict[str, int] = dict()
 """This map helps us assume nothing about the meaning of the names assigned to any regions."""
-NANO_CONVERSION_CONSTANT = 10 ** 9
 
 
 def SetLogger(logger: RcutilsLogger, defaultSeverity: LoggingSeverity) -> None:
@@ -59,33 +56,6 @@ def Now(node: Node | None) -> Time:
 	if not context.ok():
 		raise RuntimeError("ROS context not OK!")
 	return rclpy.get_global_executor()._clock.now()
-
-def DurationMsg(sec: int, nanoSec: int) -> Duration:
-	d = Duration()
-	d.sec = sec
-	d.nanosec = nanoSec
-	return d
-
-def NanoSecToTimeMsg(nanoSec: int) -> TimeMsg:
-	msg = TimeMsg()
-	msg.sec = int(nanoSec / NANO_CONVERSION_CONSTANT)
-	msg.nanosec = nanoSec % NANO_CONVERSION_CONSTANT
-	return msg
-
-def SecToTimeMsg(sec: float) -> TimeMsg:
-	msg = TimeMsg()
-	msg.sec = int(sec)
-	msg.nanosec = int((sec % 1) * NANO_CONVERSION_CONSTANT)
-	return msg
-
-def TimeToInt(t: TimeMsg | Time) -> int:
-	if isinstance(t, TimeMsg):
-		(sec, nanoSecs) = (t.sec, t.nanosec) # CSpell: ignore nanosec
-	elif isinstance(t, Time):
-		(sec, nanoSecs) = cast(tuple[int, int], t.seconds_nanoseconds())
-	else:
-		raise ValueError(f"Value is of unknown type: {repr(t)}")
-	return ((sec * NANO_CONVERSION_CONSTANT) + nanoSecs)
 
 def CreatePublisher(node: Node, topic: __Topic, topicName: str, callbackFunc: Callable[[__Topic], None] = lambda _: None, intervalSecs: float = nan) -> tuple[Publisher, Timer | None]:
 	"""
@@ -201,16 +171,6 @@ def ConcatMessageArray(array: Sequence[__Topic] | AbstractSet[__Topic] | list[__
 	array += toConcat
 	return array
 
-@deprecated("IDs are now string, no need to register. Buggy behavior.")
-def RegisterRegionId(name: str) -> int:
-	if name in __strNameToIdNum:
-		idNum = __strNameToIdNum[name]
-		Logger().debug("Duplicate region name encountered: %s... same id assigned %d." % (name, idNum))
-		return __strNameToIdNum[name]
-	idNum = len(__strNameToIdNum)
-	__strNameToIdNum[name] = idNum
-	return idNum
-
 def CreateTimer(node: Node, callback: Callable, intervalNs = 1000) -> Timer:
 	return Timer(callback, None, intervalNs, node.get_clock(), context=node.context)
 
@@ -218,13 +178,13 @@ __ServiceInterface_Request = TypeVar("__ServiceInterface_Request")
 __ServiceInterface_Response = TypeVar("__ServiceInterface_Response")
 __ServiceInterface = TypeVar("__ServiceInterface")
 
-def CreateService(node: Node, interface: __ServiceInterface, serviceName: str, callbackFunc: Callable[[__ServiceInterface_Request, __ServiceInterface_Response], __ServiceInterface_Response]) -> Service: # type: ignore
+def CreateService(node: Node, interface: __ServiceInterface, serviceName: str, callbackFunc: Callable[[__ServiceInterface_Request, __ServiceInterface_Response], __ServiceInterface_Response]) -> Service: # pyright: ignore[reportInvalidTypeVarUse]
 	l = list(filter(lambda s: s.srv_name == serviceName, node.services))
 	if len(l) == 0: return node.create_service(interface, serviceName, callbackFunc)
 	if len(l) == 1: return l[0]
 	raise RuntimeError("This should never happen.")
 
-def CreateClient(node: Node, interface: __ServiceInterface, serviceName: str) -> Client: # type: ignore
+def CreateClient(node: Node, interface: __ServiceInterface, serviceName: str) -> Client: # pyright: ignore[reportInvalidTypeVarUse]
 	l = list(filter(lambda s: s.srv_name == serviceName, node.clients))
 	if len(l) == 0: return node.create_client(interface, serviceName)
 	if len(l) == 1: return l[0]
@@ -247,15 +207,15 @@ def Wait(node: Node, timeoutSec: float = inf) -> None:
 		timeoutSec -= sleepTime
 	return
 
-def WaitForSubscriber(node: Node, topic: str, fullNodeName: str) -> None:
+def WaitForSubscriber(node: Node, topic: str, subscriberFullName: str) -> None:
 	subsName = GetSubscriberNames(node, topic)
-	while fullNodeName not in subsName:
+	node.log(f"Publisher {node.get_name()} is waiting for subscriber {subscriberFullName}.") # pyright: ignore[reportAttributeAccessIssue]
+	while subscriberFullName not in subsName:
 		Wait(node, 1.0)
 		subsName = GetSubscriberNames(node, topic)
 	return
 
 def WaitForServicesToStart(node: Node, client: Client) -> None:
-	while not client.wait_for_service():
-		node.get_logger().debug("Client %s is waiting for service %s" % (node.get_name(), client.srv_name))
-	node.get_logger().debug("Client %s is ready"% node.get_name())
+	node.log(f"Client {node.get_name()} is waiting for service {client.srv_name}.") # pyright: ignore[reportAttributeAccessIssue]
+	while not client.wait_for_service(): pass
 	return

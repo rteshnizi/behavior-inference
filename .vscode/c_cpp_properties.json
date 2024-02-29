@@ -6,8 +6,7 @@
         "limitSymbolsToIncludedHeaders": false
       },
       "includePath": [
-        "/home/reza/git/behavior-inference/install/rt_bi_interfaces/include/**",
-        "/home/reza/git/behavior-inference/install/sa_msgs/include/**",
+        "${workspaceFolder}/install/rt_bi_interfaces/include/**",
         "/opt/ros/humble/include/**",
         "/usr/include/**"
       ],

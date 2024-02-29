@@ -2,17 +2,18 @@ import rclpy
 from rclpy.logging import LoggingSeverity
 
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
-from rt_bi_emulator.Shared.DynamicRegionNode import DynamicRegionNode
+from rt_bi_emulator.Emulators.AffineRegionEmulator import AffineRegionEmulator
 
 
-class TargetEmulator(DynamicRegionNode):
+class TargetEmulator(AffineRegionEmulator):
 	def __init__(self):
-		super().__init__(loggingSeverity=LoggingSeverity.DEBUG, node_name="em_target")
+		newKw = { "node_name": "emulator_target", "loggingSeverity": LoggingSeverity.INFO }
+		super().__init__(**newKw)
 		(self.__publisher, _) = RtBiInterfaces.createTargetPublisher(self, self.publishUpdate, self.updateInterval)
 
 	def publishUpdate(self) -> None:
-		msgDy = self.createDynamicRegionMsg()
-		self.__publisher.publish(msgDy)
+		msg = self.asRegularSpaceArrayMsg()
+		self.__publisher.publish(msg)
 
 def main(args=None):
 	rclpy.init(args=args)

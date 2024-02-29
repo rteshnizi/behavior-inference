@@ -1,1 +1,0 @@
-sa_msgs/Velocity[] plan     # a sequence of action

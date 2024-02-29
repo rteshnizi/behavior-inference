@@ -1,9 +1,7 @@
-### Amended message format derived from SaMsg
-
 # A unique id associated with the detected moving body.
-uint32 id
-# A label to identify the type of the moving object
-string category_label
+string id
+# The meta data about the moving object.
+string meta
 # Information about dynamic's of a moving body
 geometry_msgs/Pose pose
 geometry_msgs/Pose velocity

@@ -1,8 +1,8 @@
 rt_bi_emulator:
-  em_sy1:
+  em_dy1:
     ros__parameters:
       render: True
-      id: 1
+      id: "1"
       updateInterval: 0.25
       timesSecs:
         - 0.0

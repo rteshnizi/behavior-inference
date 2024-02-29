@@ -15,7 +15,7 @@ def generate_launch_description():
 		Node(
 			package=packageName,
 			namespace=packageName,
-			executable="RSE",
+			executable="RSN",
 			arguments= [
 				"--ros-args",
 				"--log-level",
@@ -25,7 +25,7 @@ def generate_launch_description():
 		Node(
 			package=packageName,
 			namespace=packageName,
-			executable="ESE",
+			executable="ESN",
 			name="em_av1",
 			arguments= [
 				"--ros-args",
@@ -37,7 +37,7 @@ def generate_launch_description():
 		Node(
 			package=packageName,
 			namespace=packageName,
-			executable="ESE",
+			executable="ESN",
 			name="em_av2",
 			arguments= [
 				"--ros-args",

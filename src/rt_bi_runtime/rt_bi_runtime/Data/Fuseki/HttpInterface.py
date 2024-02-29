@@ -3,9 +3,10 @@ from math import nan
 from typing import TypedDict, cast, overload
 
 import requests
-from geometry_msgs.msg import Point as PointMsg, Point32 as Point32Msg, Polygon as PolygonMsg, Pose as PoseMsg, Quaternion as QuaternionMsg
+from geometry_msgs.msg import Point32 as Point32Msg
 
 from rt_bi_commons.Utils import Ros
+from rt_bi_commons.Utils.Msgs import Msgs
 from rt_bi_commons.Utils.Ros import Logger
 from rt_bi_interfaces.msg import Polygon as RtBiPolygonMsg, Predicate, RegularSpace as RegularSpaceMsg, TimeInterval, Traversability
 from rt_bi_interfaces.srv import SpaceTime
@@ -78,8 +79,8 @@ class HttpInterface:
 
 	def __parseInterval(self, helper: SparqlResultHelper, i: int) -> tuple[TimeInterval, int]:
 		msg = TimeInterval(
-			start=Ros.SecToTimeMsg(helper.floatVarValue(i, "minT")),
-			end=Ros.SecToTimeMsg(helper.floatVarValue(i, "maxT")),
+			start=Msgs.toTimeMsg(helper.floatVarValue(i, "minT")),
+			end=Msgs.toTimeMsg(helper.floatVarValue(i, "maxT")),
 			include_left=json.loads(helper.boolVarValue(i, "minInclusive")),
 			include_right=json.loads(helper.boolVarValue(i, "maxInclusive")),
 		)

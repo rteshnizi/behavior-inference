@@ -2,7 +2,7 @@ rt_bi_emulator:
   em_av1:
     ros__parameters:
       render: True
-      id: 1
+      id: "1"
       updateInterval: 0.75
       timesSecs:
         - 0.0
@@ -20,7 +20,7 @@ rt_bi_emulator:
   em_av2:
     ros__parameters:
       render: True
-      id: 2
+      id: "2"
       updateInterval: 0.75
       timesSecs:
         - 0.0

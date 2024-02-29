@@ -4,9 +4,7 @@ rt_bi_runtime:
       render: False
       await_cold_start:
         - "/rt_bi_runtime/ba1"
-        - "/rt_bi_emulator/em_dynamic_map"
-        - "/rt_bi_emulator/renderer_map"
-        - "/rt_bi_eventifier/eventifier"
+        - "/rt_bi_emulator/emulator_dynamic_map"
   ba1:
     ros__parameters:
       render: True

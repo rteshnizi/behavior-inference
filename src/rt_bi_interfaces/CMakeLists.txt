@@ -12,7 +12,6 @@ find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
-find_package(sa_msgs REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   # Messages
   "msg/Adjacency.msg"
@@ -20,15 +19,11 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ComponentEvent.msg"
   "msg/DataRefRequest.msg"
   "msg/DataRefResponse.msg"
-  "msg/DynamicRegion.msg"
   "msg/Estimation.msg"
-  "msg/EstimationMsg.msg"
   "msg/Events.msg"
   "msg/Graph.msg"
-  "msg/MapRegion.msg"
   "msg/Predicate.msg"
   "msg/Polygon.msg"
-  "msg/PoseEstimation.msg"
   "msg/RegularSpace.msg"
   "msg/RegularSpaceArray.msg"
   "msg/SpaceSpec.msg"
@@ -40,7 +35,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/SpaceTime.srv"
   DEPENDENCIES builtin_interfaces
   DEPENDENCIES geometry_msgs
-  DEPENDENCIES sa_msgs
   DEPENDENCIES std_msgs
  )
 ament_export_dependencies(rosidl_default_runtime)

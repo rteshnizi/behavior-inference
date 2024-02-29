@@ -1,5 +1,5 @@
 from rt_bi_commons.Shared.TimeInterval import TimeInterval
-from rt_bi_commons.Utils.Geometry import Geometry, Polygon
+from rt_bi_commons.Utils.Geometry import GeometryLib, Shapely
 
 
 class ProjectiveSpaceTimeSet:
@@ -7,7 +7,7 @@ class ProjectiveSpaceTimeSet:
 		A projective space time set. That is, the set is space x time.
 		If `space` is `None`, there is no space requirement.
 	"""
-	def __init__(self, space: Polygon | None, time: TimeInterval):
+	def __init__(self, space: Shapely.Polygon | None, time: TimeInterval):
 		self.spaceRegion = space
 		self.timeRegion = time
 
@@ -21,7 +21,7 @@ class ProjectiveSpaceTimeSet:
 
 	def spaceIntersectionCheck(self, poly2) -> bool:
 		if self.spaceRegion == None: return True
-		intersection = Geometry.intersection(self.spaceRegion, poly2)
+		intersection = GeometryLib.intersection(self.spaceRegion, poly2)
 		try:
 			return intersection.area > 0
 		except:

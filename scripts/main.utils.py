@@ -4,8 +4,7 @@ from json import loads
 from math import degrees, radians
 from typing import List
 
-from rt_bi_commons.Shared.Pose import Pose
-from rt_bi_commons.Utils.Geometry import AffineTransform, Geometry
+from rt_bi_commons.Utils.Geometry import AffineTransform, GeometryLib
 
 logging.basicConfig(format="[%(levelname)s]: %(message)s", force=True, level=logging.INFO)
 
@@ -62,16 +61,16 @@ rotationParser.add_argument(
 #endregion
 
 def getAngle(coords1: str, coords2: str) -> tuple:
-	__coords1: Geometry.CoordsList = loads(coords1)
-	__coords2: Geometry.CoordsList = loads(coords2)
-	transformation = Geometry.getAffineTransformation(__coords1, __coords2)
+	__coords1: GeometryLib.CoordsList = loads(coords1)
+	__coords2: GeometryLib.CoordsList = loads(coords2)
+	transformation = GeometryLib.getAffineTransformation(__coords1, __coords2)
 	return (transformation.rotation, degrees(transformation.rotation))
 
 def rotateCoords(coords: str, angleD: float, angleR: float) -> List[List[float]]:
-	__coords: Geometry.CoordsList = loads(coords)
+	__coords: GeometryLib.CoordsList = loads(coords)
 	angleR = radians(angleD) if angleR is None else angleR
 	transformation = AffineTransform(rotation=angleR)
-	transformed = Geometry.applyMatrixTransformToCoordsList(transformation, __coords)
+	transformed = GeometryLib.applyMatrixTransformToCoordsList(transformation, __coords)
 	transformed = [list(c) for c in transformed]
 	return transformed
 

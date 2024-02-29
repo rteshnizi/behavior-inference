@@ -25,15 +25,13 @@ setup(
 	license="UNLICENSED",
 	entry_points={
 		"console_scripts": [
-			"EMP = rt_bi_emulator.Emulators.DynamicMapEmulator:main",
-			"ESE = rt_bi_emulator.Emulators.SensorEmulator:main",
-			"ESY = rt_bi_emulator.Emulators.SymbolRegionEmulator:main",
+			"EMP = rt_bi_emulator.Emulators.MapEmulator:main",
+			"ESN = rt_bi_emulator.Emulators.SensorEmulator:main",
+			"EDY = rt_bi_emulator.Emulators.MapRegionEmulator:main",
 			"ETG = rt_bi_emulator.Emulators.TargetEmulator:main",
 			"RMP = rt_bi_emulator.Renderers.MapRenderer:main",
-			"RSE = rt_bi_emulator.Renderers.SensorRenderer:main",
-			"RSY = rt_bi_emulator.Renderers.SymbolRenderer:main",
+			"RSN = rt_bi_emulator.Renderers.SensorRenderer:main",
 			"RTG = rt_bi_emulator.Renderers.TargetRenderer:main",
-			"SMP = rt_bi_emulator.Emulators.SaMapEmulator:main",
 		],
 	},
 )

@@ -280,23 +280,27 @@ GRAPH tower_bridge:traversabilities
 		world_props:swims true .
 }
 
+@prefix tower_bridge_definition: <https://rezateshnizi.com/rt-bi/tower_bridge/defintion/> .
 GRAPH tower_bridge:definition
 {
-	[ a rt_bi:RegularSpace ;
+	tower_bridge_definition:_1 a rt_bi:RegularSpace ;
+		spatial_props:type "static" ;
 		world_props:traversability traversability:street ;
 		world_props:color "GREY" ;
 		world_props:polygons
 			polygon:0 ,
 			polygon:2 ,
 			polygon:4 ;
-	] .
-	[ a rt_bi:RegularSpace ;
+	.
+	tower_bridge_definition:_2 a rt_bi:RegularSpace ;
+		spatial_props:type "static" ;
 		world_props:traversability traversability:bridge ;
 		world_props:color "WHITE" ;
 		world_props:polygons
 			polygon:3 ;
-	] .
-	[ a rt_bi:RegularSpace ;
+	.
+	tower_bridge_definition:_3 a rt_bi:RegularSpace ;
+		spatial_props:type "dynamic" ;
 		world_props:name "tower-bridge" ;
 		world_props:traversability traversability:bridge ;
 		world_props:color "WHITE" ;
@@ -305,16 +309,18 @@ GRAPH tower_bridge:definition
 		world_props:off_times
 			interval:early_morning ,
 			interval:afternoon ;
-	] .
-	[ a rt_bi:RegularSpace ;
+	.
+	tower_bridge_definition:_4 a rt_bi:RegularSpace ;
+		spatial_props:type "static" ;
 		world_props:traversability traversability:river ;
 		world_props:color "BLUE_LIGHT" ;
 		world_props:polygons
 			polygon:1 ,
 			polygon:6 ;
 		world_props:traversability traversability:river ;
-	] .
-	[ a rt_bi:RegularSpace ;
+	.
+	tower_bridge_definition:_5 a rt_bi:RegularSpace ;
+		spatial_props:type "dynamic" ;
 		world_props:traversability traversability:river ;
 		world_props:color "BLUE_LIGHT" ;
 		world_props:polygons
@@ -323,23 +329,25 @@ GRAPH tower_bridge:definition
 			interval:morning,
 			interval:mid_day,
 			interval:evening ;
-	] .
-	[ a rt_bi:RegularSpace ;
+	.
+	tower_bridge_definition:_6 a rt_bi:RegularSpace ;
+		spatial_props:type "static" ;
 		world_props:name "south-bank" ;
 		world_props:color "PURPLE" ;
 		world_props:polygons
 			polygon:south_bank ;
-	] .
-	[ a rt_bi:RegularSpace ;
+	.
+	tower_bridge_definition:_7 a rt_bi:RegularSpace ;
+		spatial_props:type "static" ;
 		world_props:name "north-shore" ;
 		world_props:color "PURPLE" ;
 		world_props:polygons
 			polygon:north_shore ;
-	] .
-	[ a rt_bi:RegularTime ;
+	.
+	tower_bridge_definition:_8 a rt_bi:RegularTime ;
 		world_props:name "mid-day" ;
 		world_props:color "YELLOW" ;
 		world_props:intervals
 			interval:mid_day ;
-	] .
+	.
 }

@@ -31,6 +31,15 @@ rt_bi:Traversability a rdf:Class ;
 	rdfs:comment "The class of traversability specifications." .
 
 # endregion Class definitions
+# region Class instances
+rt_bi:StaticSpace a rdf:value ;
+	rdfs:comment "A value indicating a static regions." .
+rt_bi:DynamicSpace a rdf:value ;
+	rdfs:comment "A value indicating a dynamic regions. Dynamic regions have different accessibility values depending on time." .
+rt_bi:AffineSpace a rdf:value ;
+	rdfs:comment "A value indicating a affine regions. Affine regions can move about the map." .
+# endregion Class instances
+
 @prefix temporal_props: <https://rezateshnizi.com/rt-bi/temporal/props#> .
 # region temporal
 temporal_props:secs a rdf:value ;
@@ -76,6 +85,10 @@ spatial_props:y_val a rdf:value ;
 	rdfs:domain rt_bi:Y ;
 	rdfs:range xsd:double ;
 	rdfs:comment "Some y value." .
+spatial_props:type a rdf:Property ;
+	rdfs:domain rt_bi:RegularSpace ;
+	rdfs:range xsd:string ;
+	rdfs:comment "The type of the space: static, dynamic, affine. Dynamic region's accessibility depends on time. Affine broadcasts its own location" .
 # endregion spatial
 @prefix world_props: <https://rezateshnizi.com/rt-bi/world/props#> .
 # region world
@@ -94,7 +107,7 @@ world_props:intervals a rdf:Property ;
 	rdfs:domain rt_bi:RegularTime ;
 	rdfs:range rt_bi:Interval .
 world_props:off_times a rdf:Property ;
-	rdfs:domain rt_bi:RegularSpace ;
+	rdfs:domain rt_bi:DynamicRegion ;
 	rdfs:range rt_bi:Interval .
 world_props:traversability a rdf:Property ;
 	rdfs:domain rt_bi:RegularSpace ;
@@ -112,4 +125,8 @@ world_props:swims a rdf:Property ;
 	rdfs:domain rt_bi:Traversability ;
 	rdfs:range xsd:boolean ;
 	rdfs:comment "Whether the agent moves through water." .
+world_props:ros_node a rdf:Property ;
+	rdfs:domain rt_bi:Subject ;
+	rdfs:range xsd:string ;
+	rdfs:comment "The name of the ROS node publishing updates for this subject." .
 # endregion world

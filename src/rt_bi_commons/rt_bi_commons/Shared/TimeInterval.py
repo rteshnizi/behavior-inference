@@ -1,5 +1,5 @@
-from rt_bi_commons.Utils import Ros
-from rt_bi_interfaces.msg import TimeInterval as TimeIntervalMsg
+import rt_bi_interfaces.msg as RtBiMsgs
+from rt_bi_commons.Utils.Msgs import Msgs
 
 
 class TimeInterval:
@@ -32,19 +32,19 @@ class TimeInterval:
 		if self.startNanoSecs < other.endNanoSecs and other.endNanoSecs < self.endNanoSecs: return True
 		return False
 
-	def toMsg(self) -> TimeIntervalMsg:
-		msg = TimeIntervalMsg()
-		msg.start = Ros.NanoSecToTimeMsg(self.startNanoSecs)
-		msg.end = Ros.NanoSecToTimeMsg(self.endNanoSecs)
+	def toMsg(self) -> RtBiMsgs.TimeInterval:
+		msg = RtBiMsgs.TimeInterval()
+		msg.start = Msgs.toTimeMsg(self.startNanoSecs)
+		msg.end = Msgs.toTimeMsg(self.endNanoSecs)
 		msg.include_left = msg.include_left
 		msg.include_right = msg.include_right
 		return msg
 
 	@classmethod
-	def fromMsg(cls, msg: TimeIntervalMsg) -> "TimeInterval":
+	def fromMsg(cls, msg: RtBiMsgs.TimeInterval) -> "TimeInterval":
 		return TimeInterval(
-			startNanoSecs=Ros.TimeToInt(msg.start),
-			endNanoSecs=Ros.TimeToInt(msg.end),
+			startNanoSecs=Msgs.toNanoSecs(msg.start),
+			endNanoSecs=Msgs.toNanoSecs(msg.end),
 			includeLeft=msg.include_left,
 			includeRight=msg.include_right,
 		)

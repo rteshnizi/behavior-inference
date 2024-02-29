@@ -2,7 +2,7 @@ rt_bi_emulator:
   em_tg1:
     ros__parameters:
       render: False
-      id: 1
+      id: "1"
       updateInterval: 0.25
       timesSecs:
         - 0.0

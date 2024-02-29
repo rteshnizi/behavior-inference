@@ -3,11 +3,11 @@ from typing import Sequence
 from visualization_msgs.msg import Marker
 
 from rt_bi_commons.Shared.Pose import Pose
-from rt_bi_commons.Utils.RViz import ColorNames, RViz
+from rt_bi_commons.Utils.RViz import DEFAULT_RENDER_DURATION_NS, ColorNames, RViz
 
 
 class Tracklet(Pose):
-	def __init__(self, id: int, timeNanoSecs: int, x: float, y: float, angleFromX: float, spawned = False, vanished = False) -> None:
+	def __init__(self, id: str, timeNanoSecs: int, x: float, y: float, angleFromX: float, spawned = False, vanished = False) -> None:
 		super().__init__(timeNanoSecs, x, y, angleFromX)
 		self.id = id
 		self.spawned = spawned
@@ -20,7 +20,7 @@ class Tracklet(Pose):
 		if self.vanished: return "%s%s" % ("[-]", s)
 		return s
 
-	def render(self, durationNs: int = -1) -> Sequence[Marker]:
+	def render(self, durationNs: int = DEFAULT_RENDER_DURATION_NS) -> Sequence[Marker]:
 		msgs = []
 		if self.spawned: msgs.append(RViz.createCircle("TK#%d-circle" % self.id, self.x, self.y, radius=13, outline=ColorNames.GREEN, width=3.0, durationNs=durationNs))
 		elif self.vanished: msgs.append(RViz.createCircle("TK#%d-circle" % self.id, self.x, self.y, radius=13, outline=ColorNames.RED, width=3.0, durationNs=durationNs))

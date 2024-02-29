@@ -6,7 +6,6 @@
 		"${workspaceFolder}/src/rt_bi_eventifier",
 		"${workspaceFolder}/src/rt_bi_runtime",
 		"${workspaceFolder}/install/rt_bi_interfaces/lib/python3.10/site-packages",
-		"${workspaceFolder}/install/sa_msgs/lib/python3.10/site-packages",
 	],
 	"python.analysis.extraPaths": [
 		"${workspaceFolder}/src/rt_bi_commons",
@@ -15,11 +14,9 @@
 		"${workspaceFolder}/src/rt_bi_eventifier",
 		"${workspaceFolder}/src/rt_bi_runtime",
 		"${workspaceFolder}/install/rt_bi_interfaces/lib/python3.10/site-packages",
-		"${workspaceFolder}/install/sa_msgs/lib/python3.10/site-packages",
 	],
 	"cSpell.words": [
 		"agraph",
-		"anant",
 		"eventifier",
 		"fovs",
 		"fuseki",
@@ -35,12 +32,12 @@
 		"rviz",
 		"scikit",
 		"scipy",
+		"seealso",
 		"skimage",
 		"slerp",
 		"Startable",
 		"STRAFTER",
 		"STRSTARTS",
-		"tamu",
 		"tracklet",
 		"tracklets",
 		"traj",
@@ -136,7 +133,7 @@
 			"source.organizeImports": "explicit"
 		},
 	},
-	"python.envFile": "/home/reza/git/behavior-inference/.vscode/colcon.rt.env",
+	"python.envFile": "${workspaceFolder}/.vscode/colcon.rt.env",
 	"isort.args": [
 		"--settings-path",
 		"${workspaceFolder}/.isort.cfg"
@@ -150,4 +147,7 @@
 		"**/install",
 		"**/test",
 	],
+	"autoDocstring.docstringFormat": "one-line-sphinx",
+	"python.analysis.autoFormatStrings": true,
+	"python.analysis.inlayHints.callArgumentNames": "off",
 }

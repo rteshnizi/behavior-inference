@@ -5,14 +5,20 @@ from zlib import adler32
 
 from geometry_msgs.msg import Point as PointMsg
 from rclpy.node import Publisher, Timer
+from typing_extensions import Final
 from visualization_msgs.msg import Marker, MarkerArray
 
 import rt_bi_commons.Utils.Ros as RosUtils
 from rt_bi_commons.Base.RtBiNode import RtBiNode
 from rt_bi_commons.Shared.Color import RGBA, ColorNames
-from rt_bi_commons.Utils.Geometry import Geometry
+from rt_bi_commons.Utils.Geometry import GeometryLib
+from rt_bi_commons.Utils.Msgs import Msgs
 
-NANO_CONVERSION_CONSTANT = 10 ** 9
+NANO_CONVERSION_CONSTANT: Final[int] = 10 ** 9
+"""``10 ** 9``"""
+
+DEFAULT_RENDER_DURATION_NS: Final[int] = int(1.75 * NANO_CONVERSION_CONSTANT)
+"""`1.75` secs, converted to NanoSecs."""
 
 class RViz:
 	"""
@@ -72,7 +78,7 @@ class RViz:
 		return marker
 
 	@staticmethod
-	def __setMarkerPose(marker: Marker, coords: Geometry.Coords) -> Marker:
+	def __setMarkerPose(marker: Marker, coords: GeometryLib.Coords) -> Marker:
 		marker.pose.position.x = float(coords[0])
 		marker.pose.position.y = float(coords[1])
 		return marker
@@ -88,14 +94,14 @@ class RViz:
 		marker.ns = RosUtils.NAMESPACE
 		marker.action = Marker.ADD
 		if durationNs > 0:
-			marker.lifetime = RosUtils.DurationMsg(int(durationNs / NANO_CONVERSION_CONSTANT), durationNs % NANO_CONVERSION_CONSTANT)
+			marker.lifetime = Msgs.DurationMsg(int(durationNs / NANO_CONVERSION_CONSTANT), durationNs % NANO_CONVERSION_CONSTANT)
 		marker.pose.orientation.w = 1.0
 		marker.header.frame_id = RViz.FRAME_ID
 		marker.header.stamp = RosUtils.Now(None).to_msg()
 		return marker
 
 	@staticmethod
-	def createCircle(strId: str, centerX: float, centerY: float, radius: float, outline: RGBA, width = 1.0, durationNs: int = -1) -> Marker:
+	def createCircle(strId: str, centerX: float, centerY: float, radius: float, outline: RGBA, width = 1.0, durationNs: int = DEFAULT_RENDER_DURATION_NS) -> Marker:
 		RosUtils.Logger().debug("Render circle id %s." % strId)
 		circle = Marker()
 		circle = RViz.__setMarkerHeader(circle, durationNs)
@@ -112,7 +118,7 @@ class RViz:
 		return circle
 
 	@staticmethod
-	def createPolygon(strId: str, coords: Geometry.CoordsList, outline: RGBA, width: float, durationNs: int = -1) -> Marker:
+	def createPolygon(strId: str, coords: GeometryLib.CoordsList, outline: RGBA, width: float, durationNs: int = DEFAULT_RENDER_DURATION_NS) -> Marker:
 		"""Create a polygon Marker message.
 
 		Parameters
@@ -142,13 +148,13 @@ class RViz:
 		for (x, y) in coords:
 			RosUtils.AppendMessage(polygon.points, RViz.__createPointMessage(x, y))
 
-		if Geometry.coordsAreEqual(coords[0], coords[-1]): return polygon
+		if GeometryLib.coordsAreEqual(coords[0], coords[-1]): return polygon
 		# If the last vertex is not the same as the first one, we need to close the loop-back here.
 		RosUtils.AppendMessage(polygon.points, RViz.__createPointMessage(*coords[0]))
 		return polygon
 
 	@staticmethod
-	def createLine(strId: str, coords: Geometry.CoordsList, outline: RGBA, width: float, arrow = False, durationNs: int = -1) -> Marker:
+	def createLine(strId: str, coords: GeometryLib.CoordsList, outline: RGBA, width: float, arrow = False, durationNs: int = DEFAULT_RENDER_DURATION_NS) -> Marker:
 		"""Create a line Marker message.
 
 		Parameters
@@ -188,7 +194,7 @@ class RViz:
 		return lineSeg
 
 	@staticmethod
-	def createText(strId: str, coords: Geometry.Coords, text: str, outline: RGBA = ColorNames.BLACK, fontSize = 10.0, durationNs: int = -1) -> Marker:
+	def createText(strId: str, coords: GeometryLib.Coords, text: str, outline: RGBA = ColorNames.BLACK, fontSize = 10.0, durationNs: int = DEFAULT_RENDER_DURATION_NS) -> Marker:
 		"""Create a text Marker message.
 
 		Parameters

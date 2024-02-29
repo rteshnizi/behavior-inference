@@ -16,7 +16,6 @@
 				"${workspaceFolder}/install/rt_bi_emulator/lib/python3.10/site-packages/": "${workspaceFolder}/src/rt_bi_emulator/",
 				"${workspaceFolder}/install/rt_bi_eventifier/lib/python3.10/site-packages/": "${workspaceFolder}/src/rt_bi_eventifier/",
 				"${workspaceFolder}/install/rt_bi_commons/lib/python3.10/site-packages/": "${workspaceFolder}/src/rt_bi_commons/",
-				"${workspaceFolder}/install/sa_msgs/lib/python3.10/site-packages/": "${workspaceFolder}/src/sa_msgs/",
 			},
 		}
 	]

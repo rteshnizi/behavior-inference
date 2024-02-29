@@ -5,8 +5,8 @@ from rclpy.parameter import Parameter
 from rt_bi_commons.Base.ColdStartableNode import ColdStartPayload
 from rt_bi_commons.Base.RtBiNode import RtBiNode
 from rt_bi_commons.Utils import Ros
+from rt_bi_commons.Utils.Msgs import Msgs
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
-from rt_bi_interfaces.msg import ColdStart
 
 
 class RuntimeManager(RtBiNode):
@@ -32,11 +32,11 @@ class RuntimeManager(RtBiNode):
 				payload = ColdStartPayload({}).stringify()
 			else:
 				payload = ColdStartPayload({ "predicates": list(self.__allPredicates) }).stringify()
-			msg = ColdStart(node_name=nodeName, json_payload=payload)
+			msg = Msgs.RtBi.ColdStart(node_name=nodeName, json_payload=payload)
 			self.__coldStartPublisher.publish(msg)
 		return
 
-	def __onColdStartDone(self, msg: ColdStart) -> None:
+	def __onColdStartDone(self, msg: Msgs.RtBi.ColdStart) -> None:
 		if msg.json_payload:
 			payload = ColdStartPayload(msg.json_payload)
 			if not payload.done: return

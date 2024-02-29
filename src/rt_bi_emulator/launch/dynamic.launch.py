@@ -15,18 +15,8 @@ def generate_launch_description():
 		Node(
 			package=packageName,
 			namespace=packageName,
-			executable="RSY",
-			arguments= [
-				"--ros-args",
-				"--log-level",
-				"warn",
-			],
-		),
-		Node(
-			package=packageName,
-			namespace=packageName,
-			executable="ESY",
-			name="em_sy1",
+			executable="EDY",
+			name="em_dy1",
 			arguments= [
 				"--ros-args",
 				"--log-level",

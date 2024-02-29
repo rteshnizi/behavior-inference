@@ -1,60 +1,51 @@
-from typing import Dict, List
+from typing import cast
 
 import rclpy
+from rclpy.logging import LoggingSeverity
 from visualization_msgs.msg import MarkerArray
 
-import rt_bi_commons.Utils.Ros as RosUtils
-from rt_bi_commons.Base.RtBiNode import RtBiNode
+from rt_bi_commons.Base.RegionsSubscriber import RegionsSubscriberBase, SensorSubscriber
+from rt_bi_commons.Shared.Tracklet import Tracklet
+from rt_bi_commons.Utils import Ros
+from rt_bi_commons.Utils.Geometry import GeometryLib
+from rt_bi_commons.Utils.Msgs import Msgs
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_commons.Utils.RViz import RViz
-from rt_bi_commons.Utils.SaMsgs import SaMsgs
-from rt_bi_core.SensorRegion import SensorRegion
-from rt_bi_core.Tracklet import Tracklet
-from rt_bi_interfaces.msg import DynamicRegion, EstimationMsg
+from rt_bi_core.Polygons.SensingPolygon import SensingPolygon
 
 
-class SensorRenderer(RtBiNode):
+class SensorRenderer(SensorSubscriber):
 	""" This Node listens to all the messages published on the topics related to sensors and renders them. """
 	def __init__(self, **kwArgs):
-		newKw = { "node_name": "renderer_sensor", **kwArgs}
+		newKw = { "node_name": "renderer_sensor", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
 		super().__init__(**newKw)
-		self.__sensors: Dict[int, SensorRegion] = {}
-		RtBiInterfaces.subscribeToSensor(self, self.__onRegionUpdate)
 		RtBiInterfaces.subscribeToEstimation(self, self.__onEstimation)
-		(self.__rvizPublisher, _) = RViz.createRVizPublisher(self, RosUtils.CreateTopicName("map"))
 
-	def __onRegionUpdate(self, update: DynamicRegion) -> None:
-		if update is None:
-			self.log("Skipping None update.")
-			return
-
-		timeNanoSecs = self.get_clock().now().nanoseconds
-		self.log(f"Updating region type {SensorRegion.RegionType.SENSING} id {update.id} definition @{timeNanoSecs}.")
-		coords = RtBiInterfaces.fromStdPoints32ToCoordsList(update.region.points)
-		cor = RtBiInterfaces.fromStdPointToCoords(update.center_of_rotation)
-		tracklets = self.__sensors[update.id].tracklets if update.id in self.__sensors else {}
-		sensor = SensorRegion(centerOfRotation=cor, id=update.id, envelope=coords, timeNanoSecs=timeNanoSecs, tracklets=tracklets)
-		self.__sensors[update.id] = sensor
-		self.render([sensor], sensor.tracklets)
+	def onSensorsUpdated(self) -> None:
+		self.log(f"{self.get_fully_qualified_name()} sensors updated.")
+		self.render()
 		return
 
-	def __onEstimation(self, msg: EstimationMsg) -> None:
+	def __onEstimation(self, msg: Msgs.RtBi.Estimation) -> None:
 		if msg is None:
 			self.get_logger().warn("Received empty Estimation!")
 			return
 
-		toRender = []
-		for poseEstimation in msg.pose_estimations:
-			pose = SaMsgs.convertSaPoseToPose(poseEstimation.pose)
-			tracklet = Tracklet(poseEstimation.trajectory_id, int(msg.detection_time), pose.x, pose.y, pose.angleFromX, poseEstimation.spawned, poseEstimation.vanished)
-			self.__sensors[msg.robot_state.robot_id].tracklets[tracklet.id] = tracklet
-			toRender.append(msg.robot_state.robot_id)
-		sensors = []
-		tracks = {}
-		for i in toRender:
-			sensors.append(self.__sensors[i])
-			tracks = {**tracks, **self.__sensors[i].tracklets}
-		self.render(sensors, tracks)
+		for trackletMsg in msg.estimations:
+			trackletMsg = cast(Msgs.RtBi.Tracklet, trackletMsg)
+			pose = cast(Msgs.Geometry.Pose, trackletMsg.pose)
+			tracklet = Tracklet(
+				trackletMsg.id,
+				Msgs.toNanoSecs(msg.robot.stamp),
+				pose.position.x,
+				pose.position.y,
+				Msgs.toAngle(pose.orientation),
+				tracklet.spawned,
+				tracklet.vanished
+			)
+			id_ = SensingPolygon.Id(regionId=msg.robot.id, polygonId=Ros.GetMessage(msg.robot.polygons, 0, Msgs.RtBi.Polygon).id)
+			self.sensors[id_.regionId][id_].tracklets[tracklet.id] = tracklet
+		self.render()
 		return
 
 	def declareParameters(self) -> None:
@@ -62,16 +53,6 @@ class SensorRenderer(RtBiNode):
 
 	def parseParameters(self) -> None:
 		return super().parseParameters()
-
-	def render(self, regions: List[SensorRegion], tracklets: Dict[int, Tracklet]) -> None:
-		if not RViz.isRVizReady(self, self.__rvizPublisher):
-			self.log("Skipping map render... RViz is not ready yet to receive messages.")
-			return
-		msg = MarkerArray()
-		for region in regions: RosUtils.ConcatMessageArray(msg.markers, region.render())
-		for i in tracklets: RosUtils.ConcatMessageArray(msg.markers, tracklets[i].render(SensorRegion.DEFAULT_RENDER_DURATION))
-		self.__rvizPublisher.publish(msg)
-		return
 
 def main(args=None):
 	rclpy.init(args=args)

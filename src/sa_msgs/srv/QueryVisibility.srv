@@ -1,3 +1,0 @@
-sa_msgs/PoseArray[] traj_array
----
-sa_msgs/VisibilityArray[] visibility_array

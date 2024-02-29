@@ -17,10 +17,11 @@ PREFIX xsd:            <http://www.w3.org/2001/XMLSchema#>
 PREFIX y:              <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/ys#>
 
 SELECT
-	?regularRegionId
+	?regularRegionId ?spatial_type
 	# SELECTED VARIABLES ###########################
 WHERE {
 	GRAPH tower_bridge:definition {
+		?regularRegionId a rt_bi:RegularSpace ; spatial_props:type ?spatial_type .
 		# SELECTOR START ###########################
 		# SELECTOR END #############################
 		# BIND START ###############################
