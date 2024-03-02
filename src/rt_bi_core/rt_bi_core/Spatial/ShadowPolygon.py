@@ -1,9 +1,8 @@
 from typing import Literal, Sequence
 
-from visualization_msgs.msg import Marker
-
+from rt_bi_commons.Shared.Color import RGBA, ColorNames
 from rt_bi_commons.Shared.Pose import CoordsList
-from rt_bi_commons.Utils.RViz import RGBA, ColorNames
+from rt_bi_commons.Utils.RViz import RViz
 from rt_bi_core.Spatial.StaticPolygon import StaticPolygon
 
 
@@ -25,5 +24,5 @@ class ShadowPolygon(StaticPolygon):
 			**kwArgs,
 		)
 
-	def render(self, renderText = False, envelopeColor: RGBA | None = None, durationNs: int = StaticPolygon.DEFAULT_RENDER_DURATION_NS) -> Sequence[Marker]:
+	def render(self, renderText = False, envelopeColor: RGBA | None = None, durationNs: int = StaticPolygon.DEFAULT_RENDER_DURATION_NS) -> Sequence[RViz.Msgs.Marker]:
 		return super().render(renderText=renderText, envelopeColor=envelopeColor, durationNs=durationNs)

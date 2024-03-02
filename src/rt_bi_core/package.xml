@@ -8,7 +8,6 @@
 	<license>UNLICENSED</license>
 
 	<depend>rclpy</depend>
-	<depend>visualization_msgs</depend>
 
 	<depend version_eq="0.1.0">rt_bi_interfaces</depend>
 	<depend version_eq="0.1.0">rt_bi_commons</depend>

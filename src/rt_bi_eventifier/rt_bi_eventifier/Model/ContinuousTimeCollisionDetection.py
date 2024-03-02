@@ -1,7 +1,6 @@
 from typing import TypeAlias
 
 from rclpy.clock import Duration
-from visualization_msgs.msg import MarkerArray
 
 from rt_bi_commons.Shared.Color import RGBA
 from rt_bi_commons.Utils.Geometry import GeometryLib, Shapely
@@ -63,7 +62,7 @@ class ContinuousTimeCollisionDetection:
 	@classmethod
 	def __renderLineStrings(cls, lines: list[Shapely.LineString], color: RGBA, renderWidth: float = 1.0) -> None:
 		if cls.__rvizPublisher is None: return
-		msg = MarkerArray()
+		msg = RViz.Msgs.MarkerArray()
 		for line in lines:
 			strId = repr(GeometryLib.lineStringId(line))
 			marker = RViz.createLine(MovingPolygon.Id("ctcd", strId, "", ""), GeometryLib.getGeometryCoords(line), color, renderWidth)

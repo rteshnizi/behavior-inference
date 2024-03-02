@@ -1,10 +1,8 @@
 from typing import Literal, Sequence
 
-from visualization_msgs.msg import Marker
-
-import rt_bi_commons.Utils.Ros as Ros
-from rt_bi_commons.Shared.Color import ColorNames
-from rt_bi_commons.Utils.RViz import RGBA
+from rt_bi_commons.Shared.Color import RGBA, ColorNames
+from rt_bi_commons.Utils import Ros
+from rt_bi_commons.Utils.RViz import RViz
 from rt_bi_core.Spatial.AffinePolygon import AffinePolygon
 from rt_bi_core.Spatial.Tracklet import Tracklet
 
@@ -64,13 +62,13 @@ class SensingPolygon(AffinePolygon):
 		"""
 		return len(self.__tracklets) > 0
 
-	def render(self, renderTracklet = True, envelopeColor: RGBA | None = None, durationNs: int = AffinePolygon.DEFAULT_RENDER_DURATION_NS) -> Sequence[Marker]:
+	def render(self, renderTracklet = True, envelopeColor: RGBA | None = None, durationNs: int = AffinePolygon.DEFAULT_RENDER_DURATION_NS) -> Sequence[RViz.Msgs.Marker]:
 		msgs = super().render(renderText=False, envelopeColor=envelopeColor, durationNs=durationNs)
 		if renderTracklet:
 			for i in self.__tracklets: Ros.ConcatMessageArray(msgs, self.__tracklets[i].render(durationNs=durationNs))
 		return msgs
 
-	def clearRender(self) -> Sequence[Marker]:
+	def clearRender(self) -> Sequence[RViz.Msgs.Marker]:
 		msgs = super().clearRender()
 		for tracklet in self.__tracklets: Ros.ConcatMessageArray(msgs, self.__tracklets[tracklet].clearRender())
 		return msgs

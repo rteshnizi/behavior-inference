@@ -1,10 +1,9 @@
 from typing import Generic, Iterator, Sequence, TypeVar
 
-from visualization_msgs.msg import Marker
-
+from rt_bi_commons.Shared.Color import RGBA
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Geometry import GeometryLib, Shapely
-from rt_bi_commons.Utils.RViz import RGBA
+from rt_bi_commons.Utils.RViz import RViz
 from rt_bi_core.Spatial.Polygon import Polygon
 
 _T_Poly = TypeVar("_T_Poly", bound=Polygon)
@@ -154,13 +153,13 @@ class SpatialRegion(Generic[_T_Poly]):
 	def difference(self, others: "SpatialRegion") -> set[Polygon.Id]:
 		return self.__sub__(others)
 
-	def render(self, durationNs: int = Polygon.DEFAULT_RENDER_DURATION_NS, envelopeColor: RGBA | None = None) -> list[Marker]:
+	def render(self, durationNs: int = Polygon.DEFAULT_RENDER_DURATION_NS, envelopeColor: RGBA | None = None) -> list[RViz.Msgs.Marker]:
 		markers = []
 		for region in self.__polygons.values():
 			Ros.ConcatMessageArray(markers, region.render(envelopeColor=envelopeColor, durationNs=durationNs))
 		return markers
 
-	def clearRender(self) -> list[Marker]:
+	def clearRender(self) -> list[RViz.Msgs.Marker]:
 		markers = []
 		for region in self.__polygons.values():
 			Ros.ConcatMessageArray(markers, region.clearRender())
