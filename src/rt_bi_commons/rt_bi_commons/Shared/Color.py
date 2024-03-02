@@ -1,10 +1,11 @@
 import random
 from math import sqrt
+from typing import TypeAlias
 
 numeric = int | float
-RGBA = tuple[numeric, numeric, numeric, numeric]
+RGBA: TypeAlias = tuple[numeric, numeric, numeric, numeric]
 """ A tuple that represents an RGBA value. Values between [0-1]. """
-RGB = tuple[numeric, numeric, numeric]
+RGB: TypeAlias = tuple[numeric, numeric, numeric]
 """ A tuple that represents an RGB value. Values between [0-1]. """
 
 class ColorNames:

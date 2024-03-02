@@ -1,13 +1,13 @@
-from abc import ABC
+from typing import Literal
 
 from rt_bi_commons.Shared.Color import ColorNames
-from rt_bi_core.Polygons.Polygon import Polygon
+from rt_bi_core.Spatial.AffinePolygon import AffinePolygon
 
 
-class DynamicPolygon(Polygon, ABC):
+class MovingPolygon(AffinePolygon):
 	"""A Polygon with a timestamp."""
 
-	type = Polygon.Types.DYNAMIC
+	type: Literal[AffinePolygon.Types.MOVING] = AffinePolygon.Types.MOVING
 	def __init__(self, **kwArgs) -> None:
 		super().__init__(
 			envelopeColor=kwArgs.pop("envelopeColor", ColorNames.PURPLE),

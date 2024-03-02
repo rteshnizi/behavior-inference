@@ -1,7 +1,9 @@
+from typing import Any
+
 import rclpy
 from rclpy.logging import LoggingSeverity
 
-from rt_bi_commons.Base.RegionsSubscriber import TargetSubscriber
+from rt_bi_core.RegionsSubscriber import TargetSubscriber
 
 
 class TargetRenderer(TargetSubscriber):
@@ -10,8 +12,8 @@ class TargetRenderer(TargetSubscriber):
 		newKw = { "node_name": "renderer_target", **kwArgs}
 		super().__init__(loggingSeverity=LoggingSeverity.INFO, **newKw)
 
-	def onTargetsUpdated(self) -> None:
-		self.log(f"{self.get_fully_qualified_name()} targets updated.")
+	def onRegionsUpdated(self, __1: Any, __2: Any) -> None:
+		self.log("Targets updated.")
 		self.render()
 		return
 

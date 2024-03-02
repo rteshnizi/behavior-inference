@@ -1,21 +1,16 @@
 from ctypes import c_int32
 from math import cos, sin
-from typing import Tuple, Union
+from typing import Final
 from zlib import adler32
 
-from geometry_msgs.msg import Point as PointMsg
 from rclpy.node import Publisher, Timer
-from typing_extensions import Final
-from visualization_msgs.msg import Marker, MarkerArray
 
-import rt_bi_commons.Utils.Ros as RosUtils
 from rt_bi_commons.Base.RtBiNode import RtBiNode
 from rt_bi_commons.Shared.Color import RGBA, ColorNames
+from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Geometry import GeometryLib
-from rt_bi_commons.Utils.Msgs import Msgs
-
-NANO_CONVERSION_CONSTANT: Final[int] = 10 ** 9
-"""``10 ** 9``"""
+from rt_bi_commons.Utils.Msgs import NANO_CONVERSION_CONSTANT, Msgs as MsgsUtils
+from rt_bi_commons.Utils.NetworkX import NxUtils
 
 DEFAULT_RENDER_DURATION_NS: Final[int] = int(1.75 * NANO_CONVERSION_CONSTANT)
 """`1.75` secs, converted to NanoSecs."""
@@ -28,7 +23,8 @@ class RViz:
 		the points list contains the same point as its first and last elements.
 		http://wiki.ros.org/rviz/Tutorials/Markers%3A%20Points%20and%20Lines#The_Code_Explained
 	"""
-
+	import visualization_msgs.msg as Msgs
+	Id = NxUtils.Id
 	FRAME_ID = "map"
 
 	@staticmethod
@@ -45,11 +41,11 @@ class RViz:
 		return True
 
 	@staticmethod
-	def createRVizPublisher(node: RtBiNode, topic: str) -> Tuple[Publisher, Union[Timer, None]]:
-		return RosUtils.CreatePublisher(node, MarkerArray, topic)
+	def createRVizPublisher(node: RtBiNode, topic: str) -> tuple[Publisher, Timer | None]:
+		return Ros.CreatePublisher(node, RViz.Msgs.MarkerArray, topic)
 
 	@staticmethod
-	def __createPointMessage(x: float, y: float, z = 0.0) -> PointMsg:
+	def __createPointMessage(x: float, y: float, z = 0.0) -> MsgsUtils.Geometry.Point:
 		"""
 		Create a Point Msg.
 
@@ -61,16 +57,16 @@ class RViz:
 			by default 0.0
 		Returns
 		-------
-		PointMsg
+		Point
 		"""
-		p = PointMsg()
+		p = MsgsUtils.Geometry.Point()
 		p.x = float(x)
 		p.y = float(y)
 		p.z = float(z)
 		return p
 
 	@staticmethod
-	def __setMarkerColor(marker: Marker, color: RGBA) -> Marker:
+	def __setMarkerColor(marker: Msgs.Marker, color: RGBA) -> Msgs.Marker:
 		marker.color.r = float(color[0])
 		marker.color.g = float(color[1])
 		marker.color.b = float(color[2])
@@ -78,52 +74,59 @@ class RViz:
 		return marker
 
 	@staticmethod
-	def __setMarkerPose(marker: Marker, coords: GeometryLib.Coords) -> Marker:
+	def __setMarkerPose(marker: Msgs.Marker, coords: GeometryLib.Coords) -> Msgs.Marker:
 		marker.pose.position.x = float(coords[0])
 		marker.pose.position.y = float(coords[1])
 		return marker
 
 	@staticmethod
-	def __setMarkerId(marker: Marker, strId: str) -> Marker:
-		uInt = adler32(strId.encode("utf-8"))
+	def __setMarkerId(marker: Msgs.Marker, id: Id, suffix: str) -> Msgs.Marker:
+		idStr = f"{repr(id)}{suffix}"
+		uInt = adler32(idStr.encode("utf-8"))
 		marker.id = c_int32(uInt).value
 		return marker
 
 	@staticmethod
-	def __setMarkerHeader(marker: Marker, durationNs: int) -> Marker:
-		marker.ns = RosUtils.NAMESPACE
-		marker.action = Marker.ADD
+	def __setMarkerHeader(marker: Msgs.Marker, durationNs: int) -> Msgs.Marker:
+		marker.ns = Ros.NAMESPACE
+		marker.action = RViz.Msgs.Marker.ADD
 		if durationNs > 0:
-			marker.lifetime = Msgs.DurationMsg(int(durationNs / NANO_CONVERSION_CONSTANT), durationNs % NANO_CONVERSION_CONSTANT)
+			marker.lifetime = MsgsUtils.DurationMsg(int(durationNs / NANO_CONVERSION_CONSTANT), durationNs % NANO_CONVERSION_CONSTANT)
 		marker.pose.orientation.w = 1.0
 		marker.header.frame_id = RViz.FRAME_ID
-		marker.header.stamp = RosUtils.Now(None).to_msg()
+		marker.header.stamp = Ros.Now(None).to_msg()
 		return marker
 
 	@staticmethod
-	def createCircle(strId: str, centerX: float, centerY: float, radius: float, outline: RGBA, width = 1.0, durationNs: int = DEFAULT_RENDER_DURATION_NS) -> Marker:
-		RosUtils.Logger().debug("Render circle id %s." % strId)
-		circle = Marker()
+	def __logMarker(id: Id, suffix: str, created: bool) -> None:
+		if created: Ros.Logger().debug(f"Marker {repr(id)}{suffix} created.")
+		else: Ros.Logger().debug(f"Marker {repr(id)}{suffix} is set to delete.")
+		return
+
+	@staticmethod
+	def createCircle(id: Id, centerX: float, centerY: float, radius: float, outline: RGBA, width = 1.0, durationNs: int = DEFAULT_RENDER_DURATION_NS, idSuffix: str = "") -> Msgs.Marker:
+		circle = RViz.Msgs.Marker()
 		circle = RViz.__setMarkerHeader(circle, durationNs)
-		circle = RViz.__setMarkerId(circle, strId)
-		circle.type = Marker.LINE_STRIP
+		circle = RViz.__setMarkerId(circle, id, idSuffix)
+		circle.type = RViz.Msgs.Marker.LINE_STRIP
 		circle = RViz.__setMarkerColor(circle, outline)
 		# LINE_STRIP markers use only the x component of scale, for the line width
 		circle.scale.x = width
 		for i in range(32):
 			p = RViz.__createPointMessage(centerX + (radius * cos(i)), centerY + (radius * sin(i)))
-			RosUtils.AppendMessage(circle.points, p)
+			Ros.AppendMessage(circle.points, p)
 		p = RViz.__createPointMessage(centerX + (radius * cos(0)), centerY + (radius * sin(0)))
-		RosUtils.AppendMessage(circle.points, p)
+		Ros.AppendMessage(circle.points, p)
+		RViz.__logMarker(id, idSuffix, True)
 		return circle
 
 	@staticmethod
-	def createPolygon(strId: str, coords: GeometryLib.CoordsList, outline: RGBA, width: float, durationNs: int = DEFAULT_RENDER_DURATION_NS) -> Marker:
-		"""Create a polygon Marker message.
+	def createPolygon(id: Id, coords: GeometryLib.CoordsList, outline: RGBA, width: float, durationNs: int = DEFAULT_RENDER_DURATION_NS, idSuffix: str = "") -> Msgs.Marker:
+		"""Create a polygon Msgs.Marker message.
 
 		Parameters
 		----------
-		strId : str
+		id : str
 			Used for refreshing the same element over successive frames.
 		coords : Geometry.Coords
 			The placement.
@@ -134,32 +137,32 @@ class RViz:
 
 		Returns
 		-------
-		Marker
+		Msgs.Marker
 			The marker message.
 		"""
-		RosUtils.Logger().debug("Render polygon id %s." % strId)
-		polygon = Marker()
+		polygon = RViz.Msgs.Marker()
 		polygon = RViz.__setMarkerHeader(polygon, durationNs)
-		polygon = RViz.__setMarkerId(polygon, strId)
-		polygon.type = Marker.LINE_STRIP
+		polygon = RViz.__setMarkerId(polygon, id, idSuffix)
+		polygon.type = RViz.Msgs.Marker.LINE_STRIP
 		polygon = RViz.__setMarkerColor(polygon, outline)
 		# LINE_STRIP markers use only the x component of scale, for the line width
 		polygon.scale.x = float(width)
 		for (x, y) in coords:
-			RosUtils.AppendMessage(polygon.points, RViz.__createPointMessage(x, y))
+			Ros.AppendMessage(polygon.points, RViz.__createPointMessage(x, y))
+		RViz.__logMarker(id, idSuffix, True)
 
 		if GeometryLib.coordsAreEqual(coords[0], coords[-1]): return polygon
 		# If the last vertex is not the same as the first one, we need to close the loop-back here.
-		RosUtils.AppendMessage(polygon.points, RViz.__createPointMessage(*coords[0]))
+		Ros.AppendMessage(polygon.points, RViz.__createPointMessage(*coords[0]))
 		return polygon
 
 	@staticmethod
-	def createLine(strId: str, coords: GeometryLib.CoordsList, outline: RGBA, width: float, arrow = False, durationNs: int = DEFAULT_RENDER_DURATION_NS) -> Marker:
-		"""Create a line Marker message.
+	def createLine(id: Id, coords: GeometryLib.CoordsList, outline: RGBA, width: float, arrow = False, durationNs: int = DEFAULT_RENDER_DURATION_NS, idSuffix: str = "") -> Msgs.Marker:
+		"""Create a line Msgs.Marker message.
 
 		Parameters
 		----------
-		strId : str
+		id : str
 			Used for refreshing the same element over successive frames.
 		coords : Geometry.Coords
 			The placement.
@@ -172,34 +175,35 @@ class RViz:
 
 		Returns
 		-------
-		Marker
+		Msgs.Marker
 			The marker message.
 		"""
-		RosUtils.Logger().debug("Render line strip id %s." % strId)
-		lineSeg = Marker()
+		Ros.Logger().debug("Render line strip id %s." % id)
+		lineSeg = RViz.Msgs.Marker()
 		lineSeg = RViz.__setMarkerHeader(lineSeg, durationNs)
-		lineSeg = RViz.__setMarkerId(lineSeg, strId)
-		lineSeg.type = Marker.LINE_STRIP
+		lineSeg = RViz.__setMarkerId(lineSeg, id, idSuffix)
+		lineSeg.type = RViz.Msgs.Marker.LINE_STRIP
 		lineSeg = RViz.__setMarkerColor(lineSeg, outline)
 		# LINE_STRIP markers use only the x component of scale, for the line width
 		lineSeg.scale.x = float(width)
 		for (x, y) in coords:
-			RosUtils.AppendMessage(lineSeg.points, RViz.__createPointMessage(x, y))
-		if arrow: RosUtils.Logger().info("Rendering arrow-head is not implemented.")
+			Ros.AppendMessage(lineSeg.points, RViz.__createPointMessage(x, y))
+		if arrow: Ros.Logger().info("Rendering arrow-head is not implemented.")
 		# if not self.renderArrows: continue
 		# (dx, dy) = Geometry.getUnitVectorFromAngle(end.angleFromX)
 		# dx = dx * self.HEADING_ARROW_LENGTH
 		# dy = dy * self.HEADING_ARROW_LENGTH
 		# msgs.append(RViz.createLine(canvas, [[p.pt.x, p.pt.y], [p.pt.x + dx, p.pt.y + dy]], color=self.MARKING_COLOR, tag=self.name, arrow=True))
+		RViz.__logMarker(id, idSuffix, True)
 		return lineSeg
 
 	@staticmethod
-	def createText(strId: str, coords: GeometryLib.Coords, text: str, outline: RGBA = ColorNames.BLACK, fontSize = 10.0, durationNs: int = DEFAULT_RENDER_DURATION_NS) -> Marker:
-		"""Create a text Marker message.
+	def createText(id: Id, coords: GeometryLib.Coords, text: str, outline: RGBA = ColorNames.BLACK, fontSize = 10.0, durationNs: int = DEFAULT_RENDER_DURATION_NS, idSuffix: str = "") -> Msgs.Marker:
+		"""Create a text Msgs.Marker message.
 
 		Parameters
 		----------
-		strId : str
+		id : str
 			Used for refreshing the same element over successive frames.
 		coords : Geometry.Coords
 			The placement.
@@ -212,39 +216,41 @@ class RViz:
 
 		Returns
 		-------
-		Marker
+		Msgs.Marker
 			The marker message.
 		"""
-		RosUtils.Logger().debug("Render text id %s." % strId)
-		textMarker = Marker()
+		Ros.Logger().debug("Render text id %s." % id)
+		textMarker = RViz.Msgs.Marker()
 		textMarker = RViz.__setMarkerHeader(textMarker, durationNs)
-		textMarker = RViz.__setMarkerId(textMarker, strId)
-		textMarker.type = Marker.TEXT_VIEW_FACING
+		textMarker = RViz.__setMarkerId(textMarker, id, idSuffix)
+		textMarker.type = RViz.Msgs.Marker.TEXT_VIEW_FACING
 		textMarker.text = text
 		textMarker = RViz.__setMarkerPose(textMarker, coords)
 		textMarker = RViz.__setMarkerColor(textMarker, outline)
 		textMarker.scale.z = float(fontSize)
+		RViz.__logMarker(id, idSuffix, True)
 		return textMarker
 
 	@staticmethod
-	def removeMarker(strId: str) -> Marker:
+	def removeMarker(id: Id, idSuffix: str = "") -> Msgs.Marker:
 		"""
 		Remove a shape from RViz.
 		"""
-		RosUtils.Logger().debug("Clear rendered RViz shape id %s." % strId)
-		marker = Marker()
+		Ros.Logger().debug("Clear rendered RViz shape id %s." % id)
+		marker = RViz.Msgs.Marker()
 		marker = RViz.__setMarkerHeader(marker, -1)
-		marker.action = Marker.DELETE # To remove shape
-		marker = RViz.__setMarkerId(marker, strId)
+		marker.action = RViz.Msgs.Marker.DELETE # To remove shape
+		marker = RViz.__setMarkerId(marker, id, idSuffix)
+		RViz.__logMarker(id, idSuffix, False)
 		return marker
 
 	@staticmethod
-	def removeAllMarkers() -> Marker:
+	def removeAllMarkers() -> Msgs.Marker:
 		"""
 		Remove all shapes from RViz
 		"""
-		RosUtils.Logger().debug("Clear all rendered shapes from RViz.")
-		marker = Marker()
+		marker = RViz.Msgs.Marker()
 		marker = RViz.__setMarkerHeader(marker, -1)
-		marker.action = Marker.DELETEALL # To remove shape # CSpell: disable-line
+		marker.action = RViz.Msgs.Marker.DELETEALL # To remove shape # CSpell: disable-line
+		Ros.Logger().debug("Setting all markers to delete.")
 		return marker

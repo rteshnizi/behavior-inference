@@ -13,11 +13,8 @@ __Topic = TypeVar("__Topic")
 
 NAMESPACE = "rt_bi_core"
 __LOGGER: RcutilsLogger | None = None
-# In case of failure to obtain a ROS logger, the default Python logger will be used, which most likely will log to std stream.
 logging.basicConfig(format="[+][%(levelname)s]: %(message)s", force=True)
 __rtBiLog: Callable[[str], bool] = lambda m: False
-__strNameToIdNum: dict[str, int] = dict()
-"""This map helps us assume nothing about the meaning of the names assigned to any regions."""
 
 
 def SetLogger(logger: RcutilsLogger, defaultSeverity: LoggingSeverity) -> None:
@@ -28,6 +25,15 @@ def SetLogger(logger: RcutilsLogger, defaultSeverity: LoggingSeverity) -> None:
 	return
 
 def Logger() -> RcutilsLogger | logging.Logger:
+	"""
+	The logger object.
+
+	:return: The default ROS client Logger object.
+	This is most likely the logger that belong to the node that owns the process.
+	In case of failure to obtain a ROS logger, the default Python logger will be used,
+	which most likely will log to std stream.
+	:rtype: `RcutilsLogger` or `logging.Logger`
+	"""
 	global __LOGGER
 	if __LOGGER is None:
 		context = rclpy.get_default_context()

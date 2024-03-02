@@ -1,11 +1,13 @@
+from typing import Any
+
 import rclpy
 from rclpy.logging import LoggingSeverity
 
-from rt_bi_commons.Base.RegionsSubscriber import TargetSubscriber
 from rt_bi_commons.Utils import Ros
-from rt_bi_commons.Utils.Geometry import GeometryLib, Shapely
+from rt_bi_commons.Utils.Geometry import GeometryLib
 from rt_bi_commons.Utils.Msgs import Msgs
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
+from rt_bi_core.RegionsSubscriber import TargetSubscriber
 from rt_bi_emulator.Emulators.AffineRegionEmulator import AffineRegionEmulator
 
 
@@ -21,11 +23,11 @@ class SensorEmulator(AffineRegionEmulator, TargetSubscriber):
 		msg = self.asRegularSpaceArrayMsg()
 		self.__regionPublisher.publish(msg)
 
-	def onTargetsUpdated(self) -> None:
+	def onRegionsUpdated(self, __1: Any, __2: Any) -> None:
 		for targetId in self.targets:
 			region = self.targets[targetId]
 			if len(region) > 1: raise RuntimeError(f"We do not expect a target region with more than one member.")
-			target = region[region.regionIds[0]]
+			target = region[region.polygonIds[0]]
 			trackletMsg = Msgs.RtBi.Tracklet(spawned=False, vanished=False)
 			trackletMsg.id = target.id
 			trackletMsg.pose = Msgs.toStdPose(target.interior.centroid)

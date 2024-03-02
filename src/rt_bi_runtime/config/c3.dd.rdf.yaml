@@ -5,7 +5,7 @@ rt_bi_runtime:
       rdf_store: "rt-bi"
       rdf_dir: "rdf"
       sparql_dir: "rdf"
-      sparql_query_template: "template.rq"
+      sparql_query_template: "template.spatial.rq"
       sparql_var_selectors:
         - '["color", "var.color.rq"]'
         - '["name", "var.name.rq"]'

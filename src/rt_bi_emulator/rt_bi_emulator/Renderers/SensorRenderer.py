@@ -1,28 +1,25 @@
-from typing import cast
+from typing import Any, cast
 
 import rclpy
 from rclpy.logging import LoggingSeverity
-from visualization_msgs.msg import MarkerArray
 
-from rt_bi_commons.Base.RegionsSubscriber import RegionsSubscriberBase, SensorSubscriber
-from rt_bi_commons.Shared.Tracklet import Tracklet
 from rt_bi_commons.Utils import Ros
-from rt_bi_commons.Utils.Geometry import GeometryLib
 from rt_bi_commons.Utils.Msgs import Msgs
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
-from rt_bi_commons.Utils.RViz import RViz
-from rt_bi_core.Polygons.SensingPolygon import SensingPolygon
+from rt_bi_core.RegionsSubscriber import SensorSubscriber
+from rt_bi_core.Spatial.SensingPolygon import SensingPolygon
+from rt_bi_core.Spatial.Tracklet import Tracklet
 
 
 class SensorRenderer(SensorSubscriber):
 	""" This Node listens to all the messages published on the topics related to sensors and renders them. """
 	def __init__(self, **kwArgs):
-		newKw = { "node_name": "renderer_sensor", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
+		newKw = { "node_name": "renderer_sensor", "loggingSeverity": LoggingSeverity.WARN, **kwArgs}
 		super().__init__(**newKw)
 		RtBiInterfaces.subscribeToEstimation(self, self.__onEstimation)
 
-	def onSensorsUpdated(self) -> None:
-		self.log(f"{self.get_fully_qualified_name()} sensors updated.")
+	def onRegionsUpdated(self, __1: Any, __2: Any) -> None:
+		self.log("Sensors updated.")
 		self.render()
 		return
 
@@ -43,8 +40,8 @@ class SensorRenderer(SensorSubscriber):
 				tracklet.spawned,
 				tracklet.vanished
 			)
-			id_ = SensingPolygon.Id(regionId=msg.robot.id, polygonId=Ros.GetMessage(msg.robot.polygons, 0, Msgs.RtBi.Polygon).id)
-			self.sensors[id_.regionId][id_].tracklets[tracklet.id] = tracklet
+			id = SensingPolygon.Id(regionId=msg.robot.id, polygonId=Ros.GetMessage(msg.robot.polygons, 0, Msgs.RtBi.Polygon).id, overlappingRegionId="", overlappingPolygonId="")
+			self.sensors[id.regionId][id].tracklets[tracklet.id] = tracklet
 		self.render()
 		return
 

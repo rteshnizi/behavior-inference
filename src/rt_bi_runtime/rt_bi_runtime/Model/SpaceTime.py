@@ -1,5 +1,5 @@
-from rt_bi_commons.Shared.TimeInterval import TimeInterval
 from rt_bi_commons.Utils.Geometry import GeometryLib, Shapely
+from rt_bi_core.Temporal.TimeInterval import TimeInterval
 
 
 class ProjectiveSpaceTimeSet:

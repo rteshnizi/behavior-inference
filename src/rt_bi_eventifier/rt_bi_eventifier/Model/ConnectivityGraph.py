@@ -1,21 +1,20 @@
-from typing import Callable, Dict, List, Literal, Sequence, Set, TypeVar, Union
+from typing import Callable, Literal, Sequence, TypeAlias, TypeVar, cast, overload
 
 import networkx as nx
-from visualization_msgs.msg import Marker, MarkerArray
 
-from rt_bi_commons.Utils.Geometry import Geometry, LineString, Point, Polygon
-from rt_bi_commons.Utils.Ros import AppendMessage, ConcatMessageArray, Log, Logger
-from rt_bi_commons.Utils.RViz import ColorNames, Publisher, RViz
-from rt_bi_core.MapRegion import MapRegion
-from rt_bi_core.SensorRegion import SensorRegion
-from rt_bi_core.ShadowRegion import ShadowRegion
-from rt_bi_core.SymbolRegion import SymbolRegion
-from rt_bi_eventifier.Model.FieldOfView import FieldOfView
-from rt_bi_eventifier.Model.MapRegions import MapRegions
-from rt_bi_eventifier.Model.Shadows import Shadows
-from rt_bi_eventifier.Model.SymbolRegions import SymbolRegions
+from rt_bi_commons.Shared.Color import ColorNames
+from rt_bi_commons.Utils.Geometry import GeometryLib, Shapely
+from rt_bi_commons.Utils.NetworkX import NxUtils
+from rt_bi_commons.Utils.Ros import AppendMessage, ConcatMessageArray, Log, Logger, Publisher
+from rt_bi_commons.Utils.RViz import RViz
+from rt_bi_core.Spatial.MovingPolygon import MovingPolygon
+from rt_bi_core.Spatial.SensingPolygon import SensingPolygon
+from rt_bi_core.Spatial.ShadowPolygon import ShadowPolygon
+from rt_bi_core.Spatial.SpatialRegion import SpatialRegion
+from rt_bi_core.Spatial.StaticPolygon import StaticPolygon
 
-RegionType = TypeVar("RegionType", bound=Union[SensorRegion, SymbolRegion, ShadowRegion, MapRegion])
+_PolygonAlias: TypeAlias = SensingPolygon | ShadowPolygon | MovingPolygon | StaticPolygon
+_T_Polygon = TypeVar("_T_Polygon", bound=_PolygonAlias)
 
 class ConnectivityGraph(nx.DiGraph):
 	"""
@@ -23,96 +22,111 @@ class ConnectivityGraph(nx.DiGraph):
 		© Reza Teshnizi 2018-2023
 	"""
 
-	NodeContent = Dict[Literal["region", "centroid", "fromTime"], Union[RegionType, Point, int]]
-	"""### NodeContent
-		Data contents of a ConnectivityGraph node.
-	"""
+	ContentKey: TypeAlias = Literal["polygon", "centroid", "fromTime"]
+	ContentValue: TypeAlias = _PolygonAlias | Shapely.Point | int
+	NodeContent: TypeAlias = dict[ContentKey, ContentValue]
+	""" Data contents of a `ConnectivityGraph` node. """
+	Map: TypeAlias = SpatialRegion[MovingPolygon | StaticPolygon]
+	Sensors: TypeAlias = SpatialRegion[SensingPolygon]
+	Shadows: TypeAlias = SpatialRegion[ShadowPolygon]
 
 	def __init__(
 			self,
 			timeNanoSecs: int,
-			mapRegions: Union[List[MapRegion], MapRegions],
-			fovRegions: Union[List[SensorRegion], FieldOfView],
-			symbols: Union[List[SymbolRegion], SymbolRegions] = [],
-			rvizPublisher: Union[Publisher, None] = None,
+			mapRegions: list[MovingPolygon | StaticPolygon] | Map,
+			sensors: list[SensingPolygon] | Sensors,
+			rvizPublisher: Publisher | None = None,
 	) -> None:
 		super().__init__()
 		self.timeNanoSecs = timeNanoSecs
-		Log("Constructing Connectivity Graph @ %d" % self.timeNanoSecs)
+		Log(f"Constructing Connectivity Graph @ {self.timeNanoSecs}")
 		"""Geometric description of all the regions represented in this graph."""
-		self.__fieldOfView: FieldOfView = FieldOfView()
-		"""The RegularSpatialRegion representing the field-of-view."""
-		self.__shadows: Shadows = Shadows()
-		"""The RegularSpatialRegion representing the shadows."""
-		self.__symbols: SymbolRegions = SymbolRegions()
-		"""The RegularSpatialRegion representing the shadows."""
-		self.__mapPerimeter: MapRegions = MapRegions()
-		"""The RegularSpatialRegion representing the map's perimeter."""
+		self.__sensors = ConnectivityGraph.Sensors()
+		"""The SpatialRegion representing the field-of-view."""
+		self.__shadows = ConnectivityGraph.Shadows()
+		"""The SpatialRegion representing the shadows."""
+		self.__map = ConnectivityGraph.Map()
+		"""The SpatialRegion representing the map's perimeter."""
 		self.__rvizPublisher = rvizPublisher
-		self.__constructRegularRegion(regionList=mapRegions, constructionCallback=self.__constructPerimeter, loggerString="Map Perimeter")
-		self.__constructRegularRegion(regionList=fovRegions, constructionCallback=self.__constructFov, loggerString="Field-of-View")
+		self.__constructRegularRegion(regionList=mapRegions, constructionCallback=self.__constructMap, logStr="Map")
+		self.__constructRegularRegion(regionList=sensors, constructionCallback=self.__constructFov, logStr="Sensors")
 		Log("Constructing Shadows.")
 		self.__constructShadows()
-		self.__constructRegularRegion(regionList=symbols, constructionCallback=self.__constructSymbols, loggerString="Symbols") # Must come after constructing shadows
 
 	def __repr__(self):
 		return "CGr-%d" % self.timeNanoSecs
 
-	def __addNode(self, region: RegionType) -> RegionType:
+	@overload
+	def getContent(self, node: NxUtils.Id, contentKey: Literal[""]) -> NodeContent: ...
+	@overload
+	def getContent(self, node: NxUtils.Id, contentKey: Literal["polygon"]) -> _PolygonAlias: ...
+	@overload
+	def getContent(self, node: NxUtils.Id, contentKey: Literal["centroid"]) -> Shapely.Point: ...
+	@overload
+	def getContent(self, node: NxUtils.Id, contentKey: Literal["fromTime"]) -> int: ...
+
+	def getContent(self, node: NxUtils.Id, contentKey: ContentKey | Literal[""]) -> NodeContent | ContentValue:
+		if contentKey == "": return self.nodes[node]
+		else: return self.nodes[node][contentKey]
+
+	def __addNode(self, polygon: _PolygonAlias) -> None:
 		if (
-			region.regionType != SensorRegion.RegionType.SENSING and
-			region.regionType != ShadowRegion.RegionType.SHADOW and
-			region.regionType != SymbolRegion.RegionType.SYMBOL
+			polygon.type != SensingPolygon.type and
+			polygon.type != ShadowPolygon.type and
+			polygon.type != MovingPolygon.type
 		):
-			raise TypeError("Unknown node type %s" % region.regionType)
+			raise TypeError(f"Unknown node type {polygon.type}")
 
-		if region.regionType == SensorRegion.RegionType.SENSING: self.fieldOfView.addConnectedComponent(region) # type: ignore
-		if region.regionType == ShadowRegion.RegionType.SHADOW: self.shadows.addConnectedComponent(region) # type: ignore
-		if region.regionType == SymbolRegion.RegionType.SYMBOL: self.symbols.addConnectedComponent(region) # type: ignore
+		if polygon.type == SensingPolygon.type:
+			self.sensors.addConnectedComponent(cast(SensingPolygon, polygon))
+		if polygon.type == ShadowPolygon.type:
+			self.shadows.addConnectedComponent(cast(ShadowPolygon, polygon))
+		if polygon.type == MovingPolygon.type:
+			self.map.addConnectedComponent(cast(MovingPolygon, polygon))
 
-		nodeName = region.name
-		self.add_node(nodeName)
-		self.nodes[nodeName]["region"] = region
-		self.nodes[nodeName]["centroid"] = region.interior.centroid
-		self.nodes[nodeName]["fromTime"] = self.timeNanoSecs
-		return region
+		self.add_node(polygon.id)
+		self.nodes[polygon.id]["polygon"] = polygon
+		self.nodes[polygon.id]["centroid"] = polygon.interior.centroid
+		self.nodes[polygon.id]["fromTime"] = self.timeNanoSecs
+		return
 
-	def __addEdges(self, fromRegion: RegionType, toRegion: RegionType, directed=False):
-		self.add_edge(fromRegion.name, toRegion.name)
+	def __addEdges(self, fromRegion: _PolygonAlias, toRegion: _PolygonAlias, directed=False):
+		self.add_edge(fromRegion.shortName, toRegion.shortName)
 		if directed: return
-		self.add_edge(toRegion.name, fromRegion.name)
+		self.add_edge(toRegion.shortName, fromRegion.shortName)
 
-	def __constructRegularRegion(self, regionList: Union[Sequence[RegionType], MapRegions, FieldOfView, SymbolRegions], constructionCallback: Callable[[Sequence[RegionType]], None], loggerString: str) -> None:
+	def __constructRegularRegion(self, regionList: Sequence[_T_Polygon] | Map | Sensors, constructionCallback: Callable[[Sequence[_T_Polygon]], None], logStr: str) -> None:
 		if isinstance(regionList, Sequence):
-			Log("Constructing %s." % loggerString)
+			Log(f"Constructing {logStr}.")
 			constructionCallback(regionList)
 		else:
-			Log("Making a shallow copy of %s from previous graph." % loggerString)
+			Log(f"Making a shallow copy of {logStr} from previous graph.")
 			l = [regionList[n] for n in regionList]
-			constructionCallback(l) # type: ignore
+			constructionCallback(l) # pyright: ignore[reportArgumentType]
 		return
 
-	def __constructPerimeter(self, regions: Sequence[MapRegion]) -> None:
-		for region in regions:
-			self.mapRegions.addConnectedComponent(region)
-			if region.timeNanoSecs > self.mapRegions.timeNanoSec: self.mapRegions.timeNanoSec = region.timeNanoSecs
+	def __constructMap(self, regions: Sequence[MovingPolygon | StaticPolygon]) -> None:
+		for polygon in regions:
+			self.map.addConnectedComponent(polygon)
+			if polygon.timeNanoSecs > self.map.timeNanoSec: self.map.timeNanoSec = polygon.timeNanoSecs
 		return
 
-	def __constructFov(self, regions: Sequence[SensorRegion]) -> None:
+	def __constructFov(self, regions: Sequence[SensingPolygon]) -> None:
 		for region1 in regions:
 			self.__addNode(region1)
 			for region2 in regions:
 				if region1.shortName == region2.shortName: continue
-				if Geometry.intersects(region1.interior, region2.interior): self.__addEdges(region1, region2, directed=True)
+				if GeometryLib.intersects(region1.interior, region2.interior): self.__addEdges(region1, region2, directed=True)
 		return
 
-	def __addShadowNode(self, shadow: Polygon) -> None:
-		region = ShadowRegion(id=len(self.__shadows), envelope=[], timeNanoSecs=self.timeNanoSecs, interior=shadow)
+	def __addShadowNode(self, shadow: Shapely.Polygon) -> None:
+		__SHADOW_ID_PREFIX = "https://rezateshnizi.com/rt-bi/tower_bridge/defintion/"
+		region = ShadowPolygon(polygonId="", regionId="", envelope=[], timeNanoSecs=self.timeNanoSecs, interior=shadow)
 		self.__addNode(region)
-		for fovName in self.fieldOfView:
-			fovComponent = self.fieldOfView[fovName]
+		for fovName in self.sensors:
+			fovComponent = self.sensors[fovName]
 			if not fovComponent.hasTrack: continue
-			if Geometry.haveOverlappingEdge(fovComponent.interior, region.interior):
+			if GeometryLib.haveOverlappingEdge(fovComponent.interior, region.interior):
 				for i in fovComponent.tracklets:
 					tracklet = fovComponent.tracklets[i]
 					if tracklet.spawned:
@@ -123,14 +137,15 @@ class ConnectivityGraph(nx.DiGraph):
 
 	def __constructShadows(self) -> None:
 		shadows = []
-		if (not self.fieldOfView.isEmpty) and Geometry.intersects(self.mapRegions.interior, self.fieldOfView.interior):
-			shadows = Geometry.difference(self.mapRegions.interior, self.fieldOfView.interior)
+		if (not self.sensors.isEmpty) and GeometryLib.intersects(self.map.interior, self.sensors.interior):
+			shadows = GeometryLib.difference(self.map.interior, self.sensors.interior)
 			shadows = [p for p in shadows if p.length > 0]
-			shadows = list(filter(lambda p: not isinstance(p, LineString), shadows))
-			shadows = Geometry.union(shadows)
-			shadows = Geometry.toGeometryList(shadows)
+			shadows = list(filter(lambda p: not isinstance(p, Shapely.LineString), shadows))
+			shadows = GeometryLib.union(shadows)
+			shadows = GeometryLib.toGeometryList(shadows)
 		else:
-			shadows.append(self.mapRegions.interior)
+			mapPolys = GeometryLib.toGeometryList(self.map.interior)
+			shadows = shadows + mapPolys
 		if len(shadows) == 0:
 			Logger().warn("No Shadows.")
 			return # Avoid dealing with empty unions
@@ -138,88 +153,85 @@ class ConnectivityGraph(nx.DiGraph):
 			self.__addShadowNode(shadow)
 		return
 
-	def __constructSymbolsPartitions(self, symbol: SymbolRegion, regularRegion: Union[FieldOfView, Shadows]) -> None:
-		envelopePoly = Polygon(symbol.envelope) if symbol.overlappingRegionType != SymbolRegion.RegionType.BASE else symbol.interior
-		intersectionPolys = Geometry.intersection(envelopePoly, regularRegion.interior)
-		intersectionPolys = Geometry.toGeometryList(intersectionPolys)
+	def __constructMovingPolygonPartitions(self, polygon: MovingPolygon, regularRegion: Sensors | Shadows) -> None:
+		# envelopePoly = Shapely.Polygon(polygon.envelope) if polygon.overlappingRegionType != MovingPolygon.type else polygon.interior
+		envelopePoly = Shapely.Polygon(polygon.envelope)
+		intersectionPolys = GeometryLib.intersection(envelopePoly, regularRegion.interior)
+		intersectionPolys = GeometryLib.toGeometryList(intersectionPolys)
 		nonEmptyIntersections = [p for p in intersectionPolys if p.length > 0]
-		insidePolys: List[Polygon] = list(filter(lambda p: not isinstance(p, LineString), nonEmptyIntersections))
+		insidePolys: list[Shapely.Polygon] = list(filter(lambda p: not isinstance(p, Shapely.LineString), nonEmptyIntersections))
 		for i in range(len(insidePolys)):
 			poly = insidePolys[i]
 			for subRegionId in regularRegion:
 				subRegion = regularRegion[subRegionId]
-				intersection = Geometry.intersection(subRegion.interior, poly)
+				intersection = GeometryLib.intersection(subRegion.interior, poly)
 				if not intersection.is_empty:
-					splitSymbol = SymbolRegion(
-						centerOfRotation=symbol.centerOfRotation,
-						id=symbol.id,
-						envelope=symbol.envelope,
-						timeNanoSecs=symbol.timeNanoSecs,
-						overlappingRegionType=regularRegion.regionType,
-						overlappingRegionId=subRegion.id,
+					parts = MovingPolygon(
+						centerOfRotation=polygon.centerOfRotation,
+						polygonId=polygon.id.polygonId,
+						regionId=polygon.id.regionId,
+						envelope=polygon.envelope,
+						timeNanoSecs=polygon.timeNanoSecs,
+						overlappingRegionType=subRegion.type,
+						overlappingPolygonId=subRegion.id,
 						interior=poly,
 					)
-					Log(f"Adding partition {splitSymbol.name}")
-					self.__addNode(splitSymbol)
-					self.__addEdges(subRegion, splitSymbol)
+					Log(f"Adding partition {parts.shortName}")
+					self.__addNode(parts)
+					self.__addEdges(subRegion, parts)
 					break
 		return
 
-	def __constructSymbols(self, symbols: Sequence[SymbolRegion]) -> None:
-		for symbol in symbols:
-			if symbol.regionType != SensorRegion.RegionType.SYMBOL: continue
-			self.__constructSymbolsPartitions(symbol, self.fieldOfView)
-			self.__constructSymbolsPartitions(symbol, self.shadows)
+	def __constructMovingPolygons(self, polygons: Sequence[MovingPolygon]) -> None:
+		for polygon in polygons:
+			if polygon.type != MovingPolygon.type: continue
+			self.__constructMovingPolygonPartitions(polygon, self.sensors)
+			self.__constructMovingPolygonPartitions(polygon, self.shadows)
 		return
 
-	def __getShadowAreaMarkers(self, markerArray: MarkerArray) -> MarkerArray:
+	def __getShadowAreaMarkers(self, markerArray: RViz.Msgs.MarkerArray) -> RViz.Msgs.MarkerArray:
 		for shadowName in self.shadows:
 			shadow = self.shadows[shadowName]
 			textCoords = shadow.interior.centroid
 			textCoords = (textCoords.x, textCoords.y)
 			timerText = "area(%s) = %.3f" % (shadowName, shadow.interior.area)
-			timerMarker = RViz.createText("rt_st_%s" % shadowName, textCoords, timerText, ColorNames.RED, fontSize=7.5)
+			timerMarker = RViz.createText(shadow.id, textCoords, timerText, ColorNames.RED, fontSize=7.5, idSuffix="area")
 			AppendMessage(markerArray.markers, timerMarker)
 		return markerArray
 
 	@property
-	def mapRegions(self) -> MapRegions:
+	def map(self) -> Map:
 		"""The geometric description of the map."""
-		return self.__mapPerimeter
+		return self.__map
 
 	@property
-	def fieldOfView(self) -> FieldOfView:
-		return self.__fieldOfView
+	def sensors(self) -> Sensors:
+		return self.__sensors
 
 	@property
 	def shadows(self) -> Shadows:
 		return self.__shadows
 
 	@property
-	def symbols(self) -> SymbolRegions:
-		return self.__symbols
-
-	@property
-	def allRegionNames(self) -> Set[str]:
+	def allIds(self) -> set[NxUtils.Id]:
 		"""Returns all of the regions in this connectivity graph."""
-		listOfRegions = set(self.shadows.regionNames) & set(self.fieldOfView.regionNames) & set(self.symbols.regionNames)
-		return listOfRegions
+		ids = set(self.shadows.polygonIds) & set(self.sensors.polygonIds)
+		return ids
 
-	def getRegion(self, region: RegionType) -> Union[RegionType, None]:
-		rName = region.shortName
-		if rName in self.fieldOfView: return self.fieldOfView[rName] # type: ignore
-		if rName in self.shadows: return self.shadows[rName] # type: ignore
-		if rName in self.symbols: return self.symbols[rName] # type: ignore
+	def getRegion(self, region: _T_Polygon) -> _T_Polygon | None:
+		if region.id in self.sensors: return self.sensors[region.id]
+		if region.id in self.shadows: return self.shadows[region.id]
+		if region.id in self.map: return self.map[region.id] # pyright: ignore[reportReturnType]
 		return None
 
 	def render(self, rvizPublisher: Publisher | None = None) -> None:
 		if rvizPublisher is not None: self.__rvizPublisher = rvizPublisher
 		if self.__rvizPublisher is None: return
-		markers: List[Marker] = []
+		markers: list[RViz.Msgs.Marker] = []
 		ConcatMessageArray(markers, self.shadows.render())
-		ConcatMessageArray(markers, self.symbols.render())
-		# ConcatMessageArray(markers, self.fieldOfView.render())
-		message = MarkerArray()
+		ConcatMessageArray(markers, self.map.render())
+		# ConcatMessageArray(markers, self.sensors.render())
+		message = RViz.Msgs.MarkerArray()
 		for marker in markers: AppendMessage(message.markers, marker)
 		message = self.__getShadowAreaMarkers(message)
 		self.__rvizPublisher.publish(message)
@@ -228,10 +240,11 @@ class ConnectivityGraph(nx.DiGraph):
 	def clearRender(self, rvizPublisher: Publisher | None = None) -> None:
 		if rvizPublisher is not None: self.__rvizPublisher = rvizPublisher
 		if self.__rvizPublisher is None: return
-		markers: List[Marker] = []
+		markers: list[RViz.Msgs.Marker] = []
 		ConcatMessageArray(markers, self.shadows.clearRender())
-		ConcatMessageArray(markers, self.symbols.clearRender())
-		message = MarkerArray()
+		ConcatMessageArray(markers, self.map.clearRender())
+		# ConcatMessageArray(markers, self.sensors.clearRender())
+		message = RViz.Msgs.MarkerArray()
 		for marker in markers: AppendMessage(message.markers, marker)
 		self.__rvizPublisher.publish(message)
 		return

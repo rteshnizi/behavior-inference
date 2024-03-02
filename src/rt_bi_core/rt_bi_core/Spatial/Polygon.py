@@ -1,15 +1,15 @@
-from abc import ABC
+from abc import ABC, abstractproperty
 from enum import Enum
-from typing import Final, NamedTuple, Sequence, TypeAlias
-
-from visualization_msgs.msg import Marker
+from typing import Sequence, TypeAlias, TypeVar
 
 from rt_bi_commons.Shared.Color import RGBA, ColorNames, ColorUtils
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Geometry import AffineTransform, GeometryLib, Shapely
 from rt_bi_commons.Utils.Msgs import Msgs
+from rt_bi_commons.Utils.NetworkX import NxUtils
 from rt_bi_commons.Utils.RViz import RViz
 
+_T = TypeVar("_T", bound=type["Polygon"])
 
 class Polygon(ABC):
 	"""
@@ -17,12 +17,10 @@ class Polygon(ABC):
 		Provides much of the structure and functionality.
 	"""
 
-	from rt_bi_commons.Utils.RViz import DEFAULT_RENDER_DURATION_NS, NANO_CONVERSION_CONSTANT
+	from rt_bi_commons.Utils.Msgs import NANO_CONVERSION_CONSTANT
+	from rt_bi_commons.Utils.RViz import DEFAULT_RENDER_DURATION_NS
 
-
-	class Id(NamedTuple):
-		regionId: str
-		polygonId: str
+	Id = NxUtils.Id
 
 	Edges: TypeAlias = dict[str, Shapely.LineString]
 	"""
@@ -33,6 +31,7 @@ class Polygon(ABC):
 		BASE = "B"
 		"""Indicates unset value."""
 		DYNAMIC = "D"
+		MOVING = "M"
 		SENSING = "Z"
 		SHADOW = "X"
 		STATIC = "S"
@@ -41,18 +40,18 @@ class Polygon(ABC):
 	type = Types.BASE
 
 	def __init__(
-		self,
-		polygonId: str,
-		regionId: str,
-		envelope: GeometryLib.CoordsList,
-		envelopeColor: RGBA,
-		interiorColor: RGBA = ColorNames.GREY_DARK,
-		interior: Shapely.Polygon | None = None,
-		renderLineWidth = 1,
-		predicates: list[Msgs.RtBi.Predicate] = [],
-		timeNanoSecs: int = -1,
-		**kwArgs
-	):
+			self,
+			polygonId: str,
+			regionId: str,
+			envelope: GeometryLib.CoordsList,
+			envelopeColor: RGBA,
+			interiorColor: RGBA = ColorNames.GREY_DARK,
+			interior: Shapely.Polygon | None = None,
+			renderLineWidth = 1,
+			predicates: list[Msgs.RtBi.Predicate] = [],
+			timeNanoSecs: int = -1,
+			**kwArgs
+		) -> None:
 		"""
 		:param str polygonId: Id of the polygon.
 		:param str regionId: Id of the regular region owning this polygon.
@@ -66,7 +65,7 @@ class Polygon(ABC):
 		:type predicates: `list[Msgs.RtBi.Predicate]`
 		:param int timeNanoSecs: Time of the predicate evaluations, defaults to ``-1`` which indicates the polygon is static.
 		"""
-		self.__id = Polygon.Id(regionId=regionId, polygonId=polygonId)
+		self.__id = Polygon.Id(regionId=regionId, polygonId=polygonId, overlappingRegionId="", overlappingPolygonId="")
 		self.__RENDER_LINE_WIDTH = renderLineWidth
 		self.__interiorPolygon = Shapely.Polygon(envelope) if interior is None else interior
 		self.__envelope = GeometryLib.getGeometryCoords(self.__interiorPolygon) if len(envelope) == 0 else envelope
@@ -83,7 +82,7 @@ class Polygon(ABC):
 
 	def __buildEdges(self) -> Edges:
 		d = {}
-		verts = list(self.interior.exterior.coords)
+		verts = GeometryLib.getGeometryCoords(self.interior)
 		for v1, v2 in zip(verts, verts[1:]):
 			edgeCoords = [v1, v2]
 			edge = Shapely.LineString(edgeCoords)
@@ -119,12 +118,8 @@ class Polygon(ABC):
 
 	@property
 	def shortName(self) -> str:
-		return self.__id.polygonId
-
-	@property
-	def name(self) -> str:
-		"""A pre-designed string identifier, in the following format: `{self.regionType.value}-{self.id}`"""
-		return f"{self.type.value}-{self.id}"
+		""" Easy to read name. **Do not use it in any meaningful way.**"""
+		return f"{self.type.value}-{self.__id.polygonId.split('#')[-1]}"
 
 	@property
 	def envelopeColor(self) -> RGBA:
@@ -135,16 +130,26 @@ class Polygon(ABC):
 	def id(self) -> Id:
 		return self.__id
 
+	@id.setter
+	def id(self, value: Id) -> None:
+		self.__id = value
+		return
+
 	@property
 	def interior(self) -> Shapely.Polygon:
 		"""The Geometric description of the region."""
 		return self.__interiorPolygon
 
-
 	@property
 	def centroid(self) -> GeometryLib.Coords:
 		"""The centroid of the interior."""
 		return self.__interiorPolygon.centroid
+
+	@property
+	def bounds(self) -> tuple[GeometryLib.Coords, GeometryLib.Coords]:
+		"""``[(minX, minY), (maxX, maxY)]``"""
+		(minX, minY, maxX, maxY) = self.__interiorPolygon.bounds
+		return ((minX, minY), (maxX, maxY))
 
 	@property
 	def interiorColor(self) -> RGBA:
@@ -158,6 +163,11 @@ class Polygon(ABC):
 		The edge identifier is a string.
 		"""
 		return self.__edges
+
+	@abstractproperty
+	def centerOfRotation(self) -> GeometryLib.Coords:
+		"""The center of rotation of a polygonal region."""
+		...
 
 	def forceUpdateInteriorPolygon(self, polygon: Shapely.Polygon) -> None:
 		"""Deliberately did not use a setter to not casually just update the interior."""
@@ -188,26 +198,34 @@ class Polygon(ABC):
 			if GeometryLib.lineSegmentsAreAlmostEqual(finalConfig, afterTransformation): return edge
 		return None
 
-	def render(self, durationNs: int = DEFAULT_RENDER_DURATION_NS, renderText: bool = False, envelopeColor: RGBA | None = None) -> Sequence[Marker]:
+	def render(self, durationNs: int = DEFAULT_RENDER_DURATION_NS, renderText: bool = False, envelopeColor: RGBA | None = None) -> Sequence[RViz.Msgs.Marker]:
 		msgs = []
 		envelopColor = envelopeColor if envelopeColor is not None else self.__DEFAULT_ENVELOPE_COLOR
 		marker = RViz.createPolygon(
-			self.name,
+			self.id,
 			GeometryLib.getGeometryCoords(self.interior),
 			envelopColor,
 			self.__RENDER_LINE_WIDTH,
-			durationNs=durationNs
+			durationNs=durationNs,
 		)
 		msgs.append(marker)
 		if renderText:
 			textCoords = GeometryLib.getGeometryCoords(self.interior.centroid)[0]
-			msgs.append(RViz.createText(f"{self.name}_txt", textCoords, self.name, self.__TEXT_COLOR, durationNs=durationNs))
+			marker = RViz.createText(
+				self.id,
+				textCoords,
+				self.shortName,
+				self.__TEXT_COLOR,
+				durationNs=durationNs,
+				idSuffix="txt"
+			)
+			msgs.append(marker)
 		return msgs
 
-	def clearRender(self) -> Sequence[Marker]:
+	def clearRender(self) -> Sequence[RViz.Msgs.Marker]:
 		msgs = []
-		msgs.append(RViz.removeMarker(self.name))
-		msgs.append(RViz.removeMarker("%s_txt" % self.name))
+		msgs.append(RViz.removeMarker(self.id))
+		msgs.append(RViz.removeMarker(self.id, "txt"))
 		return msgs
 
 	def toRegularSpaceMsg(self) -> Msgs.RtBi.RegularSpace:

@@ -2,16 +2,15 @@ import rclpy
 from rclpy.logging import LoggingSeverity
 
 from rt_bi_commons.Base.ColdStartableNode import ColdStartableNode, ColdStartPayload
-from rt_bi_commons.Base.RegionsSubscriber import RegionsSubscriberBase
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
-from rt_bi_core.Polygons.DynamicPolygon import DynamicPolygon
-from rt_bi_core.Polygons.StaticPolygon import StaticPolygon
+from rt_bi_core.Spatial.MovingPolygon import MovingPolygon
+from rt_bi_core.Spatial.StaticPolygon import StaticPolygon
 from rt_bi_interfaces.msg import RegularSpaceArray
 from rt_bi_interfaces.srv import SpaceTime
 
 
-class MapEmulator(ColdStartableNode, RegionsSubscriberBase):
+class MapEmulator(ColdStartableNode):
 	"""
 	This class listens to all static and dynamic map region updates:
 
@@ -21,7 +20,7 @@ class MapEmulator(ColdStartableNode, RegionsSubscriberBase):
 	def __init__(self) -> None:
 		newKw = { "node_name": "emulator_dynamic_map", "loggingSeverity": LoggingSeverity.INFO }
 		super().__init__(**newKw)
-		self.mapRegions: dict[str, StaticPolygon | DynamicPolygon] = {}
+		self.mapRegions: dict[str, StaticPolygon | MovingPolygon] = {}
 		self.__mapRegionsPublisher = RtBiInterfaces.createMapRegionsPublisher(self)
 		self.rdfClient = RtBiInterfaces.createSpaceTimeClient(self)
 		Ros.WaitForServicesToStart(self, self.rdfClient)

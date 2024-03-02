@@ -12,8 +12,8 @@ from rt_bi_commons.RosParamParsers.JsonParser import ListJsonParser
 from rt_bi_commons.RosParamParsers.ParamParser import ParserBase
 from rt_bi_commons.RosParamParsers.ReferenceParser import ListReferenceParser
 from rt_bi_commons.Shared.Pose import CoordsList
-from rt_bi_commons.Shared.TimeInterval import TimeInterval
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
+from rt_bi_core.Temporal.TimeInterval import TimeInterval
 from rt_bi_interfaces.srv import SpaceTime
 from rt_bi_runtime import package_name
 from rt_bi_runtime.Data.Fuseki.HttpInterface import HttpInterface
@@ -64,7 +64,7 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 			self["sparql_dir"][0],
 			self["sparql_var_selectors"],
 		)
-		self.__httpInterface = HttpInterface(self["fuseki_server"][0], self["rdf_store"][0])
+		self.__httpInterface = HttpInterface(self, self["fuseki_server"][0], self["rdf_store"][0])
 		RtBiInterfaces.createSpaceTimeService(self, self.__onSpaceTimeRequest)
 
 	def __joinList(self, l: list[str], separator: str) -> str:

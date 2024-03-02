@@ -1,15 +1,11 @@
 import json
 from math import nan
-from typing import TypedDict, cast, overload
+from typing import TypedDict, overload
 
 import requests
-from geometry_msgs.msg import Point32 as Point32Msg
 
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Msgs import Msgs
-from rt_bi_commons.Utils.Ros import Logger
-from rt_bi_interfaces.msg import Polygon as RtBiPolygonMsg, Predicate, RegularSpace as RegularSpaceMsg, TimeInterval, Traversability
-from rt_bi_interfaces.srv import SpaceTime
 
 
 class SparqlData(TypedDict):
@@ -51,7 +47,7 @@ class SparqlResultHelper:
 
 	def boolVarValue(self, i: int, varName: str) -> str:
 		strVal = self.strVarValue(i, varName)
-		if strVal == Traversability.TRUE or strVal == Traversability.FALSE: return strVal
+		if strVal == Msgs.RtBi.Traversability.TRUE or strVal == Msgs.RtBi.Traversability.FALSE: return strVal
 		return ""
 
 	def floatVarValue(self, i: int, varName: str) -> float:
@@ -67,9 +63,10 @@ class SparqlResultHelper:
 		return ""
 
 class HttpInterface:
-	def __init__(self, fusekiServerAdr: str, rdfStoreName: str) -> None:
+	def __init__(self, node: Ros.Node, fusekiServerAdr: str, rdfStoreName: str) -> None:
 		self.__fusekiServerAdr = fusekiServerAdr
 		self.__rdfStoreName = rdfStoreName
+		self.__node = node
 		return
 
 	@property
@@ -77,8 +74,8 @@ class HttpInterface:
 		"""http://192.168.1.164:8090/rt-bi/"""
 		return f"{self.__fusekiServerAdr}/{self.__rdfStoreName}/"
 
-	def __parseInterval(self, helper: SparqlResultHelper, i: int) -> tuple[TimeInterval, int]:
-		msg = TimeInterval(
+	def __parseInterval(self, helper: SparqlResultHelper, i: int) -> tuple[Msgs.RtBi.TimeInterval, int]:
+		msg = Msgs.RtBi.TimeInterval(
 			start=Msgs.toTimeMsg(helper.floatVarValue(i, "minT")),
 			end=Msgs.toTimeMsg(helper.floatVarValue(i, "maxT")),
 			include_left=json.loads(helper.boolVarValue(i, "minInclusive")),
@@ -87,26 +84,26 @@ class HttpInterface:
 		i += 1
 		return (msg, i)
 
-	def __parsePolygons(self, helper: SparqlResultHelper, i: int, regularRegionId: str) -> tuple[list[RtBiPolygonMsg], int]:
+	def __parsePolygons(self, helper: SparqlResultHelper, i: int, regularRegionId: str) -> tuple[list[Msgs.RtBi.Polygon], int]:
 		polys = []
-		polyMsg = RtBiPolygonMsg()
+		polyMsg = Msgs.RtBi.Polygon()
 		polyMsg.id = helper.strVarValue(i, "polygonId")
 		while i < len(helper):
 			if helper.strVarValue(i, "polygonId") != polyMsg.id:
 				polys.append(polyMsg)
 				if helper.strVarValue(i, "regularRegionId") != regularRegionId:
 					return (polys, i)
-				polyMsg = RtBiPolygonMsg()
+				polyMsg = Msgs.RtBi.Polygon()
 				polyMsg.id = helper.strVarValue(i, "polygonId")
 			x = helper.floatVarValue(i, "x")
 			y = helper.floatVarValue(i, "y")
-			Ros.AppendMessage(polyMsg.region.points, Point32Msg(x=x, y=y, z=0.0))
+			Ros.AppendMessage(polyMsg.region.points, Msgs.Geometry.Point32(x=x, y=y, z=0.0))
 			i += 1
 		polys.append(polyMsg)
 		return (polys, i)
 
-	def __parseTraversability(self, helper: SparqlResultHelper, i: int) -> tuple[Traversability, int]:
-		msg = Traversability(
+	def __parseTraversability(self, helper: SparqlResultHelper, i: int) -> tuple[Msgs.RtBi.Traversability, int]:
+		msg = Msgs.RtBi.Traversability(
 			legs=helper.boolVarValue(i, "legs"),
 			wheels=helper.boolVarValue(i, "wheels"),
 			swim=helper.boolVarValue(i, "swims"),
@@ -114,34 +111,35 @@ class HttpInterface:
 		i += 1
 		return (msg, i)
 
-	def __parsePredicates(self, helper: SparqlResultHelper, i: int) -> list[Predicate]:
+	def __parsePredicates(self, helper: SparqlResultHelper, i: int) -> list[Msgs.RtBi.Predicate]:
 		predicates = []
 		for var in helper.variables:
 			if not var.startswith("p_"): continue
-			predicate = Predicate()
+			predicate = Msgs.RtBi.Predicate()
 			predicate.name = var
 			if helper.contains(i, var):
 				val = helper.strVarValue(i, var)
-				if val != Predicate.TRUE and val != Predicate.FALSE:
+				if val != Msgs.RtBi.Predicate.TRUE and val != Msgs.RtBi.Predicate.FALSE:
 					raise ValueError(f"Unexpected predicate value: {val}")
 				predicate.value = val
 			else:
-				predicate.value = Predicate.INHERIT
+				predicate.value = Msgs.RtBi.Predicate.INHERIT
 			predicates.append(predicate)
 		return predicates
 
-	def staticReachability(self, queryStr: str, res: SpaceTime.Response) -> SpaceTime.Response:
+	def staticReachability(self, queryStr: str, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
 		r = requests.post(self.__SPARQL_URL, data={ "query": queryStr })
 		try:
 			helper = SparqlResultHelper(r)
 			i = 0
 			while i < len(helper):
-				msg = RegularSpaceMsg()
+				msg = Msgs.RtBi.RegularSpace()
 				msg.id = helper.strVarValue(i, "regularRegionId")
+				msg.stamp = Msgs.toTimeMsg(Ros.Now(self.__node))
 				msg.predicates = self.__parsePredicates(helper, i)
 				(msg.polygons, i) = self.__parsePolygons(helper, i, msg.id)
 				Ros.AppendMessage(res.spatial_matches, msg)
 		except Exception as e:
-			Logger().error(f"SPARQL request failed with the following message: {repr(e)}")
+			Ros.Logger().error(f"SPARQL request failed with the following message: {repr(e)}")
 			raise e
 		return res

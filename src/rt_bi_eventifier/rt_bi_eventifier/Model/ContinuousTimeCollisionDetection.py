@@ -1,44 +1,41 @@
-from typing import Dict, List, Set, Tuple, TypeVar, Union
+from typing import TypeAlias
 
 from rclpy.clock import Duration
 from visualization_msgs.msg import MarkerArray
 
 from rt_bi_commons.Shared.Color import RGBA
-from rt_bi_commons.Utils.Geometry import Geometry, LineString
+from rt_bi_commons.Utils.Geometry import GeometryLib, Shapely
 from rt_bi_commons.Utils.Ros import AppendMessage, Log, Publisher
 from rt_bi_commons.Utils.RViz import RViz
-from rt_bi_core.AffineRegion import AffineRegion
-from rt_bi_core.MapRegion import MapRegion
-from rt_bi_core.SensorRegion import SensorRegion
-from rt_bi_core.SymbolRegion import SymbolRegion
+from rt_bi_core.Spatial.MovingPolygon import MovingPolygon
+from rt_bi_core.Spatial.SensingPolygon import SensingPolygon
+from rt_bi_core.Spatial.StaticPolygon import StaticPolygon
 from rt_bi_eventifier.Model.ContinuousTimeRegion import ContinuousTimeRegion
-from rt_bi_eventifier.Model.MapRegions import MapRegions
 
-RegionTypeX = TypeVar("RegionTypeX", SensorRegion, SymbolRegion, MapRegion)
-RegionTypeY = TypeVar("RegionTypeY", SensorRegion, SymbolRegion, MapRegion)
-
-RegionCollisions = Dict[str, List[LineString]]
+RegionCollisions = dict[str, list[Shapely.LineString]]
 """
 Represents all the collisions a Region and a Polygon.
 ### Type
 ```
 {"edgeId": {L1, L2, ...}}
-Dict[str, List[LineString]]
+dict[str, list[Shapely.LineString]]
 ```
 wherein, `edgeId` is the id of the region edge and `Li` is the edge of the other.
 """
 
-RegularRegionCollisions = Dict[str, RegionCollisions]
+RegularRegionCollisions = dict[str, RegionCollisions]
 """
 Represents all the collisions between a regular region and a polygon.
 ### Type
 ```
 {"subRegionName": {"edgeId": {L1, L2, ...}}}
-Dict[str, Dict[str, List[LineString]]]
+dict[str, dict[str, list[Shapely.LineString]]]
 ```
 """
 
-CollisionInterval = Tuple[ContinuousTimeRegion[RegionTypeX], str, ContinuousTimeRegion[RegionTypeY], str, int, int]
+_InputPolyTypes: TypeAlias = MovingPolygon | StaticPolygon | SensingPolygon
+
+CollisionInterval = tuple[ContinuousTimeRegion[_InputPolyTypes], str, ContinuousTimeRegion[_InputPolyTypes], str, int, int]
 
 """## Collision Interval
 
@@ -61,22 +58,22 @@ class ContinuousTimeCollisionDetection:
 	We expect the updates to be at least as fast as `MIN_TIME_DELTA` ns.
 	"""
 
-	__rvizPublisher: Union[Publisher, None] = None
+	__rvizPublisher: Publisher | None = None
 
 	@classmethod
-	def __renderLineStrings(cls, lines: List[LineString], color: RGBA, renderWidth: float = 1.0) -> None:
+	def __renderLineStrings(cls, lines: list[Shapely.LineString], color: RGBA, renderWidth: float = 1.0) -> None:
 		if cls.__rvizPublisher is None: return
 		msg = MarkerArray()
 		for line in lines:
-			strId = repr(Geometry.lineStringId(line))
-			marker = RViz.createLine(strId, Geometry.getGeometryCoords(line), color, renderWidth)
-			marker.lifetime = Duration(nanoseconds=int(15 * (AffineRegion.NANO_CONSTANT / 10))).to_msg()
+			strId = repr(GeometryLib.lineStringId(line))
+			marker = RViz.createLine(MovingPolygon.Id("ctcd", strId, "", ""), GeometryLib.getGeometryCoords(line), color, renderWidth)
+			marker.lifetime = Duration(nanoseconds=int(15 * (MovingPolygon.NANO_CONVERSION_CONSTANT / 10))).to_msg()
 			AppendMessage(msg.markers, marker)
 		cls.__rvizPublisher.publish(msg)
 		return
 
 	@classmethod
-	def __obbTest(cls, ctRegion1: ContinuousTimeRegion[RegionTypeX], ctRegion2: ContinuousTimeRegion[RegionTypeY]) -> List[CollisionInterval[RegionTypeX, RegionTypeY]]:
+	def __obbTest(cls, ctRegion1: ContinuousTimeRegion, ctRegion2: ContinuousTimeRegion) -> list[CollisionInterval]:
 		# If there is no overlap in time then there are no collisions.
 		if ctRegion1.latestNanoSecs < ctRegion2.earliestNanoSecs:
 			Log(f"{repr(ctRegion1)} < {repr(ctRegion2)}")
@@ -85,12 +82,12 @@ class ContinuousTimeCollisionDetection:
 			Log(f"{repr(ctRegion1)} > {repr(ctRegion2)}")
 			return []
 
-		collisions: List[CollisionInterval] = []
+		collisions: list[CollisionInterval] = []
 		for eName1 in ctRegion1.configs[0].edges:
 			obb1 = ctRegion1.getEdgeBb(eName1)
 			for eName2 in ctRegion2.configs[0].edges:
 				obb2 = ctRegion2.getEdgeBb(eName2)
-				if Geometry.intersects(obb1, obb2): collisions.append(
+				if GeometryLib.intersects(obb1, obb2): collisions.append(
 					(
 						ctRegion1, eName1,
 						ctRegion2, eName2,
@@ -100,24 +97,24 @@ class ContinuousTimeCollisionDetection:
 		return collisions
 
 	@classmethod
-	def __checkCollisionAtTime(cls, interval: CollisionInterval[RegionTypeX, RegionTypeY], timeNanoSecs: int) -> bool:
+	def __checkCollisionAtTime(cls, interval: CollisionInterval, timeNanoSecs: int) -> bool:
 		(ctRegion1, edgeStrId1, ctRegion2, edgeStrId2, intervalStart, intervalEnd) = interval
 		# Base case FIXME: and delta T less than epsilon
 		if intervalEnd - intervalStart < cls.MIN_TIME_DELTA_NS: return False
 
 		e1AtT = ctRegion1.getEdgeAt(edgeStrId1, timeNanoSecs)
 		e2AtT = ctRegion2.getEdgeAt(edgeStrId2, timeNanoSecs)
-		return Geometry.intersects(e1AtT, e2AtT)
+		return GeometryLib.intersects(e1AtT, e2AtT)
 
 	@classmethod
-	def __checkIntervalsForOverlap(cls, interval1: Tuple[int, int], interval2: Tuple[int, int]) -> bool:
+	def __checkIntervalsForOverlap(cls, interval1: tuple[int, int], interval2: tuple[int, int]) -> bool:
 		# If end of one interval happens earlier than the other
 		if interval1[1] <= interval2[0]: return False
 		if interval2[1] <= interval1[0]: return False
 		return True
 
 	@classmethod
-	def __splitIntervalsListForOverlap(cls, intervals: List[CollisionInterval[RegionTypeX, RegionTypeY]]) -> Tuple[List[CollisionInterval[RegionTypeX, RegionTypeY]], List[CollisionInterval[RegionTypeX, RegionTypeY]]]:
+	def __splitIntervalsListForOverlap(cls, intervals: list[CollisionInterval]) -> tuple[list[CollisionInterval], list[CollisionInterval]]:
 		haveOverlap = []
 		dontHaveOverlap = []
 		while len(intervals) > 0:
@@ -136,12 +133,12 @@ class ContinuousTimeCollisionDetection:
 		return (haveOverlap, dontHaveOverlap)
 
 	@classmethod
-	def __initTest(cls, ctRegion1: ContinuousTimeRegion[RegionTypeX], ctRegion2: ContinuousTimeRegion[RegionTypeY]) -> Union[CollisionInterval[RegionTypeX, RegionTypeY], None]:
+	def __initTest(cls, ctRegion1: ContinuousTimeRegion, ctRegion2: ContinuousTimeRegion) -> CollisionInterval | None:
 		if ctRegion1.length == 0: return
 		t = ctRegion1.earliestNanoSecs
 		if t not in ctRegion2: return
 		r1 = ctRegion1[t]
-		if not Geometry.intersects(r1.interior, ctRegion2[t].interior): return
+		if not GeometryLib.intersects(r1.interior, ctRegion2[t].interior): return
 		Log(f"Adding init interval: {ctRegion1.name} <===> {ctRegion2.name} @ {t}")
 		interval = (
 			ctRegion1, "",
@@ -151,26 +148,15 @@ class ContinuousTimeCollisionDetection:
 		return interval
 
 	@classmethod
-	def estimateCollisionIntervals(cls, sensorConfigs: Dict[str, List[SensorRegion]], symbolConfigs: Dict[str, List[SymbolRegion]], mapRegions: MapRegions, maxTimeNanoSecs: int, rvizPublisher: Union[Publisher, None]) -> List[CollisionInterval]:
+	def estimateCollisionIntervals(cls, sensorPolys: list[SensingPolygon], mapPolys: list[MovingPolygon | StaticPolygon], rvizPublisher: Publisher | None) -> list[CollisionInterval]:
 		cls.__rvizPublisher = rvizPublisher
-		Log(f"CtCd: {repr(sensorConfigs)} and {repr(symbolConfigs)}")
-		allCtRegions: List[Union[ContinuousTimeRegion[SensorRegion], ContinuousTimeRegion[SymbolRegion], ContinuousTimeRegion[MapRegion]]] = []
-		for r in sensorConfigs:
-			sensorCtRegion = ContinuousTimeRegion[SensorRegion](sensorConfigs[r], SensorRegion.RegionType.SENSING)
-			allCtRegions.append(sensorCtRegion)
-		for r in symbolConfigs:
-			symbolCtRegion = ContinuousTimeRegion[SymbolRegion](symbolConfigs[r], SymbolRegion.RegionType.SYMBOL)
-			allCtRegions.append(symbolCtRegion)
-		for r in mapRegions:
-			region = mapRegions[r]
-			updatedRegion = MapRegion(mapRegions[r].id, mapRegions[r].envelope, timeNanoSecs=maxTimeNanoSecs)
-			mapCtRegion = ContinuousTimeRegion[MapRegion]([region, updatedRegion], MapRegion.RegionType.MAP)
-			allCtRegions.append(mapCtRegion)
+		Log(f"CtCd: {repr(sensorPolys)} and {repr(mapPolys)}")
+		allCtRegions = ContinuousTimeRegion[SensingPolygon].fromMergedList(sensorPolys) + ContinuousTimeRegion[MovingPolygon | StaticPolygon].fromMergedList(mapPolys)
 
 		intervals = []
-		checked: Set[Tuple[str, str]] = set()
+		checked: set[tuple[str, str]] = set()
 		for ctRegion1 in allCtRegions:
-			if ctRegion1.regionType != MapRegion.regionType: continue
+			if ctRegion1.type != StaticPolygon.type: continue
 			for ctRegion2 in allCtRegions:
 				if ctRegion1 == ctRegion2: continue
 				if (ctRegion1.name, ctRegion2.name) in checked: continue
@@ -185,9 +171,9 @@ class ContinuousTimeCollisionDetection:
 		return intervals
 
 	@classmethod
-	def refineCollisionIntervals(cls, intervals: List[CollisionInterval]) -> List[CollisionInterval]:
+	def refineCollisionIntervals(cls, intervals: list[CollisionInterval]) -> list[CollisionInterval]:
 		withOverlap = intervals.copy()
-		withoutOverlap: List[CollisionInterval] = []
+		withoutOverlap: list[CollisionInterval] = []
 		i = 0
 		while len(withOverlap) > 0 and i < len(withOverlap):
 			interval = withOverlap.pop(i)

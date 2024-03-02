@@ -1,12 +1,13 @@
 from collections.abc import Sequence
-from typing import AbstractSet, cast, overload
+from typing import AbstractSet, Final, cast, overload
 
 from rclpy.clock import Time
 
 from rt_bi_commons.Shared.Pose import Coords, CoordsList, Pose, quatToAngle
 from rt_bi_commons.Utils.Geometry import GeometryLib, Shapely
 
-NANO_CONVERSION_CONSTANT = 10 ** 9
+NANO_CONVERSION_CONSTANT: Final[int] = 10 ** 9
+"""``10 ** 9``"""
 
 class Msgs:
 	import builtin_interfaces.msg as Std
@@ -24,12 +25,14 @@ class Msgs:
 		return d
 
 	@classmethod
-	def toTimeMsg(cls, time: float | int) -> Std.Time:
+	def toTimeMsg(cls, time: float | int | Time) -> Std.Time:
 		"""
 			* To process as secs, `time` must be a `float`.
 			* To process as nanoSecs, `time` must be a `int`.
 		"""
 		msg = cls.Std.Time()
+		if isinstance(time, Time):
+			msg = time.to_msg()
 		if isinstance(time, float):
 			sec = time
 			msg.sec = int(sec)

@@ -1,17 +1,19 @@
+from typing import Any
+
 import rclpy
 from rclpy.logging import LoggingSeverity
 
-from rt_bi_commons.Base.RegionsSubscriber import MapSubscriber
+from rt_bi_core.RegionsSubscriber import MapSubscriber
 
 
 class MapRenderer(MapSubscriber):
 	""" This Node listens to all static and dynamic map region updates and renders them. """
 	def __init__(self, **kwArgs):
-		newKw = { "node_name": "renderer_map", "loggingSeverity": LoggingSeverity.WARN, **kwArgs}
+		newKw = { "node_name": "renderer_map", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
 		super().__init__(**newKw)
 
-	def onMapUpdated(self) -> None:
-		self.log(f"{self.get_fully_qualified_name()} map updated.")
+	def onRegionsUpdated(self, __1: Any, __2: Any) -> None:
+		self.log("Map updated.")
 		return super().render()
 
 def main(args=None):

@@ -17,6 +17,7 @@
 	],
 	"cSpell.words": [
 		"agraph",
+		"ctcd",
 		"eventifier",
 		"fovs",
 		"fuseki",
@@ -149,5 +150,5 @@
 	],
 	"autoDocstring.docstringFormat": "one-line-sphinx",
 	"python.analysis.autoFormatStrings": true,
-	"python.analysis.inlayHints.callArgumentNames": "off",
+	"python.testing.autoTestDiscoverOnSaveEnabled": false,
 }
