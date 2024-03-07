@@ -6,6 +6,7 @@ from rclpy.logging import LoggingSeverity
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Msgs import Msgs
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
+from rt_bi_commons.Utils.RViz import RViz
 from rt_bi_core.RegionsSubscriber import SensorSubscriber
 from rt_bi_core.Spatial.SensingPolygon import SensingPolygon
 from rt_bi_core.Spatial.Tracklet import Tracklet
@@ -14,14 +15,22 @@ from rt_bi_core.Spatial.Tracklet import Tracklet
 class SensorRenderer(SensorSubscriber):
 	""" This Node listens to all the messages published on the topics related to sensors and renders them. """
 	def __init__(self, **kwArgs):
-		newKw = { "node_name": "renderer_sensor", "loggingSeverity": LoggingSeverity.WARN, **kwArgs}
-		super().__init__(**newKw)
+		newKw = { "node_name": "renderer_sensor", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
+		super().__init__(pauseQueuingMsgs=False, **newKw)
 		RtBiInterfaces.subscribeToEstimation(self, self.__onEstimation)
 
-	def onRegionsUpdated(self, __1: Any, __2: Any) -> None:
+	def onPolygonUpdated(self, rType: Any, msgs: Any) -> None:
 		self.log("Sensors updated.")
 		self.render()
 		return
+
+	def createMarkers(self) -> list[RViz.Msgs.Marker]:
+		markers = []
+		for regionId in self.sensorRegions:
+			polys = self.sensorRegions[regionId]
+			for poly in polys:
+				Ros.ConcatMessageArray(markers, poly.createMarkers(durationNs=-1))
+		return markers
 
 	def __onEstimation(self, msg: Msgs.RtBi.Estimation) -> None:
 		if msg is None:
@@ -40,8 +49,13 @@ class SensorRenderer(SensorSubscriber):
 				tracklet.spawned,
 				tracklet.vanished
 			)
-			id = SensingPolygon.Id(regionId=msg.robot.id, polygonId=Ros.GetMessage(msg.robot.polygons, 0, Msgs.RtBi.Polygon).id, overlappingRegionId="", overlappingPolygonId="")
-			self.sensors[id.regionId][id].tracklets[tracklet.id] = tracklet
+			id = SensingPolygon.Id(
+				timeNanoSecs=Msgs.toNanoSecs(msg.robot.stamp),
+				regionId=msg.robot.id,
+				polygonId=Ros.GetMessage(msg.robot.polygons, 0, Msgs.RtBi.Polygon).id,
+			)
+			(regionId, index) = self.sensorPolyIdMap[id]
+			self.sensorRegions[regionId][index].tracklets[tracklet.id] = tracklet
 		self.render()
 		return
 

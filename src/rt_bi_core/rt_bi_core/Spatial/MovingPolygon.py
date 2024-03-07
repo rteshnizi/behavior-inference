@@ -8,6 +8,7 @@ class MovingPolygon(AffinePolygon):
 	"""A Polygon with a timestamp."""
 
 	type: Literal[AffinePolygon.Types.MOVING] = AffinePolygon.Types.MOVING
+	Type = Literal[AffinePolygon.Types.MOVING]
 	def __init__(self, **kwArgs) -> None:
 		super().__init__(
 			envelopeColor=kwArgs.pop("envelopeColor", ColorNames.PURPLE),

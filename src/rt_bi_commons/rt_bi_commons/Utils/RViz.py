@@ -7,10 +7,10 @@ from rclpy.node import Publisher, Timer
 
 from rt_bi_commons.Base.RtBiNode import RtBiNode
 from rt_bi_commons.Shared.Color import RGBA, ColorNames
+from rt_bi_commons.Shared.NodeId import NodeId
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Geometry import GeometryLib
 from rt_bi_commons.Utils.Msgs import NANO_CONVERSION_CONSTANT, Msgs as MsgsUtils
-from rt_bi_commons.Utils.NetworkX import NxUtils
 
 DEFAULT_RENDER_DURATION_NS: Final[int] = int(1.75 * NANO_CONVERSION_CONSTANT)
 """`1.75` secs, converted to NanoSecs."""
@@ -24,7 +24,7 @@ class RViz:
 		http://wiki.ros.org/rviz/Tutorials/Markers%3A%20Points%20and%20Lines#The_Code_Explained
 	"""
 	import visualization_msgs.msg as Msgs
-	Id = NxUtils.Id
+	Id = NodeId
 	FRAME_ID = "map"
 
 	@staticmethod
@@ -91,7 +91,7 @@ class RViz:
 		marker.ns = Ros.NAMESPACE
 		marker.action = RViz.Msgs.Marker.ADD
 		if durationNs > 0:
-			marker.lifetime = MsgsUtils.DurationMsg(int(durationNs / NANO_CONVERSION_CONSTANT), durationNs % NANO_CONVERSION_CONSTANT)
+			marker.lifetime = MsgsUtils.DurationMsg(durationNs)
 		marker.pose.orientation.w = 1.0
 		marker.header.frame_id = RViz.FRAME_ID
 		marker.header.stamp = Ros.Now(None).to_msg()

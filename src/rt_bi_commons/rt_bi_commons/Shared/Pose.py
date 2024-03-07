@@ -1,5 +1,6 @@
 # NOTICE: This object must only rely on external dependencies. Otherwise there will be many circular-dependency issues.
 from math import isnan, nan
+from typing import Sequence
 
 from scipy.spatial.transform import Rotation
 
@@ -45,5 +46,5 @@ def angleToQuat(angleRad: float) -> Quaternion:
 	quat = Rotation.from_euler("z", angleRad, degrees=False).as_quat()
 	return(quat[0], quat[1], quat[2], quat[3])
 
-def quatToAngle(quat: Quaternion | list[float]) -> float:
+def quatToAngle(quat: Quaternion | Sequence[float]) -> float:
 	return Rotation.from_quat(list(quat)).as_euler("xyz")[2]

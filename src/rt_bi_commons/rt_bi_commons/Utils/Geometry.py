@@ -1,7 +1,7 @@
 import traceback
 import warnings
 from math import cos, inf, nan, sin, sqrt
-from typing import Callable, TypeAlias
+from typing import Callable, Final, Sequence, TypeAlias
 
 import numpy as np
 from scipy.spatial.transform import Rotation, Slerp
@@ -82,16 +82,16 @@ class GeometryLib:
 	© Reza Teshnizi 2018-2023
 	TODO: Make sure to use shapely.prepared.prep() to optimize
 	"""
-	EPSILON = 0.001
+	EPSILON: Final = 0.001
 	Vector = Coords
 	Coords = Coords
 	CoordsList = CoordsList
 	Quaternion = Quaternion
 	CoordsMap = dict[Coords, Coords]
 	angleToQuat: Callable[[float], Quaternion] = angleToQuat
-	quatToAngle: Callable[[Quaternion | list[float]], float] = quatToAngle
+	quatToAngle: Callable[[Quaternion | Sequence[float]], float] = quatToAngle
 	@staticmethod
-	def __reportShapelyException(functionName: str, exc: Exception, objs: list[Shapely.AnyObj]) -> None:
+	def __reportShapelyException(functionName: str, exc: Exception, objs: Sequence[Shapely.AnyObj]) -> None:
 		Logger().error("1. Shapely exception.. in %s(): %s" % (functionName, repr(exc)))
 		Logger().error("2. Shapely exception.. args: %s" % (", ".join([repr(o) for o in objs])))
 		i = 3
@@ -106,7 +106,7 @@ class GeometryLib:
 		return
 
 	@staticmethod
-	def __reportSkImageException(functionName: str, exc: Exception, objs: list[CoordsList]) -> None:
+	def __reportSkImageException(functionName: str, exc: Exception, objs: Sequence[CoordsList]) -> None:
 		Logger().error("1. SkImage exception.. in %s(): %s" % (functionName, repr(exc)))
 		Logger().error("2. SkImage exception.. args: %s" % (", ".join([repr(o) for o in objs])))
 		i = 3
@@ -293,6 +293,10 @@ class GeometryLib:
 
 	@staticmethod
 	def toGeometryList(polys: Shapely.MultiComponent) -> list[Shapely.ConnectedComponent]:
+		"""If you are unsure if a shapely object is multi-part or a single object,
+		this function returns either a list of the sub-parts of the multi-part object,
+		or a list containing the given connected object.
+		"""
 		try:
 			if len(polys.geoms) > 0:
 				return list(polys.geoms)
@@ -346,69 +350,53 @@ class GeometryLib:
 			return False
 
 	@staticmethod
-	def intersection(o1: Shapely.AnyObj, o2: Shapely.AnyObj) -> Shapely.AnyObj:
-		"""## Intersects
-		A function to safely obtain the intersection of two geometries while handling shapely exceptions and warnings.
-		This also performs an intersection test to avoid Shapely exceptions.
+	def isEmptyObjList(objs: Sequence[Shapely.AnyObj]) -> bool:
+		return all(obj.is_empty for obj in objs)
 
-		Parameters
-		----------
-		o1 : `Shapely.AnyObj`
-			A known Shapely geometry type.
-		o2 : `Shapely.AnyObj`
-			A known Shapely geometry type.
+	@staticmethod
+	def nonEmptyPolys(objs: Sequence[Shapely.AnyObj]) -> list[Shapely.Polygon]:
+		return [Shapely.make_valid(p) for p in objs if p.is_valid and not p.is_empty and p.area > 0]
 
-		Returns
-		-------
-		`Shapely.AnyObj`
-			A known Shapely geometry type of lower dimension.
-		"""
+	@staticmethod
+	def intersection(o1: Shapely.AnyObj, o2: Shapely.AnyObj) -> Sequence[Shapely.AnyObj]:
 		if (not o1.is_valid) or (not o2.is_valid): return type(o1)()
 		if o1.is_empty or o2.is_empty: return type(o1)()
 		try:
 			if GeometryLib.intersects(o1, o2):
-				return o1.intersection(o2)
+				intersection = o1.intersection(o2)
+				intersection = GeometryLib.toGeometryList(intersection)
+				return intersection
 			else:
-				return type(o1)()
+				return [type(o1)()]
 		except Exception as e:
 			GeometryLib.__reportShapelyException(GeometryLib.intersection.__name__, e, [o1, o2])
-			return type(o1)()
+			return [type(o1)()]
 
 	@staticmethod
-	def union(polyList: list[Shapely.Polygon]) -> Shapely.Polygon | Shapely.MultiPolygon:
-		validPolyList = []
-		for p in polyList:
-			parts = Shapely.make_valid(p)
-			validPolyList.append(parts)
+	def union(polys: Sequence[Shapely.Polygon]) -> Sequence[Shapely.Polygon]:
+		polys = GeometryLib.nonEmptyPolys(polys)
 		try:
-			return Shapely.unary_union(validPolyList)
+			result = Shapely.unary_union(polys)
+			return GeometryLib.toGeometryList(result)
 		except Exception as e:
-			GeometryLib.__reportShapelyException(GeometryLib.union.__name__, e, validPolyList)
-			return type(polyList[0])()
+			GeometryLib.__reportShapelyException(GeometryLib.union.__name__, e, polys)
+			return type(polys[0])()
 
 	@staticmethod
-	def difference(p1: Shapely.Polygon, p2: Shapely.Polygon) -> list[Shapely.Polygon]:
-		"""
-		Given p1 and p2, produce the subtraction polygons.
-
-		Parameters
-		----------
-		p1 : `Shapely.Polygon`
-			The polygon representing a base polygon.
-		p2 : `Shapely.Polygon`
-			The polygon to be subtracted.
-
-		Returns
-		-------
-		`Union[list[Shapely.Polygon], MultiPolygon]`
-			The a polygon or multi-polygon of the subtraction result.
-		"""
+	def difference(obj1: Shapely.Polygon | Sequence[Shapely.Polygon], obj2: Shapely.Polygon | Sequence[Shapely.Polygon]) -> list[Shapely.Polygon]:
+		"""Returns the parts of `obj1` that does not intersect with `obj2`."""
+		from shapely.geometry import GeometryCollection
 		try:
+			if isinstance(obj1, Shapely.Polygon): p1 = obj1
+			else: p1 = GeometryCollection(geoms=obj1)
+			if isinstance(obj2, Shapely.Polygon): p2 = obj2
+			else: p2 = GeometryCollection(geoms=obj2)
+
 			if GeometryLib.intersects(p1, p2):
-				subtraction = p1.difference(p2) # FIXME: difference() is wrong because it excludes the boundaries of fov from the shadows
-				# subtraction = mapRegionPoly.difference(mapRegionPoly.intersection(fovPoly))
-				# subtraction = mapRegionPoly.symmetric_difference(fovPoly).difference(fovPoly)
-				return GeometryLib.toGeometryList(subtraction)
+				diff = p1.difference(p2)
+				diff = GeometryLib.toGeometryList(diff)
+				diff = GeometryLib.nonEmptyPolys(diff)
+				return diff
 			else:
 				return [p1]
 		except Exception as e:
@@ -448,7 +436,7 @@ class GeometryLib:
 		return False
 
 	@staticmethod
-	def getIntersectingEdges(geom: Shapely.LineString | Shapely.Polygon, polygon: Shapely.Polygon | Shapely.MultiPolygon) -> list[Shapely.LineString]:
+	def getIntersectingEdges(geom: Shapely.LineString | Shapely.Polygon, polygon: Shapely.Polygon | Shapely.MultiPolygon) -> Sequence[Shapely.LineString]:
 		if isinstance(polygon, Shapely.MultiPolygon): raise NotImplementedError("I haven't checked the API to see how to work with this yet. %s" % GeometryLib.getIntersectingEdges.__name__)
 		edges = []
 		hashes = set()
@@ -456,8 +444,12 @@ class GeometryLib:
 		verts = list(polygon.exterior.coords)
 		geom = geom if isinstance(geom, Shapely.LineString) else geom.exterior
 		points = GeometryLib.intersection(polygon.exterior, geom)
-		if points.is_empty: return edges
-		points = GeometryLib.toGeometryList(points)
+		isEmpty = True
+		for pt in points:
+			if not pt.is_empty:
+				isEmpty = False
+				break
+		if isEmpty: return edges
 		for point in points:
 			for v1, v2 in zip(verts, verts[1:]):
 				edge = Shapely.LineString([v1, v2])
@@ -621,11 +613,6 @@ class GeometryLib:
 	def inverseTransformation(transformation: AffineTransform) -> AffineTransform:
 		inverted  = AffineTransform(matrix=transformation._inv_matrix)
 		return inverted
-
-	@staticmethod
-	def findBottomLeft(poly: Shapely.Polygon) -> Coords:
-		(minX, minY, maxX, maxY) = poly.bounds
-		return (minX, minY)
 
 	@staticmethod
 	def expandVertObbWithAngularVelocity(coords: Coords, angle: float, centerOfRotation: Coords, expandAway = True) -> Coords:

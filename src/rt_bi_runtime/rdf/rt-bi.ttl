@@ -11,23 +11,23 @@
 
 @prefix rt_bi: <https://rezateshnizi.com/rt-bi/> .
 # region Class definitions
-rt_bi:X a rdf:Class .
-rt_bi:Y a rdf:Class .
-rt_bi:Vertex a rdf:Class .
+rt_bi:X a rdfs:Class .
+rt_bi:Y a rdfs:Class .
+rt_bi:Vertex a rdfs:Class .
 rt_bi:VertexSeq a rdf:Seq .
-rt_bi:Polygon a rdf:Class .
+rt_bi:Polygon a rdfs:Class .
 
-rt_bi:Time a rdf:Class .
-rt_bi:Interval a rdf:Class .
+rt_bi:Time a rdfs:Class .
+rt_bi:Interval a rdfs:Class .
 
-rt_bi:Subject a rdf:Class .
-rt_bi:RegularSpace a rdf:Class ;
+rt_bi:Subject a rdfs:Class .
+rt_bi:RegularSpace a rdfs:Class ;
 	rdfs:subClassOf rt_bi:Subject ;
 	rdfs:comment "The class of RegularSpace specifications." .
-rt_bi:RegularTime a rdf:Class ;
+rt_bi:RegularTime a rdfs:Class ;
 	rdfs:subClassOf rt_bi:Subject ;
 	rdfs:comment "The class of RegularTime specifications." .
-rt_bi:Traversability a rdf:Class ;
+rt_bi:Traversability a rdfs:Class ;
 	rdfs:comment "The class of traversability specifications." .
 
 # endregion Class definitions

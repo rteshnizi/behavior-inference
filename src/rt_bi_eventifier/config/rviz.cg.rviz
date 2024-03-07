@@ -42,7 +42,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /rt_bi_core/connectivity_graph
+        Value: /REZA_TESHNIZI_NS/connectivity_graph
       Value: true
   Enabled: true
   Global Options:

@@ -68,7 +68,6 @@ class ColdStartableNode(RtBiNode, ABC):
 	@abstractmethod
 	def onColdStartAllowed(self, payload: ColdStartPayload) -> None: ...
 
-
 	@final
 	def __onColdStartPermission(self, msg: ColdStart) -> None:
 		if msg.node_name != self.get_fully_qualified_name(): return

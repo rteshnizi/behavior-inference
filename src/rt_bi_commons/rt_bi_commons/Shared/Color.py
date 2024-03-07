@@ -2,7 +2,8 @@ import random
 from math import sqrt
 from typing import TypeAlias
 
-numeric = int | float
+numeric: TypeAlias = int | float
+
 RGBA: TypeAlias = tuple[numeric, numeric, numeric, numeric]
 """ A tuple that represents an RGBA value. Values between [0-1]. """
 RGB: TypeAlias = tuple[numeric, numeric, numeric]

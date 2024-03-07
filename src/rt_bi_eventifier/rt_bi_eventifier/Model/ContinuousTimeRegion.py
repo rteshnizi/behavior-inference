@@ -1,19 +1,19 @@
 from math import isnan, nan
-from typing import Generic, Sequence, TypeAlias, TypeVar
+from typing import Any, Generic, TypeVar, cast
 
+from rt_bi_commons.Shared.Predicates import Predicates
 from rt_bi_commons.Utils.Geometry import AffineTransform, GeometryLib, Shapely
-from rt_bi_core.Spatial.AffinePolygon import AffinePolygon
+from rt_bi_core.Spatial import GraphInputPolygon, PolygonFactory
 from rt_bi_core.Spatial.MovingPolygon import MovingPolygon
+from rt_bi_core.Spatial.Polygon import PolygonFactoryKeys
 from rt_bi_core.Spatial.SensingPolygon import SensingPolygon
 from rt_bi_core.Spatial.StaticPolygon import StaticPolygon
-from rt_bi_core.Spatial.Tracklet import Tracklet
 
-_InputPolyTypes: TypeAlias = MovingPolygon | StaticPolygon | SensingPolygon
-_T_Poly = TypeVar("_T_Poly", bound=_InputPolyTypes)
+_T_Poly = TypeVar("_T_Poly", bound=GraphInputPolygon)
 class ContinuousTimeRegion(Generic[_T_Poly]):
-	def __init__(self, polyConfigs: Sequence[_T_Poly]) -> None:
+	def __init__(self, polyConfigs: list[_T_Poly]) -> None:
 		self.__sortedConfigs: list[_T_Poly] = list(sorted(polyConfigs, key=lambda r: r.timeNanoSecs))
-		self.__transforms: Sequence[AffineTransform] = self.__initTransformationMatrices()
+		self.__transforms: list[AffineTransform] = self.__initTransformationMatrices()
 		return
 
 	def __repr__(self) -> str:
@@ -50,16 +50,27 @@ class ContinuousTimeRegion(Generic[_T_Poly]):
 		transform = GeometryLib.getParameterizedAffineTransformation(self.__transforms[i - 1], param)
 		cor = GeometryLib.applyMatrixTransformToCoords(transform, self.configs[i - 1].centerOfRotation)
 		regionPoly = GeometryLib.applyMatrixTransformToPolygon(transform, self.configs[i - 1].interior)
-		if self.type == SensingPolygon.Types.SENSING:
-			tracklets: Dict[int, Tracklet] = self.configs[i - 1].tracklets # type: ignore
-			region = SensingPolygon(centerOfRotation=cor, id=self.id, envelope=[], timeNanoSecs=timeNanoSecs, interior=regionPoly, tracklets=tracklets)
-		elif self.configs[i - 1].type == StaticPolygon.Types.STATIC:
-			region = StaticPolygon(self.configs[i - 1].id.polygonId, self.configs[i - 1].id.regionId, envelope=[], timeNanoSecs=timeNanoSecs, interior=regionPoly)
-		elif self.configs[i - 1].type == AffinePolygon.Types.DYNAMIC:
-			region = AffinePolygon(self.configs[i - 1].centerOfRotation, self.id, [], timeNanoSecs, overlappingPolygonId=self.configs[i - 1].overlappingRegionId, overlappingRegionType=self.configs[i - 1].inFov, interior=regionPoly) # type: ignore
+		kwArgs: dict[PolygonFactoryKeys, Any] = {
+			"polygonId": self.id.polygonId,
+			"regionId": self.id.regionId,
+			"centerOfRotation": cor,
+			"envelope": [],
+			"timeNanoSecs": timeNanoSecs,
+			"interior": regionPoly,
+			"predicates": self.predicates,
+		}
+		if self.type == SensingPolygon.type:
+			kwArgs["tracklets"] = cast(SensingPolygon, self.configs[i - 1]).tracklets
+			Cls = SensingPolygon
+		elif self.type == StaticPolygon.type:
+			kwArgs.pop("centerOfRotation", None)
+			Cls = StaticPolygon
+		elif self.type == MovingPolygon.type:
+			Cls = MovingPolygon
 		else:
-			raise TypeError("Unexpected region type: %s" % repr(self.type))
-		return region # type: ignore -- Type checker doesn't understand I have type-checked here via regionType.
+			raise AssertionError(f"Unexpected region type: {repr(self.type)}")
+		poly = PolygonFactory(Cls, kwArgs)
+		return cast(_T_Poly, poly)
 
 	def __contains__(self, timeNanoSecs: int) -> bool:
 		if self.earliestNanoSecs == -1: return False
@@ -69,13 +80,18 @@ class ContinuousTimeRegion(Generic[_T_Poly]):
 		return True
 
 	@property
+	def predicates(self) -> Predicates:
+		if self.length == 0: return Predicates([])
+		return self.configs[0].predicates
+
+	@property
 	def name(self) -> str:
 		"""Region name."""
 		return f"{self.type}" if self.length == 0 else self.configs[0].shortName
 
 	@property
 	def id(self) -> MovingPolygon.Id:
-		if self.length == 0: return MovingPolygon.Id("", "", "", "")
+		if self.length == 0: return MovingPolygon.Id(timeNanoSecs=-1, regionId="", polygonId="")
 		return self.configs[0].id
 
 	@property
@@ -88,11 +104,11 @@ class ContinuousTimeRegion(Generic[_T_Poly]):
 
 	@property
 	def type(self) -> MovingPolygon.Types:
-		if self.length == 0: return MovingPolygon.Types.BASE
+		if self.length == 0: return MovingPolygon.type
 		return self.configs[0].type
 
 	@property
-	def transformations(self) -> Sequence[AffineTransform]:
+	def transformations(self) -> list[AffineTransform]:
 		return self.__transforms
 
 	@property
@@ -133,7 +149,7 @@ class ContinuousTimeRegion(Generic[_T_Poly]):
 		if total == 0: return nan
 		return (float(frac) / float(total))
 
-	def __initTransformationMatrices(self) -> Sequence[AffineTransform]:
+	def __initTransformationMatrices(self) -> list[AffineTransform]:
 		transforms: list[AffineTransform] = []
 		if self.length < 2: return transforms
 		for i in range(self.length - 1):
@@ -172,23 +188,21 @@ class ContinuousTimeRegion(Generic[_T_Poly]):
 			return i - 1
 		raise IndexError(f"{timeNanoSecs} is both inside the interval [{self.earliestNanoSecs} {self.latestNanoSecs}) and not?")
 
-	def getEdgeBb(self, eName: str) -> Shapely.Polygon | Shapely.LineString:
+	def getEdgeBb(self, edge: Shapely.LineString) -> Shapely.Polygon | Shapely.LineString:
 		"""Get Edge Bounding Box
 
 		:param str eName: edge name
 		:return: The tightest bounding box around the given line segment.
 		:rtype: `Shapely.Polygon` or `Shapely.LineString`
 		"""
-		edge = self.configs[0].edges[eName]
 		transform = self.__getOverallTransformationMatrix()
 		return GeometryLib.getLineSegmentExpandedBb(transform, edge, self.configs[0].centerOfRotation)
 
-	def getEdgeAt(self, eName: str, timeNanoSecs: int) -> Shapely.LineString:
-		e = self.configs[0].edges[eName]
+	def getEdgeAt(self, edge: Shapely.LineString, timeNanoSecs: int) -> Shapely.LineString:
 		i = self.__timeNanoSecsToIndex(timeNanoSecs)
 		frac = self.__getParameterizedTime(i, timeNanoSecs)
 		transformationAtT = GeometryLib.getParameterizedAffineTransformation(self.transformations[i], frac)
-		eAtT = GeometryLib.applyMatrixTransformToLineString(transformationAtT, e)
+		eAtT = GeometryLib.applyMatrixTransformToLineString(transformationAtT, edge)
 		return eAtT
 
 	@staticmethod
@@ -196,8 +210,9 @@ class ContinuousTimeRegion(Generic[_T_Poly]):
 		byPolyId: dict[MovingPolygon.Id, list[_T_Poly]] = {}
 		ctrList: list[ContinuousTimeRegion[_T_Poly]] = []
 		for poly in mergedList:
-			if poly.id not in byPolyId: byPolyId[poly.id] = [poly]
-			else: byPolyId[poly.id].append(poly)
+			timeLessId = poly.id.updateTime(-1)
+			if poly.id not in byPolyId: byPolyId[timeLessId] = [poly]
+			else: byPolyId[timeLessId].append(poly)
 		for id in byPolyId:
 			ctrList.append(ContinuousTimeRegion[_T_Poly](byPolyId[id]))
 		return ctrList

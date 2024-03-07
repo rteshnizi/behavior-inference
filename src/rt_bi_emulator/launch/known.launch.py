@@ -16,7 +16,7 @@ def generate_launch_description():
 			package=packageName,
 			namespace=packageName,
 			executable="EKN",
-			name="em_kn1",
+			name="kn1",
 			arguments= [
 				"--ros-args",
 				"--log-level",

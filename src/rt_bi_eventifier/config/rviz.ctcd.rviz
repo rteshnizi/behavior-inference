@@ -42,7 +42,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /rt_bi_core/continuous_time_collision_detection
+        Value: /REZA_TESHNIZI_NS/continuous_time_collision_detection
       Value: true
   Enabled: true
   Global Options:

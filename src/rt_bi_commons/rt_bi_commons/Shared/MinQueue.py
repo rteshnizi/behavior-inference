@@ -1,8 +1,10 @@
 import heapq
-from typing import Callable, Generic, List, Tuple, TypeVar, Union
+from typing import Callable, Generic, TypeAlias, TypeVar
+
+numeric: TypeAlias = int | float
 
 DataType = TypeVar("DataType")
-QueueTuple = Tuple[float, int, DataType]
+QueueTuple = tuple[float, int, DataType]
 
 class MinQueue(Generic[DataType]):
 	"""
@@ -12,19 +14,19 @@ class MinQueue(Generic[DataType]):
 	See https://stackoverflow.com/a/8875823/750567
 	"""
 
-	def __init__(self,key: Callable[[DataType], float], initial: List[DataType]=[]) -> None:
+	def __init__(self, key: Callable[[DataType], float], initial: list[DataType]=[]) -> None:
 		"""
 		Create a priority queue, whose elements are sorted using the given key function.
 
 		Parameters
 		----------
 		key : Callable[[DataType], int]
-			A function which, given any item of `DataType`, returns the primary key (or the cost) associated with that item.
+			A function which, given any item of `DataType`, returns the primary key (i.e. the sort order) associated with that item.
 			The key/cost is expected to be an `int`.
 			This is because, [in python Integers have unlimited precision](href=https://docs.python.org/3/library/stdtypes.html#typesnumeric).
 			That is, there is no such thing as an integer overflow.
 			This allows infinite axes, such a time, as the key.
-		initial : List[DataType], optional
+		initial : list[DataType], optional
 			The initial data array, by default None.
 		"""
 		self.__counter: int = 0
@@ -34,11 +36,11 @@ class MinQueue(Generic[DataType]):
 		Note that, in python there is no such thing as an integer overflow,
 		so you should not worry about this counter ever showing the wrong number.
 		"""
-		self.__key: Callable[[DataType], float] = key
+		self.__key: Callable[[DataType], numeric] = key
 		"""
-		A function to return the primary key (or the cost) associated with any given item.
+		A function to return the primary key (i.e. the sort order) associated with any given item.
 		"""
-		self.__data: List[QueueTuple] = [self.__createTuple(item) for item in initial]
+		self.__data: list[QueueTuple] = [self.__createTuple(item) for item in initial]
 		"""The internal data structure to keep the items and maintain the heap invariant."""
 		heapq.heapify(self.__data)
 
@@ -47,10 +49,6 @@ class MinQueue(Generic[DataType]):
 
 	def __len__(self) -> int:
 		return len(self.__data)
-
-	def __getitem__(self, index: int) -> Union[DataType, None]:
-		if self.isEmpty: return None
-		return self.__data[index][-1]
 
 	@property
 	def isEmpty(self) -> bool:
@@ -65,13 +63,13 @@ class MinQueue(Generic[DataType]):
 		return len(self) == 0
 
 	@property
-	def smallest(self) -> Union[DataType, None]:
+	def smallest(self) -> DataType | None:
 		"""
 		Return but not remove the smallest item. The smallest item in a minPQ is the first item in the queue.
 
 		Returns
 		-------
-		Union[DataType, None]
+		`DataType | None`
 			Returns `None` if the list is empty otherwise the smallest element in the queue w.r.t. their keys.
 		"""
 		if self.isEmpty: return None

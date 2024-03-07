@@ -122,26 +122,40 @@ GRAPH tower_bridge:spatial
 		spatial_props:y y:4 .
 	pt:21 a rt_bi:Vertex ;
 		spatial_props:x x:6 ;
-		spatial_props:y y:5 .
+		spatial_props:y y:1 .
 	pt:22 a rt_bi:Vertex ;
-		spatial_props:x x:7 ;
+		spatial_props:x x:6 ;
 		spatial_props:y y:5 .
 	pt:23 a rt_bi:Vertex ;
 		spatial_props:x x:7 ;
-		spatial_props:y y:4 .
-	# NORTH-SHORE
+		spatial_props:y y:5 .
 	pt:24 a rt_bi:Vertex ;
-		spatial_props:x x:8 ;
-		spatial_props:y y:6 .
+		spatial_props:x x:7 ;
+		spatial_props:y y:1 .
 	pt:25 a rt_bi:Vertex ;
+		spatial_props:x x:7 ;
+		spatial_props:y y:4 .
+
+	# NORTH-SHORE
+	pt:26 a rt_bi:Vertex ;
+		spatial_props:x x:8 ;
+		spatial_props:y y:6 .
+	pt:27 a rt_bi:Vertex ;
+		spatial_props:x x:8 ;
+		spatial_props:y y:2 .
+	pt:28 a rt_bi:Vertex ;
 		spatial_props:x x:8 ;
 		spatial_props:y y:7 .
-	pt:26 a rt_bi:Vertex ;
+	pt:29 a rt_bi:Vertex ;
 		spatial_props:x x:9 ;
 		spatial_props:y y:7 .
-	pt:27 a rt_bi:Vertex ;
+	pt:30 a rt_bi:Vertex ;
+		spatial_props:x x:9 ;
+		spatial_props:y y:2 .
+	pt:31 a rt_bi:Vertex ;
 		spatial_props:x x:9 ;
 		spatial_props:y y:6 .
+
 	# POLYGONS
 	polygon:0 a rt_bi:Polygon ;
 		spatial_props:vertices [ a rt_bi:VertexSeq ;
@@ -205,16 +219,44 @@ GRAPH tower_bridge:spatial
 	polygon:south_bank a rt_bi:Polygon ;
 		spatial_props:vertices [ a rt_bi:VertexSeq ;
 			rdf:_1 pt:20;
+			rdf:_2 pt:22;
+			rdf:_3 pt:23;
+			rdf:_4 pt:25;
+		] .
+	polygon:south_bank_street a rt_bi:Polygon ;
+		spatial_props:vertices [ a rt_bi:VertexSeq ;
+			rdf:_1 pt:20;
 			rdf:_2 pt:21;
-			rdf:_3 pt:22;
-			rdf:_4 pt:23;
+			rdf:_3 pt:24;
+			rdf:_4 pt:25;
+		] .
+	polygon:south_bank_river a rt_bi:Polygon ;
+		spatial_props:vertices [ a rt_bi:VertexSeq ;
+			rdf:_1 pt:21;
+			rdf:_2 pt:22;
+			rdf:_3 pt:23;
+			rdf:_4 pt:24;
 		] .
 	polygon:north_shore a rt_bi:Polygon ;
 		spatial_props:vertices [ a rt_bi:VertexSeq ;
-			rdf:_1 pt:24;
-			rdf:_2 pt:25;
-			rdf:_3 pt:26;
-			rdf:_4 pt:27;
+			rdf:_1 pt:26;
+			rdf:_2 pt:28;
+			rdf:_3 pt:29;
+			rdf:_4 pt:31;
+		] .
+	polygon:north_shore_river a rt_bi:Polygon ;
+		spatial_props:vertices [ a rt_bi:VertexSeq ;
+			rdf:_1 pt:26;
+			rdf:_2 pt:27;
+			rdf:_3 pt:30;
+			rdf:_4 pt:31;
+		] .
+	polygon:north_shore_street a rt_bi:Polygon ;
+		spatial_props:vertices [ a rt_bi:VertexSeq ;
+			rdf:_1 pt:27;
+			rdf:_2 pt:28;
+			rdf:_3 pt:29;
+			rdf:_4 pt:30;
 		] .
 }
 
@@ -283,7 +325,7 @@ GRAPH tower_bridge:traversabilities
 @prefix tower_bridge_definition: <https://rezateshnizi.com/rt-bi/tower_bridge/defintion/> .
 GRAPH tower_bridge:definition
 {
-	tower_bridge_definition:_1 a rt_bi:RegularSpace ;
+	tower_bridge_definition:_101 a rt_bi:RegularSpace ;
 		spatial_props:type "static" ;
 		world_props:traversability traversability:street ;
 		world_props:color "GREY" ;
@@ -292,14 +334,14 @@ GRAPH tower_bridge:definition
 			polygon:2 ,
 			polygon:4 ;
 	.
-	tower_bridge_definition:_2 a rt_bi:RegularSpace ;
+	tower_bridge_definition:_102 a rt_bi:RegularSpace ;
 		spatial_props:type "static" ;
 		world_props:traversability traversability:bridge ;
 		world_props:color "WHITE" ;
 		world_props:polygons
 			polygon:3 ;
 	.
-	tower_bridge_definition:_3 a rt_bi:RegularSpace ;
+	tower_bridge_definition:_103 a rt_bi:RegularSpace ;
 		spatial_props:type "dynamic" ;
 		world_props:name "tower-bridge" ;
 		world_props:traversability traversability:bridge ;
@@ -310,7 +352,7 @@ GRAPH tower_bridge:definition
 			interval:early_morning ,
 			interval:afternoon ;
 	.
-	tower_bridge_definition:_4 a rt_bi:RegularSpace ;
+	tower_bridge_definition:_104 a rt_bi:RegularSpace ;
 		spatial_props:type "static" ;
 		world_props:traversability traversability:river ;
 		world_props:color "BLUE_LIGHT" ;
@@ -319,7 +361,7 @@ GRAPH tower_bridge:definition
 			polygon:6 ;
 		world_props:traversability traversability:river ;
 	.
-	tower_bridge_definition:_5 a rt_bi:RegularSpace ;
+	tower_bridge_definition:_105 a rt_bi:RegularSpace ;
 		spatial_props:type "dynamic" ;
 		world_props:traversability traversability:river ;
 		world_props:color "BLUE_LIGHT" ;
@@ -330,21 +372,53 @@ GRAPH tower_bridge:definition
 			interval:mid_day,
 			interval:evening ;
 	.
-	tower_bridge_definition:_6 a rt_bi:RegularSpace ;
+	tower_bridge_definition:_106 a rt_bi:RegularSpace ;
 		spatial_props:type "static" ;
-		world_props:name "south-bank" ;
+		world_props:name "old-south-bank" ;
 		world_props:color "PURPLE" ;
 		world_props:polygons
 			polygon:south_bank ;
 	.
-	tower_bridge_definition:_7 a rt_bi:RegularSpace ;
+	tower_bridge_definition:_107 a rt_bi:RegularSpace ;
 		spatial_props:type "static" ;
-		world_props:name "north-shore" ;
+		world_props:name "old-north-shore" ;
 		world_props:color "PURPLE" ;
 		world_props:polygons
 			polygon:north_shore ;
 	.
-	tower_bridge_definition:_8 a rt_bi:RegularTime ;
+	tower_bridge_definition:_108 a rt_bi:RegularSpace ;
+		spatial_props:type "static" ;
+		world_props:name "south-bank" ;
+		world_props:traversability traversability:street ;
+		world_props:color "PURPLE" ;
+		world_props:polygons
+			polygon:south_bank_street ;
+	.
+	tower_bridge_definition:_109 a rt_bi:RegularSpace ;
+		spatial_props:type "static" ;
+		world_props:name "south-bank" ;
+		world_props:traversability traversability:river ;
+		world_props:color "PURPLE" ;
+		world_props:polygons
+			polygon:south_bank_river ;
+	.
+	tower_bridge_definition:_110 a rt_bi:RegularSpace ;
+		spatial_props:type "static" ;
+		world_props:name "north-shore" ;
+		world_props:traversability traversability:street ;
+		world_props:color "PURPLE" ;
+		world_props:polygons
+			polygon:north_shore_street ;
+	.
+	tower_bridge_definition:_111 a rt_bi:RegularSpace ;
+		spatial_props:type "static" ;
+		world_props:name "north-shore" ;
+		world_props:traversability traversability:river ;
+		world_props:color "PURPLE" ;
+		world_props:polygons
+			polygon:north_shore_river ;
+	.
+	tower_bridge_definition:_201 a rt_bi:RegularTime ;
 		world_props:name "mid-day" ;
 		world_props:color "YELLOW" ;
 		world_props:intervals

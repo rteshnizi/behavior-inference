@@ -1,34 +1,30 @@
-from typing import List, TypeAlias, TypeVar, cast
+from typing import TypeVar, cast
 
 from networkx.algorithms.isomorphism import is_isomorphic
 
 from rt_bi_commons.Utils import Ros
+from rt_bi_core.Spatial import GraphInputPolygon, MapPolygon
 from rt_bi_core.Spatial.MovingPolygon import MovingPolygon
 from rt_bi_core.Spatial.SensingPolygon import SensingPolygon
-from rt_bi_core.Spatial.SpatialRegion import SpatialRegion
 from rt_bi_core.Spatial.StaticPolygon import StaticPolygon
 from rt_bi_core.Spatial.Tracklet import Tracklet
 from rt_bi_eventifier.Model.ConnectivityGraph import ConnectivityGraph
 from rt_bi_eventifier.Model.ContinuousTimeCollisionDetection import CollisionInterval
 from rt_bi_eventifier.Model.ContinuousTimeRegion import ContinuousTimeRegion
 
-_InputPolyTypes: TypeAlias = MovingPolygon | StaticPolygon | SensingPolygon
-_T_Poly = TypeVar("_T_Poly", bound=_InputPolyTypes)
+_T_Poly = TypeVar("_T_Poly", bound=GraphInputPolygon)
 
 class EventAggregator:
 	"""
 		This class contains functions related to Event Aggregator.
 		For details see dissertation.
-		© Reza Teshnizi 2018-2023
 	"""
 
 	@classmethod
-	def __nodeNameMatcher(cls, n1: ConnectivityGraph.NodeContent, n2: ConnectivityGraph.NodeContent) -> bool:
-		n1Content = n1["polygon"]
-		n2Content = n2["polygon"]
-		if not isinstance(n1Content, _InputPolyTypes): raise ValueError("No Region found.")
-		if not isinstance(n2Content, _InputPolyTypes): raise ValueError("No Region found.")
-		return n1Content.id == n2Content.id
+	def __nodeNameMatcher(cls, n1: ConnectivityGraph.NodeData, n2: ConnectivityGraph.NodeData) -> bool:
+		if not isinstance(n1.polygon, GraphInputPolygon): raise ValueError("No Region found.")
+		if not isinstance(n2.polygon, GraphInputPolygon): raise ValueError("No Region found.")
+		return n1.polygon.id == n2.polygon.id
 
 	@classmethod
 	def isIsomorphic(cls, g1: ConnectivityGraph, g2: ConnectivityGraph, useMatcher = False) -> bool:
@@ -70,7 +66,7 @@ class EventAggregator:
 		return Tracklet(nowTracklet.id, eventTimeNs, x, y, psi)
 
 	@classmethod
-	def __addPolyToList(cls, poly: _InputPolyTypes, sensors: List[SensingPolygon], mapPolys: List[MovingPolygon | StaticPolygon]) -> None:
+	def __addPolyToList(cls, poly: GraphInputPolygon, sensors: list[SensingPolygon], mapPolys: list[MapPolygon]) -> None:
 		if poly.type == SensingPolygon.type:
 			sensors.append(poly)
 		elif poly.type == StaticPolygon.type:
@@ -82,55 +78,54 @@ class EventAggregator:
 		return
 
 	@classmethod
-	def __interpolateRegion(cls, oldPolys: SpatialRegion[_T_Poly], newPolys: SpatialRegion[_T_Poly], eventTimeNs: int, excludeRegions: List[MovingPolygon.Id], tracklets: List[Tracklet] = []) -> List[_T_Poly]:
-		regions: List[_T_Poly] = []
-		for id in oldPolys:
-			if id in excludeRegions: continue
-			if id not in newPolys.polygonIds: continue
-			lastRegion = oldPolys[id]
-			nowRegion = newPolys[id]
-			ctRegion = ContinuousTimeRegion[_T_Poly]((lastRegion, nowRegion))
-			poly = ctRegion[eventTimeNs]
-			if poly.type == SensingPolygon.type:
-				for track in tracklets: cast(SensingPolygon, poly).tracklets[track.id] = track
-			regions.append(poly)
+	def __interpolateRegion(cls, oldPolys: list[_T_Poly], newPolys: list[_T_Poly], eventTimeNs: int, excludeRegions: list[MovingPolygon.Id], tracklets: list[Tracklet] = []) -> list[_T_Poly]:
+		regions: list[_T_Poly] = []
+		for oldPoly in oldPolys:
+			if oldPoly.id in excludeRegions: continue
+			newPoly = next((p for p in newPolys if p.id.updateTime(-1) == oldPoly.id.updateTime(-1)), None)
+			if newPoly is None: continue
+			ctRegion = ContinuousTimeRegion[_T_Poly]([oldPoly, newPoly])
+			oldPoly = ctRegion[eventTimeNs]
+			if oldPoly.type == SensingPolygon.type:
+				for track in tracklets: cast(SensingPolygon, oldPoly).tracklets[track.id] = track
+			regions.append(oldPoly)
 		return regions
 
 	@classmethod
-	def __obtainEventCGraphs(cls, sortedEventIntervals: List[CollisionInterval], lastCGraph: ConnectivityGraph) -> List[ConnectivityGraph]:
+	def __obtainEventCGraphs(cls, sortedEventIntervals: list[CollisionInterval], lastCGraph: ConnectivityGraph) -> list[ConnectivityGraph]:
 		if len(sortedEventIntervals) == 0: return []
 
-		graphs: List[ConnectivityGraph] = []
-		sensorPolys = [lastCGraph.sensors[i] for i in lastCGraph.sensors]
-		mapPolys= [lastCGraph.map[i] for i in lastCGraph.map]
-		for interval in sortedEventIntervals:
-			(ctr1, _, ctr2, _, _, eventTimeNs) = interval
-			# interpolatedTracks: List[Tracklet] = []
-			# for tracklet in nowCGraph.fieldOfView.tracks.values():
-			# 	previousTracklet = [tracklet for prevTracklet in lastCGraph.fieldOfView.tracks.values() if prevTracklet.id == tracklet.id]
-			# 	if len(previousTracklet) == 1:
-			# 		interpolatedTracks.append(cls.__interpolateTrack(previousTracklet[0], tracklet, eventTimeNs, startTime, endTime))
-			# 	if len(previousTracklet) > 1: raise RuntimeError("How does this happen?")
-			poly1 = ctr1[eventTimeNs]
-			poly2 = ctr2[eventTimeNs]
-			cls.__addPolyToList(poly1, sensorPolys, mapPolys)
-			cls.__addPolyToList(poly2, sensorPolys, mapPolys)
-			graph = ConnectivityGraph(timeNanoSecs=eventTimeNs, mapRegions=mapPolys, sensors=sensorPolys)
-			graphs.append(graph)
+		graphs: list[ConnectivityGraph] = []
+		# sensorPolys = [lastCGraph.sensors[i] for i in lastCGraph.sensors]
+		# mapPolys= [lastCGraph.map[i] for i in lastCGraph.map]
+		# for interval in sortedEventIntervals:
+		# 	(ctr1, _, ctr2, _, _, eventTimeNs) = interval
+		# 	# interpolatedTracks: list[Tracklet] = []
+		# 	# for tracklet in nowCGraph.fieldOfView.tracks.values():
+		# 	# 	previousTracklet = [tracklet for prevTracklet in lastCGraph.fieldOfView.tracks.values() if prevTracklet.id == tracklet.id]
+		# 	# 	if len(previousTracklet) == 1:
+		# 	# 		interpolatedTracks.append(cls.__interpolateTrack(previousTracklet[0], tracklet, eventTimeNs, startTime, endTime))
+		# 	# 	if len(previousTracklet) > 1: raise RuntimeError("How does this happen?")
+		# 	poly1 = ctr1[eventTimeNs]
+		# 	poly2 = ctr2[eventTimeNs]
+		# 	cls.__addPolyToList(poly1, sensorPolys, mapPolys)
+		# 	cls.__addPolyToList(poly2, sensorPolys, mapPolys)
+		# 	graph = ConnectivityGraph(timeNanoSecs=eventTimeNs, staticPolys=mapPolys, sensorPolys=sensorPolys)
+		# 	graphs.append(graph)
 		return graphs
 
 	@classmethod
-	def __aggregateIsomorphicGraphs(cls, graphs: List[ConnectivityGraph]) -> List[ConnectivityGraph]:
-		filtered: List[ConnectivityGraph] = []
+	def __aggregateIsomorphicGraphs(cls, graphs: list[ConnectivityGraph]) -> list[ConnectivityGraph]:
+		filtered: list[ConnectivityGraph] = []
 		for graph in graphs:
 			if len(filtered) > 0 and cls.isIsomorphic(filtered[-1], graph): continue
 			filtered.append(graph)
 		return filtered
 
 	@classmethod
-	def aggregateCollisionEvents(cls, events: List[CollisionInterval], lastCGraph: ConnectivityGraph) -> List[ConnectivityGraph]:
+	def aggregateCollisionEvents(cls, events: list[CollisionInterval], lastCGraph: ConnectivityGraph) -> list[ConnectivityGraph]:
 		events.sort(key=lambda e: e[-1]) # Sort events by their end time
 		Ros.Log("Aggregating for events @ %s" % repr([(e[4], e[5]) for e in events]))
-		graphs: List[ConnectivityGraph] = cls.__obtainEventCGraphs(events, lastCGraph)
+		graphs: list[ConnectivityGraph] = cls.__obtainEventCGraphs(events, lastCGraph)
 		graphs = cls.__aggregateIsomorphicGraphs(graphs)
 		return graphs

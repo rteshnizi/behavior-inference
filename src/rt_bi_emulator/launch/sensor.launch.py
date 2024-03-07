@@ -26,7 +26,7 @@ def generate_launch_description():
 			package=packageName,
 			namespace=packageName,
 			executable="ESN",
-			name="em_av1",
+			name="av1",
 			arguments= [
 				"--ros-args",
 				"--log-level",
@@ -38,7 +38,7 @@ def generate_launch_description():
 			package=packageName,
 			namespace=packageName,
 			executable="ESN",
-			name="em_av2",
+			name="av2",
 			arguments= [
 				"--ros-args",
 				"--log-level",

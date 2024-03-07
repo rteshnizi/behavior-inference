@@ -1,7 +1,7 @@
 import logging
 from functools import partial
 from math import inf, isnan, nan
-from typing import AbstractSet, Any, Callable, Sequence, TypeVar, cast
+from typing import AbstractSet, Any, Callable, Sequence, TypeAlias, TypeVar, cast
 
 import rclpy
 from rclpy.clock import Time
@@ -11,11 +11,12 @@ from rclpy.node import Client, Node, Publisher, Service, Subscription, Timer
 
 __Topic = TypeVar("__Topic")
 
-NAMESPACE = "rt_bi_core"
+NAMESPACE = "REZA_TESHNIZI_NS"
 __LOGGER: RcutilsLogger | None = None
 logging.basicConfig(format="[+][%(levelname)s]: %(message)s", force=True)
 __rtBiLog: Callable[[str], bool] = lambda m: False
 
+Array: TypeAlias = Sequence[__Topic] | AbstractSet[__Topic] | list[__Topic]
 
 def SetLogger(logger: RcutilsLogger, defaultSeverity: LoggingSeverity) -> None:
 	global __LOGGER
@@ -147,7 +148,7 @@ def AppendMessage(array: Sequence[__Topic] | AbstractSet[__Topic] | list[__Topic
 	msg : Any
 		The message.
 	"""
-	assert isinstance(array, list), ("Failed to append messages to array. Array type: %s" % type(array))
+	assert isinstance(array, list), (f"Failed to append messages to array. Array type: {type(array)}")
 	array.append(msg)
 
 def GetMessage(array: Sequence[__Topic] | AbstractSet[__Topic] | list[__Topic], i: int, t: type[__Topic] = Any) -> __Topic:
@@ -160,22 +161,23 @@ def GetMessage(array: Sequence[__Topic] | AbstractSet[__Topic] | list[__Topic], 
 	msg : Any
 		The message.
 	"""
-	assert isinstance(array, list), ("Failed to append messages to array. Array type: %s" % type(array))
+	assert isinstance(array, list), (f"Failed to append messages to array. Array type: {type(array)}")
 	return array[i]
 
-def ConcatMessageArray(array: Sequence[__Topic] | AbstractSet[__Topic] | list[__Topic], toConcat: Sequence[__Topic]) -> list[__Topic]:
-	"""Concatenates an array of messages to another message array.
+def ConcatMessageArray(first: Sequence[__Topic] | AbstractSet[__Topic] | list[__Topic], second: Sequence[__Topic]) -> None:
+	"""Creates a new array by concatenating first to second.
+	This ensures the type-checker error is managed from ROS arrays.
 
-	Parameters
-	----------
-	array : Union[Sequence, AbstractSet, UserList]
-		The array.
-	msg : Any
-		The message.
+	:param first: The first part of the new array.
+	:type array: `Sequence[__Topic]` or `AbstractSet[__Topic]` or `list[__Topic]`
+	:param toConcat: The second part of the new array.
+	:type toConcat: `Sequence[__Topic]`
+	:return: The concatenated array.
+	:rtype: `list[__Topic]`
 	"""
-	assert isinstance(array, list), ("Failed to append messages to array. Array type: %s" % type(array))
-	array += toConcat
-	return array
+	assert isinstance(first, list), (f"Failed to append messages to array. Array type: {type(first)}")
+	first += second
+	return
 
 def CreateTimer(node: Node, callback: Callable, intervalNs = 1000) -> Timer:
 	return Timer(callback, None, intervalNs, node.get_clock(), context=node.context)

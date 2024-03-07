@@ -1,20 +1,29 @@
-from typing import Any
-
 import rclpy
 from rclpy.logging import LoggingSeverity
 
+from rt_bi_commons.Utils import Ros
+from rt_bi_commons.Utils.RViz import RViz
 from rt_bi_core.RegionsSubscriber import MapSubscriber
+from rt_bi_core.Spatial import MapPolygon, MovingPolygon, StaticPolygon
 
 
 class MapRenderer(MapSubscriber):
 	""" This Node listens to all static and dynamic map region updates and renders them. """
 	def __init__(self, **kwArgs):
 		newKw = { "node_name": "renderer_map", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
-		super().__init__(**newKw)
+		super().__init__(pauseQueuingMsgs=False, **newKw)
 
-	def onRegionsUpdated(self, __1: Any, __2: Any) -> None:
+	def createMarkers(self) -> list[RViz.Msgs.Marker]:
+		markers = []
+		for regionId in self.mapRegions:
+			polys = self.mapRegions[regionId]
+			for poly in polys:
+				Ros.ConcatMessageArray(markers, poly.createMarkers(durationNs=-1))
+		return markers
+
+	def onPolygonUpdated(self, rType: MovingPolygon.Type | StaticPolygon.Type, polygon: MapPolygon) -> None:
 		self.log("Map updated.")
-		return super().render()
+		return self.render()
 
 def main(args=None):
 	rclpy.init(args=args)

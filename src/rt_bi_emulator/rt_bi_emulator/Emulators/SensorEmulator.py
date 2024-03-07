@@ -1,5 +1,3 @@
-from typing import Any
-
 import rclpy
 from rclpy.logging import LoggingSeverity
 
@@ -7,14 +5,16 @@ from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Geometry import GeometryLib
 from rt_bi_commons.Utils.Msgs import Msgs
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
+from rt_bi_commons.Utils.RViz import RViz
 from rt_bi_core.RegionsSubscriber import TargetSubscriber
+from rt_bi_core.Spatial import TargetPolygon
 from rt_bi_emulator.Emulators.AffineRegionEmulator import AffineRegionEmulator
 
 
 class SensorEmulator(AffineRegionEmulator, TargetSubscriber):
 	def __init__(self):
 		newKw = { "node_name": "emulator_sensor", "loggingSeverity": LoggingSeverity.INFO }
-		super().__init__(**newKw)
+		super().__init__(pauseQueuingMsgs=False, **newKw)
 		self.__observedTargetIds = set()
 		(self.__regionPublisher, _) = RtBiInterfaces.createSensorPublisher(self, self.__publishUpdate, self.updateInterval)
 		(self.__estPublisher, _) = RtBiInterfaces.createEstimationPublisher(self)
@@ -23,11 +23,12 @@ class SensorEmulator(AffineRegionEmulator, TargetSubscriber):
 		msg = self.asRegularSpaceArrayMsg()
 		self.__regionPublisher.publish(msg)
 
-	def onRegionsUpdated(self, __1: Any, __2: Any) -> None:
-		for targetId in self.targets:
-			region = self.targets[targetId]
-			if len(region) > 1: raise RuntimeError(f"We do not expect a target region with more than one member.")
-			target = region[region.polygonIds[0]]
+	def onPolygonUpdated(self, rType: TargetPolygon.Type, polygon: TargetPolygon) -> None:
+		for regionId in self.targetRegions:
+			polys = self.targetRegions[regionId]
+			if len(polys) > 1: raise RuntimeError(f"We do not expect a target region with more than one member.")
+			(_, index) = self.targetPolyIdMap[polys[0].id]
+			target = self.targetRegions[regionId][index]
 			trackletMsg = Msgs.RtBi.Tracklet(spawned=False, vanished=False)
 			trackletMsg.id = target.id
 			trackletMsg.pose = Msgs.toStdPose(target.interior.centroid)
@@ -43,8 +44,8 @@ class SensorEmulator(AffineRegionEmulator, TargetSubscriber):
 				return
 		return
 
-	def render(self) -> None:
-		return super().render()
+	def createMarkers(self) -> list[RViz.Msgs.Marker]:
+		raise AssertionError("Emulators do not render")
 
 def main(args=None):
 	rclpy.init(args=args)

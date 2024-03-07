@@ -79,16 +79,13 @@ class AffineRegionEmulator(RtBiNode, ABC):
 		saPoses = list(self.get_parameter("saPoses").get_parameter_value().string_array_value)
 		centersOfRotation = list(self.get_parameter("centersOfRotation").get_parameter_value().string_array_value)
 		fovs = list(self.get_parameter("fovs").get_parameter_value().string_array_value)
-		parsedFov = []
 		for i in range(len(timePoints)):
 			self.__centersOfRotation.append(json.loads(centersOfRotation[i]))
 			fov = [tuple(p) for p in json.loads(fovs[i])]
-			self.log(f"parsed {repr(fov)}")
-			parsedFov.append(fov)
 			pose = json.loads(saPoses[i])
 			timeNanoSecs = int(timePoints[i] * self.NANO_CONVERSION_CONSTANT)
-			body = Body(self.id, Pose(timeNanoSecs, *(pose)), self.__centersOfRotation[i], parsedFov[i])
-			self.log(f"parsed {repr(body)}")
+			body = Body(self.id, Pose(timeNanoSecs, *(pose)), self.__centersOfRotation[i], fov)
+			self.log(f"Parsed {repr(body)} config @ {timeNanoSecs}")
 			self.regionPositions.append(body)
 			if i > 0:
 				matrix = GeometryLib.getAffineTransformation(self.regionPositions[i - 1].spatialRegion, self.regionPositions[i].spatialRegion)

@@ -42,7 +42,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /rt_bi_core/map
+        Value: /REZA_TESHNIZI_NS/map
       Value: true
   Enabled: true
   Global Options:

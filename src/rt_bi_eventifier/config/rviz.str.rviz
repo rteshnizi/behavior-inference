@@ -36,13 +36,13 @@ Visualization Manager:
       Enabled: true
       Name: MarkerArray
       Namespaces:
-        rt_bi_core: true
+        REZA_TESHNIZI_NS: true
       Topic:
         Depth: 5
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /rt_bi_core/shadow_tree
+        Value: /REZA_TESHNIZI_NS/shadow_tree
       Value: true
   Enabled: true
   Global Options:
@@ -99,11 +99,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 1.7176134586334229
+      Scale: 0.420954167842865
       Target Frame: <Fixed Frame>
       Value: TopDownOrtho (rviz_default_plugins)
-      X: 315.83331298828125
-      Y: 202.00221252441406
+      X: 1289.5975341796875
+      Y: 1013.7694702148438
     Saved: ~
 Window Geometry:
   Displays:

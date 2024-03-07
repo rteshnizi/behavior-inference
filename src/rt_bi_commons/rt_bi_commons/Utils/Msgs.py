@@ -18,10 +18,17 @@ class Msgs:
 	__ = RtBiSrv # RtBiSrv is being re-exported. This is here to get rid of unused import warning.
 
 	@classmethod
-	def DurationMsg(cls, sec: int, nanoSec: int) -> Std.Duration:
+	def toSecsNanoSecsPair(cls, nanoSecs: int) -> tuple[int, int]:
+		secs = int(nanoSecs / NANO_CONVERSION_CONSTANT)
+		nanoSecs = nanoSecs % NANO_CONVERSION_CONSTANT
+		return (secs, nanoSecs)
+
+	@classmethod
+	def DurationMsg(cls, nanoSecs: int) -> Std.Duration:
 		d = cls.Std.Duration()
-		d.sec = sec
-		d.nanosec = nanoSec
+		(secs, nanoSecs) = cls.toSecsNanoSecsPair(nanoSecs)
+		d.sec = secs
+		d.nanosec = nanoSecs
 		return d
 
 	@classmethod
@@ -33,25 +40,34 @@ class Msgs:
 		msg = cls.Std.Time()
 		if isinstance(time, Time):
 			msg = time.to_msg()
-		if isinstance(time, float):
-			sec = time
-			msg.sec = int(sec)
-			msg.nanosec = int((sec % 1) * NANO_CONVERSION_CONSTANT)
+		elif isinstance(time, float):
+			nanoSecs = cls.toNanoSecs(time)
+			(secs, nanoSecs) = cls.toSecsNanoSecsPair(nanoSecs)
+			msg.sec = int(secs)
+			msg.nanosec = int((secs % 1) * NANO_CONVERSION_CONSTANT)
 		elif isinstance(time, int):
-			nanoSec = time
-			msg.sec = int(nanoSec / NANO_CONVERSION_CONSTANT)
-			msg.nanosec = nanoSec % NANO_CONVERSION_CONSTANT
+			nanoSecs = time
+			(secs, nanoSecs) = cls.toSecsNanoSecsPair(nanoSecs)
+			msg.sec = secs
+			msg.nanosec = nanoSecs
+		else:
+			raise ValueError(f"Value is of unknown type: {repr(time)}")
 		return msg
 
 	@classmethod
-	def toNanoSecs(cls, t: Std.Time | Time) -> int:
-		if isinstance(t, cls.Std.Time):
-			(sec, nanoSecs) = (t.sec, t.nanosec) # CSpell: ignore nanosec
-		elif isinstance(t, Time):
-			(sec, nanoSecs) = cast(tuple[int, int], t.seconds_nanoseconds())
+	def toNanoSecs(cls, time: Std.Time | Time | float) -> int:
+		"""Returns a given time as a single `int` in nano-seconds."""
+		if isinstance(time, cls.Std.Time):
+			(secs, nanoSecs) = (time.sec, time.nanosec) # CSpell: ignore nanosec
+		elif isinstance(time, Time):
+			(secs, nanoSecs) = cast(tuple[int, int], time.seconds_nanoseconds())
+		elif isinstance(time, float):
+			secs = time
+			secs = int(secs)
+			nanoSecs = int((secs % 1) * NANO_CONVERSION_CONSTANT)
 		else:
-			raise ValueError(f"Value is of unknown type: {repr(t)}")
-		return ((sec * NANO_CONVERSION_CONSTANT) + nanoSecs)
+			raise ValueError(f"Value is of unknown type: {repr(time)}")
+		return ((secs * NANO_CONVERSION_CONSTANT) + nanoSecs)
 
 	@classmethod
 	def toCoords(cls, p: Geometry.Point32) -> Coords:

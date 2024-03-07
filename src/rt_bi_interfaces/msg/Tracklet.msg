@@ -1,7 +1,5 @@
 # A unique id associated with the detected moving body.
 string id
-# The meta data about the moving object.
-string meta
 # Information about dynamic's of a moving body
 geometry_msgs/Pose pose
 geometry_msgs/Pose velocity

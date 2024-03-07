@@ -1,8 +1,8 @@
 rt_bi_emulator:
-  em_kn1:
+  kn1:
     ros__parameters:
       render: True
-      id: "https://rezateshnizi.com/rt-bi/tower_bridge/defintion/em_kn1"
+      id: "https://rezateshnizi.com/rt-bi/tower_bridge/defintion/kn1"
       updateInterval: 0.25
       timesSecs:
         - 0.0

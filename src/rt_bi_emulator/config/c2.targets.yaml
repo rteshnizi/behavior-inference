@@ -1,8 +1,8 @@
 rt_bi_emulator:
-  em_tg1:
+  tg1:
     ros__parameters:
       render: False
-      id: "https://rezateshnizi.com/rt-bi/tower_bridge/defintion/em_tg1"
+      id: "https://rezateshnizi.com/rt-bi/tower_bridge/defintion/tg1"
       updateInterval: 0.25
       timesSecs:
         - 0.0
