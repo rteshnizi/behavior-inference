@@ -17,7 +17,7 @@ class TargetRenderer(TargetSubscriber):
 		for regionId in self.targetRegions:
 			polys = self.targetRegions[regionId]
 			for poly in polys:
-				Ros.ConcatMessageArray(markers, poly.createMarkers(durationNs=-1))
+				Ros.ConcatMessageArray(markers, poly.createMarkers(durationNs=-1, stamped=False))
 		return markers
 
 	def onPolygonUpdated(self, rType: TargetPolygon.Type, polygon: TargetPolygon) -> None:

@@ -1,18 +1,17 @@
-from typing import TypeAlias
+from typing import Sequence, TypeAlias
 
 from rt_bi_commons.Shared.Color import RGBA
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Geometry import GeometryLib, Shapely
 from rt_bi_commons.Utils.RViz import RViz
-from rt_bi_core.Spatial import GraphInputPolygon, MapPolygon
-from rt_bi_core.Spatial.MovingPolygon import MovingPolygon
+from rt_bi_core.Spatial import GraphPolygon
 from rt_bi_core.Spatial.SensingPolygon import SensingPolygon
 from rt_bi_core.Spatial.StaticPolygon import StaticPolygon
 from rt_bi_eventifier.Model.ContinuousTimeRegion import ContinuousTimeRegion
 
 CollisionInterval: TypeAlias = tuple[
-	ContinuousTimeRegion[GraphInputPolygon], Shapely.LineString | None,
-	ContinuousTimeRegion[GraphInputPolygon], Shapely.LineString | None,
+	ContinuousTimeRegion[GraphPolygon], Shapely.LineString | None,
+	ContinuousTimeRegion[GraphPolygon], Shapely.LineString | None,
 	int, int
 ]
 """## Collision Interval
@@ -38,15 +37,20 @@ class ContinuousTimeCollisionDetection:
 	__rvizPublisher: Ros.Publisher | None = None
 
 	@classmethod
+	def __logInterval(cls, header: str, interval: CollisionInterval) -> None:
+		(ctr1, edge1, ctr2, edge2, intervalStart, intervalEnd) = interval
+		Ros.Log(header, [(ctr1, edge1), (ctr2, edge2), (intervalStart, intervalEnd)], indentStr="\t")
+		return
+
+	@classmethod
 	def __renderLineStrings(cls, lines: list[Shapely.LineString], color: RGBA, renderWidth: float = 1.0) -> None:
 		if cls.__rvizPublisher is None: return
 		msg = RViz.Msgs.MarkerArray()
 		for line in lines:
-			strId = repr(GeometryLib.lineStringId(line))
-			markerId = MovingPolygon.Id(timeNanoSecs=-1, regionId="ctcd", polygonId=strId)
+			markerId = RViz.Id(hIndex = -1, timeNanoSecs=-1, regionId="ctcd", polygonId=line.wkb_hex)
 			marker = RViz.createLine(
 				id=markerId,
-				coords=GeometryLib.getGeometryCoords(line),
+				coordsList=GeometryLib.getGeometryCoords(line),
 				outline=color,
 				width=renderWidth,
 			)
@@ -55,7 +59,7 @@ class ContinuousTimeCollisionDetection:
 		return
 
 	@classmethod
-	def __obbTest(cls, ctRegion1: ContinuousTimeRegion, ctRegion2: ContinuousTimeRegion) -> list[CollisionInterval]:
+	def __obbTest(cls, ctRegion1: ContinuousTimeRegion[GraphPolygon], ctRegion2: ContinuousTimeRegion[GraphPolygon], upToNs: int) -> list[CollisionInterval]:
 		# If there is no overlap in time then there are no collisions.
 		if ctRegion1.latestNanoSecs < ctRegion2.earliestNanoSecs:
 			Ros.Log(f"{repr(ctRegion1)} < {repr(ctRegion2)}")
@@ -64,16 +68,17 @@ class ContinuousTimeCollisionDetection:
 			Ros.Log(f"{repr(ctRegion1)} > {repr(ctRegion2)}")
 			return []
 
+		Ros.Log(f"OBB Test: {ctRegion1.name} <==> {ctRegion2.name} -- up to {upToNs}")
 		collisions: list[CollisionInterval] = []
 		for e1 in ctRegion1.configs[0].edges:
-			obb1 = ctRegion1.getEdgeBb(e1)
+			obb1 = ctRegion1.getEdgeBb(e1, upToNs)
 			for e2 in ctRegion2.configs[0].edges:
-				obb2 = ctRegion2.getEdgeBb(e2)
+				obb2 = ctRegion2.getEdgeBb(e2, upToNs)
 				if GeometryLib.intersects(obb1, obb2): collisions.append(
 					(
 						ctRegion1, e1,
 						ctRegion2, e2,
-						max(ctRegion1.earliestNanoSecs, ctRegion2.earliestNanoSecs), min(ctRegion1.latestNanoSecs, ctRegion2.latestNanoSecs)
+						max(ctRegion1.earliestNanoSecs, ctRegion2.earliestNanoSecs), upToNs
 					)
 				)
 		return collisions
@@ -81,7 +86,8 @@ class ContinuousTimeCollisionDetection:
 	@classmethod
 	def __checkCollisionAtTime(cls, interval: CollisionInterval, timeNanoSecs: int) -> bool:
 		(ctRegion1, edge1, ctRegion2, edge2, intervalStart, intervalEnd) = interval
-		# Base case FIXME: and delta T less than epsilon
+		assert edge1 is not None and edge2 is not None, f"Does this ever happen? e1={edge1}, e2={edge2}"
+		# Base case: delta T less than epsilon
 		if intervalEnd - intervalStart < cls.MIN_TIME_DELTA_NS: return False
 
 		e1AtT = ctRegion1.getEdgeAt(edge1, timeNanoSecs)
@@ -115,69 +121,106 @@ class ContinuousTimeCollisionDetection:
 		return (haveOverlap, dontHaveOverlap)
 
 	@classmethod
-	def __initTest(cls, ctRegion1: ContinuousTimeRegion, ctRegion2: ContinuousTimeRegion) -> CollisionInterval | None:
-		if ctRegion1.length == 0: return
-		t = ctRegion1.earliestNanoSecs
-		if t not in ctRegion2: return
-		r1 = ctRegion1[t]
-		if not GeometryLib.intersects(r1.interior, ctRegion2[t].interior): return
-		Ros.Log(f"Adding init interval: {ctRegion1.name} <===> {ctRegion2.name} @ {t}")
+	def __initTest(cls, ctRegion1: ContinuousTimeRegion[GraphPolygon], ctRegion2: ContinuousTimeRegion[GraphPolygon], upToNs: int) -> CollisionInterval | None:
+		if upToNs not in ctRegion1: return
+		if upToNs not in ctRegion2: return
+		Ros.Log(f"INIT Test: {ctRegion1.name} <===> {ctRegion2.name} -- up to {upToNs}")
+		if not GeometryLib.intersects(ctRegion1[upToNs].interior, ctRegion2[upToNs].interior):
+			return
 		interval = (
 			ctRegion1, None,
 			ctRegion2, None,
-			t, t
+			upToNs, upToNs
 		)
 		return interval
 
 	@classmethod
-	def estimateCollisionIntervals(cls, sensorPolys: list[SensingPolygon], mapPolys: list[MapPolygon], rvizPublisher: Ros.Publisher | None) -> list[CollisionInterval]:
+	def __estimateCollisionIntervals(cls, ctrs: Sequence[ContinuousTimeRegion[GraphPolygon]], processUpToNs: int, rvizPublisher: Ros.Publisher | None) -> list[CollisionInterval]:
 		cls.__rvizPublisher = rvizPublisher
-		Ros.Log("<===================================CTCD - START===================================>")
-		Ros.Log(f"Sensors: {repr(sensorPolys)}")
-		Ros.Log(f"Map {repr(mapPolys)}")
-		ctSensors = ContinuousTimeRegion[SensingPolygon].fromMergedList(sensorPolys)
-		ctMap = ContinuousTimeRegion[MapPolygon].fromMergedList(mapPolys)
-		allCtRegions = ctSensors + ctMap
-		Ros.Log(f"CT Sensors: {len(ctSensors)}")
-		Ros.Log(f"CT Map: {len(ctMap)}")
+		Ros.Log(" ------------------------------- CTCD - ESTIMATION - START --------------------------------")
 
-		intervals = []
+		intervals: list[CollisionInterval] = []
 		checked: set[tuple[SensingPolygon.Id, SensingPolygon.Id]] = set()
-		for ctRegion1 in allCtRegions:
-			if ctRegion1.type != StaticPolygon.type: continue
-			for ctRegion2 in allCtRegions:
+		for ctRegion1 in ctrs:
+			if ctRegion1.type == StaticPolygon.type:
+				Ros.Log(f"Not testing {ctRegion1.name}: STATIC")
+				continue
+			if ctRegion1.isSlice:
+				Ros.Log(f"Not testing {ctRegion1.name}: SLICE")
+				continue
+			for ctRegion2 in ctrs:
+				if ctRegion1 == ctRegion2: continue
+				if (ctRegion1.id, ctRegion2.id) in checked: continue
+				if ctRegion2.isSlice:
+					Ros.Log(f"Not testing {ctRegion1.name} vs {ctRegion2.name}: SLICE.")
+					continue
+
+				if processUpToNs in ctRegion2:
+					intervals += cls.__obbTest(ctRegion1, ctRegion2, processUpToNs)
+				checked.add((ctRegion1.id, ctRegion2.id))
+				checked.add((ctRegion2.id, ctRegion1.id))
+		Ros.Log(" ------------------------------- CTCD - ESTIMATION - END ----------------------------------")
+		return intervals
+
+	@classmethod
+	def estimateCollisionIntervals(cls, ctrs: Sequence[ContinuousTimeRegion[GraphPolygon]], processUpToNs: int, rvizPublisher: Ros.Publisher | None) -> list[CollisionInterval]:
+		cls.__rvizPublisher = rvizPublisher
+		Ros.Log(" ------------------------------- CTCD - ESTIMATION - START --------------------------------")
+
+		intervals: list[CollisionInterval] = []
+		checked: set[tuple[SensingPolygon.Id, SensingPolygon.Id]] = set()
+		for ctRegion1 in ctrs:
+			if ctRegion1.type == StaticPolygon.type:
+				Ros.Log(f"Not testing {ctRegion1.name}: STATIC")
+				continue
+			if processUpToNs < ctRegion1.earliestNanoSecs:
+				Ros.Log(f"Not testing {ctRegion1.name}: STARTS LATER.")
+				continue
+			for ctRegion2 in ctrs:
 				if ctRegion1 == ctRegion2: continue
 				if (ctRegion1.id, ctRegion2.id) in checked: continue
 
 				if ctRegion1.isSlice:
-					init = cls.__initTest(ctRegion1, ctRegion2)
+					init = cls.__initTest(ctRegion1, ctRegion2, processUpToNs)
 					if init is not None: intervals.append(init)
-				elif not ctRegion2.isSlice:
-					intervals += cls.__obbTest(ctRegion1, ctRegion2)
+				elif not ctRegion2.isSlice and processUpToNs in ctRegion2:
+					intervals += cls.__obbTest(ctRegion1, ctRegion2, processUpToNs)
+				elif ctRegion2.isSlice:
+					# If ctRegion2 is a slice, it will be tested when it is selected as ctRegion1 above.
+					Ros.Log(f"Not testing {ctRegion1.name} vs {ctRegion2.name}: SLICE.")
+				elif processUpToNs < ctRegion2.earliestNanoSecs:
+					Ros.Log(f"Not testing {ctRegion1.name} vs {ctRegion2.name}: STARTS LATER.")
+				else:
+					raise AssertionError(f"Does this ever happen? ctr1 = {ctRegion1.name} vs ctr2 = {ctRegion2.name}")
 				checked.add((ctRegion1.id, ctRegion2.id))
 				checked.add((ctRegion2.id, ctRegion1.id))
-		Ros.Log("<===================================CTCD - END=====================================>")
+		Ros.Log(" ------------------------------- CTCD - ESTIMATION - END ----------------------------------")
 		return intervals
 
 	@classmethod
 	def refineCollisionIntervals(cls, intervals: list[CollisionInterval]) -> list[CollisionInterval]:
+		if len(intervals) < 2: return intervals
+		Ros.Log(" ------------------------------- CTCD - REFINEMENT - START --------------------------------")
+		Ros.Log(f"{len(intervals)} intervals.")
 		withOverlap = intervals.copy()
 		withoutOverlap: list[CollisionInterval] = []
 		i = 0
 		while len(withOverlap) > 0 and i < len(withOverlap):
-			interval = withOverlap.pop(i)
-			(ctRegion1, edge1, ctRegion2, edge2, intervalStart, intervalEnd) = interval
-			if edge1 is None or edge2 is None: continue
-			intervalMid = int((intervalStart + intervalEnd) / 2)
-			collidingAtStart = cls.__checkCollisionAtTime(interval, intervalStart)
-			collidingAtMid = cls.__checkCollisionAtTime(interval, intervalMid)
-			collidingAtEnd = cls.__checkCollisionAtTime(interval, intervalEnd)
-			if collidingAtStart != collidingAtMid:
-				withOverlap.insert(i, (ctRegion1, edge1, ctRegion2, edge2, intervalStart, intervalMid))
-				i += 1
-			if collidingAtMid != collidingAtEnd:
-				withOverlap.insert(i, (ctRegion1, edge1, ctRegion2, edge2, intervalMid, intervalEnd))
-				i += 1
+			cls.__logInterval("Interval to Refine", withOverlap[i])
+			(ctRegion1, edge1, ctRegion2, edge2, intervalStart, intervalEnd) = withOverlap[i]
+			if edge1 is not None and edge2 is not None:
+				interval = withOverlap.pop(i)
+				intervalMid = int((intervalStart + intervalEnd) / 2)
+				collidingAtStart = cls.__checkCollisionAtTime(interval, intervalStart)
+				collidingAtMid = cls.__checkCollisionAtTime(interval, intervalMid)
+				collidingAtEnd = cls.__checkCollisionAtTime(interval, intervalEnd)
+				if collidingAtStart != collidingAtMid:
+					withOverlap.insert(i, (ctRegion1, edge1, ctRegion2, edge2, intervalStart, intervalMid))
+					i += 1
+				if collidingAtMid != collidingAtEnd:
+					withOverlap.insert(i, (ctRegion1, edge1, ctRegion2, edge2, intervalMid, intervalEnd))
+					i += 1
 			(withOverlap, withoutOverlap) = cls.__splitIntervalsListForOverlap(withOverlap)
-
+		for i in range(len(withoutOverlap)): cls.__logInterval(f"Non-overlapping Interval {i}", withoutOverlap[i])
+		Ros.Log(" ------------------------------- CTCD - REFINEMENT - END ----------------------------------")
 		return withoutOverlap

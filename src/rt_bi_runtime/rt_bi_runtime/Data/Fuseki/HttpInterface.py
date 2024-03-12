@@ -131,11 +131,12 @@ class HttpInterface:
 		r = requests.post(self.__SPARQL_URL, data={ "query": queryStr })
 		try:
 			helper = SparqlResultHelper(r)
+			stamp = Ros.Now(self.__node).to_msg()
 			i = 0
 			while i < len(helper):
 				msg = Msgs.RtBi.RegularSpace()
 				msg.id = helper.strVarValue(i, "regularRegionId")
-				msg.stamp = Msgs.toTimeMsg(Ros.Now(self.__node))
+				msg.stamp = stamp
 				msg.predicates = self.__parsePredicates(helper, i)
 				(msg.polygons, i) = self.__parsePolygons(helper, i, msg.id)
 				Ros.AppendMessage(res.spatial_matches, msg)

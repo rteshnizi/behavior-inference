@@ -34,6 +34,7 @@ class Eventifier(MapSubscriber, SensorSubscriber):
 	def onPolygonUpdated(self, rType: MovingPolygon.Type | StaticPolygon.Type | SensingPolygon.Type, polygon: MapPolygon | SensingPolygon) -> None:
 		self.log(f"Updating polygons of type {rType}.")
 		self.__shadowTree.updatePolygon(polygon)
+		self.__shadowTree.renderLatestCGraph()
 		if self.shouldRender: self.render()
 		return
 

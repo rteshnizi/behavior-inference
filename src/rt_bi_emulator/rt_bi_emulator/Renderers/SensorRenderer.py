@@ -29,7 +29,8 @@ class SensorRenderer(SensorSubscriber):
 		for regionId in self.sensorRegions:
 			polys = self.sensorRegions[regionId]
 			for poly in polys:
-				Ros.ConcatMessageArray(markers, poly.createMarkers(durationNs=-1))
+				marker = poly.createMarkers(durationNs=-1, stamped=False)
+				Ros.ConcatMessageArray(markers, marker)
 		return markers
 
 	def __onEstimation(self, msg: Msgs.RtBi.Estimation) -> None:
@@ -41,15 +42,17 @@ class SensorRenderer(SensorSubscriber):
 			trackletMsg = cast(Msgs.RtBi.Tracklet, trackletMsg)
 			pose = cast(Msgs.Geometry.Pose, trackletMsg.pose)
 			tracklet = Tracklet(
-				trackletMsg.id,
-				Msgs.toNanoSecs(msg.robot.stamp),
-				pose.position.x,
-				pose.position.y,
-				Msgs.toAngle(pose.orientation),
-				tracklet.spawned,
-				tracklet.vanished
+				idStr=trackletMsg.id,
+				timeNanoSecs=Msgs.toNanoSecs(msg.robot.stamp),
+				hIndex=-1,
+				x=pose.position.x,
+				y=pose.position.y,
+				angleFromX=Msgs.toAngle(pose.orientation),
+				spawned=tracklet.spawned,
+				vanished=tracklet.vanished,
 			)
 			id = SensingPolygon.Id(
+				hIndex=-1,
 				timeNanoSecs=Msgs.toNanoSecs(msg.robot.stamp),
 				regionId=msg.robot.id,
 				polygonId=Ros.GetMessage(msg.robot.polygons, 0, Msgs.RtBi.Polygon).id,

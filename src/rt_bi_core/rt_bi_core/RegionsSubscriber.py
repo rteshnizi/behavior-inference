@@ -79,6 +79,7 @@ class __RegionsSubscriberBase(RtBiNode, ABC):
 			"envelope": Msgs.toCoordsList(polyMsg.region.points),
 			"timeNanoSecs": Msgs.toNanoSecs(regularSpace.stamp),
 			"predicates": regularSpace.predicates if isinstance(regularSpace.predicates, list) else [],
+			"hIndex": -1,
 			"centerOfRotation": Msgs.toCoords(polyMsg.center_of_rotation),
 		}
 		match rType:
@@ -95,9 +96,32 @@ class __RegionsSubscriberBase(RtBiNode, ABC):
 		poly = PolygonFactory(PolyCls, kwArgs)
 		return poly
 
+	def __processEnqueuedUpdatesSlow(self) -> None:
+		if self.__processingTimer is not None: self.__processingTimer.destroy()
+		if self.__msgPq.isEmpty: self.log("No updates to process.. see you next time!")
+		else:
+			self.log(f"[SLOW] Processing enqueued updates.")
+			(rType, msgs) = self.__msgPq.peek
+			if len(msgs) == 0:
+				self.__msgPq.dequeue()
+				self.__processingTimer = Ros.CreateTimer(self, self.__processEnqueuedUpdatesSlow, intervalNs=50)
+				return
+			regularSpace = msgs[-1]
+			if len(regularSpace.polygons) == 0:
+				msgs.pop()
+				self.__processingTimer = Ros.CreateTimer(self, self.__processEnqueuedUpdatesSlow, intervalNs=50)
+				return
+			polyMsg = Ros.PopMessage(regularSpace.polygons, 0, Msgs.RtBi.Polygon)
+			poly = self.__createPolygon(rType, regularSpace, polyMsg)
+			self.__storePolygon(regularSpace.id, poly)
+			self.onPolygonUpdated(rType, poly)
+		self.__processingTimer = Ros.CreateTimer(self, self.__processEnqueuedUpdatesSlow, intervalNs=1000)
+		return
+
 	def __processEnqueuedUpdates(self) -> None:
 		if self.__processingTimer is not None: self.__processingTimer.destroy()
-		self.log(f"Processing enqueued updates.")
+		if not self.__msgPq.isEmpty: self.log("Processing enqueued updates.")
+		else: self.log("No updates to process.. see you next time!")
 		while not self.__msgPq.isEmpty:
 			(rType, msgs) = self.__msgPq.dequeue()
 			for regularSpace in msgs:

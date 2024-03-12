@@ -6,6 +6,12 @@ from scipy.spatial.transform import Rotation
 
 Coords = tuple[float, float]
 """``(x, y)``"""
+Coords2d = Coords
+"""``(x, y)``"""
+Coords3d = tuple[float, float, float]
+"""``(x, y, z)``
+Only used in RViz.
+"""
 CoordsList = list[Coords]
 """``[(x0, y0), (x1, y1), (x2, y2), ...]``"""
 Quaternion = tuple[float, float, float, float]

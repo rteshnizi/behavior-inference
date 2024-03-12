@@ -13,10 +13,11 @@ class AffinePolygon(Polygon, ABC):
 			polygonId: str,
 			regionId: str,
 			envelope: CoordsList,
+			predicates: Predicates,
 			envelopeColor: RGBA,
 			centerOfRotation: Coords,
 			timeNanoSecs: int,
-			predicates: Predicates,
+			hIndex: int,
 			**kwArgs
 		) -> None:
 		super().__init__(
@@ -26,6 +27,7 @@ class AffinePolygon(Polygon, ABC):
 			predicates=predicates,
 			envelopeColor=envelopeColor,
 			timeNanoSecs=timeNanoSecs,
+			hIndex=hIndex,
 			**kwArgs
 		)
 		self.__centerOfRotation = centerOfRotation

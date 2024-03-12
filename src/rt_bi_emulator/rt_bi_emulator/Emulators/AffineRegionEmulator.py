@@ -40,7 +40,7 @@ class AffineRegionEmulator(RtBiNode, ABC):
 		self.__cutOffTime: float = inf
 		self.__centersOfRotation: GeometryLib.CoordsList = []
 		self.regionPositions: list[Body] = []
-		self.__initialRegionPoly = Shapely.Polygon()
+		self.__initialRegionPoly = Shapely.set_precision(Shapely.Polygon(), GeometryLib.EPSILON)
 		self.__totalTimeNanoSecs = 0.0
 		self.__transformationMatrix: list[AffineTransform] = []
 		self.parseParameters()
@@ -90,7 +90,10 @@ class AffineRegionEmulator(RtBiNode, ABC):
 			if i > 0:
 				matrix = GeometryLib.getAffineTransformation(self.regionPositions[i - 1].spatialRegion, self.regionPositions[i].spatialRegion)
 				self.__transformationMatrix.append(matrix)
-		self.__initialRegionPoly = Shapely.Polygon(self.regionPositions[0].spatialRegion)
+		self.__initialRegionPoly = Shapely.set_precision(
+			Shapely.Polygon(self.regionPositions[0].spatialRegion),
+			GeometryLib.EPSILON
+		)
 		self.__totalTimeNanoSecs = timePoints[-1] * self.NANO_CONVERSION_CONSTANT
 		return
 
@@ -104,7 +107,10 @@ class AffineRegionEmulator(RtBiNode, ABC):
 		if elapsedTimeRatio < 1:
 			matrix = GeometryLib.getParameterizedAffineTransformation(self.__transformationMatrix[0], elapsedTimeRatio)
 			return GeometryLib.applyMatrixTransformToPolygon(matrix, self.__initialRegionPoly)
-		return Shapely.Polygon(self.regionPositions[-1].spatialRegion)
+		return Shapely.set_precision(
+			Shapely.Polygon(self.regionPositions[-1].spatialRegion),
+			GeometryLib.EPSILON
+		)
 
 	def getPoseAtTime(self, timeNanoSecs: int) -> Pose:
 		if self.__passedCutOffTime < 0 and ((timeNanoSecs - self.__initTime) / AffineRegionEmulator.NANO_CONVERSION_CONSTANT) > self.__cutOffTime:

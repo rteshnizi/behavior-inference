@@ -8,12 +8,12 @@ from rclpy.node import Publisher, Timer
 from rt_bi_commons.Base.RtBiNode import RtBiNode
 from rt_bi_commons.Shared.Color import RGBA, ColorNames
 from rt_bi_commons.Shared.NodeId import NodeId
+from rt_bi_commons.Shared.Pose import Coords2d, Coords3d
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Geometry import GeometryLib
 from rt_bi_commons.Utils.Msgs import NANO_CONVERSION_CONSTANT, Msgs as MsgsUtils
 
-DEFAULT_RENDER_DURATION_NS: Final[int] = int(1.75 * NANO_CONVERSION_CONSTANT)
-"""`1.75` secs, converted to NanoSecs."""
+DEFAULT_RENDER_DURATION_NS: Final[int] = int(3 * NANO_CONVERSION_CONSTANT)
 
 class RViz:
 	"""
@@ -24,8 +24,11 @@ class RViz:
 		http://wiki.ros.org/rviz/Tutorials/Markers%3A%20Points%20and%20Lines#The_Code_Explained
 	"""
 	import visualization_msgs.msg as Msgs
+
 	Id = NodeId
 	FRAME_ID = "map"
+	Coords = Coords2d | Coords3d
+	CoordsList = list[Coords2d] | list[Coords3d]
 
 	@staticmethod
 	def isRVizReady(node: RtBiNode, publisher: Publisher) -> bool:
@@ -45,20 +48,7 @@ class RViz:
 		return Ros.CreatePublisher(node, RViz.Msgs.MarkerArray, topic)
 
 	@staticmethod
-	def __createPointMessage(x: float, y: float, z = 0.0) -> MsgsUtils.Geometry.Point:
-		"""
-		Create a Point Msg.
-
-		Parameters
-		----------
-		x : float
-		y : float
-		z : float, optional
-			by default 0.0
-		Returns
-		-------
-		Point
-		"""
+	def __createPointMessage(x: float, y: float, z: float) -> MsgsUtils.Geometry.Point:
 		p = MsgsUtils.Geometry.Point()
 		p.x = float(x)
 		p.y = float(y)
@@ -74,9 +64,10 @@ class RViz:
 		return marker
 
 	@staticmethod
-	def __setMarkerPose(marker: Msgs.Marker, coords: GeometryLib.Coords) -> Msgs.Marker:
+	def __setMarkerPose(marker: Msgs.Marker, coords: Coords3d) -> Msgs.Marker:
 		marker.pose.position.x = float(coords[0])
 		marker.pose.position.y = float(coords[1])
+		marker.pose.position.z = float(coords[2])
 		return marker
 
 	@staticmethod
@@ -104,7 +95,7 @@ class RViz:
 		return
 
 	@staticmethod
-	def createCircle(id: Id, centerX: float, centerY: float, radius: float, outline: RGBA, width = 1.0, durationNs: int = DEFAULT_RENDER_DURATION_NS, idSuffix: str = "") -> Msgs.Marker:
+	def createCircle(id: Id, center: Coords, radius: float, outline: RGBA, width = 1.0, durationNs: int = DEFAULT_RENDER_DURATION_NS, idSuffix: str = "") -> Msgs.Marker:
 		circle = RViz.Msgs.Marker()
 		circle = RViz.__setMarkerHeader(circle, durationNs)
 		circle = RViz.__setMarkerId(circle, id, idSuffix)
@@ -112,16 +103,17 @@ class RViz:
 		circle = RViz.__setMarkerColor(circle, outline)
 		# LINE_STRIP markers use only the x component of scale, for the line width
 		circle.scale.x = width
+		(centerX, centerY, centerZ) = GeometryLib.toCoords3d(center)
 		for i in range(32):
-			p = RViz.__createPointMessage(centerX + (radius * cos(i)), centerY + (radius * sin(i)))
+			p = RViz.__createPointMessage(centerX + (radius * cos(i)), centerY + (radius * sin(i)), centerZ)
 			Ros.AppendMessage(circle.points, p)
-		p = RViz.__createPointMessage(centerX + (radius * cos(0)), centerY + (radius * sin(0)))
+		p = RViz.__createPointMessage(centerX + (radius * cos(0)), centerY + (radius * sin(0)), centerZ)
 		Ros.AppendMessage(circle.points, p)
 		RViz.__logMarker(id, idSuffix, True)
 		return circle
 
 	@staticmethod
-	def createPolygon(id: Id, coords: GeometryLib.CoordsList, outline: RGBA, width: float, durationNs: int = DEFAULT_RENDER_DURATION_NS, idSuffix: str = "") -> Msgs.Marker:
+	def createPolygon(id: Id, coordsList: CoordsList, outline: RGBA, width: float, durationNs: int = DEFAULT_RENDER_DURATION_NS, idSuffix: str = "") -> Msgs.Marker:
 		"""Create a polygon Msgs.Marker message.
 
 		Parameters
@@ -147,17 +139,18 @@ class RViz:
 		polygon = RViz.__setMarkerColor(polygon, outline)
 		# LINE_STRIP markers use only the x component of scale, for the line width
 		polygon.scale.x = float(width)
-		for (x, y) in coords:
-			Ros.AppendMessage(polygon.points, RViz.__createPointMessage(x, y))
+		for coords in coordsList:
+			(x, y, z) = GeometryLib.toCoords3d(coords)
+			Ros.AppendMessage(polygon.points, RViz.__createPointMessage(x, y, z))
 		RViz.__logMarker(id, idSuffix, True)
 
-		if GeometryLib.coordsAreEqual(coords[0], coords[-1]): return polygon
+		if GeometryLib.coordsAreEqual(coordsList[0], coordsList[-1]): return polygon
 		# If the last vertex is not the same as the first one, we need to close the loop-back here.
-		Ros.AppendMessage(polygon.points, RViz.__createPointMessage(*coords[0]))
+		Ros.AppendMessage(polygon.points, RViz.__createPointMessage(*coordsList[0]))
 		return polygon
 
 	@staticmethod
-	def createLine(id: Id, coords: GeometryLib.CoordsList, outline: RGBA, width: float, arrow = False, durationNs: int = DEFAULT_RENDER_DURATION_NS, idSuffix: str = "") -> Msgs.Marker:
+	def createLine(id: Id, coordsList: CoordsList, outline: RGBA, width: float, arrow = False, durationNs: int = DEFAULT_RENDER_DURATION_NS, idSuffix: str = "") -> Msgs.Marker:
 		"""Create a line Msgs.Marker message.
 
 		Parameters
@@ -186,8 +179,9 @@ class RViz:
 		lineSeg = RViz.__setMarkerColor(lineSeg, outline)
 		# LINE_STRIP markers use only the x component of scale, for the line width
 		lineSeg.scale.x = float(width)
-		for (x, y) in coords:
-			Ros.AppendMessage(lineSeg.points, RViz.__createPointMessage(x, y))
+		for coords in coordsList:
+			(x, y, z) = GeometryLib.toCoords3d(coords)
+			Ros.AppendMessage(lineSeg.points, RViz.__createPointMessage(x, y, z))
 		if arrow: Ros.Logger().info("Rendering arrow-head is not implemented.")
 		# if not self.renderArrows: continue
 		# (dx, dy) = Geometry.getUnitVectorFromAngle(end.angleFromX)
@@ -198,7 +192,7 @@ class RViz:
 		return lineSeg
 
 	@staticmethod
-	def createText(id: Id, coords: GeometryLib.Coords, text: str, outline: RGBA = ColorNames.BLACK, fontSize = 10.0, durationNs: int = DEFAULT_RENDER_DURATION_NS, idSuffix: str = "") -> Msgs.Marker:
+	def createText(id: Id, coords: Coords, text: str, outline: RGBA = ColorNames.BLACK, fontSize = 10.0, durationNs: int = DEFAULT_RENDER_DURATION_NS, idSuffix: str = "") -> Msgs.Marker:
 		"""Create a text Msgs.Marker message.
 
 		Parameters
@@ -225,6 +219,7 @@ class RViz:
 		textMarker = RViz.__setMarkerId(textMarker, id, idSuffix)
 		textMarker.type = RViz.Msgs.Marker.TEXT_VIEW_FACING
 		textMarker.text = text
+		coords = GeometryLib.toCoords3d(coords)
 		textMarker = RViz.__setMarkerPose(textMarker, coords)
 		textMarker = RViz.__setMarkerColor(textMarker, outline)
 		textMarker.scale.z = float(fontSize)

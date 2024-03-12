@@ -1,7 +1,7 @@
 import logging
 from functools import partial
 from math import inf, isnan, nan
-from typing import AbstractSet, Any, Callable, Sequence, TypeAlias, TypeVar, cast
+from typing import AbstractSet, Any, Callable, Sequence, TypeAlias, TypeVar, cast, overload
 
 import rclpy
 from rclpy.clock import Time
@@ -51,8 +51,13 @@ def Logger() -> RcutilsLogger | logging.Logger:
 		__LOGGER = rosNodes[0].get_logger()
 	return __LOGGER
 
-def Log(msg: str) -> bool:
+def Log(msg: str, l: Sequence | None = None, indentStr = "\t\t") -> bool:
 	global __rtBiLog
+	if l is not None:
+		sep = f"\n{indentStr}"
+		l = [m if isinstance(m, str) else repr(m) for m in l]
+		indentedStr = sep.join(l)
+		msg = f"{msg}:{sep}{indentedStr}"
 	return __rtBiLog(msg)
 
 def Now(node: Node | None) -> Time:
@@ -137,6 +142,19 @@ def CreateTopicName(shortTopicName: str) -> str:
 		For example, given `rviz` the returned topic would be `/namespace_prefix/rviz`.
 	"""
 	return "/%s/%s" % (NAMESPACE, shortTopicName)
+
+def PopMessage(array: Sequence[__Topic] | AbstractSet[__Topic] | list[__Topic], i: int, t: type[__Topic] = Any) -> __Topic:
+	"""Appends a message to a message array.
+
+	Parameters
+	----------
+	array : Union[Sequence, AbstractSet, UserList]
+		The array.
+	msg : Any
+		The message.
+	"""
+	assert isinstance(array, list), (f"Failed to append messages to array. Array type: {type(array)}")
+	return array.pop(i)
 
 def AppendMessage(array: Sequence[__Topic] | AbstractSet[__Topic] | list[__Topic], msg: __Topic) -> None:
 	"""Appends a message to a message array.

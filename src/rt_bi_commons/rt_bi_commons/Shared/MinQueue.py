@@ -63,7 +63,7 @@ class MinQueue(Generic[DataType]):
 		return len(self) == 0
 
 	@property
-	def smallest(self) -> DataType | None:
+	def smallest(self) -> DataType:
 		"""
 		Return but not remove the smallest item. The smallest item in a minPQ is the first item in the queue.
 
@@ -72,8 +72,12 @@ class MinQueue(Generic[DataType]):
 		`DataType | None`
 			Returns `None` if the list is empty otherwise the smallest element in the queue w.r.t. their keys.
 		"""
-		if self.isEmpty: return None
+		if self.isEmpty: raise IndexError("MinQueue is empty.")
 		return self.__data[0][-1]
+
+	@property
+	def peek(self) -> DataType:
+		return self.smallest
 
 	def __createTuple(self, item: DataType) -> QueueTuple:
 		"""

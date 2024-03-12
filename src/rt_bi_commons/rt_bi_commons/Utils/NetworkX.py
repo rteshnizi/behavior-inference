@@ -1,9 +1,8 @@
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
-from typing import Protocol, TypeAlias
 
 import networkx as nx
-from typing_extensions import Any, Generic, Literal, LiteralString, Mapping, TypeVar, final, overload
+from typing_extensions import Any, Generic, Literal, LiteralString, Protocol, TypeAlias, TypeVar, cast, final, overload
 
 from rt_bi_commons.Shared.NodeId import NodeId
 from rt_bi_commons.Shared.Pose import Coords
@@ -18,6 +17,8 @@ class _PolygonLike(Protocol):
 	def centroid(self) -> Coords: ...
 	@property
 	def bounds(self) -> tuple[Coords, Coords]: ...
+	@property
+	def timeNanoSecs(self) -> int: ...
 
 _Polygon = TypeVar("_Polygon", bound=_PolygonLike)
 
@@ -34,19 +35,23 @@ class EdgeData:
 class NxUtils:
 	from networkx.classes.reportviews import OutEdgeView  # CSpell: ignore reportviews
 
-	NxDefaultLayout: TypeAlias = Mapping[Any, Any]
-	GraphLayout: TypeAlias = dict[NodeId, tuple[float, float]]
+	GraphLayout2D: TypeAlias = dict[NodeId, tuple[float, float]]
+	"""A dictionary from node id to an (X, Y) coordinate."""
+	GraphLayout3D: TypeAlias = dict[NodeId, tuple[float, float, float]]
 	"""A dictionary from node id to an (X, Y) coordinate."""
 	Id = NodeId
 	NodeData = NodeData
 	EdgeData = EdgeData
 
 	class Graph(Generic[_Polygon], nx.DiGraph, ABC):
-		__RENDER_DELTA_X = 200
-		__RENDER_DELTA_Y = 100
+		__LAYOUT_SCALE = 300
+		__RENDER_DELTA_X = 75
+		__RENDER_DELTA_Y = 75
+		__RENDER_DELTA_Z = 75
 		def __init__(self, rVizPublisher: Ros.Publisher | None):
 			super().__init__()
-			self.__rVizPublisher = rVizPublisher
+			self.__layout: NxUtils.GraphLayout2D | None = None
+			self.rVizPublisher = rVizPublisher
 
 		def __contains__(self, id: NodeId) -> bool:
 			if not isinstance(id, NodeId):
@@ -55,6 +60,7 @@ class NxUtils:
 			return super().__contains__(id)
 
 		def addNode(self, id: NodeId, content: NodeData[_Polygon]) -> NodeId:
+			assert isinstance(id, NodeId), f"Unexpected Id type: {type(id)}, repr = {repr(id)}"
 			data = asdict(content) if content is not None else {}
 			self.add_node(id, **data)
 			return id
@@ -70,26 +76,40 @@ class NxUtils:
 			return
 
 		@overload
-		def getContent(self, node: NodeId, contentKey: Literal[""]) -> NodeData[_Polygon]: ...
+		def getContent(self, node: NodeId) -> NodeData[_Polygon]: ...
+		@overload
+		def getContent(self, node: NodeId, contentKey: None) -> NodeData[_Polygon]: ...
 		@overload
 		def getContent(self, node: NodeId, contentKey: Literal["polygon"]) -> _Polygon: ...
 
-		def getContent(self, node: NodeId, contentKey: LiteralString | Literal[""]) -> NodeData[_Polygon] | Any:
-			if contentKey == "": return self.nodes[node]
+		def getContent(self, node: NodeId, contentKey: LiteralString | None = None) -> NodeData[_Polygon] | Any:
+			assert isinstance(node, NodeId), f"Unexpected Id type: {type(node)}, repr = {repr(node)}"
+			if contentKey is None: return NodeData(**self.nodes[node])
 			else: return self.nodes[node][contentKey]
+
+		def _3dLayout(self) -> "NxUtils.GraphLayout3D":
+			pos2d = self._multiPartiteLayout()
+			pos: NxUtils.GraphLayout3D = {}
+			minHIndex = 0
+			for id in pos2d:
+				if (minHIndex == 0 or id.hIndex < minHIndex) and id.hIndex > 0: minHIndex = id.hIndex
+			for id in pos2d:
+				dz = id.hIndex - minHIndex
+				pos[id] = (pos2d[id][0], pos2d[id][1], dz * self.__RENDER_DELTA_Z)
+			return pos
 
 		def __nodeSortKey(self, id: NodeId) -> tuple:
 			((minX, minY), (maxX, maxY)) = self.getContent(id, "polygon").bounds
 			return (id.timeNanoSecs, minX, maxX, minY, maxY)
 
-		def _multiPartiteLayout(self) -> "NxUtils.GraphLayout":
+		def _multiPartiteLayout(self) -> "NxUtils.GraphLayout2D":
 			ids: list[NxUtils.Id] = sorted(self.nodes, key=self.__nodeSortKey)
-			pos: NxUtils.GraphLayout = {}
+			pos: NxUtils.GraphLayout2D = {}
 			y = 0
 			x = 0
 			timeNanoSecs = 0
 			zag = -1
-			zig = (self.__RENDER_DELTA_Y / 10)
+			zig = (self.__RENDER_DELTA_Y / 5)
 			for id in ids:
 				if id.timeNanoSecs > timeNanoSecs:
 					timeNanoSecs = id.timeNanoSecs
@@ -99,6 +119,13 @@ class NxUtils:
 				zag *= -1
 				x += self.__RENDER_DELTA_X
 			return pos
+
+		def _kkLayout(self) -> "NxUtils.GraphLayout2D":
+			# pos = nx.multipartite_layout(self, align="horizontal", scale=self.__LAYOUT_SCALE)
+			# self.__layout = cast(NxUtils.GraphLayout, pos)
+			pos = nx.kamada_kawai_layout(self, dim=3, scale=self.__LAYOUT_SCALE) # CSpell: ignore - kamada kawai
+			self.__layout = cast(NxUtils.GraphLayout2D, pos)
+			return self.__layout
 
 		@abstractmethod
 		def getNodeMarkers(self) -> list[RViz.Msgs.Marker]: ...
@@ -115,9 +142,9 @@ class NxUtils:
 
 		@final
 		def render(self) -> None:
-			if self.__rVizPublisher is None: return
+			if self.rVizPublisher is None: return
 			markerArray = RViz.Msgs.MarkerArray()
 			Ros.AppendMessage(markerArray.markers, RViz.removeAllMarkers())
 			Ros.ConcatMessageArray(markerArray.markers, self.__createMarkers())
-			self.__rVizPublisher.publish(markerArray)
+			self.rVizPublisher.publish(markerArray)
 			return

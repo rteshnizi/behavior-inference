@@ -31,7 +31,7 @@ class BehaviorAutomaton(nx.DiGraph):
 		self.__transitionGrammarDir: str = transitionGrammarDir
 		self.__grammarFileName: str = grammarFileName
 		self.__buildGraph()
-		self.renderLayout: NxUtils.GraphLayout | NxUtils.NxDefaultLayout = nx.circular_layout(self)
+		self.renderLayout = nx.circular_layout(self)
 		return
 
 	def __repr__(self):

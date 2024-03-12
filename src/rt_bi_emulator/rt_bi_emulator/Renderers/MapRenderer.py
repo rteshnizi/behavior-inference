@@ -18,7 +18,8 @@ class MapRenderer(MapSubscriber):
 		for regionId in self.mapRegions:
 			polys = self.mapRegions[regionId]
 			for poly in polys:
-				Ros.ConcatMessageArray(markers, poly.createMarkers(durationNs=-1))
+				marker = poly.createMarkers(durationNs=-1, stamped=False)
+				Ros.ConcatMessageArray(markers, marker)
 		return markers
 
 	def onPolygonUpdated(self, rType: MovingPolygon.Type | StaticPolygon.Type, polygon: MapPolygon) -> None:

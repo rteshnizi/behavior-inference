@@ -1,7 +1,6 @@
 from abc import ABC, abstractproperty
 from enum import Enum
-
-from typing_extensions import Any, Literal, Self, Sequence, TypeAlias
+from typing import Any, Literal, Sequence, cast
 
 from rt_bi_commons.Shared.Color import RGBA, ColorNames, ColorUtils
 from rt_bi_commons.Shared.NodeId import NodeId
@@ -15,6 +14,7 @@ PolygonFactoryKeys = Literal[
 	"centerOfRotation",
 	"envelope",
 	"envelopeColor",
+	"hIndex",
 	"interior",
 	"interiorColor",
 	"polygonId",
@@ -60,10 +60,11 @@ class Polygon(ABC):
 			envelopeColor: RGBA,
 			predicates: list[Msgs.RtBi.Predicate] | Predicates,
 			timeNanoSecs: int,
+			hIndex: int,
 			interiorColor: RGBA = ColorNames.GREY_DARK,
 			interior: Shapely.Polygon | None = None,
 			renderLineWidth = 1,
-			**kwArgs: dict[PolygonFactoryKeys, Any]
+			**kwArgs
 		) -> None:
 		"""
 		:param str polygonId: Id of the polygon.
@@ -78,9 +79,10 @@ class Polygon(ABC):
 		:type interior: `Shapely.Polygon` or `None`
 		:param int renderLineWidth: The width of the rendered lines, defaults to ``1``.
 		"""
-		self.__id = Polygon.Id(regionId=regionId, polygonId=polygonId, timeNanoSecs=timeNanoSecs)
+		self.__id = Polygon.Id(regionId=regionId, polygonId=polygonId, timeNanoSecs=timeNanoSecs, hIndex=hIndex)
 		self.__RENDER_LINE_WIDTH = renderLineWidth
 		self.__interiorPolygon = Shapely.Polygon(envelope) if interior is None else interior
+		self.__interiorPolygon = Shapely.set_precision(self.__interiorPolygon, GeometryLib.EPSILON)
 		self.__envelope = GeometryLib.getGeometryCoords(self.__interiorPolygon) if len(envelope) == 0 else envelope
 		self.__DEFAULT_ENVELOPE_COLOR = envelopeColor
 		self.__INTERIOR_COLOR = interiorColor
@@ -92,15 +94,6 @@ class Polygon(ABC):
 
 	def __repr__(self) -> str:
 		return self.shortName
-
-	def __and__(self, other: "Polygon") -> Sequence[Shapely.AnyObj]:
-		return GeometryLib.intersection(self.interior, other.interior)
-
-	def __sub__(self, other: "Polygon") -> list[Shapely.Polygon]:
-		return GeometryLib.difference(self.interior, other.interior)
-
-	def __add__(self, other: "Polygon") -> Sequence[Shapely.Polygon]:
-		return GeometryLib.union([self.interior, other.interior])
 
 	def __buildEdges(self) -> None:
 		verts = GeometryLib.getGeometryCoords(self.interior)
@@ -128,6 +121,7 @@ class Polygon(ABC):
 				regionId=self.__id.regionId,
 				polygonId=self.__id.polygonId,
 				timeNanoSecs=t,
+				hIndex=self.id.hIndex,
 			)
 		return
 
@@ -148,9 +142,9 @@ class Polygon(ABC):
 	@property
 	def shortName(self) -> str:
 		""" Easy to read name. **Do not use it in any meaningful way.**"""
-		polyId = self.__id.polygonId.split('#')[-1].strip("_")
-		regionId = self.__id.regionId.split('/')[-1].strip("_")
-		return f"{self.type.value}-{regionId}-{polyId}"
+		(regionId, polyId) = self.__id.shortNames()
+		hIndex = f"[{self.id.hIndex}]" if self.id.hIndex >= 0 else ""
+		return f"{self.type.value}{hIndex}-{regionId}-{polyId}"
 
 	@property
 	def envelopeColor(self) -> RGBA:
@@ -160,6 +154,15 @@ class Polygon(ABC):
 	@property
 	def id(self) -> Id:
 		return self.__id
+
+	@id.setter
+	def id(self, value: Id) -> None:
+		assert (
+			self.id.polygonId == value.polygonId and
+			self.id.regionId == value.regionId
+		), f"Changing polygon and region Ids is not allowed. Existing = {repr(self.id)} vs New = {repr(value)}"
+		self.__id = value
+		return
 
 	@property
 	def interior(self) -> Shapely.Polygon:
@@ -209,14 +212,18 @@ class Polygon(ABC):
 			if GeometryLib.lineSegmentsAreAlmostEqual(finalConfig, afterTransformation): return edge
 		return None
 
-	def createMarkers(self, durationNs: int = DEFAULT_RENDER_DURATION_NS, renderText: bool = False, envelopeColor: RGBA | None = None, stamped: bool = False) -> list[RViz.Msgs.Marker]:
+	def createMarkers(self, durationNs: int = DEFAULT_RENDER_DURATION_NS, renderText: bool = False, envelopeColor: RGBA | None = None, stamped: bool = True) -> list[RViz.Msgs.Marker]:
 		"""Creates all relevant markers for a given polygon."""
 		msgs = []
+		coords = GeometryLib.getGeometryCoords(self.interior)
+		if len(coords) == 0:
+			Ros.Logger().error(f"Empty polygon? {self.shortName}")
+			return msgs
 		envelopColor = envelopeColor if envelopeColor is not None else self.__DEFAULT_ENVELOPE_COLOR
-		unstampedId = self.id if stamped else self.id.updateTime(0)
+		unstampedId = self.id if stamped else self.id.sansTime()
 		marker = RViz.createPolygon(
 			unstampedId,
-			GeometryLib.getGeometryCoords(self.interior),
+			coords,
 			envelopColor,
 			self.__RENDER_LINE_WIDTH,
 			durationNs=durationNs,
@@ -236,17 +243,14 @@ class Polygon(ABC):
 		return msgs
 
 	def deleteMarkers(self) -> list[RViz.Msgs.Marker]:
-		"""Create markers to delete all markers, both stamped and unstamped.
+		"""Create markers to delete all markers.
 
 		:return: Markers set to delete.
 		:rtype: `list[RViz.Msgs.Marker]`
 		"""
 		msgs = []
-		unstampedId = self.id.updateTime(0)
 		msgs.append(RViz.removeMarker(self.id))
-		msgs.append(RViz.removeMarker(unstampedId))
-		msgs.append(RViz.removeMarker(self.id, "txt"))
-		msgs.append(RViz.removeMarker(unstampedId, "txt"))
+		msgs.append(RViz.removeMarker(self.id, idSuffix="txt"))
 		return msgs
 
 	def toRegularSpaceMsg(self) -> Msgs.RtBi.RegularSpace:

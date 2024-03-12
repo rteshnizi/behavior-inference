@@ -11,7 +11,7 @@ from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 
 class RuntimeManager(RtBiNode):
 	def __init__(self, **kwArgs) -> None:
-		newKw = { "node_name": "runtime_mgr", "loggingSeverity": LoggingSeverity.WARN, **kwArgs}
+		newKw = { "node_name": "runtime_mgr", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
 		super().__init__(**newKw)
 		self.declareParameters()
 		self.__awaitingColdStart: list[str] = []

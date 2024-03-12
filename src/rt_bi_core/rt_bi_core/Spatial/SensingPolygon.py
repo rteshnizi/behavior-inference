@@ -55,7 +55,7 @@ class SensingPolygon(AffinePolygon):
 		"""
 		return len(self.__tracklets) > 0
 
-	def createMarkers(self, durationNs: int = AffinePolygon.DEFAULT_RENDER_DURATION_NS, renderText: bool = False, envelopeColor: RGBA | None = None, stamped: bool = False, renderTracklet = True) -> list[RViz.Msgs.Marker]:
+	def createMarkers(self, durationNs: int = AffinePolygon.DEFAULT_RENDER_DURATION_NS, renderText: bool = False, envelopeColor: RGBA | None = None, stamped: bool = True, renderTracklet = True) -> list[RViz.Msgs.Marker]:
 		msgs = super().createMarkers(durationNs=durationNs, renderText=renderText, envelopeColor=envelopeColor, stamped=stamped)
 		if renderTracklet:
 			for i in self.__tracklets: Ros.ConcatMessageArray(msgs, self.__tracklets[i].createMarkers())

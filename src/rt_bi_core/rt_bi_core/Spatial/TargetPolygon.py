@@ -14,10 +14,6 @@ class TargetPolygon(AffinePolygon):
 			**kwArgs
 		)
 
-	def createMarkers(self, durationNs: int = AffinePolygon.DEFAULT_RENDER_DURATION_NS, renderText: bool = False, stamped: bool = False) -> list[RViz.Msgs.Marker]:
-		msgs = super().createMarkers(
-			durationNs=durationNs,
-			renderText=renderText,
-			stamped=stamped,
-		)
+	def createMarkers(self, durationNs: int = AffinePolygon.DEFAULT_RENDER_DURATION_NS, renderText: bool = False, stamped: bool = True) -> list[RViz.Msgs.Marker]:
+		msgs = super().createMarkers(durationNs=durationNs, renderText=renderText, stamped=stamped)
 		return msgs
