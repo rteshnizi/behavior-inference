@@ -18,6 +18,7 @@ class SensingPolygon(AffinePolygon):
 	def __init__(self,
 			polygonId: str,
 			regionId: str,
+			subPartId: str,
 			envelope: CoordsList,
 			centerOfRotation: Coords,
 			timeNanoSecs: int,
@@ -28,6 +29,7 @@ class SensingPolygon(AffinePolygon):
 		super().__init__(
 			polygonId=polygonId,
 			regionId=regionId,
+			subPartId=subPartId,
 			envelope=envelope,
 			predicates=predicates,
 			envelopeColor=kwArgs.pop("envelopeColor", ColorNames.GREEN_LIGHT),

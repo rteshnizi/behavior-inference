@@ -60,6 +60,7 @@ class ContinuousTimeRegion(Generic[_T_Poly]):
 		kwArgs: dict[PolygonFactoryKeys, Any] = {
 			"polygonId": self.id.polygonId,
 			"regionId": self.id.regionId,
+			"subPartId": self.id.subPartId,
 			"centerOfRotation": cor,
 			"envelope": [],
 			"timeNanoSecs": timeNanoSecs,
@@ -102,7 +103,7 @@ class ContinuousTimeRegion(Generic[_T_Poly]):
 
 	@property
 	def id(self) -> MovingPolygon.Id:
-		if self.length == 0: return MovingPolygon.Id(hIndex=-1, timeNanoSecs=-1, regionId="", polygonId="")
+		if self.length == 0: return MovingPolygon.Id(hIndex=-1, timeNanoSecs=-1, regionId="", polygonId="", subPartId="")
 		return self.configs[0].id
 
 	@property

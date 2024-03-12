@@ -187,26 +187,13 @@ class ShadowTree(NxUtils.Graph[GraphPolygon]):
 	def __connectTopLayerTemporally(self) -> None:
 		fromGraph = self.__history[self.length - 2]
 		toGraph = self.__history[self.length - 1]
-		# hIndex = toGraph.hIndex
-		# assert hIndex is not None, f"TO Graph with unset hIndex found in shadow tree. {repr(toGraph)}"
-		# # Add temporal edges between FOVs
-		# for fromSensor in fromGraph.sensors:
-		# 	toSensorId = fromSensor.id.duplicate(timeNanoSecs=toGraph.timeNanoSecs, hIndex=-1)
-		# 	if toSensorId not in toGraph.nodes: continue
-		# 	toSensor = toGraph.getContent(toSensorId, "polygon")
-		# 	Ros.Log(f"From Sensor: {repr(fromSensor.id)}")
-		# 	Ros.Log(f"To Sensor: {repr(toSensor.id)}")
-		# 	self.addEdge(fromSensor.id, toSensor.id, addReverseEdge=False, content=NxUtils.EdgeData(isTemporal=True))
-		# # Add temporal edges between moving polygons
-		# for prevMapPolyId in fromGraph.map:
-		# 	nodeIdInPrevGraph = prevMapPolyId.updateId(fromGraph.timeNanoSecs)
-		# 	if nodeIdInPrevGraph not in self.nodes: continue
-		# 	if fromGraph.map[prevMapPolyId].type == StaticPolygon.type: continue
-		# 	parts = toGraph.map.getAllParts(prevMapPolyId)
-		# 	for poly in parts:
-		# 		nodeIdInNextGraph = poly.id.updateId(toGraph.timeNanoSecs)
-		# 		self.addEdge(nodeIdInPrevGraph, nodeIdInNextGraph, addReverseEdge=False, content=NxUtils.EdgeData(isTemporal=True))
-		# # Add temporal edges between shadows
+		assert toGraph.hIndex is not None, f"Cannot connect graph with unset hIndex in shadow tree. {repr(toGraph)}"
+		# Add temporal edges between FOVs
+		for fromAntiShadow in fromGraph.antiShadows:
+			for toAntiShadow in toGraph.antiShadows:
+				if fromAntiShadow.id.copy(timeNanoSecs=-1, hIndex=-1, subPartId="") == toAntiShadow.id.copy(timeNanoSecs=-1, hIndex=-1, subPartId=""):
+					self.addEdge(fromAntiShadow.id, toAntiShadow.id, fromGraph, toGraph)
+		# Add temporal edges between shadows
 		for fromShadow in fromGraph.shadows:
 			for toShadow in toGraph.shadows:
 				if GeometryLib.intersects(fromShadow.interior, toShadow.interior):
@@ -222,7 +209,7 @@ class ShadowTree(NxUtils.Graph[GraphPolygon]):
 		Ros.Log(f"Removing Graph: {repr(self.__history[index])} with {len(self.__history[index].nodes)} nodes.")
 		polyId: NxUtils.Id
 		for polyId in self.__history[index].nodes:
-			id = NxUtils.Id(hIndex=hIndex, timeNanoSecs=polyId.timeNanoSecs, regionId=polyId.regionId, polygonId=polyId.polygonId)
+			id = NxUtils.Id(hIndex=hIndex, timeNanoSecs=polyId.timeNanoSecs, regionId=polyId.regionId, polygonId=polyId.polygonId, subPartId=polyId.subPartId)
 			assert id in self, f"Remove failed: {id} is not a node in the graph."
 			self.remove_node(id)
 		if delete: self.__history.pop(index)
@@ -230,7 +217,7 @@ class ShadowTree(NxUtils.Graph[GraphPolygon]):
 	def __replaceInHistory(self, index: int, graph: ConnectivityGraph) -> None:
 		""" **Does not add nodes.** This just manipulates `self.__history` variable. """
 		self.__removeFromHistory(index, False)
-		Ros.Log(f"REPLACE graph with {len(graph.sensors)} sensors and {len(graph.shadows)} shadows.")
+		Ros.Log(f"REPLACE graph with {len(graph.antiShadows)} anti-shadows and {len(graph.shadows)} shadows.")
 		# graph.logGraphNodes()
 		hIndex = cast(int, self.__history[index].hIndex)
 		graph.hIndex = hIndex
@@ -246,7 +233,7 @@ class ShadowTree(NxUtils.Graph[GraphPolygon]):
 			Ros.Log("Isomorphic graph detected.")
 			self.__replaceInHistory(self.length - 1, graph)
 		else:
-			Ros.Log(f"APPENDING graph with {len(graph.sensors)} sensors and {len(graph.shadows)} shadows.")
+			Ros.Log(f"APPENDING graph with {len(graph.antiShadows)} anti-shadows and {len(graph.shadows)} shadows.")
 			graph.hIndex = self.hIndex
 			self.__history.append(graph)
 			self.hIndex += 1

@@ -56,6 +56,7 @@ class SensorRenderer(SensorSubscriber):
 				timeNanoSecs=Msgs.toNanoSecs(msg.robot.stamp),
 				regionId=msg.robot.id,
 				polygonId=Ros.GetMessage(msg.robot.polygons, 0, Msgs.RtBi.Polygon).id,
+				subPartId="",
 			)
 			(regionId, index) = self.sensorPolyIdMap[id]
 			self.sensorRegions[regionId][index].tracklets[tracklet.id] = tracklet

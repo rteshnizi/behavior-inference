@@ -72,7 +72,7 @@ class RViz:
 
 	@staticmethod
 	def __setMarkerId(marker: Msgs.Marker, id: Id, suffix: str) -> Msgs.Marker:
-		idStr = f"{repr(id)}{suffix}"
+		idStr = f"{id.regionId}>{id.polygonId}>{id.subPartId}>{suffix}"
 		uInt = adler32(idStr.encode("utf-8"))
 		marker.id = c_int32(uInt).value
 		return marker

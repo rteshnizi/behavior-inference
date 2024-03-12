@@ -12,6 +12,7 @@ class AffinePolygon(Polygon, ABC):
 			self,
 			polygonId: str,
 			regionId: str,
+			subPartId: str,
 			envelope: CoordsList,
 			predicates: Predicates,
 			envelopeColor: RGBA,
@@ -23,6 +24,7 @@ class AffinePolygon(Polygon, ABC):
 		super().__init__(
 			polygonId=polygonId,
 			regionId=regionId,
+			subPartId=subPartId,
 			envelope=envelope,
 			predicates=predicates,
 			envelopeColor=envelopeColor,

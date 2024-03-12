@@ -47,7 +47,7 @@ class ContinuousTimeCollisionDetection:
 		if cls.__rvizPublisher is None: return
 		msg = RViz.Msgs.MarkerArray()
 		for line in lines:
-			markerId = RViz.Id(hIndex = -1, timeNanoSecs=-1, regionId="ctcd", polygonId=line.wkb_hex)
+			markerId = RViz.Id(hIndex = -1, timeNanoSecs=-1, regionId="ctcd", polygonId=line.wkb_hex, subPartId="")
 			marker = RViz.createLine(
 				id=markerId,
 				coordsList=GeometryLib.getGeometryCoords(line),

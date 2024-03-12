@@ -15,6 +15,7 @@ class StaticPolygon(Polygon):
 			self,
 			polygonId: str,
 			regionId: str,
+			subPartId: str,
 			envelope: CoordsList,
 			predicates: list[Msgs.RtBi.Predicate] | Predicates,
 			timeNanoSecs: int,
@@ -25,6 +26,7 @@ class StaticPolygon(Polygon):
 		super().__init__(
 			polygonId=polygonId,
 			regionId=regionId,
+			subPartId=subPartId,
 			envelope=envelope,
 			envelopeColor=kwArgs.pop("envelopeColor", ColorNames.WHITE),
 			predicates=predicates,

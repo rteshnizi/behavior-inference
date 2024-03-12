@@ -21,6 +21,7 @@ PolygonFactoryKeys = Literal[
 	"predicates",
 	"regionId",
 	"renderLineWidth",
+	"subPartId",
 	"timeNanoSecs",
 	"tracklets",
 ]
@@ -56,6 +57,7 @@ class Polygon(ABC):
 			self,
 			polygonId: str,
 			regionId: str,
+			subPartId: str,
 			envelope: GeometryLib.CoordsList,
 			envelopeColor: RGBA,
 			predicates: list[Msgs.RtBi.Predicate] | Predicates,
@@ -79,7 +81,13 @@ class Polygon(ABC):
 		:type interior: `Shapely.Polygon` or `None`
 		:param int renderLineWidth: The width of the rendered lines, defaults to ``1``.
 		"""
-		self.__id = Polygon.Id(regionId=regionId, polygonId=polygonId, timeNanoSecs=timeNanoSecs, hIndex=hIndex)
+		self.__id = Polygon.Id(
+			regionId=regionId,
+			polygonId=polygonId,
+			subPartId=subPartId,
+			timeNanoSecs=timeNanoSecs,
+			hIndex=hIndex,
+		)
 		self.__RENDER_LINE_WIDTH = renderLineWidth
 		self.__interiorPolygon = Shapely.Polygon(envelope) if interior is None else interior
 		self.__interiorPolygon = Shapely.set_precision(self.__interiorPolygon, GeometryLib.EPSILON)
@@ -120,6 +128,7 @@ class Polygon(ABC):
 		self.__id = Polygon.Id(
 				regionId=self.__id.regionId,
 				polygonId=self.__id.polygonId,
+				subPartId=self.__id.subPartId,
 				timeNanoSecs=t,
 				hIndex=self.id.hIndex,
 			)
@@ -193,6 +202,9 @@ class Polygon(ABC):
 		The edge identifier is a string.
 		"""
 		return self.__edges
+
+	def intersects(self, other: "Polygon") -> bool:
+		return GeometryLib.intersects(self.interior, other.interior)
 
 	def hasCommonEdge(self, other: "Polygon") -> bool:
 		return GeometryLib.haveOverlappingEdge(self.interior, other.interior)

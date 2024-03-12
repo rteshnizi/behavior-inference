@@ -13,15 +13,17 @@ class NodeId:
 	timeNanoSecs: int
 	regionId: str
 	polygonId: str
+	subPartId: str
 
 	def __repr__(self) -> str:
-		onStr = f"[{self.hIndex}]" if self.hIndex > 0 else ""
-		return f"{onStr}@{self.timeNanoSecs}//{self.regionId}/{self.polygonId}/"
+		hIndex = f"[{self.hIndex}]" if self.hIndex > 0 else ""
+		return f"{hIndex}@{self.timeNanoSecs}>{self.regionId}>{self.polygonId}/"
 
-	def copy(self, timeNanoSecs: int | None = None, hIndex: int | None = None) -> "NodeId":
+	def copy(self, timeNanoSecs: int | None = None, hIndex: int | None = None, subPartId: str | None = None) -> "NodeId":
 		timeNanoSecs = timeNanoSecs if timeNanoSecs is not None else self.timeNanoSecs
 		hIndex = hIndex if hIndex is not None else self.hIndex
-		return replace(self, timeNanoSecs=timeNanoSecs, hIndex=hIndex)
+		subPartId = subPartId if subPartId is not None else self.subPartId
+		return replace(self, timeNanoSecs=timeNanoSecs, hIndex=hIndex, subPartId=subPartId)
 
 	def sansTime(self) -> "NodeId":
 		return self.copy(timeNanoSecs=-1, hIndex=-1)

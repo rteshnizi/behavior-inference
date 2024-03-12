@@ -76,6 +76,7 @@ class __RegionsSubscriberBase(RtBiNode, ABC):
 		kwArgs: dict[PolygonFactoryKeys, Any] = {
 			"polygonId": polyMsg.id,
 			"regionId": regularSpace.id,
+			"subPartId": "",
 			"envelope": Msgs.toCoordsList(polyMsg.region.points),
 			"timeNanoSecs": Msgs.toNanoSecs(regularSpace.stamp),
 			"predicates": regularSpace.predicates if isinstance(regularSpace.predicates, list) else [],

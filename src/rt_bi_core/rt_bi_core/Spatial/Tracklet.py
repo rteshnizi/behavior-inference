@@ -9,7 +9,7 @@ class Tracklet(Pose):
 	def __init__(self, idStr: str, timeNanoSecs: int, hIndex: int, x: float, y: float, angleFromX: float, spawned = False, vanished = False) -> None:
 		super().__init__(timeNanoSecs, x, y, angleFromX)
 		self.id = idStr
-		self.__rVizId = RViz.Id(hIndex=hIndex, timeNanoSecs=timeNanoSecs, regionId=self.id, polygonId=Tracklet.__ID_PREFIX)
+		self.__rVizId = RViz.Id(hIndex=hIndex, timeNanoSecs=timeNanoSecs, regionId=self.id, polygonId=Tracklet.__ID_PREFIX, subPartId="")
 		self.spawned = spawned
 		self.vanished = vanished
 
