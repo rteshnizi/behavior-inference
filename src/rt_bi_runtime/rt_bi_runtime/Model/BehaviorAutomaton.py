@@ -1,10 +1,9 @@
-from typing import Generator
-
 import networkx as nx
 
+from rt_bi_commons.Shared.NodeId import NodeId
 from rt_bi_commons.Utils import Ros
-from rt_bi_commons.Utils.NetworkX import NxUtils
-from rt_bi_runtime.Model.State import State
+from rt_bi_commons.Utils.Msgs import Msgs
+from rt_bi_runtime.Model.State import State, StateToken
 from rt_bi_runtime.Model.Transition import Transition
 
 
@@ -21,7 +20,7 @@ class BehaviorAutomaton(nx.DiGraph):
 		):
 		super().__init__()
 		self.__specName: str = specName
-		self.name = "NFA(%s)" % self.__specName
+		self.name = f"NFA({self.__specName})"
 		self.__states: list[str] = states
 		self.__transitions: dict[str, dict[str, str]] = transitions
 		self.__start: str = start
@@ -30,6 +29,7 @@ class BehaviorAutomaton(nx.DiGraph):
 		self.__baseDir: str = baseDir
 		self.__transitionGrammarDir: str = transitionGrammarDir
 		self.__grammarFileName: str = grammarFileName
+		self.__tokens: set[StateToken] = set()
 		self.__buildGraph()
 		self.renderLayout = nx.circular_layout(self)
 		return
@@ -64,15 +64,13 @@ class BehaviorAutomaton(nx.DiGraph):
 		return list(self.__predicates)
 
 	@property
-	def acceptingStates(self) -> set[str]:
-		return self.__accepting
+	def tokens(self) -> set[StateToken]:
+		return self.__tokens
 
-	def activeStates(self) -> set[str]:
-		Ros.Logger().warn(f"Not implemented.")
-		return set()
-
-	def nonActiveStates(self) -> set[str]:
-		return (set(self.__states) - self.activeStates())
-
-	def baGenerator(self) -> Generator["BehaviorAutomaton", None, None]:
-		yield self
+	def resetTokens(self, topologicalGraphNode: list[NodeId]) -> None:
+		for n in topologicalGraphNode:
+			self.__tokens.add(StateToken(
+				stateName=self.__start,
+				graphNode=n,
+			))
+		return

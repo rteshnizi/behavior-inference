@@ -58,8 +58,7 @@ class TransitionTransformer(__TransitionVisitorBase, Transformer[str, Any], ABC)
 		return super().property_seq(variables)
 
 class TransitionParser(Lark):
-	def __init__(self, baseDir: str, transitionGrammarDir: str, grammarFileName: str, Transformer: type[TransitionTransformer] | None = None) -> None:
+	def __init__(self, baseDir: str, transitionGrammarDir: str, grammarFileName: str) -> None:
 		grammarFilePath = Path(baseDir, transitionGrammarDir, grammarFileName)
 		grammar = grammarFilePath.read_text()
-		transformer = Transformer() if Transformer is not None else None
-		super().__init__(grammar, parser="lalr", transformer=transformer) # CSpell: ignore - lalr
+		super().__init__(grammar, parser="lalr", transformer=Transformer()) # CSpell: ignore - lalr

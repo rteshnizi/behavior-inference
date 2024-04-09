@@ -9,9 +9,9 @@ from rt_bi_commons.Utils.Msgs import Msgs
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 
 
-class RuntimeManager(RtBiNode):
+class ColdStartManager(RtBiNode):
 	def __init__(self, **kwArgs) -> None:
-		newKw = { "node_name": "runtime_mgr", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
+		newKw = { "node_name": "cs_mgr", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
 		super().__init__(**newKw)
 		self.declareParameters()
 		self.__awaitingColdStart: list[str] = []
@@ -61,7 +61,7 @@ class RuntimeManager(RtBiNode):
 
 def main(args=None):
 	rclpy.init(args=args)
-	mgr = RuntimeManager()
+	mgr = ColdStartManager()
 	rclpy.spin(mgr)
 	mgr.destroy_node()
 	rclpy.shutdown()

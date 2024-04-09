@@ -29,7 +29,9 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 		self.timeNanoSecs = timeNanoSecs
 		self.__hIndex: int | None = None
 		self.__map: list[MapPolygon] = []
+		self.__mapIdToIndex: dict[NxUtils.Id, int] = {}
 		self.__sensors: list[SensingPolygon] = []
+		self.__sensorIdToIndex: dict[NxUtils.Id, int] = {}
 		self.__shadows: list[MapPolygon] = []
 		self.__antiShadows: list[SensingPolygon] = []
 		Ros.Log(f"Constructing Connectivity Graph @ {self.timeNanoSecs}")
@@ -42,14 +44,13 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 	def __repr__(self):
 		return f"CGr-{self.timeNanoSecs}"
 
-	def addNode(self, id: NodeId, content: NodeData) -> NodeId:
-		id = id.copy(hIndex=-1) # CGraph nodes are do not have an hIndex
-		return super().addNode(id, content)
-
-	def addEdge(self, frmId: NodeId, toId: NodeId, addReverseEdge=False, content: EdgeData | None = None) -> None:
-		frmId = frmId.copy(hIndex=-1) # CGraph nodes are do not have an hIndex
-		toId = toId.copy(hIndex=-1) # CGraph nodes are do not have an hIndex
-		return super().addEdge(frmId, toId, addReverseEdge, content)
+	def __contains__(self, id_: NxUtils.Id | Sequence[NxUtils.Id]) -> bool:
+		if isinstance(id_, NxUtils.Id):
+			id_ = id_.copy(hIndex=-1) # CGraph nodes are do not have an hIndex
+			return super().__contains__(id_)
+		sansHIndex = []
+		for id_i in id_: sansHIndex.append(id_i.copy(hIndex=-1))
+		return super().__contains__(sansHIndex)
 
 	def __constructMap(self, polys: Sequence[MapPolygon]) -> None:
 		if len(polys) == 0: return
@@ -58,6 +59,7 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 			polys[0].type == StaticPolygon.type
 		), f"Unexpected input polygon type: {polys[0].type}"
 		for poly in polys:
+			self.__mapIdToIndex[poly.id.copy(timeNanoSecs=-1, hIndex=-1, subPartId="")] = len(self.map)
 			self.map.append(poly)
 		Ros.Log(f"Stored {len(self.map)} map polygons.")
 		return
@@ -65,7 +67,9 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 	def __constructSensors(self, polys: Sequence[SensingPolygon]) -> None:
 		if len(polys) == 0: return
 		assert polys[0].type == SensingPolygon.type, f"Unexpected input polygon type: {polys[0].type}"
-		for poly in polys: self.sensors.append(poly)
+		for poly in polys:
+			self.__sensorIdToIndex[poly.id.copy(timeNanoSecs=-1, hIndex=-1, subPartId="")] = len(self.sensors)
+			self.sensors.append(poly)
 		Ros.Log(f"Stored {len(self.sensors)} sensors.")
 		return
 
@@ -146,6 +150,15 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 		Ros.Log(f"Constructed {len(self.shadows)} shadows and {len(self.antiShadows)} anti-shadows.")
 		return
 
+	def addNode(self, id: NodeId, content: NodeData) -> NodeId:
+		id = id.copy(hIndex=-1) # CGraph nodes are do not have an hIndex
+		return super().addNode(id, content)
+
+	def addEdge(self, frmId: NodeId, toId: NodeId, addReverseEdge=False, content: EdgeData | None = None) -> None:
+		frmId = frmId.copy(hIndex=-1) # CGraph nodes are do not have an hIndex
+		toId = toId.copy(hIndex=-1) # CGraph nodes are do not have an hIndex
+		return super().addEdge(frmId, toId, addReverseEdge, content)
+
 	@property
 	def hIndex(self) -> int | None:
 		return self.__hIndex
@@ -173,6 +186,20 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 	@property
 	def antiShadows(self) -> list[SensingPolygon]:
 		return self.__antiShadows
+
+	def getMapPoly(self, id_: NxUtils.Id) -> MapPolygon:
+		id__ = id_.copy(timeNanoSecs=-1, hIndex=-1, subPartId="")
+		assert id__ in self.__mapIdToIndex, f"Sensor has gone missing {id_}!"
+		return self.map[self.__mapIdToIndex[id__]]
+
+	def getSensor(self, id_: NxUtils.Id) -> SensingPolygon:
+		id__ = id_.copy(timeNanoSecs=-1, hIndex=-1, subPartId="")
+		assert id__ in self.__sensorIdToIndex, f"Sensor has gone missing {id_}!"
+		return self.sensors[self.__sensorIdToIndex[id__]]
+
+	def hasSensor(self, id_: NxUtils.Id) -> bool:
+		id__ = id_.copy(timeNanoSecs=-1, hIndex=-1, subPartId="")
+		return id__ in self.__sensorIdToIndex
 
 	def getNodeMarkers(self) -> list[RViz.Msgs.Marker]:
 		markers = []

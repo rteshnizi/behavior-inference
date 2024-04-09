@@ -36,6 +36,8 @@ class RtBiInterfaces:
 		RT_BI_EMULATOR_KNOWN = "/__rt_bi_emulator/known"
 		RT_BI_EMULATOR_TARGET = "/__rt_bi_emulator/target"
 		RT_BI_EMULATOR_ESTIMATION = "/__rt_bi_emulator/estimation"
+		RT_BI_EVENTIFIER_INIT_GRAPH = "/__rt_bi_eventifier/init_graph"
+		RT_BI_EVENTIFIER_EVENT = "/__rt_bi_eventifier/event"
 		RT_BI_RUNTIME_MAP_COLD_START = "/__rt_bi_runtime/cold_start/map"
 		RT_BI_RUNTIME_SYM_REGIONS = "/__rt_bi_runtime/symbol_regions"
 		RT_BI_RUNTIME_COLD_START = "/__rt_bi_runtime/cold_start"
@@ -131,4 +133,24 @@ class RtBiInterfaces:
 	@staticmethod
 	def subscribeToColdStart(node: RtBiNode, callbackFunc: Callable[[Msgs.RtBi.ColdStart], None]) -> None:
 		Ros.CreateSubscriber(node, Msgs.RtBi.ColdStart, RtBiInterfaces.TopicNames.RT_BI_RUNTIME_COLD_START.value, callbackFunc) # pyright: ignore[reportArgumentType]
+		return
+
+	@staticmethod
+	def createEventGraphPublisher(node: RtBiNode) -> Publisher:
+		(publisher, _) = Ros.CreatePublisher(node, Msgs.RtBi.Graph, RtBiInterfaces.TopicNames.RT_BI_EVENTIFIER_INIT_GRAPH.value)
+		return publisher
+
+	@staticmethod
+	def subscribeToEventGraph(node: RtBiNode, callbackFunc: Callable[[Msgs.RtBi.Graph], None]) -> None:
+		Ros.CreateSubscriber(node, Msgs.RtBi.Graph, RtBiInterfaces.TopicNames.RT_BI_EVENTIFIER_INIT_GRAPH.value, callbackFunc) # pyright: ignore[reportArgumentType]
+		return
+
+	@staticmethod
+	def createEventPublisher(node: RtBiNode) -> Publisher:
+		(publisher, _) = Ros.CreatePublisher(node, Msgs.RtBi.Events, RtBiInterfaces.TopicNames.RT_BI_EVENTIFIER_EVENT.value)
+		return publisher
+
+	@staticmethod
+	def subscribeToEvent(node: RtBiNode, callbackFunc: Callable[[Msgs.RtBi.Events], None]) -> None:
+		Ros.CreateSubscriber(node, Msgs.RtBi.Events, RtBiInterfaces.TopicNames.RT_BI_EVENTIFIER_EVENT.value, callbackFunc) # pyright: ignore[reportArgumentType]
 		return

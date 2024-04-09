@@ -1,7 +1,7 @@
 import logging
 from functools import partial
 from math import inf, isnan, nan
-from typing import AbstractSet, Any, Callable, Sequence, TypeAlias, TypeVar, cast, overload
+from typing import AbstractSet, Any, Callable, Iterable, Sequence, TypeAlias, TypeVar, cast
 
 import rclpy
 from rclpy.clock import Time
@@ -51,7 +51,7 @@ def Logger() -> RcutilsLogger | logging.Logger:
 		__LOGGER = rosNodes[0].get_logger()
 	return __LOGGER
 
-def Log(msg: str, l: Sequence | None = None, indentStr = "\t\t") -> bool:
+def Log(msg: str, l: Iterable | None = None, indentStr = "\t\t") -> bool:
 	global __rtBiLog
 	if l is not None:
 		sep = f"\n{indentStr}"
@@ -94,7 +94,7 @@ def CreatePublisher(node: Node, topic: __Topic, topicName: str, callbackFunc: Ca
 	publisher = node.create_publisher(topic, topicName, 10)
 	timer = None if isnan(intervalSecs) else node.create_timer(intervalSecs, callbackFunc)
 	try:
-		freq = " @ %.2fHz" % (1 / intervalSecs)
+		freq = f" @ {(1 / intervalSecs):.2f}Hz"
 	except:
 		freq = ""
 	node.get_logger().debug(f"{node.get_fully_qualified_name()} publishes topic \"{topicName}\"{freq}")
@@ -120,7 +120,7 @@ def CreateSubscriber(node: Node, topic: __Topic, topicName: str, callbackFunc: C
 	`Subscription`
 	"""
 	subscription = node.create_subscription(topic, topicName, callbackFunc, 10)
-	node.get_logger().debug("%s subscribed to \"%s\"" % (node.get_fully_qualified_name(), topicName))
+	node.get_logger().debug(f"{node.get_fully_qualified_name()} subscribed to \"{topicName}\"")
 	return subscription
 
 def CreateTopicName(shortTopicName: str) -> str:
@@ -141,9 +141,9 @@ def CreateTopicName(shortTopicName: str) -> str:
 
 		For example, given `rviz` the returned topic would be `/namespace_prefix/rviz`.
 	"""
-	return "/%s/%s" % (NAMESPACE, shortTopicName)
+	return f"/{NAMESPACE}/{shortTopicName}"
 
-def PopMessage(array: Sequence[__Topic] | AbstractSet[__Topic] | list[__Topic], i: int, t: type[__Topic] = Any) -> __Topic:
+def PopMessage(array: Sequence[__Topic] | AbstractSet[__Topic] | list[__Topic], i: int, t: type[__Topic] | Any = Any) -> __Topic:
 	"""Appends a message to a message array.
 
 	Parameters
@@ -169,7 +169,7 @@ def AppendMessage(array: Sequence[__Topic] | AbstractSet[__Topic] | list[__Topic
 	assert isinstance(array, list), (f"Failed to append messages to array. Array type: {type(array)}")
 	array.append(msg)
 
-def GetMessage(array: Sequence[__Topic] | AbstractSet[__Topic] | list[__Topic], i: int, t: type[__Topic] = Any) -> __Topic:
+def GetMessage(array: Sequence[__Topic] | AbstractSet[__Topic] | list[__Topic], i: int, t: type[__Topic] | Any = Any) -> __Topic:
 	"""Appends a message to a message array.
 
 	Parameters

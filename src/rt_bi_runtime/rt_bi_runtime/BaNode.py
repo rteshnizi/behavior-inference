@@ -4,11 +4,14 @@ from rclpy.logging import LoggingSeverity
 from rclpy.parameter import Parameter
 
 from rt_bi_commons.Base.ColdStartableNode import ColdStartableNode
+from rt_bi_commons.Shared.NodeId import NodeId
 from rt_bi_commons.Utils import Ros
+from rt_bi_commons.Utils.Msgs import Msgs
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
+from rt_bi_commons.Utils.RViz import RViz
 from rt_bi_runtime import package_name
-from rt_bi_runtime.Model.BaMatplotlibRenderer import BaMatplotlibRenderer
 from rt_bi_runtime.Model.BehaviorAutomaton import BehaviorAutomaton
+from rt_bi_runtime.Model.TopologicalGraph import TopologicalGraph
 
 
 class BaNode(ColdStartableNode):
@@ -18,7 +21,7 @@ class BaNode(ColdStartableNode):
 	"""
 	def __init__(self, **kwArgs) -> None:
 		""" Create a Behavior Automaton node. """
-		newKw = { "node_name": "ba", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
+		newKw = { "node_name": "ba", "loggingSeverity": LoggingSeverity.WARN, **kwArgs}
 		super().__init__(**newKw)
 		self.declareParameters()
 		self.__name: str = self.get_fully_qualified_name()
@@ -43,7 +46,31 @@ class BaNode(ColdStartableNode):
 			self.__grammarFile
 		)
 		self.waitForColdStartPermission(self.onColdStartAllowed)
-		# if self.shouldRender: self.render()
+		RtBiInterfaces.subscribeToEventGraph(self, self.__onInitGraph)
+		RtBiInterfaces.subscribeToEvent(self, self.__onEvent)
+		(rVizPublisher, _) = RViz.createRVizPublisher(self, Ros.CreateTopicName("topological_graph"))
+		self.__topologicalGraph = TopologicalGraph([], [], rVizPublisher=rVizPublisher)
+		if self.shouldRender: self.render()
+		return
+
+	def __onInitGraph(self, msg: Msgs.RtBi.Graph) -> None:
+		assert isinstance(msg.vertices, list)
+		assert isinstance(msg.adjacency, list)
+		assert len(msg.vertices) == len(msg.adjacency), f"Vertices and adjacency must have equal length: V:{len(msg.vertices)}, A:{len(msg.adjacency)}"
+		self.__topologicalGraph = TopologicalGraph(msg.vertices, msg.adjacency, rVizPublisher=None)
+		ids: list[NodeId] = [n for n in self.__topologicalGraph.nodes]
+		self.__ba.resetTokens(ids)
+		Ros.Log(f"Topological Graph: {len(self.__topologicalGraph.nodes)} vertices and {len(self.__topologicalGraph.edges)} edges")
+		return
+
+	def __onEvent(self, msg: Msgs.RtBi.Events) -> None:
+		assert isinstance(msg.component_events, list)
+		Ros.Log(f"Topological Events: {len(msg.component_events)}.")
+		# Ros.Log(f"Before applying: V={len(self.__topologicalGraph.nodes)}, E={len(self.__topologicalGraph.edges)}.")
+		# for event in msg.component_events: self.__topologicalGraph.apply(event)
+		# Ros.Log(f"After applying: V={len(self.__topologicalGraph.nodes)}, E={len(self.__topologicalGraph.edges)}.")
+		# Ros.Log("Tokens", self.__ba.tokens)
+		# self.__timer = Ros.CreateTimer(self, self.__evaluateTokens, 500)
 		return
 
 	def onColdStartAllowed(self, _) -> None:
@@ -86,13 +113,7 @@ class BaNode(ColdStartableNode):
 		return
 
 	def render(self) -> None:
-		# FIXME: MATPLOTLIB blocks ros thread.
-		BaMatplotlibRenderer.createBehaviorAutomatonFigure(self.__ba)
-		return
-
-	def destroy_node(self) -> None:
-		BaMatplotlibRenderer.closeFig(self.__ba)
-		return super().destroy_node()
+		self.__topologicalGraph.render()
 
 def main(args=None):
 	rclpy.init(args=args)

@@ -1,8 +1,9 @@
 from dataclasses import dataclass
-from typing import Literal, Sequence, TypeVar, cast
+from typing import Literal, cast
 
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Geometry import GeometryLib, Shapely
+from rt_bi_commons.Utils.Msgs import Msgs
 from rt_bi_commons.Utils.NetworkX import NxUtils
 from rt_bi_commons.Utils.RViz import ColorNames, RViz
 from rt_bi_core.Spatial import GraphPolygon, MapPolygon
@@ -14,7 +15,6 @@ from rt_bi_eventifier.Model.ContinuousTimeCollisionDetection import ContinuousTi
 from rt_bi_eventifier.Model.ContinuousTimeRegion import ContinuousTimeRegion
 from rt_bi_eventifier.Model.EventAggregator import EventAggregator
 
-_T_Poly = TypeVar("_T_Poly", bound=GraphPolygon)
 
 class ShadowTree(NxUtils.Graph[GraphPolygon]):
 	"""
@@ -24,10 +24,8 @@ class ShadowTree(NxUtils.Graph[GraphPolygon]):
 	SUBMODULES = ("connectivity_graph", "continuous_time_collision_detection", "shadow_tree")
 	SUBMODULE = Literal["connectivity_graph", "continuous_time_collision_detection", "shadow_tree"]
 	"""The name of a ShadowTree sub-module publisher."""
-	ST_TOPIC = Literal["eventifier_graph", "eventifier_event"]
-	"""The name of a ShadowTree topic."""
 	__RENDER_RADIUS = 10
-	__MAX_HISTORY = 2
+	__MAX_HISTORY = 4
 
 	@dataclass(frozen=True, order=True)
 	class NodeData(NxUtils.NodeData[GraphPolygon]):
@@ -43,7 +41,7 @@ class ShadowTree(NxUtils.Graph[GraphPolygon]):
 				subset=subset
 			)
 
-	def __init__(self, eventPublisher: dict[ST_TOPIC, Ros.Publisher], rvizPublishers: dict[SUBMODULE, Ros.Publisher | None]):
+	def __init__(self, eventPublishers: tuple[Ros.Publisher, Ros.Publisher], rvizPublishers: dict[SUBMODULE, Ros.Publisher | None]):
 		"""Initialize the shadow tree. The tree is expected to be updated in a streaming fashion."""
 		super().__init__(rVizPublisher=rvizPublishers.pop("shadow_tree", None))
 		# super().__init__(rVizPublisher=None)
@@ -52,7 +50,7 @@ class ShadowTree(NxUtils.Graph[GraphPolygon]):
 
 		self.componentEvents: list[list[Shapely.Polygon]] = []
 		""" The reason this is a list of lists is that the time of event is relative to the time between. """
-		self.__eventPublisher = eventPublisher
+		(self.__graphPublisher, self.__eventPublisher) = eventPublishers
 		self.__rvizPublishers = rvizPublishers
 		self.__ctrs: dict[MovingPolygon.Id, ContinuousTimeRegion[GraphPolygon]] = {}
 
@@ -154,37 +152,45 @@ class ShadowTree(NxUtils.Graph[GraphPolygon]):
 			 3. takes the union of those polygons to get the area swept by FOV
 			 4. if the intersection has areas that are not swept by FOV, then they are connected
 		"""
-		intersectionOfShadows = GeometryLib.intersection(pastPoly.interior, nowPoly.interior)
-		intersectionOfShadows = GeometryLib.filterPolygons(intersectionOfShadows)
-		intersectionOfShadows = GeometryLib.union(intersectionOfShadows)
-		for pastSensorPoly in pastGraph.sensors:
-			nowSensorId = pastSensorPoly.id.copy(timeNanoSecs=nowGraph.timeNanoSecs, hIndex=-1)
-			if nowSensorId not in nowGraph: continue
-			nowSensorPoly = nowGraph.getContent(nowSensorId, "polygon")
-			pastCoords = GeometryLib.getGeometryCoords(pastSensorPoly.interior)
-			nowCoords = GeometryLib.getGeometryCoords(nowSensorPoly.interior)
-			transformation = GeometryLib.getAffineTransformation(pastCoords, nowCoords)
+		try:
+			intersectionOfShadows = GeometryLib.intersection(pastPoly.interior, nowPoly.interior)
+			intersectionOfShadows = GeometryLib.filterPolygons(intersectionOfShadows)
+			if len(intersectionOfShadows) == 0: return False
+			intersectionOfShadows = GeometryLib.union(intersectionOfShadows)
 			objs = []
-			for nowEdge in nowSensorPoly.edges:
-				pastEdge = pastSensorPoly.getEquivalentEdge(nowEdge, transformation)
-				if pastEdge is None:
-					raise AssertionError("No equivalent edge found based on transformation.")
-				if pastEdge == nowEdge: continue
-				obj = Shapely.Polygon([
-					pastEdge.coords[0], pastEdge.coords[1],
-					nowEdge.coords[1], nowEdge.coords[0],
-				])
-				obj = Shapely.make_valid(obj)
-				obj = Shapely.set_precision(obj, GeometryLib.EPSILON)
-				subParts = GeometryLib.toGeometryList(obj)
-				for p in subParts: objs.append(p)
-
+			for nowSensor in nowGraph.sensors:
+				if pastGraph.hasSensor(nowSensor.id):
+					pastSensor = pastGraph.getSensor(nowSensor.id)
+					pastCoords = GeometryLib.getGeometryCoords(pastSensor.interior)
+					nowCoords = GeometryLib.getGeometryCoords(nowSensor.interior)
+					transformation = GeometryLib.getAffineTransformation(pastCoords, nowCoords)
+					for nowEdge in nowSensor.edges:
+						pastEdge = pastSensor.getEquivalentEdge(nowEdge, transformation)
+						if pastEdge is None:
+							raise AssertionError("No equivalent edge found based on transformation.")
+						if pastEdge == nowEdge: continue
+						obj = Shapely.Polygon([
+							pastEdge.coords[0], pastEdge.coords[1],
+							nowEdge.coords[1], nowEdge.coords[0],
+						])
+						obj = Shapely.make_valid(obj)
+						obj = Shapely.set_precision(obj, GeometryLib.EPSILON)
+						subParts = GeometryLib.toGeometryList(obj)
+						for p in subParts: objs.append(p)
+				else:
+					objs.append(nowSensor.interior)
+			objs = objs if len(objs) > 0 else [Shapely.Polygon()]
 			sweptBySensors = Shapely.GeometryCollection(geoms=objs)
 			remainingShadows = GeometryLib.difference(intersectionOfShadows, sweptBySensors)
 			if len(remainingShadows) > 0: return True
+		except Exception as e:
+			from traceback import format_exc
+			Ros.Log(f"Error in X-Connection Test -- {e}\n{format_exc()}")
+
 		return False
 
 	def __connectTopLayerTemporally(self) -> None:
+		Ros.Log(" ------------------------------- SHADOW 3 - CONNECT-Z - START -----------------------------")
 		fromGraph = self.__history[self.length - 2]
 		toGraph = self.__history[self.length - 1]
 		assert toGraph.hIndex is not None, f"Cannot connect graph with unset hIndex in shadow tree. {repr(toGraph)}"
@@ -192,13 +198,18 @@ class ShadowTree(NxUtils.Graph[GraphPolygon]):
 		for fromAntiShadow in fromGraph.antiShadows:
 			for toAntiShadow in toGraph.antiShadows:
 				if fromAntiShadow.id.copy(timeNanoSecs=-1, hIndex=-1, subPartId="") == toAntiShadow.id.copy(timeNanoSecs=-1, hIndex=-1, subPartId=""):
+					Ros.Log("AntiShadows are connected", (fromAntiShadow.id, toAntiShadow.id))
 					self.addEdge(fromAntiShadow.id, toAntiShadow.id, fromGraph, toGraph)
 		# Add temporal edges between shadows
+		Ros.Log(" ------------------------------- SHADOW 3 - CONNECT-Z - END -------------------------------")
+		Ros.Log(" ------------------------------- SHADOW 3 - CONNECT-X - START -----------------------------")
 		for fromShadow in fromGraph.shadows:
 			for toShadow in toGraph.shadows:
 				if GeometryLib.intersects(fromShadow.interior, toShadow.interior):
 					if self.__shadowsAreConnectedTemporally(fromGraph, toGraph, fromShadow, toShadow):
+						Ros.Log("Shadows are connected", (fromShadow.id, toShadow.id))
 						self.addEdge(fromShadow.id, toShadow.id, fromGraph, toGraph)
+		Ros.Log(" ------------------------------- SHADOW 3 - CONNECT-X - END -------------------------------")
 		return
 
 	def __removeFromHistory(self, index: int, delete: bool) -> None:
@@ -209,9 +220,8 @@ class ShadowTree(NxUtils.Graph[GraphPolygon]):
 		Ros.Log(f"Removing Graph: {repr(self.__history[index])} with {len(self.__history[index].nodes)} nodes.")
 		polyId: NxUtils.Id
 		for polyId in self.__history[index].nodes:
-			id = NxUtils.Id(hIndex=hIndex, timeNanoSecs=polyId.timeNanoSecs, regionId=polyId.regionId, polygonId=polyId.polygonId, subPartId=polyId.subPartId)
-			assert id in self, f"Remove failed: {id} is not a node in the graph."
-			self.remove_node(id)
+			id_ = NxUtils.Id(hIndex=hIndex, timeNanoSecs=polyId.timeNanoSecs, regionId=polyId.regionId, polygonId=polyId.polygonId, subPartId=polyId.subPartId)
+			self.removeNode(id_)
 		if delete: self.__history.pop(index)
 
 	def __replaceInHistory(self, index: int, graph: ConnectivityGraph) -> None:
@@ -237,11 +247,10 @@ class ShadowTree(NxUtils.Graph[GraphPolygon]):
 			graph.hIndex = self.hIndex
 			self.__history.append(graph)
 			self.hIndex += 1
-			self.__publishGraphEvent()
 
-		for id in graph.nodes:
-			id = cast(NxUtils.Id, id)
-			self.addNode(id, graph)
+		for id_ in graph.nodes:
+			id_ = cast(NxUtils.Id, id_)
+			self.addNode(id_, graph)
 		for edge in graph.edges:
 			self.addEdge(edge[0], edge[1], graph, graph)
 
@@ -251,66 +260,80 @@ class ShadowTree(NxUtils.Graph[GraphPolygon]):
 			self.__removeFromHistory(0, True)
 		self.render()
 
-	def __publishGraphEvent(self) -> None:
-		# if self.length == 1:
-		# 	adjacency: list[tuple[str, list[str]]] = [(n, list(adjDict.keys())) for (n, adjDict) in self.__history[0].adjacency()]
-		# 	graphMsg = Graph()
-		# 	for (node, neighbors) in adjacency:
-		# 		Ros.AppendMessage(graphMsg.vertices, node)
-		# 		adjacencyMsg = Adjacency()
-		# 		for neighbor in neighbors:
-		# 			Ros.AppendMessage(adjacencyMsg.neighbors, neighbor)
-		# 		Ros.AppendMessage(graphMsg.adjacency, adjacencyMsg)
-		# 	self.__eventPublisher["eventifier_graph"].publish(graphMsg)
-		# 	return
-		# lastCGraph = self.__history[-1]
-		# prevCGraph = self.__history[-2]
-		# lastCGraphNodes = [polyId.updateId(lastCGraph.timeNanoSecs) for polyId in lastCGraph.nodes]
-		# prevCGraphNodes = [polyId.updateId(prevCGraph.timeNanoSecs) for polyId in prevCGraph.nodes]
-		# appearedNodes: list[NxUtils.Id] = []
-		# disappearedNodes: list[NxUtils.Id] = []
-		# mergedNodes: list[tuple[NxUtils.Id, list[NxUtils.Id]]] = []
-		# splittedNodes: list[tuple[NxUtils.Id, list[NxUtils.Id]]] = []
-		# for n in lastCGraphNodes:
-		# 	if self.in_degree(n) == 0: appearedNodes.append(n)
-		# 	if self.in_degree(n) > 1:
-		# 		inNeighbors: list[NxUtils.Id] = [edge[1] for edge in self.in_edges(n)]
-		# 		mergedNodes.append((n, inNeighbors))
-		# for n in prevCGraphNodes:
-		# 	if self.out_degree(n) == 0: disappearedNodes.append(n)
-		# 	if self.out_degree(n) > 1:
-		# 		outNeighbors: list[NxUtils.Id] = [edge[1] for edge in self.out_edges(n)]
-		# 		splittedNodes.append((n, outNeighbors))
-		# eventsMsg = Events()
-		# event = ComponentEvent()
-		# event.ros_time = lastCGraph.timeNanoSecs
-		# event.type = "A"
-		# for n in appearedNodes: Ros.AppendMessage(event.after, n)
-		# Ros.AppendMessage(eventsMsg.component_events, event)
+	def __publishGraph(self) -> None:
+		Ros.Log(f"Publishing topological graph {self.__history[-1]}.")
+		graphMsg = Msgs.RtBi.Graph()
+		for (node, adjDict) in self.__history[-1].adjacency():
+			neighbors = list(adjDict.keys())
+			Ros.AppendMessage(graphMsg.vertices, Msgs.toIdMsg(node))
+			adjacencyMsg = Msgs.RtBi.Adjacency()
+			for neighbor in neighbors:
+				Ros.AppendMessage(adjacencyMsg.neighbors, Msgs.toIdMsg(neighbor))
+			Ros.AppendMessage(graphMsg.adjacency, adjacencyMsg)
+		self.__graphPublisher.publish(graphMsg)
+		return
 
-		# event = ComponentEvent()
-		# event.ros_time = lastCGraph.timeNanoSecs
-		# event.type = "D"
-		# for n in disappearedNodes: Ros.AppendMessage(event.before, n)
-		# Ros.AppendMessage(eventsMsg.component_events, event)
+	def __publishEvents(self) -> None:
+		lastCGraph = self.__history[-1]
+		prevCGraph = self.__history[-2]
+		appearedNodes: list[NxUtils.Id] = []
+		disappearedNodes: list[NxUtils.Id] = []
+		temporalChanges: dict[NxUtils.Id, list[NxUtils.Id]] = {}
+		for fromNode in lastCGraph.nodes:
+			fromNode: NxUtils.Id = fromNode
+			id_ = fromNode.copy(hIndex=lastCGraph.hIndex)
+			temporalInEdges: list[tuple[NxUtils.Id, NxUtils.Id]] = [
+				e for e in self.in_edges(nbunch=[id_], data=True) if ( # CSpell: ignore -- nbunch
+					"isTemporal" in e[2] and e[2]["isTemporal"]
+				)
+			]
+			if len(temporalInEdges) == 0: appearedNodes.append(id_)
 
-		# event = ComponentEvent()
-		# event.ros_time = lastCGraph.timeNanoSecs
-		# event.type = "M"
-		# for n in mergedNodes:
-		# 	Ros.AppendMessage(event.before, n[0])
-		# 	for inNode in n[1]: Ros.AppendMessage(event.after, inNode)
-		# Ros.AppendMessage(eventsMsg.component_events, event)
+		for fromNode in prevCGraph.nodes:
+			fromNode: NxUtils.Id = fromNode
+			id_ = fromNode.copy(hIndex=prevCGraph.hIndex)
+			temporalOutEdges: list[tuple[NxUtils.Id, NxUtils.Id]] = [e for e in self.out_edges(nbunch=[id_], data=True) if ( # CSpell: ignore -- nbunch
+				"isTemporal" in e[2] and e[2]["isTemporal"]
+			)]
+			if len(temporalOutEdges) == 0: disappearedNodes.append(id_)
+			if len(temporalOutEdges) > 1:
+				if id_ not in temporalChanges: temporalChanges[id_] = []
+				temporalChanges[id_] += [edge[1] for edge in temporalOutEdges]
 
-		# event = ComponentEvent()
-		# event.ros_time = lastCGraph.timeNanoSecs
-		# event.type = "D"
-		# for n in splittedNodes:
-		# 	Ros.AppendMessage(event.before, n[0])
-		# 	for inNode in n[1]: Ros.AppendMessage(event.after, inNode)
-		# Ros.AppendMessage(eventsMsg.component_events, event)
+		newSpatialEdges: list[tuple[NxUtils.Id, NxUtils.Id]] = [e for e in self.edges(nbunch=appearedNodes, data=True) if (
+			"isTemporal" not in e[2] or not e[2]["isTemporal"]
+		)]
+		eventsMsg = Msgs.RtBi.Events()
+		if len(appearedNodes) > 0:
+			event = Msgs.RtBi.Event()
+			event.time_nano_secs = lastCGraph.timeNanoSecs
+			event.type = "A"
+			for fromNode in appearedNodes:
+				Ros.AppendMessage(event.after, Msgs.toIdMsg(fromNode))
+			for e in newSpatialEdges:
+				Ros.AppendMessage(event.spatial_edge_from, Msgs.toIdMsg(e[0]))
+				Ros.AppendMessage(event.spatial_edge_to, Msgs.toIdMsg(e[1]))
+			if len(event.after) > 0: Ros.AppendMessage(eventsMsg.component_events, event)
 
-		# self.__eventPublisher["eventifier_event"].publish(eventsMsg)
+		if len(disappearedNodes) > 0:
+			event = Msgs.RtBi.Event()
+			event.time_nano_secs = lastCGraph.timeNanoSecs
+			event.type = "D"
+			for fromNode in disappearedNodes: Ros.AppendMessage(event.before, Msgs.toIdMsg(fromNode))
+			if len(event.before) > 0: Ros.AppendMessage(eventsMsg.component_events, event)
+
+		if len(temporalChanges) > 0:
+			for fromNode in temporalChanges:
+				event = Msgs.RtBi.Event()
+				event.time_nano_secs = lastCGraph.timeNanoSecs
+				event.type = "S"
+				Ros.AppendMessage(event.before, Msgs.toIdMsg(fromNode))
+				for afterNode in temporalChanges[fromNode]: Ros.AppendMessage(event.after, Msgs.toIdMsg(afterNode))
+				if len(event.before) > 0 or len(event.after) > 0: Ros.AppendMessage(eventsMsg.component_events, event)
+
+		if len(eventsMsg.component_events) > 0:
+			Ros.Log("Publishing topological events.")
+			self.__eventPublisher.publish(eventsMsg)
 		return
 
 	def __updateCTRs(self, poly: GraphPolygon) -> None:
@@ -358,6 +381,7 @@ class ShadowTree(NxUtils.Graph[GraphPolygon]):
 		if self.length == 0:
 			cGraph = self.at(minLatestNs)
 			self.__appendToHistory(cGraph)
+			self.__publishGraph()
 			return
 
 		ctrs = list(self.__ctrs.values())
@@ -365,7 +389,6 @@ class ShadowTree(NxUtils.Graph[GraphPolygon]):
 		intervals = CtCd.refineCollisionIntervals(intervals)
 		Ros.Log(f"After refinement {len(intervals)} intervals remained.")
 		intervals.sort(key=lambda e: (e[-1], e[-2])) # Sort events by their end time, then start-time
-		Ros.Log("Aggregating intervals.")
 		eventGraphs: list[ConnectivityGraph] = []
 		for interval in intervals:
 			# Pick an arbitrary point in the interval. We pick the end.
@@ -374,4 +397,7 @@ class ShadowTree(NxUtils.Graph[GraphPolygon]):
 		if len(eventGraphs) == 0: eventGraphs = [self.at(polygon.timeNanoSecs)] # If no events, just update the locations of polygons.
 		Ros.Log("Aggregated CGraphs", eventGraphs)
 		for graph in eventGraphs: self.__appendToHistory(graph)
+
+		if polygon.type == StaticPolygon.type: self.__publishGraph()
+		else: self.__publishEvents()
 		return

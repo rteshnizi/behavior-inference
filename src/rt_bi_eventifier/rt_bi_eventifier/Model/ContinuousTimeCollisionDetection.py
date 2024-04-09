@@ -135,34 +135,6 @@ class ContinuousTimeCollisionDetection:
 		return interval
 
 	@classmethod
-	def __estimateCollisionIntervals(cls, ctrs: Sequence[ContinuousTimeRegion[GraphPolygon]], processUpToNs: int, rvizPublisher: Ros.Publisher | None) -> list[CollisionInterval]:
-		cls.__rvizPublisher = rvizPublisher
-		Ros.Log(" ------------------------------- CTCD - ESTIMATION - START --------------------------------")
-
-		intervals: list[CollisionInterval] = []
-		checked: set[tuple[SensingPolygon.Id, SensingPolygon.Id]] = set()
-		for ctRegion1 in ctrs:
-			if ctRegion1.type == StaticPolygon.type:
-				Ros.Log(f"Not testing {ctRegion1.name}: STATIC")
-				continue
-			if ctRegion1.isSlice:
-				Ros.Log(f"Not testing {ctRegion1.name}: SLICE")
-				continue
-			for ctRegion2 in ctrs:
-				if ctRegion1 == ctRegion2: continue
-				if (ctRegion1.id, ctRegion2.id) in checked: continue
-				if ctRegion2.isSlice:
-					Ros.Log(f"Not testing {ctRegion1.name} vs {ctRegion2.name}: SLICE.")
-					continue
-
-				if processUpToNs in ctRegion2:
-					intervals += cls.__obbTest(ctRegion1, ctRegion2, processUpToNs)
-				checked.add((ctRegion1.id, ctRegion2.id))
-				checked.add((ctRegion2.id, ctRegion1.id))
-		Ros.Log(" ------------------------------- CTCD - ESTIMATION - END ----------------------------------")
-		return intervals
-
-	@classmethod
 	def estimateCollisionIntervals(cls, ctrs: Sequence[ContinuousTimeRegion[GraphPolygon]], processUpToNs: int, rvizPublisher: Ros.Publisher | None) -> list[CollisionInterval]:
 		cls.__rvizPublisher = rvizPublisher
 		Ros.Log(" ------------------------------- CTCD - ESTIMATION - START --------------------------------")

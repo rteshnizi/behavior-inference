@@ -5,6 +5,7 @@ from rclpy.parameter import Parameter
 
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Msgs import Msgs
+from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_commons.Utils.RViz import RViz
 from rt_bi_core.RegionsSubscriber import MapSubscriber, SensorSubscriber
 from rt_bi_core.Spatial import MapPolygon
@@ -20,16 +21,16 @@ class Eventifier(MapSubscriber, SensorSubscriber):
 		super().__init__(pauseQueuingMsgs=True, **newKw)
 		self.declareParameters()
 		self.__renderModules: list[ShadowTree.SUBMODULE] = []
-		self.__topicPublishers: dict[ShadowTree.ST_TOPIC, Publisher] = {}
 		self.parseParameters()
 		modulePublishers: dict[ShadowTree.SUBMODULE, Publisher | None] = {}
 		for module in ShadowTree.SUBMODULES:
 			if module in self.__renderModules: (publisher, _) = RViz.createRVizPublisher(self, Ros.CreateTopicName(module))
 			else: publisher = None
 			modulePublishers[module] = publisher
-		(self.__topicPublishers["eventifier_graph"], _) = Ros.CreatePublisher(self, Msgs.RtBi.Graph, Ros.CreateTopicName("eventifier_graph"))
-		(self.__topicPublishers["eventifier_event"], _) = Ros.CreatePublisher(self, Msgs.RtBi.Events, Ros.CreateTopicName("eventifier_event"))
-		self.__shadowTree: ShadowTree = ShadowTree(self.__topicPublishers, modulePublishers)
+
+		gPublisher = RtBiInterfaces.createEventGraphPublisher(self)
+		ePublisher = RtBiInterfaces.createEventPublisher(self)
+		self.__shadowTree: ShadowTree = ShadowTree((gPublisher, ePublisher), modulePublishers)
 
 	def onPolygonUpdated(self, rType: MovingPolygon.Type | StaticPolygon.Type | SensingPolygon.Type, polygon: MapPolygon | SensingPolygon) -> None:
 		self.log(f"Updating polygons of type {rType}.")

@@ -13,8 +13,11 @@
 # region Class definitions
 rt_bi:X a rdfs:Class .
 rt_bi:Y a rdfs:Class .
-rt_bi:Vertex a rdfs:Class .
-rt_bi:VertexSeq a rdf:Seq .
+rt_bi:Pt a rdfs:Class ;
+	rdfs:comment "Has an X and a Y" .
+rt_bi:PtSeq a rdfs:Class ;
+	rdfs:subClassOf rdf:Seq ;
+	rdfs:comment "To indicate to a human reader that the members are ordered points." .
 rt_bi:Polygon a rdfs:Class .
 
 rt_bi:Time a rdfs:Class .
@@ -30,13 +33,46 @@ rt_bi:RegularTime a rdfs:Class ;
 rt_bi:Traversability a rdfs:Class ;
 	rdfs:comment "The class of traversability specifications." .
 
+# region PtSeq members
+rt_bi:vertex a rdfs:Class ;
+	rdfs:subClassOf rdfs:ContainerMembershipProperty ;
+	rdfs:subPropertyOf rdfs:member ;
+	rdfs:domain rt_bi:PtSeq ;
+	rdfs:range rt_bi:Pt ;
+	rdfs:comment "A rt_bi:Pt whose order of placement in the container owning the point matters." .
+
+rt_bi:v_101 a rt_bi:vertex .
+rt_bi:v_102 a rt_bi:vertex .
+rt_bi:v_103 a rt_bi:vertex .
+rt_bi:v_104 a rt_bi:vertex .
+rt_bi:v_105 a rt_bi:vertex .
+rt_bi:v_106 a rt_bi:vertex .
+rt_bi:v_107 a rt_bi:vertex .
+rt_bi:v_108 a rt_bi:vertex .
+rt_bi:v_109 a rt_bi:vertex .
+rt_bi:v_110 a rt_bi:vertex .
+rt_bi:v_111 a rt_bi:vertex .
+rt_bi:v_112 a rt_bi:vertex .
+rt_bi:v_113 a rt_bi:vertex .
+rt_bi:v_114 a rt_bi:vertex .
+rt_bi:v_115 a rt_bi:vertex .
+rt_bi:v_116 a rt_bi:vertex .
+rt_bi:v_117 a rt_bi:vertex .
+rt_bi:v_118 a rt_bi:vertex .
+rt_bi:v_119 a rt_bi:vertex .
+rt_bi:v_120 a rt_bi:vertex .
+# endregion PtSeq members
+
 # endregion Class definitions
 # region Class instances
-rt_bi:StaticSpace a rdf:value ;
+rt_bi:StaticSpace a rdfs:Class ;
+	rdfs:subClassOf rt_bi:RegularSpace ;
 	rdfs:comment "A value indicating a static regions." .
-rt_bi:DynamicSpace a rdf:value ;
+rt_bi:DynamicSpace a rdfs:Class ;
+	rdfs:subClassOf rt_bi:RegularSpace ;
 	rdfs:comment "A value indicating a dynamic regions. Dynamic regions have different accessibility values depending on time." .
-rt_bi:AffineSpace a rdf:value ;
+rt_bi:AffineSpace a rdfs:Class ;
+	rdfs:subClassOf rt_bi:RegularSpace ;
 	rdfs:comment "A value indicating a affine regions. Affine regions can move about the map." .
 # endregion Class instances
 
@@ -67,14 +103,14 @@ temporal_props:include_max a rdf:Property ;
 # region spatial
 spatial_props:vertices a rdf:Property ;
 	rdfs:domain rt_bi:Polygon ;
-	rdfs:range rt_bi:VertexSet ;
+	rdfs:range rt_bi:PtSeq ;
 	rdfs:comment "The vertices of a polygon." .
 spatial_props:x a rdf:Property ;
-	rdfs:domain rt_bi:Vertex ;
+	rdfs:domain rt_bi:Pt ;
 	rdfs:range rt_bi:X ;
 	rdfs:comment "The x Coordinate." .
 spatial_props:y a rdf:Property ;
-	rdfs:domain rt_bi:Vertex ;
+	rdfs:domain rt_bi:Pt ;
 	rdfs:range rt_bi:Y ;
 	rdfs:comment "The y Coordinate." .
 spatial_props:x_val a rdf:value ;

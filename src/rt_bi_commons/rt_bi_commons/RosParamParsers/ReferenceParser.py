@@ -32,7 +32,7 @@ class ListReferenceParser(
 
 	@property
 	def srcs(self) -> list[ReferenceDescriptor]:
-		if self.__srcs is None: raise RuntimeError(f"The node {self.node.get_fully_qualified_name()} must set {self.srcs.__name__} during the parsing of its parameters.")
+		if self.__srcs is None: raise RuntimeError(f"The node {self.node.get_fully_qualified_name()} must set self.__srcs during the parsing of its parameters.")
 		return self.__srcs
 
 	@srcs.setter

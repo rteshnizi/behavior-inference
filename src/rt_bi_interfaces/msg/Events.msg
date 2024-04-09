@@ -1,1 +1,1 @@
-rt_bi_interfaces/ComponentEvent[] component_events
+rt_bi_interfaces/Event[] component_events

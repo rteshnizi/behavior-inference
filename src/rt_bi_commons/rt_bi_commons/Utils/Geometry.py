@@ -1,4 +1,3 @@
-import traceback
 import warnings
 from math import cos, inf, nan, sin, sqrt
 
@@ -94,6 +93,7 @@ class GeometryLib:
 	# region: Logging functions
 	@staticmethod
 	def __reportShapelyException(functionName: str, exc: Exception, objs: Sequence[Shapely.AnyObj]) -> None:
+		from traceback import format_exc
 		Ros.Logger().error(f"1. Shapely exception.. in {functionName}(): {exc}")
 		Ros.Log("2. Shapely exception.. args", objs)
 		i = 3
@@ -104,14 +104,15 @@ class GeometryLib:
 				verts = GeometryLib.getGeometryCoords(o)
 			Ros.Log(f"{i}. Shapely exception.. Verts of {repr(o)}", verts)
 			i += 1
-		Ros.Log(f"{i}. Shapely exception.. Stack trace:\n{traceback.format_exc()}")
+		Ros.Log(f"{i}. Shapely exception.. Stack trace:\n{format_exc()}")
 		return
 
 	@staticmethod
 	def __reportSkImageException(functionName: str, exc: Exception, objs: Sequence[CoordsList]) -> None:
+		from traceback import format_exc
 		Ros.Logger().error("1. SkImage exception.. in %s(): %s" % (functionName, repr(exc)))
 		Ros.Log("2. SkImage exception.. args", objs)
-		Ros.Log(f"3. SkImage exception.. Stack trace:\n{traceback.format_exc()}")
+		Ros.Log(f"3. SkImage exception.. Stack trace:\n{format_exc()}")
 		return
 	# endregion: Logging functions
 
@@ -213,13 +214,13 @@ class GeometryLib:
 	# endregion: Basic operations
 
 	# region: Shapely wrappers
+
 	@staticmethod
 	def filterPolygons(geom: Shapely.AnyObj) -> list[Shapely.Polygon]:
 		geomList = GeometryLib.toGeometryList(geom)
 		geomList = [Shapely.make_valid(Shapely.set_precision(p, GeometryLib.EPSILON)) for p in geomList]
 		geomList = [p for p in geomList if (not p.is_empty) and p.area > 0]
 		return geomList
-
 
 	@staticmethod
 	def getGeometryCoords(geom: Shapely.ConnectedComponent) -> CoordsList:

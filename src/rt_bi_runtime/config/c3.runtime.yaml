@@ -1,5 +1,5 @@
 rt_bi_runtime:
-  runtime_mgr:
+  cs_mgr:
     ros__parameters:
       render: False
       await_cold_start:

@@ -42,7 +42,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /REZA_TESHNIZI_NS/shadow_tree
+        Value: /REZA_TESHNIZI_NS/topological_graph
       Value: true
   Enabled: true
   Global Options:

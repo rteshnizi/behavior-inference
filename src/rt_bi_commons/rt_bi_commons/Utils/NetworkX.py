@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
 
 import networkx as nx
-from typing_extensions import Any, Generic, Literal, LiteralString, Protocol, TypeAlias, TypeVar, cast, final, overload
+from typing_extensions import Any, Generic, Literal, LiteralString, Protocol, Sequence, TypeAlias, TypeVar, cast, final, overload
 
 from rt_bi_commons.Shared.NodeId import NodeId
 from rt_bi_commons.Shared.Pose import Coords
@@ -53,26 +53,33 @@ class NxUtils:
 			self.__layout: NxUtils.GraphLayout2D | None = None
 			self.rVizPublisher = rVizPublisher
 
-		def __contains__(self, id: NodeId) -> bool:
-			if not isinstance(id, NodeId):
-				Ros.Log(f"NodeId is of invalid type: {type(id)}.")
+		def __contains__(self, id_: NodeId | Sequence[NodeId]) -> bool:
+			if not isinstance(id_, NodeId) and not isinstance(id_, Sequence):
+				Ros.Log(f"NodeId is of invalid type: {type(id_)}.")
 				return False
-			return super().__contains__(id)
+			return super().__contains__(id_)
 
-		def addNode(self, id: NodeId, content: NodeData[_Polygon]) -> NodeId:
+		def removeNode(self, id_: NodeId) -> None:
+			assert isinstance(id_, NodeId), f"Unexpected Id type: {type(id_)}, repr = {repr(id_)}"
+			assert id_ in self, f"Remove failed: {id_} is not a node in the graph."
+			self.remove_node(id_)
+			return
+
+		def addNode(self, id: NodeId, content: NodeData[_Polygon] | None = None) -> NodeId:
 			assert isinstance(id, NodeId), f"Unexpected Id type: {type(id)}, repr = {repr(id)}"
-			data = asdict(content) if content is not None else {}
-			self.add_node(id, **data)
+			if content is not None: self.add_node(id, **asdict(content))
+			else: self.add_node(id)
 			return id
 
 		def addEdge(self, frmId: NodeId, toId: NodeId, addReverseEdge=False, content: EdgeData | None = None) -> None:
 			if frmId not in self: raise AssertionError(f"{frmId} is not a node in the graph.")
 			if toId not in self: raise AssertionError(f"{toId} is not a node in the graph.")
 			if frmId == toId: raise AssertionError(f"No loop-back edge! {frmId}")
-			data = asdict(content) if content is not None else {}
-			self.add_edge(frmId, toId, **data)
+			if content is not None: self.add_edge(frmId, toId, **asdict(content))
+			else: self.add_edge(frmId, toId)
 			if not addReverseEdge: return
-			self.add_edge(toId, frmId, **data)
+			if content is not None: self.add_edge(toId, frmId, **asdict(content))
+			else: self.add_edge(toId, frmId)
 			return
 
 		@overload
@@ -119,13 +126,6 @@ class NxUtils:
 				zag *= -1
 				x += self.__RENDER_DELTA_X
 			return pos
-
-		def _kkLayout(self) -> "NxUtils.GraphLayout2D":
-			# pos = nx.multipartite_layout(self, align="horizontal", scale=self.__LAYOUT_SCALE)
-			# self.__layout = cast(NxUtils.GraphLayout, pos)
-			pos = nx.kamada_kawai_layout(self, dim=3, scale=self.__LAYOUT_SCALE) # CSpell: ignore - kamada kawai
-			self.__layout = cast(NxUtils.GraphLayout2D, pos)
-			return self.__layout
 
 		@abstractmethod
 		def getNodeMarkers(self) -> list[RViz.Msgs.Marker]: ...

@@ -16,8 +16,8 @@ def generate_launch_description():
 		Node(
 			package=package_name,
 			namespace=package_name,
-			executable="RUNTIME_MGR",
-			name="runtime_mgr",
+			executable="CS_MGR",
+			name="cs_mgr",
 			arguments= [
 				"--ros-args",
 				"--log-level",
