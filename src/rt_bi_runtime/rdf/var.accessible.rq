@@ -21,14 +21,12 @@ SELECT
 	?min ?max ?include_min ?include_max
 WHERE {
 	# SELECTOR START ###########################
-	OPTIONAL { ?regularSetId a ?namespace ; world_props:accessible_times ?intervalId ;
-		GRAPH tower_bridge:temporal {
-			?intervalId
-				temporal_props:min/temporal_props:secs ?min ;
-				temporal_props:max/temporal_props:secs ?max ;
-				temporal_props:include_min ?include_min ;
-				temporal_props:include_max ?include_max .
-		}
+	OPTIONAL { ?regularSetId world_props:accessible_times ?intervalId .
+		?intervalId
+			temporal_props:min/temporal_props:secs ?min ;
+			temporal_props:max/temporal_props:secs ?max ;
+			temporal_props:include_min ?include_min ;
+			temporal_props:include_max ?include_max .
 	}
 	# SELECTOR END #############################
 }

@@ -8,14 +8,14 @@
 @prefix temporal_props: <https://rezateshnizi.com/rt-bi/temporal/props#> .
 @prefix world_props: <https://rezateshnizi.com/rt-bi/world/props#> .
 
-############## THE GRAPHS ##############
+############## THE DATASET ##############
 @prefix tower_bridge: <https://rezateshnizi.com/rt-bi/tower_bridge/> .
-
+# region [SPATIAL DEFS]
 @prefix x: <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/xs#> .
 @prefix y: <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/ys#> .
 @prefix pt: <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/pts#> .
 @prefix polygon: <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/polygons#> .
-# XS
+# region [XS]
 x:0 a rt_bi:X ;
 	spatial_props:x_val 0.0 .
 x:1 a rt_bi:X ;
@@ -36,7 +36,8 @@ x:8 a rt_bi:X ;
 	spatial_props:x_val 410.0 .
 x:9 a rt_bi:X ;
 	spatial_props:x_val 590.0 .
-# YS
+# endregion [XS]
+# region [YS]
 y:0 a rt_bi:Y ;
 	spatial_props:y_val 0.0 .
 y:1 a rt_bi:Y ;
@@ -53,7 +54,8 @@ y:6 a rt_bi:Y ;
 	spatial_props:y_val 80.0 .
 y:7 a rt_bi:Y ;
 	spatial_props:y_val 100.0 .
-# PTS
+# endregion [YS]
+# region [PTS]
 pt:0 a rt_bi:Pt ;
 	spatial_props:x x:0 ;
 	spatial_props:y y:0 .
@@ -114,7 +116,8 @@ pt:18 a rt_bi:Pt ;
 pt:19 a rt_bi:Pt ;
 	spatial_props:x x:5 ;
 	spatial_props:y y:3 .
-# SOUTH-BANK
+# endregion [PTS]
+# region [SOUTH-BANK]
 pt:20 a rt_bi:Pt ;
 	spatial_props:x x:6 ;
 	spatial_props:y y:4 .
@@ -133,7 +136,8 @@ pt:24 a rt_bi:Pt ;
 pt:25 a rt_bi:Pt ;
 	spatial_props:x x:7 ;
 	spatial_props:y y:4 .
-# NORTH-SHORE
+# endregion [SOUTH-BANK]
+# region [NORTH-SHORE]
 pt:26 a rt_bi:Pt ;
 	spatial_props:x x:8 ;
 	spatial_props:y y:6 .
@@ -152,7 +156,8 @@ pt:30 a rt_bi:Pt ;
 pt:31 a rt_bi:Pt ;
 	spatial_props:x x:9 ;
 	spatial_props:y y:6 .
-# POLYGONS
+# endregion [NORTH-SHORE]
+# region [POLYGONS]
 polygon:0 a rt_bi:Polygon ;
 	spatial_props:vertices [ a rt_bi:PtSeq ;
 		rt_bi:v_101 pt:0 ;
@@ -271,9 +276,12 @@ polygon:north_shore_street a rt_bi:Polygon ;
 		rt_bi:v_104 pt:30;
 	] .
 
+# endregion [POLYGONS]
+# endregion [SPATIAL DEFS]
+# region [TEMPORAL DEFS]
 @prefix t: <https://rezateshnizi.com/rt-bi/tower_bridge/temporal/ts#> .
 @prefix interval: <https://rezateshnizi.com/rt-bi/tower_bridge/temporal/intervals#> .
-# TS
+# region [TS]
 t:0 a rt_bi:Time ;
 	temporal_props:secs 0.0 .
 t:1 a rt_bi:Time ;
@@ -286,7 +294,8 @@ t:4 a rt_bi:Time ;
 	temporal_props:secs 40.0 .
 t:5 a rt_bi:Time ;
 	temporal_props:secs 50.0 .
-# INTERVALS
+# endregion [TS]
+# region [INTERVALS]
 interval:early_morning a rt_bi:Interval ;
 	temporal_props:min t:0 ;
 	temporal_props:max t:1 ;
@@ -313,6 +322,9 @@ interval:evening a rt_bi:Interval ;
 	temporal_props:include_min true ;
 	temporal_props:include_max false .
 
+# endregion [INTERVALS]
+# endregion [TEMPORAL DEFS]
+# region [TRAVERSABILITY DEFS]
 @prefix traversability: <https://rezateshnizi.com/rt-bi/tower_bridge/traversability#> .
 traversability:bridge a rt_bi:Traversability ;
 	world_props:legs true ;
@@ -327,6 +339,8 @@ traversability:river a rt_bi:Traversability ;
 	world_props:wheels false ;
 	world_props:swims true .
 
+# endregion [TRAVERSABILITY DEFS]
+# region [REGULAR SET DEFS]
 @prefix tower_bridge_definition: <https://rezateshnizi.com/rt-bi/tower_bridge/defintion/> .
 tower_bridge_definition:_101 a rt_bi:StaticSpace ;
 	world_props:traversability traversability:street ;
@@ -399,11 +413,12 @@ tower_bridge_definition:_111 a rt_bi:StaticSpace ;
 .
 tower_bridge_definition:_112 a rt_bi:AffineSpace ;
 	world_props:name "asset" ;
-	world_props:ros_node "/rt_bi_emulator/kn1" .
-
+	world_props:ros_node "/rt_bi_emulator/kn1" ;
+.
 tower_bridge_definition:_201 a rt_bi:RegularTime ;
 	world_props:name "mid-day" ;
 	world_props:color "YELLOW" ;
 	world_props:intervals
 		interval:mid_day ;
 .
+# endregion [REGULAR SET DEFS]

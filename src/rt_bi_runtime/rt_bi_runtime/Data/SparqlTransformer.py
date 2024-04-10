@@ -94,3 +94,7 @@ class PredicateToQueryStr:
 	@property
 	def polygonVarNames(self) -> str:
 		return "?polygonId ?vertInd ?x ?y"
+
+	@property
+	def intervalVarNames(self) -> str:
+		return "?min ?max ?include_min ?include_min"

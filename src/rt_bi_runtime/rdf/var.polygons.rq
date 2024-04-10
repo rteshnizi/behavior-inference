@@ -21,12 +21,13 @@ SELECT
 	?polygonId ?vertInd ?x ?y
 WHERE {
 	# SELECTOR START ###########################
-	?regularSetId world_props:polygons ?polygonId .
-	?polygonId spatial_props:vertices ?vertexSeq .
-	?vertexSeq ?vertInd ?vertex .
-	?vertex
-		spatial_props:x/spatial_props:x_val ?x ;
-		spatial_props:y/spatial_props:y_val ?y .
+	OPTIONAL { ?regularSetId world_props:polygons ?polygonId .
+		?polygonId spatial_props:vertices ?vertexSeq .
+		?vertexSeq ?vertInd ?vertex .
+		?vertex
+			spatial_props:x/spatial_props:x_val ?x ;
+			spatial_props:y/spatial_props:y_val ?y .
+	}
 	# SELECTOR END #############################
 }
 ORDER BY ?regularSetId ?polygonId ?vertInd
