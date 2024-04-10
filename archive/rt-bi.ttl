@@ -1,0 +1,173 @@
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<https://rezateshnizi.com/rt-bi/> a owl:Ontology ;
+	dc:title "The vocabulary used in RT Behavior Inference." ;
+	dc:date "2024-02-08" ;
+	dc:description "This is the RDF Schema for the terms in RT Behavior Automata, defined in the dissertation of Reza Teshnizi." .
+
+@prefix rt_bi: <https://rezateshnizi.com/rt-bi/> .
+# region [CLASSES]
+rt_bi:X a rdfs:Class .
+rt_bi:Y a rdfs:Class .
+rt_bi:Pt a rdfs:Class ;
+	rdfs:comment "Has an X and a Y" .
+rt_bi:PtSeq a rdfs:Class ;
+	rdfs:subClassOf rdf:Seq ;
+	rdfs:comment "To indicate to a human reader that the members are ordered points." .
+rt_bi:Polygon a rdfs:Class .
+rt_bi:StampedPolygon a rdfs:Class ;
+	rdfs:comment "The class of timestamped polygons." .
+rt_bi:Time a rdfs:Class .
+rt_bi:Interval a rdfs:Class .
+
+rt_bi:Subject a rdfs:Class .
+rt_bi:RegularSpace a rdfs:Class ;
+	rdfs:subClassOf rt_bi:Subject ;
+	rdfs:comment "The class of RegularSpace specifications." .
+rt_bi:RegularTime a rdfs:Class ;
+	rdfs:subClassOf rt_bi:Subject ;
+	rdfs:comment "The class of RegularTime specifications." .
+rt_bi:Traversability a rdfs:Class ;
+	rdfs:comment "The class of traversability specifications." .
+
+# region PtSeq members
+rt_bi:vertex a rdfs:Class ;
+	rdfs:subClassOf rdfs:ContainerMembershipProperty ;
+	rdfs:subPropertyOf rdfs:member ;
+	rdfs:domain rt_bi:PtSeq ;
+	rdfs:range rt_bi:Pt ;
+	rdfs:comment "A rt_bi:Pt whose order of placement in the container owning the point matters." .
+
+rt_bi:v_101 a rt_bi:vertex .
+rt_bi:v_102 a rt_bi:vertex .
+rt_bi:v_103 a rt_bi:vertex .
+rt_bi:v_104 a rt_bi:vertex .
+rt_bi:v_105 a rt_bi:vertex .
+rt_bi:v_106 a rt_bi:vertex .
+rt_bi:v_107 a rt_bi:vertex .
+rt_bi:v_108 a rt_bi:vertex .
+rt_bi:v_109 a rt_bi:vertex .
+rt_bi:v_110 a rt_bi:vertex .
+rt_bi:v_111 a rt_bi:vertex .
+rt_bi:v_112 a rt_bi:vertex .
+rt_bi:v_113 a rt_bi:vertex .
+rt_bi:v_114 a rt_bi:vertex .
+rt_bi:v_115 a rt_bi:vertex .
+rt_bi:v_116 a rt_bi:vertex .
+rt_bi:v_117 a rt_bi:vertex .
+rt_bi:v_118 a rt_bi:vertex .
+rt_bi:v_119 a rt_bi:vertex .
+rt_bi:v_120 a rt_bi:vertex .
+# endregion PtSeq members
+# endregion [CLASSES]
+# region [INSTANCES]
+rt_bi:StaticSpace a rdfs:Class ;
+	rdfs:subClassOf rt_bi:RegularSpace ;
+	rdfs:comment "A value indicating a static regions." .
+rt_bi:DynamicSpace a rdfs:Class ;
+	rdfs:subClassOf rt_bi:RegularSpace ;
+	rdfs:comment "A value indicating a dynamic regions. Dynamic regions have different accessibility values depending on time." .
+rt_bi:AffineSpace a rdfs:Class ;
+	rdfs:subClassOf rt_bi:RegularSpace ;
+	rdfs:comment "A value indicating a affine regions. Affine regions can move about the map." .
+# endregion [INSTANCES]
+@prefix temporal_props: <https://rezateshnizi.com/rt-bi/temporal/props#> .
+# region [TEMPORAL PROPS]
+temporal_props:secs a rdf:value ;
+	rdfs:domain rt_bi:Time ;
+	rdfs:range xsd:double ;
+	rdfs:comment "A time value in Seconds." .
+temporal_props:min a rdf:Property ;
+	rdfs:domain rt_bi:Interval ;
+	rdfs:range rt_bi:Time ;
+	rdfs:comment "The min bound of a time interval." .
+temporal_props:max a rdf:Property ;
+	rdfs:domain rt_bi:Interval ;
+	rdfs:range rt_bi:Time ;
+	rdfs:comment "The max bound of a time interval." .
+temporal_props:include_min a rdf:Property ;
+	rdfs:domain rt_bi:Interval ;
+	rdfs:range xsd:boolean ;
+	rdfs:comment "Whether the min bound is included in the interval" .
+temporal_props:include_max a rdf:Property ;
+	rdfs:domain rt_bi:Interval ;
+	rdfs:range xsd:boolean ;
+	rdfs:comment "Whether the max bound is included in the interval" .
+temporal_props:timestamp a rdf:Property ;
+	rdfs:domain rt_bi:StampedPolygon ;
+	rdfs:range rt_bi:Time ;
+	rdfs:comment "The timestamp associated with a polygon" .
+# endregion [TEMPORAL PROPS]
+@prefix spatial_props: <https://rezateshnizi.com/rt-bi/spatial/props#> .
+# region [SPATIAL PROPS]
+spatial_props:vertices a rdf:Property ;
+	rdfs:domain rt_bi:Polygon ;
+	rdfs:domain rt_bi:StampedPolygon ;
+	rdfs:range rt_bi:PtSeq ;
+	rdfs:comment "The vertices of a polygon." .
+spatial_props:x a rdf:Property ;
+	rdfs:domain rt_bi:Pt ;
+	rdfs:range rt_bi:X ;
+	rdfs:comment "The x Coordinate." .
+spatial_props:y a rdf:Property ;
+	rdfs:domain rt_bi:Pt ;
+	rdfs:range rt_bi:Y ;
+	rdfs:comment "The y Coordinate." .
+spatial_props:x_val a rdf:value ;
+	rdfs:domain rt_bi:X ;
+	rdfs:range xsd:double ;
+	rdfs:comment "Some x value." .
+spatial_props:y_val a rdf:value ;
+	rdfs:domain rt_bi:Y ;
+	rdfs:range xsd:double ;
+	rdfs:comment "Some y value." .
+# endregion [SPATIAL PROPS]
+@prefix world_props: <https://rezateshnizi.com/rt-bi/world/props#> .
+# region [WORLD PROPS]
+world_props:name a rdfs:label ;
+	rdfs:domain rt_bi:Subject ;
+	rdfs:range xsd:string ;
+	rdfs:comment "The name of this subject." .
+world_props:color a rdf:Property ;
+	rdfs:domain rt_bi:Subject ;
+	rdfs:range xsd:string ;
+	rdfs:comment "Color to describe this area (and use in render)." .
+world_props:polygons a rdf:Property ;
+	rdfs:domain rt_bi:RegularSpace ;
+	rdfs:range rt_bi:Polygon .
+world_props:intervals a rdf:Property ;
+	rdfs:domain rt_bi:RegularTime ;
+	rdfs:range rt_bi:Interval .
+world_props:traversability a rdf:Property ;
+	rdfs:domain rt_bi:RegularSpace ;
+	rdfs:range rt_bi:Traversability ;
+	rdfs:comment "The range of this property is a traversability specification." .
+world_props:accessible_times a rdf:Property ;
+	rdfs:domain rt_bi:DynamicSpace ;
+	rdfs:range rt_bi:Interval .
+world_props:legs a rdf:Property ;
+	rdfs:domain rt_bi:Traversability ;
+	rdfs:range xsd:boolean ;
+	rdfs:comment "Whether the agent moves on legs." .
+world_props:wheels a rdf:Property ;
+	rdfs:domain rt_bi:Traversability ;
+	rdfs:range xsd:boolean ;
+	rdfs:comment "Whether the agent moves on wheels." .
+world_props:swims a rdf:Property ;
+	rdfs:domain rt_bi:Traversability ;
+	rdfs:range xsd:boolean ;
+	rdfs:comment "Whether the agent moves through water." .
+world_props:ros_node a rdf:Property ;
+	rdfs:domain rt_bi:AffineSpace ;
+	rdfs:range xsd:string ;
+	rdfs:comment "The name of the ROS node publishing updates for this subject." .
+world_props:stamped_polygons a rdf:Property ;
+	rdfs:domain rt_bi:AffineSpace ;
+	rdfs:range rt_bi:StampedPolygon ;
+	rdfs:comment "A polygon and timestamp." .
+
+# endregion [WORLD PROPS]
