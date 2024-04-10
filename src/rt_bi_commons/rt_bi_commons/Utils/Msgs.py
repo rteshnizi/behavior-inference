@@ -1,5 +1,5 @@
 from collections.abc import Sequence
-from typing import AbstractSet, Final, cast, overload
+from typing import AbstractSet, Final, cast
 
 from rclpy.clock import Time
 
@@ -79,8 +79,9 @@ class Msgs:
 		return [(p.x, p.y) for p in pts]
 
 	@classmethod
-	def toStdPoint(cls, pose: Pose) -> Geometry.Point32:
-		return cls.Geometry.Point32(x=pose.x, y=pose.y, z=0.0)
+	def toStdPoint(cls, p: Pose | Coords) -> Geometry.Point32:
+		if isinstance(p, Pose): return cls.Geometry.Point32(x=p.x, y=p.y, z=0.0)
+		return cls.Geometry.Point32(x=p[0], y=p[1], z=0.0)
 
 	@classmethod
 	def toStdPose(cls, pose: Pose) -> Geometry.Pose:
@@ -96,7 +97,8 @@ class Msgs:
 	@classmethod
 	def toStdPolygon(cls, poly: Shapely.Polygon | RtBi.Polygon) -> Geometry.Polygon:
 		if isinstance(poly, cls.RtBi.Polygon): return poly.region
-		msg = cls.Geometry.Polygon(points=[cls.Geometry.Point32(x=p[0], y=p[1], z=0.0) for p in GeometryLib.getGeometryCoords(poly)])
+		points = [cls.Geometry.Point32(x=p[0], y=p[1], z=0.0) for p in GeometryLib.getGeometryCoords(poly)]
+		msg = cls.Geometry.Polygon(points=points)
 		return msg
 
 	@classmethod
