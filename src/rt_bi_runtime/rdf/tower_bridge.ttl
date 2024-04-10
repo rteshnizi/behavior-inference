@@ -342,7 +342,7 @@ traversability:river a rt_bi:Traversability ;
 # endregion [TRAVERSABILITY DEFS]
 # region [REGULAR SET DEFS]
 @prefix tower_bridge_definition: <https://rezateshnizi.com/rt-bi/tower_bridge/defintion/> .
-tower_bridge_definition:_101 a rt_bi:StaticSpace ;
+tower_bridge_definition:101 a rt_bi:StaticSpace ;
 	world_props:traversability traversability:street ;
 	world_props:color "GREY" ;
 	world_props:polygons
@@ -350,13 +350,13 @@ tower_bridge_definition:_101 a rt_bi:StaticSpace ;
 		polygon:2 ,
 		polygon:4 ;
 .
-tower_bridge_definition:_102 a rt_bi:StaticSpace ;
+tower_bridge_definition:102 a rt_bi:StaticSpace ;
 	world_props:traversability traversability:bridge ;
 	world_props:color "WHITE" ;
 	world_props:polygons
 		polygon:3 ;
 .
-tower_bridge_definition:_103 a rt_bi:DynamicSpace ;
+tower_bridge_definition:103 a rt_bi:DynamicSpace ;
 	world_props:name "tower-bridge" ;
 	world_props:traversability traversability:bridge ;
 	world_props:color "WHITE" ;
@@ -366,14 +366,14 @@ tower_bridge_definition:_103 a rt_bi:DynamicSpace ;
 		interval:morning ,
 		interval:afternoon ;
 .
-tower_bridge_definition:_104 a rt_bi:StaticSpace ;
+tower_bridge_definition:104 a rt_bi:StaticSpace ;
 	world_props:traversability traversability:river ;
 	world_props:color "BLUE_LIGHT" ;
 	world_props:polygons
 		polygon:1 ,
 		polygon:6 ;
 .
-tower_bridge_definition:_105 a rt_bi:DynamicSpace ;
+tower_bridge_definition:105 a rt_bi:DynamicSpace ;
 	world_props:traversability traversability:river ;
 	world_props:color "BLUE_LIGHT" ;
 	world_props:polygons
@@ -383,39 +383,39 @@ tower_bridge_definition:_105 a rt_bi:DynamicSpace ;
 		interval:mid_day ,
 		interval:evening ;
 .
-tower_bridge_definition:_108 a rt_bi:StaticSpace ;
+tower_bridge_definition:108 a rt_bi:StaticSpace ;
 	world_props:name "south-bank" ;
 	world_props:traversability traversability:street ;
 	world_props:color "PURPLE" ;
 	world_props:polygons
 		polygon:south_bank_street ;
 .
-tower_bridge_definition:_109 a rt_bi:StaticSpace ;
+tower_bridge_definition:109 a rt_bi:StaticSpace ;
 	world_props:name "south-bank" ;
 	world_props:traversability traversability:river ;
 	world_props:color "PURPLE" ;
 	world_props:polygons
 		polygon:south_bank_river ;
 .
-tower_bridge_definition:_110 a rt_bi:StaticSpace ;
+tower_bridge_definition:110 a rt_bi:StaticSpace ;
 	world_props:name "north-shore" ;
 	world_props:traversability traversability:street ;
 	world_props:color "PURPLE" ;
 	world_props:polygons
 		polygon:north_shore_street ;
 .
-tower_bridge_definition:_111 a rt_bi:StaticSpace ;
+tower_bridge_definition:111 a rt_bi:StaticSpace ;
 	world_props:name "north-shore" ;
 	world_props:traversability traversability:river ;
 	world_props:color "PURPLE" ;
 	world_props:polygons
 		polygon:north_shore_river ;
 .
-tower_bridge_definition:_112 a rt_bi:AffineSpace ;
-	world_props:name "asset" ;
-	world_props:ros_node "/rt_bi_emulator/kn1" ;
+tower_bridge_definition:king a rt_bi:AffineSpace ;
+	world_props:name "king" ;
+	world_props:ros_node "/rt_bi_emulator/king" ;
 .
-tower_bridge_definition:_201 a rt_bi:RegularTime ;
+tower_bridge_definition:201 a rt_bi:RegularTime ;
 	world_props:name "mid-day" ;
 	world_props:color "YELLOW" ;
 	world_props:intervals

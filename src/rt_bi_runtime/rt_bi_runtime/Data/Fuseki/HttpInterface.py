@@ -123,9 +123,16 @@ class HttpInterface:
 					raise ValueError(f"Unexpected predicate value: {val}")
 				predicate.value = val
 			else:
-				predicate.value = Msgs.RtBi.Predicate.INHERIT
+				predicate.value = Msgs.RtBi.Predicate.FALSE
 			predicates.append(predicate)
 		return predicates
+
+	def __parseSpaceType(self, helper: SparqlResultHelper, i: int) -> str:
+		t = helper.strVarValue(i, "setType")
+		if t.endswith("StaticSpace"): return Msgs.RtBi.RegularSpace.STATIC
+		if t.endswith("DynamicSpace"): return Msgs.RtBi.RegularSpace.DYNAMIC
+		if t.endswith("AffineSpace"): return Msgs.RtBi.RegularSpace.AFFINE
+		raise ValueError(f"Unexpected spatial set type: {t}")
 
 	def staticReachability(self, queryStr: str, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
 		Ros.Log(queryStr)
@@ -138,6 +145,7 @@ class HttpInterface:
 				msg = Msgs.RtBi.RegularSpace()
 				msg.id = helper.strVarValue(i, "regularSetId")
 				msg.stamp = stamp
+				msg.space_type = self.__parseSpaceType(helper, i)
 				msg.predicates = self.__parsePredicates(helper, i)
 				(msg.polygons, i) = self.__parsePolygons(helper, i, msg.id)
 				Ros.AppendMessage(res.spatial_matches, msg)

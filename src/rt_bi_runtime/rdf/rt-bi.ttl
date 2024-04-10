@@ -10,7 +10,7 @@
 	dc:description "This is the RDF Schema for the terms in RT Behavior Automata, defined in the dissertation of Reza Teshnizi." .
 
 @prefix rt_bi: <https://rezateshnizi.com/rt-bi/> .
-# region Class definitions
+# region [CLASSES]
 rt_bi:X a rdfs:Class .
 rt_bi:Y a rdfs:Class .
 rt_bi:Pt a rdfs:Class ;
@@ -19,7 +19,6 @@ rt_bi:PtSeq a rdfs:Class ;
 	rdfs:subClassOf rdf:Seq ;
 	rdfs:comment "To indicate to a human reader that the members are ordered points." .
 rt_bi:Polygon a rdfs:Class .
-
 rt_bi:Time a rdfs:Class .
 rt_bi:Interval a rdfs:Class .
 
@@ -62,9 +61,8 @@ rt_bi:v_118 a rt_bi:vertex .
 rt_bi:v_119 a rt_bi:vertex .
 rt_bi:v_120 a rt_bi:vertex .
 # endregion PtSeq members
-
-# endregion Class definitions
-# region Class instances
+# endregion [CLASSES]
+# region [INSTANCES]
 rt_bi:StaticSpace a rdfs:Class ;
 	rdfs:subClassOf rt_bi:RegularSpace ;
 	rdfs:comment "A value indicating a static regions." .
@@ -74,10 +72,9 @@ rt_bi:DynamicSpace a rdfs:Class ;
 rt_bi:AffineSpace a rdfs:Class ;
 	rdfs:subClassOf rt_bi:RegularSpace ;
 	rdfs:comment "A value indicating a affine regions. Affine regions can move about the map." .
-# endregion Class instances
-
+# endregion [INSTANCES]
 @prefix temporal_props: <https://rezateshnizi.com/rt-bi/temporal/props#> .
-# region temporal
+# region [TEMPORAL PROPS]
 temporal_props:secs a rdf:value ;
 	rdfs:domain rt_bi:Time ;
 	rdfs:range xsd:double ;
@@ -98,9 +95,9 @@ temporal_props:include_max a rdf:Property ;
 	rdfs:domain rt_bi:Interval ;
 	rdfs:range xsd:boolean ;
 	rdfs:comment "Whether the max bound is included in the interval" .
-# endregion temporal
+# endregion [TEMPORAL PROPS]
 @prefix spatial_props: <https://rezateshnizi.com/rt-bi/spatial/props#> .
-# region spatial
+# region [SPATIAL PROPS]
 spatial_props:vertices a rdf:Property ;
 	rdfs:domain rt_bi:Polygon ;
 	rdfs:range rt_bi:PtSeq ;
@@ -121,9 +118,9 @@ spatial_props:y_val a rdf:value ;
 	rdfs:domain rt_bi:Y ;
 	rdfs:range xsd:double ;
 	rdfs:comment "Some y value." .
-# endregion spatial
+# endregion [SPATIAL PROPS]
 @prefix world_props: <https://rezateshnizi.com/rt-bi/world/props#> .
-# region world
+# region [WORLD PROPS]
 world_props:name a rdfs:label ;
 	rdfs:domain rt_bi:Subject ;
 	rdfs:range xsd:string ;
@@ -158,7 +155,7 @@ world_props:swims a rdf:Property ;
 	rdfs:range xsd:boolean ;
 	rdfs:comment "Whether the agent moves through water." .
 world_props:ros_node a rdf:Property ;
-	rdfs:domain rt_bi:Subject ;
+	rdfs:domain rt_bi:AffineSpace ;
 	rdfs:range xsd:string ;
 	rdfs:comment "The name of the ROS node publishing updates for this subject." .
-# endregion world
+# endregion [WORLD PROPS]
