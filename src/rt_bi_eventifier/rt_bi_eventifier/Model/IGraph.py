@@ -7,12 +7,12 @@ from rt_bi_commons.Utils.Msgs import Msgs
 from rt_bi_commons.Utils.NetworkX import NxUtils
 from rt_bi_commons.Utils.RViz import ColorNames, RViz
 from rt_bi_core.Spatial import GraphPolygon, MapPolygon
+from rt_bi_core.Spatial.ContinuousTimePolygon import ContinuousTimePolygon
 from rt_bi_core.Spatial.MovingPolygon import MovingPolygon
 from rt_bi_core.Spatial.SensingPolygon import SensingPolygon
 from rt_bi_core.Spatial.StaticPolygon import StaticPolygon
 from rt_bi_eventifier.Model.ConnectivityGraph import ConnectivityGraph
 from rt_bi_eventifier.Model.ContinuousTimeCollisionDetection import ContinuousTimeCollisionDetection as CtCd
-from rt_bi_eventifier.Model.ContinuousTimeRegion import ContinuousTimeRegion
 from rt_bi_eventifier.Model.EventAggregator import EventAggregator
 
 
@@ -52,7 +52,7 @@ class ShadowTree(NxUtils.Graph[GraphPolygon]):
 		""" The reason this is a list of lists is that the time of event is relative to the time between. """
 		(self.__graphPublisher, self.__eventPublisher) = eventPublishers
 		self.__rvizPublishers = rvizPublishers
-		self.__ctrs: dict[MovingPolygon.Id, ContinuousTimeRegion[GraphPolygon]] = {}
+		self.__ctrs: dict[MovingPolygon.Id, ContinuousTimePolygon[GraphPolygon]] = {}
 
 	@property
 	def length(self) -> int:
@@ -343,19 +343,19 @@ class ShadowTree(NxUtils.Graph[GraphPolygon]):
 		idSansTime = poly.id.sansTime()
 		Ros.Log(f"Updating CTR: {idSansTime.shortNames()}.")
 		if idSansTime not in self.__ctrs:
-			self.__ctrs[idSansTime] = ContinuousTimeRegion(polyConfigs=[poly])
+			self.__ctrs[idSansTime] = ContinuousTimePolygon(polyConfigs=[poly])
 			return
 
 		self.__ctrs[idSansTime].addPolygon(poly, self.processedTime)
 		return
 
 	def __latestNanoSecsBounds(self) -> tuple[int, int]:
-		minNs = ContinuousTimeRegion.INF_NS + 1
+		minNs = ContinuousTimePolygon.INF_NS + 1
 		maxNs = -1
 		for ctr in self.__ctrs.values():
 			if ctr.latestNanoSecs < minNs:
 				minNs = ctr.latestNanoSecs
-			if ctr.latestNanoSecs != ContinuousTimeRegion.INF_NS and ctr.latestNanoSecs > maxNs:
+			if ctr.latestNanoSecs != ContinuousTimePolygon.INF_NS and ctr.latestNanoSecs > maxNs:
 				maxNs = ctr.latestNanoSecs
 		return (minNs, maxNs)
 

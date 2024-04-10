@@ -11,10 +11,10 @@ from rt_bi_core.Spatial.SensingPolygon import SensingPolygon
 from rt_bi_core.Spatial.StaticPolygon import StaticPolygon
 
 _T_Poly = TypeVar("_T_Poly", bound=GraphPolygon)
-class ContinuousTimeRegion(Generic[_T_Poly]):
+class ContinuousTimePolygon(Generic[_T_Poly]):
 	INF_NS: Final[int] = 2 ** 100
-	__MAX_HISTORY = 2
-	def __init__(self, polyConfigs: list[_T_Poly]) -> None:
+	def __init__(self, polyConfigs: list[_T_Poly], historyDepth = 2) -> None:
+		self.__MAX_HISTORY: Final[int] = historyDepth
 		self.__sortedConfigs: list[_T_Poly] = []
 		for poly in polyConfigs: self.addPolygon(poly, -1)
 		return
@@ -38,25 +38,17 @@ class ContinuousTimeRegion(Generic[_T_Poly]):
 		Shapely.Polygon
 			The shape.
 		"""
-		if self.length == 0: raise ValueError("Empty CTR.")
-		if self.earliestNanoSecs == -1: raise ValueError(f"earliestNanoSecs is not set in {self.name}.")
-		if self.latestNanoSecs == -1: raise ValueError(f"latestNanoSecs is not set in {self.name}.")
-
+		index = self.timeNanoSecsToIndex(timeNanoSecs) # This tests for edge-cases as well
 		if self.isStatic: return self.configs[0]
-
-		if timeNanoSecs < self.earliestNanoSecs: raise IndexError(f"{timeNanoSecs} is less than earliestNanoSecs={self.earliestNanoSecs} in {self.name}.")
-		if timeNanoSecs > self.latestNanoSecs: raise IndexError(f"{timeNanoSecs} is greater than latestNanoSecs={self.latestNanoSecs} in {self.name}.")
 		if timeNanoSecs == self.earliestNanoSecs: return self.configs[0]
-		if timeNanoSecs == self.latestNanoSecs: return self.configs[-1]
-		i = 0
-		for i in range(self.length):
-			if timeNanoSecs <= self.configs[i].timeNanoSecs: break
-		param = self.__getParameterizedTime(i - 1, timeNanoSecs)
-		if isnan(param):
-			return self.configs[i - 1]
-		transform = GeometryLib.getParameterizedAffineTransformation(self.__transformation(), param)
-		cor = GeometryLib.applyMatrixTransformToCoords(transform, self.configs[i - 1].centerOfRotation)
-		poly = GeometryLib.applyMatrixTransformToPolygon(transform, self.configs[i - 1].interior)
+		if timeNanoSecs == self.latestNanoSecs: return self.configs[self.length - 1]
+
+		param = self.__getParameterizedTime(index, timeNanoSecs)
+		if isnan(param): return self.configs[index]
+
+		transform = GeometryLib.getParameterizedAffineTransformation(self.__transformation(index), param)
+		cor = GeometryLib.applyMatrixTransformToCoords(transform, self.configs[index].centerOfRotation)
+		poly = GeometryLib.applyMatrixTransformToPolygon(transform, self.configs[index].interior)
 		kwArgs: dict[PolygonFactoryKeys, Any] = {
 			"polygonId": self.id.polygonId,
 			"regionId": self.id.regionId,
@@ -69,11 +61,10 @@ class ContinuousTimeRegion(Generic[_T_Poly]):
 			"predicates": self.predicates,
 		}
 		if self.type == SensingPolygon.type:
-			kwArgs["tracklets"] = cast(SensingPolygon, self.configs[i - 1]).tracklets
+			kwArgs["tracklets"] = cast(SensingPolygon, self.configs[index]).tracklets
 			Cls = SensingPolygon
 		elif self.isStatic:
-			kwArgs.pop("centerOfRotation", None)
-			kwArgs["timeNanoSecs"] = self.configs[i - 1].timeNanoSecs
+			kwArgs["timeNanoSecs"] = self.configs[index].timeNanoSecs
 			Cls = StaticPolygon
 		elif self.type == MovingPolygon.type:
 			Cls = MovingPolygon
@@ -138,7 +129,21 @@ class ContinuousTimeRegion(Generic[_T_Poly]):
 	def isStatic(self) -> bool:
 		return self.type == StaticPolygon.type
 
-	def __getParameterizedTime(self, i: int, timeNanoSecs: int) -> float:
+	def timeNanoSecsToIndex(self, timeNanoSecs: int) -> int:
+		if self.length == 0: raise ValueError("Empty CTR.")
+		if self.earliestNanoSecs == -1: raise ValueError(f"earliestNanoSecs is not set in {self.name}.")
+		if self.latestNanoSecs == -1: raise ValueError(f"latestNanoSecs is not set in {self.name}.")
+
+		if self.isStatic: return 0
+
+		if timeNanoSecs < self.earliestNanoSecs: raise IndexError(f"{timeNanoSecs} is less than earliestNanoSecs={self.earliestNanoSecs} in {self.name}.")
+		if timeNanoSecs > self.latestNanoSecs: raise IndexError(f"{timeNanoSecs} is greater than latestNanoSecs={self.latestNanoSecs} in {self.name}.")
+		i = 0
+		for i in range(self.length):
+			if timeNanoSecs < self.configs[i].timeNanoSecs: break
+		return i - 1
+
+	def __getParameterizedTime(self, index: int, timeNanoSecs: int) -> float:
 		"""### Get Parameterized Time
 		Given a time, returns it as a fraction of the interval between `self.__configs[i]` and `self.__configs[i + 1]`.
 
@@ -155,21 +160,29 @@ class ContinuousTimeRegion(Generic[_T_Poly]):
 			A number in the range `[0, 1]`, or `nan` if the two ends of the interval are the same.
 		"""
 		if self.length < 2: return nan
-		frac = timeNanoSecs - self.configs[i].timeNanoSecs
-		total = self.configs[i + 1].timeNanoSecs - self.configs[i].timeNanoSecs
+		frac = timeNanoSecs - self.configs[index].timeNanoSecs
+		total = self.configs[index + 1].timeNanoSecs - self.configs[index].timeNanoSecs
 		if total == 0: return nan
 		return (float(frac) / float(total))
 
-	def __transformation(self) -> AffineTransform:
-		return GeometryLib.getAffineTransformation(self.configs[0].envelope, self.configs[-1].envelope)
+	def __transformation(self, index: int) -> AffineTransform:
+		return GeometryLib.getAffineTransformation(self.configs[index].envelope, self.configs[index + 1].envelope)
 
 	def __transformationAt(self, timeNanoSecs: int) -> AffineTransform:
 		assert timeNanoSecs in self, f"Requested time {timeNanoSecs} is out of range: {self.name} -- {self.earliestNanoSecs}-{self.latestNanoSecs}"
 		if self.length == 1: return GeometryLib.getAffineTransformation(None, None)
 
-		frac = self.__getParameterizedTime(0, timeNanoSecs)
-		transformationAtT = GeometryLib.getParameterizedAffineTransformation(self.__transformation(), frac)
+		index = self.timeNanoSecsToIndex(timeNanoSecs)
+		param = self.__getParameterizedTime(index, timeNanoSecs)
+		if isnan(param): return GeometryLib.getAffineTransformation(None, None)
+		transform = self.__transformation(index)
+		transformationAtT = GeometryLib.getParameterizedAffineTransformation(transform, param)
 		return transformationAtT
+
+	def getCenterOfRotationAt(self, timeNanoSecs: int) -> GeometryLib.Coords:
+		index = self.timeNanoSecsToIndex(timeNanoSecs)
+		transform = self.__transformationAt(timeNanoSecs)
+		return GeometryLib.applyMatrixTransformToCoords(transform, self.configs[index].centerOfRotation)
 
 	def getEdgeBb(self, edge: Shapely.LineString, upToNs: int) -> Shapely.Polygon | Shapely.LineString:
 		"""Get Edge Bounding Box
@@ -179,15 +192,16 @@ class ContinuousTimeRegion(Generic[_T_Poly]):
 		:rtype: `Shapely.Polygon` or `Shapely.LineString`
 		"""
 		if self.isStatic: return edge
+		index = self.timeNanoSecsToIndex(upToNs)
 		transform = self.__transformationAt(upToNs)
-		return GeometryLib.getLineSegmentExpandedBb(transform, edge, self.configs[0].centerOfRotation)
+		return GeometryLib.getLineSegmentExpandedBb(transform, edge, self.configs[index].centerOfRotation)
 
 	def getEdgeAt(self, edge: Shapely.LineString, timeNanoSecs: int) -> Shapely.LineString:
 		if self.isStatic or self.length == 1: return edge
 		transform = self.__transformationAt(timeNanoSecs)
 		return GeometryLib.applyMatrixTransformToLineString(transform, edge)
 
-	def addPolygon(self, polygon: _T_Poly, keepFromNs: int) -> None:
+	def addPolygon(self, polygon: _T_Poly, keepFromNs: int = -1) -> None:
 		if self.length > 0:
 			assert self.id.sansTime() == polygon.id.sansTime(), (
 				f"Different ids in poly configs. {self.id} vs {polygon.id}. " +
@@ -196,9 +210,12 @@ class ContinuousTimeRegion(Generic[_T_Poly]):
 		self.__sortedConfigs.append(polygon)
 		self.__sortedConfigs = sorted(self.__sortedConfigs, key=lambda p: p.timeNanoSecs)
 
-		if len(self.__sortedConfigs) > self.__MAX_HISTORY:
-			popIndex = 1
-			if self.__sortedConfigs[1].timeNanoSecs <= keepFromNs: popIndex = 0
+		if self.length > self.__MAX_HISTORY:
+			popIndex = 0
+			for i in range(1, self.length):
+				if self.__sortedConfigs[i].timeNanoSecs >= keepFromNs:
+					popIndex = i - 1
+					break
 			c = self.__sortedConfigs.pop(popIndex)
 			Ros.Log(f"Dropping from {self.name}: {c.timeNanoSecs}")
 		return
