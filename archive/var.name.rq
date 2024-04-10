@@ -18,10 +18,12 @@ PREFIX y:              <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/ys#>
 
 SELECT
 	?regularSetId
-	?color
+	?name
 WHERE {
-	# SELECTOR START ###########################
-	OPTIONAL { ?regularSetId world_props:color ?color . }
-	# SELECTOR END #############################
+	GRAPH tower_bridge:definition {
+		# SELECTOR START ###########################
+		OPTIONAL { ?regularSetId a ?namespace ; world_props:name ?name . }
+		# SELECTOR END #############################
+	}
 }
 ORDER BY ?regularSetId

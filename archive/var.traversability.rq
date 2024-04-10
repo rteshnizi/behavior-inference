@@ -18,10 +18,19 @@ PREFIX y:              <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/ys#>
 
 SELECT
 	?regularSetId
-	?color
+	?legs ?wheels ?swim
 WHERE {
-	# SELECTOR START ###########################
-	OPTIONAL { ?regularSetId world_props:color ?color . }
-	# SELECTOR END #############################
+	GRAPH tower_bridge:definition {
+		# SELECTOR START ###########################
+		OPTIONAL { ?regularSetId a ?namespace ; world_props:traversability ?traversability ;
+			GRAPH tower_bridge:traversabilities {
+				?traversability
+					world_props:legs ?legs ;
+					world_props:wheels ?wheels ;
+					world_props:swims ?swims .
+			}
+		}
+		# SELECTOR END #############################
+	}
 }
 ORDER BY ?regularSetId

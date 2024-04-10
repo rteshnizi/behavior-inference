@@ -17,20 +17,16 @@ PREFIX xsd:            <http://www.w3.org/2001/XMLSchema#>
 PREFIX y:              <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/ys#>
 
 SELECT
-	?regularRegionId
+	?regularSetId
 	?polygonId ?vertInd ?x ?y
 WHERE {
-	GRAPH tower_bridge:definition {
-		# SELECTOR START ###########################
-		?regularRegionId a rt_bi:RegularSpace ; world_props:polygons ?polygonId ;
-			GRAPH tower_bridge:spatial {
-				?polygonId spatial_props:vertices ?vertexSeq .
-				?vertexSeq ?vertInd ?vertex .
-				?vertex
-					spatial_props:x/spatial_props:x_val ?x ;
-					spatial_props:y/spatial_props:y_val ?y .
-			}
-		# SELECTOR END #############################
-	}
+	# SELECTOR START ###########################
+	?regularSetId world_props:polygons ?polygonId .
+	?polygonId spatial_props:vertices ?vertexSeq .
+	?vertexSeq ?vertInd ?vertex .
+	?vertex
+		spatial_props:x/spatial_props:x_val ?x ;
+		spatial_props:y/spatial_props:y_val ?y .
+	# SELECTOR END #############################
 }
-ORDER BY ?regularRegionId ?polygonId ?vertInd
+ORDER BY ?regularSetId ?polygonId ?vertInd

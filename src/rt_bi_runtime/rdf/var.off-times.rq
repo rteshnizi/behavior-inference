@@ -17,21 +17,19 @@ PREFIX xsd:            <http://www.w3.org/2001/XMLSchema#>
 PREFIX y:              <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/ys#>
 
 SELECT
-	?regularRegionId
+	?regularSetId
 	?min ?max ?include_min ?include_max
 WHERE {
-	GRAPH tower_bridge:definition {
-		# SELECTOR START ###########################
-		OPTIONAL { ?regularRegionId a ?namespace ; world_props:off_times ?intervalId ;
-			GRAPH tower_bridge:temporal {
-				?intervalId
-					temporal_props:min/temporal_props:secs ?min ;
-					temporal_props:max/temporal_props:secs ?max ;
-					temporal_props:include_min ?include_min ;
-					temporal_props:include_max ?include_max .
-			}
+	# SELECTOR START ###########################
+	OPTIONAL { ?regularSetId a ?namespace ; world_props:accessible_times ?intervalId ;
+		GRAPH tower_bridge:temporal {
+			?intervalId
+				temporal_props:min/temporal_props:secs ?min ;
+				temporal_props:max/temporal_props:secs ?max ;
+				temporal_props:include_min ?include_min ;
+				temporal_props:include_max ?include_max .
 		}
-		# SELECTOR END #############################
 	}
+	# SELECTOR END #############################
 }
-ORDER BY ?regularRegionId
+ORDER BY ?regularSetId

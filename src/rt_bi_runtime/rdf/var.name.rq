@@ -17,13 +17,11 @@ PREFIX xsd:            <http://www.w3.org/2001/XMLSchema#>
 PREFIX y:              <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/ys#>
 
 SELECT
-	?regularRegionId
+	?regularSetId
 	?name
 WHERE {
-	GRAPH tower_bridge:definition {
-		# SELECTOR START ###########################
-		OPTIONAL { ?regularRegionId a ?namespace ; world_props:name ?name . }
-		# SELECTOR END #############################
-	}
+	# SELECTOR START ###########################
+	OPTIONAL { ?regularSetId world_props:name ?name . }
+	# SELECTOR END #############################
 }
-ORDER BY ?regularRegionId
+ORDER BY ?regularSetId

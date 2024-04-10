@@ -2,7 +2,7 @@ rt_bi_runtime:
   dd_rdf_1:
     ros__parameters:
       fuseki_server: "http://192.168.1.164:8090"
-      rdf_store: "rt-bi"
+      rdf_store: "rt-bi-dev"
       rdf_dir: "rdf"
       sparql_dir: "rdf"
       sparql_query_template: "template.spatial.rq"
@@ -12,10 +12,10 @@ rt_bi_runtime:
         - '["off-times", "var.off-times.rq"]'
         - '["polygons", "var.polygons.rq"]'
         - '["traversability", "var.traversability.rq"]'
-      placeholder_bind_comment: "# BIND END #################################"
-      placeholder_order_by_comment: "# OTHER ORDER VARS #######"
-      placeholder_selector_end_comment: "# SELECTOR END #############################"
-      placeholder_selector_start_comment: "# SELECTOR START ###########################"
-      placeholder_variable_comment: "# SELECTED VARIABLES ###########################"
+      placeholder_bind: "# BIND END #################################"
+      placeholder_order_by: "# OTHER ORDER VARS #######"
+      placeholder_selector_end: "# SELECTOR END #############################"
+      placeholder_selector_start: "# SELECTOR START ###########################"
+      placeholder_variables: "# SELECTED VARIABLES ###########################"
       transition_grammar_dir: "rdf"
       transition_grammar_file: "transition.lark"

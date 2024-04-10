@@ -18,10 +18,19 @@ PREFIX y:              <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/ys#>
 
 SELECT
 	?regularSetId
-	?color
+	?polygonId ?vertInd ?x ?y
 WHERE {
-	# SELECTOR START ###########################
-	OPTIONAL { ?regularSetId world_props:color ?color . }
-	# SELECTOR END #############################
+	GRAPH tower_bridge:definition {
+		# SELECTOR START ###########################
+		?regularSetId a rt_bi:RegularSpace ; world_props:polygons ?polygonId ;
+			GRAPH tower_bridge:spatial {
+				?polygonId spatial_props:vertices ?vertexSeq .
+				?vertexSeq ?vertInd ?vertex .
+				?vertex
+					spatial_props:x/spatial_props:x_val ?x ;
+					spatial_props:y/spatial_props:y_val ?y .
+			}
+		# SELECTOR END #############################
+	}
 }
-ORDER BY ?regularSetId
+ORDER BY ?regularSetId ?polygonId ?vertInd

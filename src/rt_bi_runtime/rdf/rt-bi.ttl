@@ -121,10 +121,6 @@ spatial_props:y_val a rdf:value ;
 	rdfs:domain rt_bi:Y ;
 	rdfs:range xsd:double ;
 	rdfs:comment "Some y value." .
-spatial_props:type a rdf:Property ;
-	rdfs:domain rt_bi:RegularSpace ;
-	rdfs:range xsd:string ;
-	rdfs:comment "The type of the space: static, dynamic, affine. Dynamic region's accessibility depends on time. Affine broadcasts its own location" .
 # endregion spatial
 @prefix world_props: <https://rezateshnizi.com/rt-bi/world/props#> .
 # region world
@@ -142,13 +138,13 @@ world_props:polygons a rdf:Property ;
 world_props:intervals a rdf:Property ;
 	rdfs:domain rt_bi:RegularTime ;
 	rdfs:range rt_bi:Interval .
-world_props:off_times a rdf:Property ;
-	rdfs:domain rt_bi:DynamicRegion ;
-	rdfs:range rt_bi:Interval .
 world_props:traversability a rdf:Property ;
 	rdfs:domain rt_bi:RegularSpace ;
 	rdfs:range rt_bi:Traversability ;
 	rdfs:comment "The range of this property is a traversability specification." .
+world_props:accessible_times a rdf:Property ;
+	rdfs:domain rt_bi:DynamicSpace ;
+	rdfs:range rt_bi:Interval .
 world_props:legs a rdf:Property ;
 	rdfs:domain rt_bi:Traversability ;
 	rdfs:range xsd:boolean ;

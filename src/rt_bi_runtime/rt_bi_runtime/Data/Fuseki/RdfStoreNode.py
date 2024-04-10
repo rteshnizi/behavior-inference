@@ -26,11 +26,11 @@ _Parameters = Literal[
 	"sparql_dir",
 	"sparql_query_template",
 	"sparql_var_selectors",
-	"placeholder_bind_comment",
-	"placeholder_order_by_comment",
-	"placeholder_selector_end_comment",
-	"placeholder_selector_start_comment",
-	"placeholder_variable_comment",
+	"placeholder_bind",
+	"placeholder_order_by",
+	"placeholder_selector_end",
+	"placeholder_selector_start",
+	"placeholder_variables",
 	"transition_grammar_dir",
 	"transition_grammar_file",
 ]
@@ -47,15 +47,15 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 			"sparql_dir": StrParser[_Parameters](self, "sparql_dir"),
 			"sparql_query_template": StrParser[_Parameters](self, "sparql_query_template"),
 			"sparql_var_selectors": ListJsonParser[_Parameters, tuple[str, str], list[str], Any](self, "sparql_var_selectors"),
-			"placeholder_bind_comment": StrParser[_Parameters](self, "placeholder_bind_comment"),
-			"placeholder_order_by_comment": StrParser[_Parameters](self, "placeholder_order_by_comment"),
-			"placeholder_selector_end_comment": StrParser[_Parameters](self, "placeholder_selector_end_comment"),
-			"placeholder_selector_start_comment": StrParser[_Parameters](self, "placeholder_selector_start_comment"),
-			"placeholder_variable_comment": StrParser[_Parameters](self, "placeholder_variable_comment"),
+			"placeholder_bind": StrParser[_Parameters](self, "placeholder_bind"),
+			"placeholder_order_by": StrParser[_Parameters](self, "placeholder_order_by"),
+			"placeholder_selector_end": StrParser[_Parameters](self, "placeholder_selector_end"),
+			"placeholder_selector_start": StrParser[_Parameters](self, "placeholder_selector_start"),
+			"placeholder_variables": StrParser[_Parameters](self, "placeholder_variables"),
 			"transition_grammar_dir": StrParser[_Parameters](self, "transition_grammar_dir"),
 			"transition_grammar_file": StrParser[_Parameters](self, "transition_grammar_file"),
 		}
-		newKw = { "node_name": "dd_rdf", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
+		newKw = { "node_name": "dd_rdf", "loggingSeverity": LoggingSeverity.WARN, **kwArgs}
 		super().__init__(parsers, **newKw)
 		self.__varToSparql = PredicateToQueryStr(
 			get_package_share_directory(package_name),
@@ -84,10 +84,10 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 		binds: list[str] = []
 		# Polygon SPARQL must come first, order in optional statements matter. https://stackoverflow.com/a/61395608/750567
 		variables.append(self.__varToSparql.polygonVarNames)
-		sparqls.append(self.__varToSparql.selector("polygons", self["placeholder_selector_start_comment"][0], self["placeholder_selector_end_comment"][0]))
+		sparqls.append(self.__varToSparql.selector("polygons", self["placeholder_selector_start"][0], self["placeholder_selector_end"][0]))
 		i = 0
 		for predicate in payload.predicates:
-			(variable, sparql, bindStatement) = self.__varToSparql.transform(predicate, i, self["placeholder_selector_start_comment"][0], self["placeholder_selector_end_comment"][0])
+			(variable, sparql, bindStatement) = self.__varToSparql.transform(predicate, i, self["placeholder_selector_start"][0], self["placeholder_selector_end"][0])
 			if variable == "" and sparql == "": continue
 			variables.append(variable)
 			sparqls.append(sparql)
@@ -96,10 +96,10 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 		binds.append(self.__varsToFilter(variables))
 
 		query = Path(get_package_share_directory(package_name), self["sparql_dir"][0], self["sparql_query_template"][0]).read_text()
-		query = query.replace(self["placeholder_variable_comment"][0], self.__joinList(variables, " "))
-		query = query.replace(self["placeholder_selector_end_comment"][0], self.__joinList(sparqls, ""))
-		query = query.replace(self["placeholder_bind_comment"][0], self.__joinList(binds, "\n\t\t"))
-		query = query.replace(self["placeholder_order_by_comment"][0], self.__varToSparql.polygonVarNames)
+		query = query.replace(self["placeholder_variables"][0], self.__joinList(variables, " "))
+		query = query.replace(self["placeholder_selector_end"][0], self.__joinList(sparqls, ""))
+		query = query.replace(self["placeholder_bind"][0], self.__joinList(binds, "\n\t"))
+		query = query.replace(self["placeholder_order_by"][0], self.__varToSparql.polygonVarNames)
 		return self.__httpInterface.staticReachability(query, res)
 
 	def render(self) -> None:

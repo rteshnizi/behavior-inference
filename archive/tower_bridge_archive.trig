@@ -1,3 +1,5 @@
+# Turns out database implementations behave differently when it comes to named graphs
+# For now I am not going to use named graphs and keep everything in the default graph.
 ############## NAMESPACES ###############
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
@@ -339,8 +341,7 @@ GRAPH tower_bridge:traversabilities
 @prefix tower_bridge_definition: <https://rezateshnizi.com/rt-bi/tower_bridge/defintion/> .
 GRAPH tower_bridge:definition
 {
-	tower_bridge_definition:_101 a rt_bi:RegularSpace ;
-		spatial_props:type "static" ;
+	tower_bridge_definition:_101 a rt_bi:StaticSpace ;
 		world_props:traversability traversability:street ;
 		world_props:color "GREY" ;
 		world_props:polygons
@@ -348,75 +349,71 @@ GRAPH tower_bridge:definition
 			polygon:2 ,
 			polygon:4 ;
 	.
-	tower_bridge_definition:_102 a rt_bi:RegularSpace ;
-		spatial_props:type "static" ;
+	tower_bridge_definition:_102 a rt_bi:StaticSpace ;
 		world_props:traversability traversability:bridge ;
 		world_props:color "WHITE" ;
 		world_props:polygons
 			polygon:3 ;
 	.
-	tower_bridge_definition:_103 a rt_bi:RegularSpace ;
-		spatial_props:type "dynamic" ;
+	tower_bridge_definition:_103 a rt_bi:DynamicSpace ;
 		world_props:name "tower-bridge" ;
 		world_props:traversability traversability:bridge ;
 		world_props:color "WHITE" ;
 		world_props:polygons
 			polygon:5 ;
-		world_props:off_times
-			interval:early_morning ,
+		world_props:accessible_times
+			interval:morning ,
 			interval:afternoon ;
 	.
-	tower_bridge_definition:_104 a rt_bi:RegularSpace ;
-		spatial_props:type "static" ;
+	tower_bridge_definition:_104 a rt_bi:StaticSpace ;
 		world_props:traversability traversability:river ;
 		world_props:color "BLUE_LIGHT" ;
 		world_props:polygons
 			polygon:1 ,
 			polygon:6 ;
 	.
-	tower_bridge_definition:_105 a rt_bi:RegularSpace ;
-		spatial_props:type "dynamic" ;
+	tower_bridge_definition:_105 a rt_bi:DynamicSpace ;
 		world_props:traversability traversability:river ;
 		world_props:color "BLUE_LIGHT" ;
 		world_props:polygons
 			polygon:5 ;
-		world_props:off_times
-			interval:morning,
-			interval:mid_day,
+		world_props:accessible_times
+			interval:early_morning ,
+			interval:mid_day ,
 			interval:evening ;
 	.
-	tower_bridge_definition:_108 a rt_bi:RegularSpace ;
-		spatial_props:type "static" ;
+	tower_bridge_definition:_108 a rt_bi:StaticSpace ;
 		world_props:name "south-bank" ;
 		world_props:traversability traversability:street ;
 		world_props:color "PURPLE" ;
 		world_props:polygons
 			polygon:south_bank_street ;
 	.
-	tower_bridge_definition:_109 a rt_bi:RegularSpace ;
-		spatial_props:type "static" ;
+	tower_bridge_definition:_109 a rt_bi:StaticSpace ;
 		world_props:name "south-bank" ;
 		world_props:traversability traversability:river ;
 		world_props:color "PURPLE" ;
 		world_props:polygons
 			polygon:south_bank_river ;
 	.
-	tower_bridge_definition:_110 a rt_bi:RegularSpace ;
-		spatial_props:type "static" ;
+	tower_bridge_definition:_110 a rt_bi:StaticSpace ;
 		world_props:name "north-shore" ;
 		world_props:traversability traversability:street ;
 		world_props:color "PURPLE" ;
 		world_props:polygons
 			polygon:north_shore_street ;
 	.
-	tower_bridge_definition:_111 a rt_bi:RegularSpace ;
-		spatial_props:type "static" ;
+	tower_bridge_definition:_111 a rt_bi:StaticSpace ;
 		world_props:name "north-shore" ;
 		world_props:traversability traversability:river ;
 		world_props:color "PURPLE" ;
 		world_props:polygons
 			polygon:north_shore_river ;
 	.
+	tower_bridge_definition:_112 a rt_bi:AffineSpace ;
+		world_props:name "asset" ;
+		world_props:ros_node "/rt_bi_emulator/kn1" .
+
 	tower_bridge_definition:_201 a rt_bi:RegularTime ;
 		world_props:name "mid-day" ;
 		world_props:color "YELLOW" ;

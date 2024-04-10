@@ -84,14 +84,14 @@ class HttpInterface:
 		i += 1
 		return (msg, i)
 
-	def __parsePolygons(self, helper: SparqlResultHelper, i: int, regularRegionId: str) -> tuple[list[Msgs.RtBi.Polygon], int]:
+	def __parsePolygons(self, helper: SparqlResultHelper, i: int, regularSetId: str) -> tuple[list[Msgs.RtBi.Polygon], int]:
 		polys = []
 		polyMsg = Msgs.RtBi.Polygon()
 		polyMsg.id = helper.strVarValue(i, "polygonId")
 		while i < len(helper):
 			if helper.strVarValue(i, "polygonId") != polyMsg.id:
 				polys.append(polyMsg)
-				if helper.strVarValue(i, "regularRegionId") != regularRegionId:
+				if helper.strVarValue(i, "regularSetId") != regularSetId:
 					return (polys, i)
 				polyMsg = Msgs.RtBi.Polygon()
 				polyMsg.id = helper.strVarValue(i, "polygonId")
@@ -128,6 +128,7 @@ class HttpInterface:
 		return predicates
 
 	def staticReachability(self, queryStr: str, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
+		Ros.Log(queryStr)
 		r = requests.post(self.__SPARQL_URL, data={ "query": queryStr })
 		try:
 			helper = SparqlResultHelper(r)
@@ -135,7 +136,7 @@ class HttpInterface:
 			i = 0
 			while i < len(helper):
 				msg = Msgs.RtBi.RegularSpace()
-				msg.id = helper.strVarValue(i, "regularRegionId")
+				msg.id = helper.strVarValue(i, "regularSetId")
 				msg.stamp = stamp
 				msg.predicates = self.__parsePredicates(helper, i)
 				(msg.polygons, i) = self.__parsePolygons(helper, i, msg.id)

@@ -17,7 +17,7 @@ PREFIX xsd:            <http://www.w3.org/2001/XMLSchema#>
 PREFIX y:              <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/ys#>
 
 SELECT
-	?regularRegionId
+	?regularSetId
 	?polygonId ?vertInd ?x ?y
 	# Optionals
 	?name ?color
@@ -26,8 +26,8 @@ SELECT
 WHERE {
 	GRAPH tower_bridge:definition {
 		{
-			?regularRegionId a rt_bi:RegularSpace .
-			?regularRegionId world_props:polygons ?polygonId .
+			?regularSetId a rt_bi:RegularSpace .
+			?regularSetId world_props:polygons ?polygonId .
 			GRAPH tower_bridge:spatial {
 				?polygonId spatial_props:vertices ?vertexSeq .
 				?vertexSeq ?vertInd ?vertex .
@@ -37,11 +37,11 @@ WHERE {
 			}
 		}
 		UNION
-		{ ?regularRegionId world_props:color ?color . }
+		{ ?regularSetId world_props:color ?color . }
 		UNION
-		{ ?regularRegionId world_props:name ?name . }
+		{ ?regularSetId world_props:name ?name . }
 		UNION
-		{ ?regularRegionId world_props:traversability ?traversability .
+		{ ?regularSetId world_props:traversability ?traversability .
 			GRAPH tower_bridge:traversabilities {
 				?traversability
 					world_props:legs ?needsLegs ;
@@ -50,7 +50,7 @@ WHERE {
 			}
 		}
 		UNION
-		{ ?regularRegionId world_props:off_times ?intervalId .
+		{ ?regularSetId world_props:accessible_times ?intervalId .
 			GRAPH tower_bridge:temporal {
 				?intervalId
 					temporal_props:min/temporal_props:secs ?minT ;
@@ -66,4 +66,4 @@ WHERE {
 		############################
 	}
 }
-ORDER BY ?regularRegionId ?polygonId ?vertInd
+ORDER BY ?regularSetId ?polygonId ?vertInd
