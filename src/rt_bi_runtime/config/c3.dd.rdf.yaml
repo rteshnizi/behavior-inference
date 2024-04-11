@@ -9,7 +9,7 @@ rt_bi_runtime:
       sparql_var_selectors:
         - '["color", "var.color.rq"]'
         - '["name", "var.name.rq"]'
-        - '["accessible-times", "var.accessible.rq"]'
+        - '["accessible-times", "var.accessiblity.rq"]'
         - '["polygons", "var.polygons.rq"]'
         - '["traversability", "var.traversability.rq"]'
       placeholder_bind: "# BIND END #################################"
