@@ -8,9 +8,9 @@
 	<license>UNLICENSED</license>
 
 	<depend>rclpy</depend>
-	<depend version_eq="0.1.0">rt_bi_eventifier</depend>
-	<depend version_eq="0.1.0">rt_bi_interfaces</depend>
-	<depend version_eq="0.1.0">rt_bi_commons</depend>
+	<depend version_eq="0.2.0">rt_bi_eventifier</depend>
+	<depend version_eq="0.2.0">rt_bi_interfaces</depend>
+	<depend version_eq="0.2.0">rt_bi_commons</depend>
 
 	<export>
 		<build_type>ament_python</build_type>
