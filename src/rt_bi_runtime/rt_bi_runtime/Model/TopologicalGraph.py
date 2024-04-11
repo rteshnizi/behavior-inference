@@ -22,7 +22,7 @@ class TopologicalGraph(NxUtils.Graph):
 				toId = Msgs.toId(toIdMsg)
 				self.addEdge(fromId, toId)
 
-	def getNodeMarkers(self) -> list[RViz.Msgs.Marker]:
+	def createNodeMarkers(self) -> list[RViz.Msgs.Marker]:
 		markers = []
 		if len(self.nodes) == 0: return markers
 		nodePositions = self._3dLayout()
@@ -34,7 +34,7 @@ class TopologicalGraph(NxUtils.Graph):
 			Ros.AppendMessage(markers, marker)
 		return markers
 
-	def getEdgeMarkers(self) -> list[RViz.Msgs.Marker]:
+	def createEdgeMarkers(self) -> list[RViz.Msgs.Marker]:
 		markers = []
 		if len(self.nodes) == 0: return markers
 		nodePositions = self._3dLayout()

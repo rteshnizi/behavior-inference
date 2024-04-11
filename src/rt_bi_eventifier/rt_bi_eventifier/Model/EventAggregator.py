@@ -3,11 +3,11 @@ from typing import TypeVar, cast
 from networkx.algorithms.isomorphism import is_isomorphic
 
 from rt_bi_core.Spatial import GraphPolygon
+from rt_bi_core.Spatial.ContinuousTimePolygon import ContinuousTimePolygon
 from rt_bi_core.Spatial.MovingPolygon import MovingPolygon
 from rt_bi_core.Spatial.SensingPolygon import SensingPolygon
 from rt_bi_core.Spatial.Tracklet import Tracklet
 from rt_bi_eventifier.Model.ConnectivityGraph import ConnectivityGraph
-from rt_bi_eventifier.Model.ContinuousTimeRegion import ContinuousTimeRegion
 
 _T_Poly = TypeVar("_T_Poly", bound=GraphPolygon)
 
@@ -69,7 +69,7 @@ class EventAggregator:
 			if oldPoly.id in excludeRegions: continue
 			newPoly = next((p for p in newPolys if p.id.sansTime() == oldPoly.id.sansTime()), None)
 			if newPoly is None: continue
-			ctRegion = ContinuousTimeRegion[_T_Poly]([oldPoly, newPoly])
+			ctRegion = ContinuousTimePolygon[_T_Poly]([oldPoly, newPoly])
 			oldPoly = ctRegion[eventTimeNs]
 			if oldPoly.type == SensingPolygon.type:
 				for track in tracklets: cast(SensingPolygon, oldPoly).tracklets[track.id] = track

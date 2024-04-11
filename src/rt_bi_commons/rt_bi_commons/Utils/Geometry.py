@@ -12,7 +12,7 @@ from rt_bi_commons.Utils import Ros
 
 class Shapely:
 	"""This class sets up a group of functions and type aliases that help use shapely objects easier."""
-	from shapely import convex_hull, get_rings, make_valid, set_precision, union_all
+	from shapely import buffer, convex_hull, get_rings, make_valid, set_precision, union_all
 	from shapely.geometry import GeometryCollection, LinearRing, LineString, MultiLineString, MultiPoint, MultiPolygon, Point, Polygon
 
 	ConnectedComponent: TypeAlias = Polygon | LineString | Point
@@ -226,8 +226,7 @@ class GeometryLib:
 	def getGeometryCoords(geom: Shapely.ConnectedComponent) -> CoordsList:
 		if not hasattr(geom, "exterior"):
 			if not hasattr(geom, "coords"):
-				Ros.Logger().error(f"Unknown geometry {geom}.")
-				return []
+				raise ValueError(f"Unknown geometry: {repr(geom)}")
 			return list(geom.coords)
 		return list(geom.exterior.coords)
 
@@ -560,13 +559,13 @@ class GeometryLib:
 		return expanded
 
 	@staticmethod
-	def getLineSegmentExpandedBb(transformation: AffineTransform, lineSeg: Shapely.LineString, centerOfRotation: Coords) -> Shapely.Polygon | Shapely.LineString:
+	def getLineSegmentExpandedBb(transformation: AffineTransform, lineSeg: Shapely.LineString, centerOfRotation: Coords) -> Shapely.Polygon:
 		""" Gets a tight bounding box for a line segment that is moving with a constant angular velocity. """
 		angle: float = abs(transformation.rotation)
 		originalCoords = GeometryLib.getGeometryCoords(lineSeg)
 		if len(originalCoords) > 2: raise ValueError(f"A line segment must have two vertices. Input: {repr(lineSeg)}")
-		if GeometryLib.isIdentityTransform(transformation):
-			return lineSeg
+		if GeometryLib.isIdentityTransform(transformation): return Shapely.buffer(lineSeg, GeometryLib.EPSILON)
+
 		finalConfig = GeometryLib.applyMatrixTransformToLineString(transformation, lineSeg)
 		finalCoords = GeometryLib.getGeometryCoords(finalConfig)
 		verts: GeometryLib.CoordsList = []
@@ -579,7 +578,8 @@ class GeometryLib:
 		pts = Shapely.MultiPoint(verts)
 		expandedObb = Shapely.set_precision(Shapely.convex_hull(pts), GeometryLib.EPSILON)
 		if isinstance(expandedObb, Shapely.Polygon): return expandedObb
-		raise ValueError(f"Expanded OBB is not a polygon: {repr(expandedObb)}")
+		if isinstance(expandedObb, Shapely.LineString): return Shapely.buffer(expandedObb, GeometryLib.EPSILON)
+		raise ValueError(f"Expanded OBB is neither a polygon nor a line segment: {repr(expandedObb)}")
 	# endregion: SciKit Matrix operations
 
 warnings.filterwarnings("error") # Turn shapely C++ errors into exceptions for better debugging.

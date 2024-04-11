@@ -210,6 +210,7 @@ class ContinuousTimePolygon(Generic[_T_Poly]):
 		self.__sortedConfigs.append(polygon)
 		self.__sortedConfigs = sorted(self.__sortedConfigs, key=lambda p: p.timeNanoSecs)
 
+		Ros.Log(f"CTR{self.id.shortNames()} is told to keep from {keepFromNs} onward.")
 		if self.length > self.__MAX_HISTORY:
 			popIndex = 0
 			for i in range(1, self.length):
@@ -217,5 +218,5 @@ class ContinuousTimePolygon(Generic[_T_Poly]):
 					popIndex = i - 1
 					break
 			c = self.__sortedConfigs.pop(popIndex)
-			Ros.Log(f"Dropping from {self.name}: {c.timeNanoSecs}")
+			Ros.Log(f"Dropping index {popIndex} from {self.id}: {c.timeNanoSecs}")
 		return

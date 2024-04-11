@@ -8,7 +8,7 @@ from rt_bi_emulator.Emulators.AffineRegionEmulator import AffineRegionEmulator
 class KnownRegionEmulator(AffineRegionEmulator):
 	""" This class provides a ROS node which emulates a *known* moving region. """
 	def __init__(self):
-		newKw = { "node_name": "emulator_map_region", "loggingSeverity": LoggingSeverity.WARN }
+		newKw = { "node_name": "emulator_map_region", "loggingSeverity": LoggingSeverity.INFO }
 		super().__init__(**newKw)
 		(self.__publisher, _) = RtBiInterfaces.createKnownRegionPublisher(self, self.publishUpdate, self.updateInterval)
 

@@ -1,11 +1,11 @@
 from dataclasses import dataclass
-from typing import Sequence, TypeVar
+from typing import Sequence
 
 from rt_bi_commons.Shared.Color import ColorNames
 from rt_bi_commons.Shared.NodeId import NodeId
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Geometry import GeometryLib, Shapely
-from rt_bi_commons.Utils.NetworkX import EdgeData, NodeData, NxUtils
+from rt_bi_commons.Utils.NetworkX import EdgeData, NxUtils
 from rt_bi_commons.Utils.RViz import RViz
 from rt_bi_core.Spatial import GraphPolygon, MapPolygon
 from rt_bi_core.Spatial.MovingPolygon import MovingPolygon
@@ -42,7 +42,7 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 		self.__constructEdges()
 
 	def __repr__(self):
-		return f"CGr-{self.timeNanoSecs}"
+		return f"CGr-{self.timeNanoSecs}(N={len(self.nodes)}, E={len(self.edges)})"
 
 	def __contains__(self, id_: NxUtils.Id | Sequence[NxUtils.Id]) -> bool:
 		if isinstance(id_, NxUtils.Id):
@@ -201,24 +201,18 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 		id__ = id_.copy(timeNanoSecs=-1, hIndex=-1, subPartId="")
 		return id__ in self.__sensorIdToIndex
 
-	def getNodeMarkers(self) -> list[RViz.Msgs.Marker]:
+	def createNodeMarkers(self) -> list[RViz.Msgs.Marker]:
 		markers = []
 		for antiShadow in self.antiShadows:
 			Ros.ConcatMessageArray(markers, antiShadow.createMarkers(stamped=False))
 		for shadow in self.shadows:
 			Ros.ConcatMessageArray(markers, shadow.createMarkers(stamped=False))
-		id = RViz.Id(hIndex=-1, timeNanoSecs=-1, regionId="CGraph", polygonId="Sensors", subPartId="")
-		marker = RViz.createText(id, coords=(100, -10), text=f"Z = {len(self.antiShadows)}", outline=ColorNames.WHITE, idSuffix="txt")
-		Ros.AppendMessage(markers, marker)
-		id = RViz.Id(hIndex=-1, timeNanoSecs=-1, regionId="CGraph", polygonId="Shadows", subPartId="")
-		marker = RViz.createText(id, coords=(100, -25), text=f"X = {len(self.shadows)}", outline=ColorNames.WHITE, idSuffix="txt")
-		Ros.AppendMessage(markers, marker)
-		id = RViz.Id(hIndex=-1, timeNanoSecs=-1, regionId="CGraph", polygonId="Time", subPartId="")
-		marker = RViz.createText(id, coords=(100, -50), text=f"T = {self.timeNanoSecs}", outline=ColorNames.WHITE, idSuffix="txt")
+		id = RViz.Id(hIndex=-1, timeNanoSecs=-1, regionId="CGraph", polygonId="Name", subPartId="")
+		marker = RViz.createText(id, coords=(100, -10), text=f"{repr(self)}", outline=ColorNames.WHITE, idSuffix="txt")
 		Ros.AppendMessage(markers, marker)
 		return markers
 
-	def getEdgeMarkers(self) -> list[RViz.Msgs.Marker]:
+	def createEdgeMarkers(self) -> list[RViz.Msgs.Marker]:
 		return []
 
 	def logGraphNodes(self) -> None:

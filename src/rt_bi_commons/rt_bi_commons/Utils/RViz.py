@@ -71,8 +71,15 @@ class RViz:
 		return marker
 
 	@staticmethod
+	def __setMarkerScale(marker: Msgs.Marker, scaleFactors: Coords3d) -> Msgs.Marker:
+		marker.scale.x = float(scaleFactors[0])
+		marker.scale.y = float(scaleFactors[1])
+		marker.scale.z = float(scaleFactors[2])
+		return marker
+
+	@staticmethod
 	def __setMarkerId(marker: Msgs.Marker, id: Id, suffix: str) -> Msgs.Marker:
-		idStr = f"{id.regionId}>{id.polygonId}>{id.subPartId}>{suffix}"
+		idStr = f"{repr(id)}>{suffix}"
 		uInt = adler32(idStr.encode("utf-8"))
 		marker.id = c_int32(uInt).value
 		return marker
@@ -225,6 +232,18 @@ class RViz:
 		textMarker.scale.z = float(fontSize)
 		RViz.__logMarker(id, idSuffix, True)
 		return textMarker
+
+	@staticmethod
+	def createSphere(id: Id, center: Coords3d, radius: float, color: RGBA, durationNs: int = DEFAULT_RENDER_DURATION_NS, idSuffix: str = "") -> Msgs.Marker:
+		sphere = RViz.Msgs.Marker()
+		sphere = RViz.__setMarkerHeader(sphere, durationNs)
+		sphere = RViz.__setMarkerId(sphere, id, idSuffix)
+		sphere.type = RViz.Msgs.Marker.SPHERE
+		sphere = RViz.__setMarkerPose(sphere, center)
+		sphere = RViz.__setMarkerScale(sphere, (radius, radius, radius))
+		sphere = RViz.__setMarkerColor(sphere, color)
+		RViz.__logMarker(id, idSuffix, True)
+		return sphere
 
 	@staticmethod
 	def removeMarker(id: Id, idSuffix: str = "") -> Msgs.Marker:

@@ -143,6 +143,10 @@ def CreateTopicName(shortTopicName: str) -> str:
 	"""
 	return f"/{NAMESPACE}/{shortTopicName}"
 
+def AsList(array: Sequence[__Topic] | AbstractSet[__Topic] | list[__Topic], t: type[__Topic]) -> list[__Topic]:
+	assert isinstance(array, list), (f"Failed to cast messages to array. Array type: {type(array)}")
+	return array
+
 def PopMessage(array: Sequence[__Topic] | AbstractSet[__Topic] | list[__Topic], i: int, t: type[__Topic] | Any = Any) -> __Topic:
 	"""Appends a message to a message array.
 
@@ -241,7 +245,7 @@ def WaitForSubscriber(node: Node, topic: str, subscriberFullName: str) -> None:
 		subsName = GetSubscriberNames(node, topic)
 	return
 
-def WaitForServicesToStart(node: Node, client: Client) -> None:
+def WaitForServiceToStart(node: Node, client: Client) -> None:
 	node.log(f"Client {node.get_name()} is waiting for service {client.srv_name}.") # pyright: ignore[reportAttributeAccessIssue]
 	while not client.wait_for_service(): pass
 	return

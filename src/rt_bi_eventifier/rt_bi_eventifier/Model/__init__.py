@@ -1,3 +1,3 @@
 """
-The code related to Shadow Tree data structure.
+The code related to IGraph data structure.
 """

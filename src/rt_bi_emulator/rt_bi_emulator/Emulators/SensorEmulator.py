@@ -32,7 +32,7 @@ class SensorEmulator(AffineRegionEmulator, TargetSubscriber):
 			trackletMsg = Msgs.RtBi.Tracklet(spawned=False, vanished=False)
 			trackletMsg.id = target.id
 			trackletMsg.pose = Msgs.toStdPose(target.interior.centroid)
-			if GeometryLib.intersects(target.interior, self.getRegionAtTime(target.timeNanoSecs)):
+			if GeometryLib.intersects(target.interior, self.getRegionAtTime(target.timeNanoSecs).interior):
 				estMsg = Msgs.RtBi.Estimation()
 				estMsg.robot = self.asRegularSpaceMsg()
 				if target.id not in self.__observedTargetIds:

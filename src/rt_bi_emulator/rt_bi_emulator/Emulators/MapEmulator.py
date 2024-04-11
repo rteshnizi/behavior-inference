@@ -3,11 +3,10 @@ from rclpy.logging import LoggingSeverity
 
 from rt_bi_commons.Base.ColdStartableNode import ColdStartableNode, ColdStartPayload
 from rt_bi_commons.Utils import Ros
+from rt_bi_commons.Utils.Msgs import Msgs
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_core.Spatial.MovingPolygon import MovingPolygon
 from rt_bi_core.Spatial.StaticPolygon import StaticPolygon
-from rt_bi_interfaces.msg import RegularSpaceArray
-from rt_bi_interfaces.srv import SpaceTime
 
 
 class MapEmulator(ColdStartableNode):
@@ -18,25 +17,35 @@ class MapEmulator(ColdStartableNode):
 	* Information about dynamic regions are provided by :class:`KnownRegionEmulator` instances.
 	"""
 	def __init__(self) -> None:
-		newKw = { "node_name": "emulator_dynamic_map", "loggingSeverity": LoggingSeverity.INFO }
+		newKw = { "node_name": "dynamic_map", "loggingSeverity": LoggingSeverity.WARN }
 		super().__init__(**newKw)
 		self.mapRegions: dict[str, StaticPolygon | MovingPolygon] = {}
 		self.__mapRegionsPublisher = RtBiInterfaces.createMapRegionsPublisher(self)
 		self.rdfClient = RtBiInterfaces.createSpaceTimeClient(self)
-		Ros.WaitForServicesToStart(self, self.rdfClient)
+		Ros.WaitForServiceToStart(self, self.rdfClient)
 		self.waitForColdStartPermission(self.onColdStartAllowed)
 		return
 
 	def onColdStartAllowed(self, payload: ColdStartPayload) -> None:
-		req = SpaceTime.Request()
+		req = Msgs.RtBiSrv.SpaceTime.Request()
 		req.json_payload = payload.stringify()
 		Ros.SendClientRequest(self, self.rdfClient, req, self.__onSpaceTimeResponse)
 		return
 
-	def __onSpaceTimeResponse(self, req: SpaceTime.Request, res: SpaceTime.Response) -> SpaceTime.Response:
-		msg = RegularSpaceArray(spaces=res.spatial_matches)
+	def __extractDynamicSetIds(self, matches: list[Msgs.RtBi.RegularSpace]) -> list[str]:
+		dynamics = map(
+			lambda m: m.id,
+			filter(lambda m: m.space_type == Msgs.RtBi.RegularSpace.DYNAMIC, matches)
+		)
+		return list(dynamics)
+
+	def __onSpaceTimeResponse(self, req: Msgs.RtBiSrv.SpaceTime.Request, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
+		msg = Msgs.RtBi.RegularSpaceArray(spaces=res.spatial_matches)
 		self.__mapRegionsPublisher.publish(msg)
-		self.coldStartCompleted({ "done": True })
+		self.coldStartCompleted({
+			"done": True,
+			"dynamic": self.__extractDynamicSetIds(Ros.AsList(res.spatial_matches, Msgs.RtBi.RegularSpace)),
+		})
 		return res
 
 	def declareParameters(self) -> None:

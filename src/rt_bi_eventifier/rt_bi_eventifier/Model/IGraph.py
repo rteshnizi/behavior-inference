@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Literal, cast
 
+from rt_bi_commons.Shared.Color import RGBA
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Geometry import GeometryLib, Shapely
 from rt_bi_commons.Utils.Msgs import Msgs
@@ -16,15 +17,15 @@ from rt_bi_eventifier.Model.ContinuousTimeCollisionDetection import ContinuousTi
 from rt_bi_eventifier.Model.EventAggregator import EventAggregator
 
 
-class ShadowTree(NxUtils.Graph[GraphPolygon]):
+class IGraph(NxUtils.Graph[GraphPolygon]):
 	"""
-		The implementation of a Shadow Tree in python as described in the dissertation.
+		The implementation of a Region IGraph in python as described in the dissertation.
 	"""
 
-	SUBMODULES = ("connectivity_graph", "continuous_time_collision_detection", "shadow_tree")
-	SUBMODULE = Literal["connectivity_graph", "continuous_time_collision_detection", "shadow_tree"]
+	SUBMODULES = ("connectivity_graph", "continuous_time_collision_detection", "i_graph")
+	SUBMODULE = Literal["connectivity_graph", "continuous_time_collision_detection", "i_graph"]
 	"""The name of a ShadowTree sub-module publisher."""
-	__RENDER_RADIUS = 10
+	__RENDER_RADIUS = 20
 	__MAX_HISTORY = 4
 
 	@dataclass(frozen=True, order=True)
@@ -35,15 +36,15 @@ class ShadowTree(NxUtils.Graph[GraphPolygon]):
 		"""
 
 		@staticmethod
-		def extend(data: NxUtils.NodeData[GraphPolygon], subset: int) -> "ShadowTree.NodeData":
-			return ShadowTree.NodeData(
+		def extend(data: NxUtils.NodeData[GraphPolygon], subset: int) -> "IGraph.NodeData":
+			return IGraph.NodeData(
 				polygon=data.polygon,
 				subset=subset
 			)
 
 	def __init__(self, eventPublishers: tuple[Ros.Publisher, Ros.Publisher], rvizPublishers: dict[SUBMODULE, Ros.Publisher | None]):
-		"""Initialize the shadow tree. The tree is expected to be updated in a streaming fashion."""
-		super().__init__(rVizPublisher=rvizPublishers.pop("shadow_tree", None))
+		"""Initialize the I-graph."""
+		super().__init__(rVizPublisher=rvizPublishers.pop("i_graph", None))
 		# super().__init__(rVizPublisher=None)
 		self.__history: list[ConnectivityGraph] = []
 		self.hIndex = 0
@@ -55,28 +56,29 @@ class ShadowTree(NxUtils.Graph[GraphPolygon]):
 		self.__ctrs: dict[MovingPolygon.Id, ContinuousTimePolygon[GraphPolygon]] = {}
 
 	@property
-	def length(self) -> int:
-		"""The length of the shadow tree history stack."""
+	def depth(self) -> int:
+		"""The depth of the I-graph history stack."""
 		return len(self.__history)
 
 	@property
 	def processedTime(self) -> int:
-		if self.length == 0: return -1
+		if self.depth == 0: return -1
 		return self.__history[-1].timeNanoSecs
 
 	def __repr__(self) -> str:
-		timeRangeStr = "∅"
-		if self.length == 1:
+		if self.depth == 0:
+			timeRangeStr = "0"
+		if self.depth == 1:
 			timeRangeStr = "%d" % self.__history[0].timeNanoSecs
-		if self.length > 1:
-			timeRangeStr = "%d-%d" % (self.__history[0].timeNanoSecs, self.__history[-1].timeNanoSecs)
-		return "%s[%s]{d=%d}" % (self.name, timeRangeStr, self.length)
+		if self.depth > 1:
+			timeRangeStr = "%d , %d" % (self.__history[0].timeNanoSecs, self.__history[-1].timeNanoSecs)
+		return f"IGr-[{timeRangeStr})(D={self.depth}, N={len(self.nodes)}, E={len(self.edges)})"
 
 	def addNode(self, id: NxUtils.Id, cGraph: ConnectivityGraph) -> NxUtils.Id:
 		assert cGraph.hIndex is not None and cGraph.hIndex > -1, f"Unset hIndex is not allowed in ShadowTree: cGraph = {repr(cGraph)}, hIndex = {cGraph.hIndex}"
 		content = cGraph.getContent(id)
 		id = id.copy(hIndex=cGraph.hIndex)
-		content = ShadowTree.NodeData.extend(data=content, subset=cGraph.hIndex)
+		content = IGraph.NodeData.extend(data=content, subset=cGraph.hIndex)
 		return super().addNode(id=id, content=content)
 
 	def addEdge(self, fromId: NxUtils.Id, toId: NxUtils.Id, fromCGraph: ConnectivityGraph, toCGraph: ConnectivityGraph) -> None:
@@ -85,28 +87,45 @@ class ShadowTree(NxUtils.Graph[GraphPolygon]):
 		content = NxUtils.EdgeData(isTemporal=fromCGraph.timeNanoSecs != toCGraph.timeNanoSecs)
 		return super().addEdge(fromId, toId, addReverseEdge=False, content=content)
 
-	def getNodeMarkers(self) -> list[RViz.Msgs.Marker]:
+	def __getNodeRenderColor(self, type_: StaticPolygon.Type | SensingPolygon.Type | MovingPolygon.Type) -> RGBA:
+		if type_ == StaticPolygon.type: return ColorNames.ORANGE
+		elif type_ == SensingPolygon.type: return ColorNames.GREEN
+		elif type_ == MovingPolygon.type: return ColorNames.PURPLE
+		else: return ColorNames.RED
+
+	def __getNodeRenderZOffset(self, type_: StaticPolygon.Type | SensingPolygon.Type | MovingPolygon.Type) -> float:
+		if type_ == StaticPolygon.type: return 0
+		elif type_ == SensingPolygon.type: return self.__RENDER_RADIUS
+		elif type_ == MovingPolygon.type: return -1 * self.__RENDER_RADIUS
+		else: return 0
+
+	def createNodeMarkers(self) -> list[RViz.Msgs.Marker]:
 		markers = []
 		if len(self.nodes) == 0: return markers
 		nodePositions = self._3dLayout()
 		for id in nodePositions:
 			poly = self.getContent(id, "polygon")
-			if poly.type == StaticPolygon.type:
-				outlineColor = ColorNames.ORANGE
-			elif poly.type == SensingPolygon.type:
-				outlineColor = ColorNames.GREEN
-			elif poly.type == MovingPolygon.type:
-				outlineColor = ColorNames.PURPLE
-			else:
-				outlineColor = ColorNames.RED
-			coords = nodePositions[id]
-			marker = RViz.createCircle(id, center=coords, radius=self.__RENDER_RADIUS, outline=outlineColor)
+			color = self.__getNodeRenderColor(poly.type)
+			zOffset = self.__getNodeRenderZOffset(poly.type)
+			coords = (nodePositions[id][0], nodePositions[id][1], nodePositions[id][2] + zOffset)
+			marker = RViz.createSphere(id, center=coords, radius=self.__RENDER_RADIUS, color=color)
 			Ros.AppendMessage(markers, marker)
+			coords = (coords[0], coords[1], coords[2] + self.__RENDER_RADIUS)
 			marker = RViz.createText(id, coords=coords, text=poly.shortName, outline=ColorNames.WHITE, idSuffix="txt")
 			Ros.AppendMessage(markers, marker)
+		id = RViz.Id(hIndex=-1, timeNanoSecs=-1, regionId="IGraph", polygonId="Name", subPartId="")
+		marker = RViz.createText(id, coords=(100, 50), text=f"{repr(self)}", fontSize=15.0, outline=ColorNames.WHITE, idSuffix="txt")
+		Ros.AppendMessage(markers, marker)
 		return markers
 
-	def getEdgeMarkers(self) -> list[RViz.Msgs.Marker]:
+	def __getEdgeRenderColor(self, frmType: StaticPolygon.Type | SensingPolygon.Type | MovingPolygon.Type, toType: StaticPolygon.Type | SensingPolygon.Type | MovingPolygon.Type, isTemporal: bool) -> RGBA:
+		if isTemporal: return ColorNames.CYAN_DARK
+		elif (frmType, toType) == (StaticPolygon.type, StaticPolygon.type): return ColorNames.ORANGE
+		elif (frmType, toType) == (SensingPolygon.type, SensingPolygon.type): return ColorNames.GREEN
+		elif (frmType, toType) == (MovingPolygon.type, MovingPolygon.type): return ColorNames.PURPLE
+		else: return ColorNames.MAGENTA_DARK
+
+	def createEdgeMarkers(self) -> list[RViz.Msgs.Marker]:
 		markers = []
 		if len(self.nodes) == 0: return markers
 		nodePositions = self._3dLayout()
@@ -115,15 +134,21 @@ class ShadowTree(NxUtils.Graph[GraphPolygon]):
 			frm = cast(NxUtils.Id, frm)
 			to = cast(NxUtils.Id, to)
 			if frm == to: continue
+			frmType = self.getContent(frm, "polygon").type
+			zOffset = self.__getNodeRenderZOffset(frmType)
+			frmCoords = (nodePositions[frm][0], nodePositions[frm][1], nodePositions[frm][2] + zOffset)
+			toType = self.getContent(to, "polygon").type
+			zOffset = self.__getNodeRenderZOffset(toType)
+			toCoords = (nodePositions[to][0], nodePositions[to][1], nodePositions[to][2] + zOffset)
 			edgeData = outEdgeView[frm, to]
-			color = ColorNames.CYAN_DARK if ("isTemporal" in edgeData and edgeData["isTemporal"]) else ColorNames.MAGENTA_DARK
-			# (dx, dy, dz) = GeometryLib.subtractCoords(nodePositions[to], nodePositions[frm])
+			color = self.__getEdgeRenderColor(frmType, toType, "isTemporal" in edgeData and edgeData["isTemporal"])
+			# (dx, dy, dz) = GeometryLib.subtractCoords(toCoords, frmCoords)
 			# dVect = GeometryLib.getUnitVector((dx, dy, dz))
 			# dVect = GeometryLib.scaleCoords(dVect, self.__RENDER_RADIUS)
-			# fromCoords = GeometryLib.addCoords(nodePositions[frm], dVect)
-			# toCoords = GeometryLib.subtractCoords(nodePositions[to], dVect)
+			# fromCoords = GeometryLib.addCoords(frmCoords, dVect)
+			# toCoords = GeometryLib.subtractCoords(toCoords, dVect)
 			# marker = RViz.createLine(frm, coordsList=[fromCoords, toCoords], outline=color, width=2, idSuffix=repr(to))
-			marker = RViz.createLine(frm, coordsList=[nodePositions[frm], nodePositions[to]], outline=color, width=2, idSuffix=repr(to))
+			marker = RViz.createLine(frm, coordsList=[frmCoords, toCoords], outline=color, width=2, idSuffix=repr(to))
 			Ros.AppendMessage(markers, marker)
 		return markers
 
@@ -140,7 +165,8 @@ class ShadowTree(NxUtils.Graph[GraphPolygon]):
 		return cGraph
 
 	def renderLatestCGraph(self) -> None:
-		Ros.Log("Rendering latest CGraph.")
+		if self.depth == 0: return
+		Ros.Log(f"{repr(self)} Rendering latest CGraph.")
 		self.__history[-1].render()
 		return
 
@@ -190,10 +216,10 @@ class ShadowTree(NxUtils.Graph[GraphPolygon]):
 		return False
 
 	def __connectTopLayerTemporally(self) -> None:
-		Ros.Log(" ------------------------------- SHADOW 3 - CONNECT-Z - START -----------------------------")
-		fromGraph = self.__history[self.length - 2]
-		toGraph = self.__history[self.length - 1]
-		assert toGraph.hIndex is not None, f"Cannot connect graph with unset hIndex in shadow tree. {repr(toGraph)}"
+		Ros.Log(" ------------------------------- CONNECT-Z - START -----------------------------")
+		fromGraph = self.__history[self.depth - 2]
+		toGraph = self.__history[self.depth - 1]
+		assert toGraph.hIndex is not None, f"Cannot connect graph with unset hIndex in I-graph. {repr(toGraph)}"
 		# Add temporal edges between FOVs
 		for fromAntiShadow in fromGraph.antiShadows:
 			for toAntiShadow in toGraph.antiShadows:
@@ -201,21 +227,21 @@ class ShadowTree(NxUtils.Graph[GraphPolygon]):
 					Ros.Log("AntiShadows are connected", (fromAntiShadow.id, toAntiShadow.id))
 					self.addEdge(fromAntiShadow.id, toAntiShadow.id, fromGraph, toGraph)
 		# Add temporal edges between shadows
-		Ros.Log(" ------------------------------- SHADOW 3 - CONNECT-Z - END -------------------------------")
-		Ros.Log(" ------------------------------- SHADOW 3 - CONNECT-X - START -----------------------------")
+		Ros.Log(" ------------------------------- CONNECT-Z - END -------------------------------")
+		Ros.Log(" ------------------------------- CONNECT-X - START -----------------------------")
 		for fromShadow in fromGraph.shadows:
 			for toShadow in toGraph.shadows:
 				if GeometryLib.intersects(fromShadow.interior, toShadow.interior):
 					if self.__shadowsAreConnectedTemporally(fromGraph, toGraph, fromShadow, toShadow):
 						Ros.Log("Shadows are connected", (fromShadow.id, toShadow.id))
 						self.addEdge(fromShadow.id, toShadow.id, fromGraph, toGraph)
-		Ros.Log(" ------------------------------- SHADOW 3 - CONNECT-X - END -------------------------------")
+		Ros.Log(" ------------------------------- CONNECT-X - END -------------------------------")
 		return
 
 	def __removeFromHistory(self, index: int, delete: bool) -> None:
 		assert index >= 0 and index < len(self.__history), f"Index out of history bounds: index = {index}, Len = {len(self.__history)}"
 		hIndex = self.__history[index].hIndex
-		assert hIndex is not None, f"Graph with unset hIndex found in shadow tree. {repr(self.__history[index])}"
+		assert hIndex is not None, f"Graph with unset hIndex found in I-graph. {repr(self.__history[index])}"
 
 		Ros.Log(f"Removing Graph: {repr(self.__history[index])} with {len(self.__history[index].nodes)} nodes.")
 		polyId: NxUtils.Id
@@ -235,13 +261,13 @@ class ShadowTree(NxUtils.Graph[GraphPolygon]):
 		return
 
 	def __appendToHistory(self, graph: ConnectivityGraph) -> None:
-		if self.length > 0 and graph.timeNanoSecs < self.__history[-1].timeNanoSecs:
+		if self.depth > 0 and graph.timeNanoSecs < self.__history[-1].timeNanoSecs:
 				Ros.Logger().error(f"Older graph than latest in history --> {graph.timeNanoSecs} vs {self.__history[-1].timeNanoSecs}")
 				return
 
-		if self.length > 0 and EventAggregator.isIsomorphic(self.__history[-1], graph):
+		if self.depth > 0 and EventAggregator.isIsomorphic(self.__history[-1], graph):
 			Ros.Log("Isomorphic graph detected.")
-			self.__replaceInHistory(self.length - 1, graph)
+			self.__replaceInHistory(self.depth - 1, graph)
 		else:
 			Ros.Log(f"APPENDING graph with {len(graph.antiShadows)} anti-shadows and {len(graph.shadows)} shadows.")
 			graph.hIndex = self.hIndex
@@ -254,11 +280,12 @@ class ShadowTree(NxUtils.Graph[GraphPolygon]):
 		for edge in graph.edges:
 			self.addEdge(edge[0], edge[1], graph, graph)
 
-		if self.length > 1: self.__connectTopLayerTemporally()
-		if self.length > self.__MAX_HISTORY:
+		if self.depth > 1: self.__connectTopLayerTemporally()
+		if self.depth > self.__MAX_HISTORY:
 			Ros.Log(f"History depth is more than MAX={self.__MAX_HISTORY} graphs.")
 			self.__removeFromHistory(0, True)
 		self.render()
+		return
 
 	def __publishGraph(self) -> None:
 		Ros.Log(f"Publishing topological graph {self.__history[-1]}.")
@@ -341,7 +368,7 @@ class ShadowTree(NxUtils.Graph[GraphPolygon]):
 			Ros.Log(f"Out of sync update: {poly.timeNanoSecs} < {self.processedTime} processed already.")
 			return
 		idSansTime = poly.id.sansTime()
-		Ros.Log(f"Updating CTR: {idSansTime.shortNames()}.")
+		Ros.Log(f"Updating CTR: {idSansTime}.")
 		if idSansTime not in self.__ctrs:
 			self.__ctrs[idSansTime] = ContinuousTimePolygon(polyConfigs=[poly])
 			return
@@ -360,9 +387,10 @@ class ShadowTree(NxUtils.Graph[GraphPolygon]):
 		return (minNs, maxNs)
 
 	def updatePolygon(self, polygon: GraphPolygon) -> None:
+		Ros.Log(f"↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ {repr(self)} ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓")
 		Ros.Log(f"<=============================== {polygon.timeNanoSecs:20} =====================================>")
 		Ros.Log(f"New Poly = {polygon}")
-		if self.length == 0 and polygon.type != StaticPolygon.type:
+		if self.depth == 0 and polygon.type != StaticPolygon.type:
 			Ros.Log("Initial CGraph must be created from a static map.")
 			return
 		self.__updateCTRs(polygon)
@@ -378,7 +406,7 @@ class ShadowTree(NxUtils.Graph[GraphPolygon]):
 		minLatestNs = polygon.timeNanoSecs if polygon.type == StaticPolygon.type else minLatestNs
 		Ros.Log(f"Processing {minLatestNs:20}.")
 
-		if self.length == 0:
+		if self.depth == 0:
 			cGraph = self.at(minLatestNs)
 			self.__appendToHistory(cGraph)
 			self.__publishGraph()

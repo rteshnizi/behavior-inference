@@ -5,13 +5,13 @@ from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Geometry import GeometryLib, Shapely
 from rt_bi_commons.Utils.RViz import RViz
 from rt_bi_core.Spatial import GraphPolygon
+from rt_bi_core.Spatial.ContinuousTimePolygon import ContinuousTimePolygon
 from rt_bi_core.Spatial.SensingPolygon import SensingPolygon
 from rt_bi_core.Spatial.StaticPolygon import StaticPolygon
-from rt_bi_eventifier.Model.ContinuousTimeRegion import ContinuousTimeRegion
 
 CollisionInterval: TypeAlias = tuple[
-	ContinuousTimeRegion[GraphPolygon], Shapely.LineString | None,
-	ContinuousTimeRegion[GraphPolygon], Shapely.LineString | None,
+	ContinuousTimePolygon[GraphPolygon], Shapely.LineString | None,
+	ContinuousTimePolygon[GraphPolygon], Shapely.LineString | None,
 	int, int
 ]
 """## Collision Interval
@@ -59,7 +59,7 @@ class ContinuousTimeCollisionDetection:
 		return
 
 	@classmethod
-	def __obbTest(cls, ctRegion1: ContinuousTimeRegion[GraphPolygon], ctRegion2: ContinuousTimeRegion[GraphPolygon], upToNs: int) -> list[CollisionInterval]:
+	def __obbTest(cls, ctRegion1: ContinuousTimePolygon[GraphPolygon], ctRegion2: ContinuousTimePolygon[GraphPolygon], upToNs: int) -> list[CollisionInterval]:
 		# If there is no overlap in time then there are no collisions.
 		if ctRegion1.latestNanoSecs < ctRegion2.earliestNanoSecs:
 			Ros.Log(f"{repr(ctRegion1)} < {repr(ctRegion2)}")
@@ -70,9 +70,9 @@ class ContinuousTimeCollisionDetection:
 
 		Ros.Log(f"OBB Test: {ctRegion1.name} <==> {ctRegion2.name} -- up to {upToNs}")
 		collisions: list[CollisionInterval] = []
-		for e1 in ctRegion1.configs[0].edges:
+		for e1 in ctRegion1.configs[ctRegion1.timeNanoSecsToIndex(upToNs)].edges:
 			obb1 = ctRegion1.getEdgeBb(e1, upToNs)
-			for e2 in ctRegion2.configs[0].edges:
+			for e2 in ctRegion2.configs[ctRegion2.timeNanoSecsToIndex(upToNs)].edges:
 				obb2 = ctRegion2.getEdgeBb(e2, upToNs)
 				if GeometryLib.intersects(obb1, obb2): collisions.append(
 					(
@@ -121,7 +121,7 @@ class ContinuousTimeCollisionDetection:
 		return (haveOverlap, dontHaveOverlap)
 
 	@classmethod
-	def __initTest(cls, ctRegion1: ContinuousTimeRegion[GraphPolygon], ctRegion2: ContinuousTimeRegion[GraphPolygon], upToNs: int) -> CollisionInterval | None:
+	def __initTest(cls, ctRegion1: ContinuousTimePolygon[GraphPolygon], ctRegion2: ContinuousTimePolygon[GraphPolygon], upToNs: int) -> CollisionInterval | None:
 		if upToNs not in ctRegion1: return
 		if upToNs not in ctRegion2: return
 		Ros.Log(f"INIT Test: {ctRegion1.name} <===> {ctRegion2.name} -- up to {upToNs}")
@@ -135,7 +135,7 @@ class ContinuousTimeCollisionDetection:
 		return interval
 
 	@classmethod
-	def estimateCollisionIntervals(cls, ctrs: Sequence[ContinuousTimeRegion[GraphPolygon]], processUpToNs: int, rvizPublisher: Ros.Publisher | None) -> list[CollisionInterval]:
+	def estimateCollisionIntervals(cls, ctrs: Sequence[ContinuousTimePolygon[GraphPolygon]], processUpToNs: int, rvizPublisher: Ros.Publisher | None) -> list[CollisionInterval]:
 		cls.__rvizPublisher = rvizPublisher
 		Ros.Log(" ------------------------------- CTCD - ESTIMATION - START --------------------------------")
 

@@ -6,20 +6,12 @@ from rclpy.logging import LoggingSeverity
 from rclpy.parameter import Parameter
 
 from rt_bi_commons.Base.RtBiNode import RtBiNode
-from rt_bi_commons.Shared.Pose import Pose
-from rt_bi_commons.Utils.Geometry import AffineTransform, GeometryLib, Shapely
+from rt_bi_commons.Shared.Predicates import Predicates
+from rt_bi_commons.Utils.Geometry import Shapely
 from rt_bi_commons.Utils.Msgs import Msgs
+from rt_bi_core.Spatial.ContinuousTimePolygon import ContinuousTimePolygon
+from rt_bi_core.Spatial.MovingPolygon import MovingPolygon
 
-
-class Body:
-	def __init__(self, id: str, location: Pose, centerOfRotation: GeometryLib.Coords, spatialRegion: GeometryLib.CoordsList) -> None:
-		self.id: str = id
-		self.location = location
-		self.spatialRegion = spatialRegion
-		self.centerOfRotation = centerOfRotation
-
-	def __repr__(self) -> str:
-		return f"#{self.id}"
 
 class AffineRegionEmulator(RtBiNode, ABC):
 	"""
@@ -36,27 +28,11 @@ class AffineRegionEmulator(RtBiNode, ABC):
 		self.declareParameters()
 		self.id = ""
 		self.updateInterval = 1
-		self.__initTime = float(self.get_clock().now().nanoseconds)
-		self.__cutOffTime: float = inf
-		self.__centersOfRotation: GeometryLib.CoordsList = []
-		self.regionPositions: list[Body] = []
-		self.__initialRegionPoly = Shapely.set_precision(Shapely.Polygon(), GeometryLib.EPSILON)
-		self.__totalTimeNanoSecs = 0.0
-		self.__transformationMatrix: list[AffineTransform] = []
+		self.__initTimeNs: int = self.get_clock().now().nanoseconds
+		self.__cutOffTimeSecs: float = inf
+		self.__ctPoly: ContinuousTimePolygon[MovingPolygon] = ContinuousTimePolygon([])
+		self.__predicates = Predicates([])
 		self.parseParameters()
-		# Provides a debugging way to stop the updating the position any further.
-		self.__passedCutOffTime: int = -1
-
-	def __getCenterOfRotationAtTime(self, timeNanoSecs: int) -> Pose:
-		if self.__passedCutOffTime < 0 and ((timeNanoSecs - self.__initTime) / AffineRegionEmulator.NANO_CONVERSION_CONSTANT) > self.__cutOffTime:
-			self.__passedCutOffTime = timeNanoSecs
-		elif self.__passedCutOffTime > 0:
-			timeNanoSecs = self.__passedCutOffTime
-		elapsedTimeRatio = (timeNanoSecs - self.__initTime) / self.__totalTimeNanoSecs
-		elapsedTimeRatio = 1 if elapsedTimeRatio > 1 else elapsedTimeRatio
-		if elapsedTimeRatio < 1:
-			return Pose(timeNanoSecs, self.regionPositions[0].location.x, self.regionPositions[0].location.y, self.regionPositions[0].location.angleFromX)
-		return Pose(timeNanoSecs, self.regionPositions[-1].location.x, self.regionPositions[-1].location.y, self.regionPositions[-1].location.angleFromX)
 
 	def declareParameters(self) -> None:
 		self.log(f"{self.get_fully_qualified_name()} is setting node parameters.")
@@ -73,65 +49,45 @@ class AffineRegionEmulator(RtBiNode, ABC):
 		self.log(f"{self.get_fully_qualified_name()} is parsing parameters.")
 		self.id = str(self.get_parameter("id").get_parameter_value().string_value)
 		self.updateInterval = self.get_parameter("updateInterval").get_parameter_value().double_value
-		try: self.__cutOffTime = self.get_parameter("cutOffTime").get_parameter_value().double_value
-		except: self.__cutOffTime = inf
+		try: self.__cutOffTimeSecs = self.get_parameter("cutOffTime").get_parameter_value().double_value
+		except: self.__cutOffTimeSecs = inf
 		timePoints = self.get_parameter("timesSecs").get_parameter_value().double_array_value
 		saPoses = list(self.get_parameter("saPoses").get_parameter_value().string_array_value)
 		centersOfRotation = list(self.get_parameter("centersOfRotation").get_parameter_value().string_array_value)
 		fovs = list(self.get_parameter("fovs").get_parameter_value().string_array_value)
+		self.__ctPoly = ContinuousTimePolygon([], len(timePoints))
 		for i in range(len(timePoints)):
-			self.__centersOfRotation.append(json.loads(centersOfRotation[i]))
+			cor = json.loads(centersOfRotation[i])
 			fov = [tuple(p) for p in json.loads(fovs[i])]
 			pose = json.loads(saPoses[i])
-			timeNanoSecs = int(timePoints[i] * self.NANO_CONVERSION_CONSTANT)
-			body = Body(self.id, Pose(timeNanoSecs, *(pose)), self.__centersOfRotation[i], fov)
-			self.log(f"Parsed {repr(body)} config @ {timeNanoSecs}")
-			self.regionPositions.append(body)
-			if i > 0:
-				matrix = GeometryLib.getAffineTransformation(self.regionPositions[i - 1].spatialRegion, self.regionPositions[i].spatialRegion)
-				self.__transformationMatrix.append(matrix)
-		self.__initialRegionPoly = Shapely.set_precision(
-			Shapely.Polygon(self.regionPositions[0].spatialRegion),
-			GeometryLib.EPSILON
-		)
-		self.__totalTimeNanoSecs = timePoints[-1] * self.NANO_CONVERSION_CONSTANT
+			timeNanoSecs = int(timePoints[i] * self.NANO_CONVERSION_CONSTANT) + self.__initTimeNs
+			poly = MovingPolygon(
+				polygonId="0",
+				regionId=self.id,
+				subPartId="",
+				envelope=fov,
+				predicates=self.__predicates,
+				centerOfRotation=cor,
+				timeNanoSecs=timeNanoSecs,
+				hIndex=-1,
+			)
+			self.log(f"Parsed {fov} config @ {timeNanoSecs}")
+			self.__ctPoly.addPolygon(poly)
 		return
 
-	def getRegionAtTime(self, timeNanoSecs: int) -> Shapely.Polygon:
-		if self.__passedCutOffTime < 0 and ((timeNanoSecs - self.__initTime) / AffineRegionEmulator.NANO_CONVERSION_CONSTANT) > self.__cutOffTime:
-			self.__passedCutOffTime = timeNanoSecs
-		elif self.__passedCutOffTime > 0:
-			timeNanoSecs = self.__passedCutOffTime
-		elapsedTimeRatio = (timeNanoSecs - self.__initTime) / self.__totalTimeNanoSecs
-		elapsedTimeRatio = 1 if elapsedTimeRatio > 1 else elapsedTimeRatio
-		if elapsedTimeRatio < 1:
-			matrix = GeometryLib.getParameterizedAffineTransformation(self.__transformationMatrix[0], elapsedTimeRatio)
-			return GeometryLib.applyMatrixTransformToPolygon(matrix, self.__initialRegionPoly)
-		return Shapely.set_precision(
-			Shapely.Polygon(self.regionPositions[-1].spatialRegion),
-			GeometryLib.EPSILON
-		)
-
-	def getPoseAtTime(self, timeNanoSecs: int) -> Pose:
-		if self.__passedCutOffTime < 0 and ((timeNanoSecs - self.__initTime) / AffineRegionEmulator.NANO_CONVERSION_CONSTANT) > self.__cutOffTime:
-			self.__passedCutOffTime = timeNanoSecs
-		elif self.__passedCutOffTime > 0:
-			timeNanoSecs = self.__passedCutOffTime
-		elapsedTimeRatio = (timeNanoSecs - self.__initTime) / self.__totalTimeNanoSecs
-		elapsedTimeRatio = 1 if elapsedTimeRatio > 1 else elapsedTimeRatio
-		if elapsedTimeRatio < 1:
-			matrix = GeometryLib.getParameterizedAffineTransformation(self.__transformationMatrix[0], elapsedTimeRatio)
-			transformed = GeometryLib.applyMatrixTransformToPose(matrix, self.regionPositions[0].location)
-			transformed.timeNanoSecs = timeNanoSecs
-			return transformed
-		return Pose(timeNanoSecs, self.regionPositions[-1].location.x, self.regionPositions[-1].location.y, self.regionPositions[-1].location.angleFromX)
+	def getRegionAtTime(self, timeNanoSecs: int) -> MovingPolygon:
+		if ((timeNanoSecs - self.__initTimeNs) / AffineRegionEmulator.NANO_CONVERSION_CONSTANT) > self.__cutOffTimeSecs:
+			timeNanoSecs = int(self.__cutOffTimeSecs * AffineRegionEmulator.NANO_CONVERSION_CONSTANT)
+		if timeNanoSecs in self.__ctPoly: return self.__ctPoly[timeNanoSecs]
+		return self.__ctPoly.configs[-1]
 
 	def asRegularSpaceMsg(self) -> Msgs.RtBi.RegularSpace:
 		timeOfPublish = self.get_clock().now()
+		self.log(f"{self.id} is publishing @ {timeOfPublish.nanoseconds}")
 		poly = self.getRegionAtTime(timeOfPublish.nanoseconds)
-		currentCor = self.__getCenterOfRotationAtTime(timeOfPublish.nanoseconds)
+		currentCor = self.__ctPoly.getCenterOfRotationAt(timeOfPublish.nanoseconds)
 		polyMsg = Msgs.RtBi.Polygon()
-		polyMsg.region = Msgs.toStdPolygon(poly)
+		polyMsg.region = Msgs.toStdPolygon(poly.interior)
 		polyMsg.id = "0" # All emulated dynamic regions currently only hold a single polygon.
 		polyMsg.center_of_rotation = Msgs.toStdPoint(currentCor)
 		msg = Msgs.RtBi.RegularSpace()

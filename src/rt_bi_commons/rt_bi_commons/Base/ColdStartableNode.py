@@ -9,7 +9,7 @@ from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_interfaces.msg import ColdStart
 
-_K = Literal["done", "predicates"]
+_K = Literal["done", "predicates", "dynamic", "affine"]
 class ColdStartPayload(dict[_K, Any]):
 	__V = TypeVar("__V")
 	@overload
@@ -42,6 +42,14 @@ class ColdStartPayload(dict[_K, Any]):
 	@property
 	def predicates(self) -> set[str]:
 		return self.__getListAsSet("predicates", str)
+
+	@property
+	def dynamicRegions(self) -> set[str]:
+		return self.__getListAsSet("dynamic", str)
+
+	@property
+	def knownRegions(self) -> set[str]:
+		return self.__getListAsSet("affine", str)
 
 	def stringify(self) -> str:
 		try:

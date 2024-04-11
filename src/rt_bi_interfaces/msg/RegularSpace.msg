@@ -1,10 +1,15 @@
 # Unique string id
 string id
 
+string STATIC = "static"
+string DYNAMIC = "dynamic"
+string AFFINE = "affine"
+string space_type # One of the above constants
+
 # Symbolized region predicates
 rt_bi_interfaces/Predicate[] predicates
 
-# A named polygon.
+# A list of polygons.
 rt_bi_interfaces/Polygon[] polygons
 
 # Spatial specs.

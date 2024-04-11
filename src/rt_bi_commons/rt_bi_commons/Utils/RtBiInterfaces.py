@@ -30,6 +30,7 @@ class ReferenceDescriptor(NamedTuple):
 
 class RtBiInterfaces:
 	BA_NODE_PREFIX = "/rt_bi_runtime/ba"
+	KNOWN_REGION_NODE_PREFIX = "/rt_bi_emulator/kn"
 	class TopicNames(Enum):
 		RT_BI_EMULATOR_MAP = "/__rt_bi_emulator/em_dynamic_map"
 		RT_BI_EMULATOR_SENSOR = "/__rt_bi_emulator/sensor"

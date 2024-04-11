@@ -1,13 +1,11 @@
-from typing_extensions import Literal, Self, TypeAlias, cast
+from typing_extensions import Self
 
 from rt_bi_commons.Utils.Msgs import Msgs
-
-PredicateValue: TypeAlias = bool | Literal["inherit"]
 
 
 class Predicates:
 	def __init__(self, raw: list[Msgs.RtBi.Predicate]) -> None:
-		self.__d: dict[str, PredicateValue] = {}
+		self.__d: dict[str, bool] = {}
 		self.__meta: dict[str, str] = {}
 		for msg in raw:
 			self[msg.name] = msg.value
@@ -23,7 +21,6 @@ class Predicates:
 	def __setitem__(self, p: str, val: str | bool) -> None:
 		assert (
 			isinstance(val, bool) or
-			val == Msgs.RtBi.Predicate.INHERIT or
 			val == Msgs.RtBi.Predicate.FALSE or
 			val == Msgs.RtBi.Predicate.TRUE
 		), f"Unexpected value for predicate {p}: {val}"
@@ -33,10 +30,6 @@ class Predicates:
 		), "The boolean value of a predicate is fixed."
 		if isinstance(val, bool):
 			self.__d[p] = val
-			return
-		if val == Msgs.RtBi.Predicate.INHERIT:
-			# FIXME: TURN predicates to boolean with meta. NO inheriting of props
-			self.__d[p] = False
 			return
 		if val == Msgs.RtBi.Predicate.TRUE:
 			self.__d[p] = True
@@ -57,7 +50,6 @@ class Predicates:
 
 	def __ior__(self, other: "Predicates") -> Self:
 		for p in self:
-			if self[p] != Msgs.RtBi.Predicate.INHERIT: continue
 			if p not in other: continue
 			self[p] = other[p]
 		return self
@@ -69,8 +61,3 @@ class Predicates:
 
 	def __contains__(self, p: str) -> bool:
 		return p in self.__d
-
-	def inheritFalse(self) -> Self:
-		for p in self:
-			if self[p] == "INHERIT": self[p] = False
-		return self

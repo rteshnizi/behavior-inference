@@ -21,7 +21,7 @@ class BaNode(ColdStartableNode):
 	"""
 	def __init__(self, **kwArgs) -> None:
 		""" Create a Behavior Automaton node. """
-		newKw = { "node_name": "ba", "loggingSeverity": LoggingSeverity.WARN, **kwArgs}
+		newKw = { "node_name": "ba", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
 		super().__init__(**newKw)
 		self.declareParameters()
 		self.__name: str = self.get_fully_qualified_name()
@@ -33,7 +33,7 @@ class BaNode(ColdStartableNode):
 		self.__accepting: list[str] = []
 		self.parseParameters()
 		self.rdfClient = RtBiInterfaces.createSpaceTimeClient(self)
-		Ros.WaitForServicesToStart(self, self.rdfClient)
+		Ros.WaitForServiceToStart(self, self.rdfClient)
 		baseDir = get_package_share_directory(package_name)
 		self.__ba = BehaviorAutomaton(
 			self.__name,

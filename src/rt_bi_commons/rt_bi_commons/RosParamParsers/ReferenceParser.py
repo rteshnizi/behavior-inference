@@ -130,7 +130,7 @@ class ListReferenceParser(
 
 		if len(self.__remoteRequests) > 0:
 			client = RtBiInterfaces.createDataReferenceClient(self.node, self.getSrc(srcInd))
-			Ros.WaitForServicesToStart(self.node, client)
+			Ros.WaitForServiceToStart(self.node, client)
 			for serviceName in self.__remoteRequests:
 				Ros.SendClientRequest(self.node, client, self.__remoteRequests[serviceName], self.resolveRemoteResponse)
 		return self.__intermediateData[srcInd]

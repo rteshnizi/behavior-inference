@@ -11,7 +11,7 @@ from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 
 class ColdStartManager(RtBiNode):
 	def __init__(self, **kwArgs) -> None:
-		newKw = { "node_name": "cs_mgr", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
+		newKw = { "node_name": "cs_mgr", "loggingSeverity": LoggingSeverity.WARN, **kwArgs}
 		super().__init__(**newKw)
 		self.declareParameters()
 		self.__awaitingColdStart: list[str] = []
@@ -29,6 +29,8 @@ class ColdStartManager(RtBiNode):
 			Ros.WaitForSubscriber(self, topic, nodeName)
 			self.log(f"Sending cold start to node {nodeName}.")
 			if nodeName.startswith(RtBiInterfaces.BA_NODE_PREFIX):
+				payload = ColdStartPayload({}).stringify()
+			elif nodeName.startswith(RtBiInterfaces.KNOWN_REGION_NODE_PREFIX):
 				payload = ColdStartPayload({}).stringify()
 			else:
 				payload = ColdStartPayload({ "predicates": list(self.__allPredicates) }).stringify()

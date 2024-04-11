@@ -46,7 +46,7 @@ class NxUtils:
 	class Graph(Generic[_Polygon], nx.DiGraph, ABC):
 		__LAYOUT_SCALE = 300
 		__RENDER_DELTA_X = 75
-		__RENDER_DELTA_Y = 75
+		__RENDER_DELTA_Y = 90
 		__RENDER_DELTA_Z = 75
 		def __init__(self, rVizPublisher: Ros.Publisher | None):
 			super().__init__()
@@ -128,16 +128,16 @@ class NxUtils:
 			return pos
 
 		@abstractmethod
-		def getNodeMarkers(self) -> list[RViz.Msgs.Marker]: ...
+		def createNodeMarkers(self) -> list[RViz.Msgs.Marker]: ...
 
 		@abstractmethod
-		def getEdgeMarkers(self) -> list[RViz.Msgs.Marker]: ...
+		def createEdgeMarkers(self) -> list[RViz.Msgs.Marker]: ...
 
 		@final
 		def __createMarkers(self) -> list[RViz.Msgs.Marker]:
 			markers = []
-			Ros.ConcatMessageArray(markers, self.getNodeMarkers())
-			Ros.ConcatMessageArray(markers, self.getEdgeMarkers())
+			Ros.ConcatMessageArray(markers, self.createNodeMarkers())
+			Ros.ConcatMessageArray(markers, self.createEdgeMarkers())
 			return markers
 
 		@final
