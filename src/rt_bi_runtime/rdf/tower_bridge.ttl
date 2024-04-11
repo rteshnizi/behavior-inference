@@ -413,7 +413,7 @@ tower_bridge_definition:111 a rt_bi:StaticSpace ;
 .
 tower_bridge_definition:king a rt_bi:AffineSpace ;
 	world_props:name "king" ;
-	world_props:ros_node "/rt_bi_emulator/king" ;
+	world_props:ros_node "/rt_bi_emulator/kn2" ;
 .
 tower_bridge_definition:201 a rt_bi:RegularTime ;
 	world_props:name "mid-day" ;

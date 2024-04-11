@@ -3,7 +3,7 @@ from ament_index_python.packages import get_package_share_directory
 from rclpy.logging import LoggingSeverity
 from rclpy.parameter import Parameter
 
-from rt_bi_commons.Base.ColdStartableNode import ColdStartableNode
+from rt_bi_commons.Base.ColdStartableNode import ColdStartableNode, ColdStartPayload
 from rt_bi_commons.Shared.NodeId import NodeId
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Msgs import Msgs
@@ -73,9 +73,10 @@ class BaNode(ColdStartableNode):
 		# self.__timer = Ros.CreateTimer(self, self.__evaluateTokens, 500)
 		return
 
-	def onColdStartAllowed(self, _) -> None:
+	def onColdStartAllowed(self, payload: ColdStartPayload) -> None:
 		super().coldStartCompleted({
 			"done": True,
+			"phase": payload.phase,
 			"predicates": self.__ba.predicates,
 		})
 		return

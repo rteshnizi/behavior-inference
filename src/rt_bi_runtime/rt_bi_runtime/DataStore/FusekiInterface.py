@@ -62,7 +62,7 @@ class SparqlResultHelper:
 			return self[i][varName]["value"]
 		return ""
 
-class HttpInterface:
+class FusekiInterface:
 	def __init__(self, node: Ros.Node, fusekiServerAdr: str, rdfStoreName: str) -> None:
 		self.__fusekiServerAdr = fusekiServerAdr
 		self.__rdfStoreName = rdfStoreName

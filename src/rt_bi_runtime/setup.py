@@ -31,7 +31,7 @@ setup(
 	entry_points={
 		"console_scripts": [
 			"BA = rt_bi_runtime.BaNode:main",
-			"DD_RDF = rt_bi_runtime.Data.Fuseki.RdfStoreNode:main",
+			"DD_RDF = rt_bi_runtime.RdfStoreNode:main",
 			"CS_MGR = rt_bi_runtime.ColdStartManager:main"
 		],
 	},

@@ -29,8 +29,6 @@ class ReferenceDescriptor(NamedTuple):
 		return ReferenceDescriptor(node=parts[1].lower(), param=parts[2].lower())
 
 class RtBiInterfaces:
-	BA_NODE_PREFIX = "/rt_bi_runtime/ba"
-	KNOWN_REGION_NODE_PREFIX = "/rt_bi_emulator/kn"
 	class TopicNames(Enum):
 		RT_BI_EMULATOR_MAP = "/__rt_bi_emulator/em_dynamic_map"
 		RT_BI_EMULATOR_SENSOR = "/__rt_bi_emulator/sensor"

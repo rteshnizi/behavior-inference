@@ -34,7 +34,7 @@ concurrently\
 	--prefix "[{name}-{time}]"\
 	-c "bgWhite.black,bgBlue,bgMagenta,bgGreen,bgYellow.black,bgBlack.white,bgCyan.black,bgBlack.white"\
 	--timestamp-format "HH:mm:ss"\
-	"ros2 launch rt_bi_runtime c3.all.launch.py"\
+	"ros2 launch rt_bi_runtime all.launch.py"\
 	"echo 'ros2 launch rt_bi_runtime rviz.launch.py'"\
 	"ros2 launch rt_bi_emulator map.launch.py"\
 	"ros2 launch rt_bi_emulator known.launch.py"\

@@ -1,11 +1,4 @@
 rt_bi_runtime:
-  cs_mgr:
-    ros__parameters:
-      render: False
-      await_cold_start:
-        # The order in this list is significant
-        - "/rt_bi_runtime/ba1"
-        - "/rt_bi_emulator/dynamic_map"
   ba1:
     ros__parameters:
       render: True

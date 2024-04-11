@@ -41,9 +41,11 @@ class MapEmulator(ColdStartableNode):
 
 	def __onSpaceTimeResponse(self, req: Msgs.RtBiSrv.SpaceTime.Request, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
 		msg = Msgs.RtBi.RegularSpaceArray(spaces=res.spatial_matches)
+		coldStartPayload = ColdStartPayload(req.json_payload)
 		self.__mapRegionsPublisher.publish(msg)
 		self.coldStartCompleted({
 			"done": True,
+			"phase": coldStartPayload.phase,
 			"dynamic": self.__extractDynamicSetIds(Ros.AsList(res.spatial_matches, Msgs.RtBi.RegularSpace)),
 		})
 		return res

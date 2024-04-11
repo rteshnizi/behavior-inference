@@ -9,7 +9,7 @@ from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_interfaces.msg import ColdStart
 
-_K = Literal["done", "predicates", "dynamic", "affine"]
+_K = Literal["done", "phase", "predicates", "dynamic", "affine"]
 class ColdStartPayload(dict[_K, Any]):
 	__V = TypeVar("__V")
 	@overload
@@ -38,6 +38,10 @@ class ColdStartPayload(dict[_K, Any]):
 	@property
 	def done(self) -> bool:
 		return self.get("done", False)
+
+	@property
+	def phase(self) -> int:
+		return self.get("phase", 0)
 
 	@property
 	def predicates(self) -> set[str]:

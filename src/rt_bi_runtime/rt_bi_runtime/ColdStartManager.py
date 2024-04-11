@@ -13,11 +13,16 @@ class ColdStartManager(RtBiNode):
 	def __init__(self, **kwArgs) -> None:
 		newKw = { "node_name": "cs_mgr", "loggingSeverity": LoggingSeverity.WARN, **kwArgs}
 		super().__init__(**newKw)
-		self.declareParameters()
-		self.__awaitingColdStart: list[str] = []
+		self.__BA_NODE_PREFIX = "/rt_bi_runtime/ba"
+		self.__KNOWN_REGION_NODE_PREFIX = "/rt_bi_emulator/kn"
+		self.__awaitingColdStart: list[str] = [
+			# The order in this list is significant
+			"/rt_bi_runtime/ba1",
+			"/rt_bi_emulator/dynamic_map",
+		]
 		self.__allPredicates: set[str] = set()
-		self.parseParameters()
 		self.__coldStartPublisher = RtBiInterfaces.createColdStartPublisher(self)
+		self.__coldStartPhase = 0
 		RtBiInterfaces.subscribeToColdStart(self, self.__onColdStartDone)
 		self.__triggerNextColdStart()
 		return
@@ -28,12 +33,18 @@ class ColdStartManager(RtBiNode):
 			topic = RtBiInterfaces.TopicNames.RT_BI_RUNTIME_COLD_START.value
 			Ros.WaitForSubscriber(self, topic, nodeName)
 			self.log(f"Sending cold start to node {nodeName}.")
-			if nodeName.startswith(RtBiInterfaces.BA_NODE_PREFIX):
-				payload = ColdStartPayload({}).stringify()
-			elif nodeName.startswith(RtBiInterfaces.KNOWN_REGION_NODE_PREFIX):
-				payload = ColdStartPayload({}).stringify()
-			else:
-				payload = ColdStartPayload({ "predicates": list(self.__allPredicates) }).stringify()
+			if nodeName.startswith(self.__BA_NODE_PREFIX):
+				payload = ColdStartPayload({ "phase": self.__coldStartPhase }).stringify()
+			elif nodeName.startswith(self.__KNOWN_REGION_NODE_PREFIX):
+				# TODO: Assign predicates
+				payload = ColdStartPayload({ "phase": self.__coldStartPhase }).stringify()
+			else: # Dynamic Map Cold Start
+				payload = ColdStartPayload({ "phase": self.__coldStartPhase, "predicates": list(self.__allPredicates) }).stringify()
+				# if self.__coldStartPhase == 0:
+				# 	payload = ColdStartPayload({ "phase": self.__coldStartPhase, "predicates": list(self.__allPredicates) }).stringify()
+				# elif self.__coldStartPhase == 1:
+				# 	return
+				# else: assert False, "This should never happen"
 			msg = Msgs.RtBi.ColdStart(node_name=nodeName, json_payload=payload)
 			self.__coldStartPublisher.publish(msg)
 		return
@@ -43,19 +54,26 @@ class ColdStartManager(RtBiNode):
 			payload = ColdStartPayload(msg.json_payload)
 			if not payload.done: return
 			self.log(f"Cold start done for node {msg.node_name}.")
-			if msg.node_name.startswith(RtBiInterfaces.BA_NODE_PREFIX):
+			if msg.node_name.startswith(self.__BA_NODE_PREFIX):
+				self.__coldStartPhase = 0
 				self.__allPredicates |= payload.predicates
+			if msg.node_name.startswith(self.__KNOWN_REGION_NODE_PREFIX):
+				self.__coldStartPhase = 0
+				pass # TODO:
+			else: # Dynamic Map
+				pass
+				# if payload.phase == 0:
+				# 	pass # Fetch dynamic region data so that the map can trigger reachability events
+				# 	self.__coldStartPhase = 1
+				# elif payload.phase == 1:
+				# 	self.__coldStartPhase = 0
 			self.__triggerNextColdStart()
 		return
 
 	def declareParameters(self) -> None:
-		self.log("%s is setting node parameters." % self.get_fully_qualified_name())
-		self.declare_parameter("await_cold_start", Parameter.Type.STRING_ARRAY)
 		return
 
 	def parseParameters(self) -> None:
-		self.log("%s is parsing parameters." % self.get_fully_qualified_name())
-		self.__awaitingColdStart = list(self.get_parameter("await_cold_start").get_parameter_value().string_array_value)
 		return
 
 	def render(self) -> None:

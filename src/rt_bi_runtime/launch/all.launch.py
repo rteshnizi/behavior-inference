@@ -9,8 +9,8 @@ from launch import LaunchDescription
 package_name = Path(__file__).parent.parent.name
 
 def generate_launch_description():
-	runtimeYamlPath = os.path.join(get_package_share_directory(package_name), "config", "c3.runtime.yaml")
-	rdfYamlPath = os.path.join(get_package_share_directory(package_name), "config", "c3.dd.rdf.yaml")
+	runtimeYamlPath = os.path.join(get_package_share_directory(package_name), "config", "ba.yaml")
+	rdfYamlPath = os.path.join(get_package_share_directory(package_name), "config", "rdf.yaml")
 
 	return LaunchDescription([
 		Node(
@@ -23,7 +23,6 @@ def generate_launch_description():
 				"--log-level",
 				"warn",
 			],
-			parameters=[runtimeYamlPath],
 		),
 		Node(
 			package=package_name,
