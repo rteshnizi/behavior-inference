@@ -34,7 +34,7 @@ _Parameters = Literal[
 	"transition_grammar_dir",
 	"transition_grammar_file",
 ]
-
+# FIXME: Upload the rdf data at the startup via cold start.
 class RdfStoreNode(DataDictionaryNode[_Parameters]):
 	CoordsListParser = ListReferenceParser[_Parameters, CoordsList, Any]
 	OffIntervalsParser = ListReferenceParser[_Parameters, list[TimeInterval], Any]
