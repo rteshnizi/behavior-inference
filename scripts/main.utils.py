@@ -8,9 +8,9 @@ from rt_bi_commons.Utils.Geometry import AffineTransform, GeometryLib
 
 logging.basicConfig(format="[%(levelname)s]: %(message)s", force=True, level=logging.INFO)
 
-#region Configuration of CLI Arguments
+# region Configuration of CLI Arguments
 argParser = ArgumentParser(
-	description="Provides CLI access to some of Reza Teshnizi's python utility functionality.",
+	description="Provides CLI access to some of my python utility functionality.",
 )
 
 subParsers = argParser.add_subparsers(
@@ -18,7 +18,7 @@ subParsers = argParser.add_subparsers(
 	dest="command",
 )
 
-#region Rotation Parser
+# region Rotation Parser
 rotationParser = subParsers.add_parser(
 	"rotation",
 	usage="%(prog)s \"[[283.602, 65.354], [296.297, 119.257], [120.804, 134.190]]\" -d 30",
@@ -39,9 +39,9 @@ mxg.add_argument(
 	type=float,
 	help="The radians to be used for rotation.",
 )
-#endregion # cSpell: disable-line
+# endregion
 
-#region Get Angle Parser
+# region Get Angle Parser
 rotationParser = subParsers.add_parser(
 	"angle",
 	usage="%(prog)s \"[[283.602, 65.354], [296.297, 119.257], [120.804, 134.190]]\" \"[[200.612, -24.140], [244.985, 8.992], [120.148, 133.236]]\"",
@@ -56,9 +56,9 @@ rotationParser.add_argument(
 	type=str,
 	help="Second list of coordinates."
 )
-#endregion
+# endregion
 
-#endregion
+# endregion
 
 def getAngle(coords1: str, coords2: str) -> tuple:
 	__coords1: GeometryLib.CoordsList = loads(coords1)
