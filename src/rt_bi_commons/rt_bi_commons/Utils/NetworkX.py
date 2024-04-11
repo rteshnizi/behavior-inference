@@ -95,7 +95,7 @@ class NxUtils:
 			else: return self.nodes[node][contentKey]
 
 		def _3dLayout(self) -> "NxUtils.GraphLayout3D":
-			pos2d = self._multiPartiteLayout()
+			pos2d = self._multiPartiteLayout2()
 			pos: NxUtils.GraphLayout3D = {}
 			minHIndex = 0
 			for id in pos2d:
@@ -109,21 +109,23 @@ class NxUtils:
 			((minX, minY), (maxX, maxY)) = self.getContent(id, "polygon").bounds
 			return (id.timeNanoSecs, minX, maxX, minY, maxY)
 
-		def _multiPartiteLayout(self) -> "NxUtils.GraphLayout2D":
+		def _multiPartiteLayout2(self) -> "NxUtils.GraphLayout2D":
+			pos: NxUtils.GraphLayout2D = {}
+			id_: NxUtils.Id
+			for id_ in self.nodes:
+				poly = self.getContent(id_, "polygon")
+				pos[id_] = (poly.centroid[0], poly.centroid[1])
+			return pos
+
+		def _multiPartiteLayout1(self) -> "NxUtils.GraphLayout2D":
 			ids: list[NxUtils.Id] = sorted(self.nodes, key=self.__nodeSortKey)
 			pos: NxUtils.GraphLayout2D = {}
 			y = 0
 			x = 0
-			timeNanoSecs = 0
-			zag = -1
-			zig = (self.__RENDER_DELTA_Y / 5)
 			for id in ids:
-				if id.timeNanoSecs > timeNanoSecs:
-					timeNanoSecs = id.timeNanoSecs
-					x = 0
-					y += self.__RENDER_DELTA_Y
-				pos[id] = (x, (y + (zig * zag)))
-				zag *= -1
+				pos[id] = (x, y)
+				if y == 0: y = self.__RENDER_DELTA_Y
+				else: y = 0
 				x += self.__RENDER_DELTA_X
 			return pos
 

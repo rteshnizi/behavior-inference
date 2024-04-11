@@ -25,7 +25,7 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 	SUBMODULES = ("connectivity_graph", "continuous_time_collision_detection", "i_graph")
 	SUBMODULE = Literal["connectivity_graph", "continuous_time_collision_detection", "i_graph"]
 	"""The name of a ShadowTree sub-module publisher."""
-	__RENDER_RADIUS = 20
+	__RENDER_RADIUS = 10
 	__MAX_HISTORY = 4
 
 	@dataclass(frozen=True, order=True)
@@ -114,7 +114,7 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 			marker = RViz.createText(id, coords=coords, text=poly.shortName, outline=ColorNames.WHITE, idSuffix="txt")
 			Ros.AppendMessage(markers, marker)
 		id = RViz.Id(hIndex=-1, timeNanoSecs=-1, regionId="IGraph", polygonId="Name", subPartId="")
-		marker = RViz.createText(id, coords=(100, 50), text=f"{repr(self)}", fontSize=15.0, outline=ColorNames.WHITE, idSuffix="txt")
+		marker = RViz.createText(id, coords=(-100, -100), text=f"{repr(self)}", fontSize=15.0, outline=ColorNames.WHITE, idSuffix="txt")
 		Ros.AppendMessage(markers, marker)
 		return markers
 
