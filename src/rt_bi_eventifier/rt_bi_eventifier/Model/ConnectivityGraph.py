@@ -125,7 +125,7 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 				for sensor in self.sensors:
 					diffPolys = GeometryLib.difference(diff, sensor.interior)
 					diff = Shapely.MultiPolygon(diffPolys)
-				diff = GeometryLib.toGeometryList(diff)
+				diff = GeometryLib.filterPolygons(diff)
 				for i in range(len(diff)):
 					shadowPolys.append(type(mapPoly)(
 						polygonId=mapPoly.id.polygonId,

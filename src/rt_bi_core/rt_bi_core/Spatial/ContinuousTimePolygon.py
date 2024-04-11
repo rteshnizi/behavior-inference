@@ -13,8 +13,7 @@ from rt_bi_core.Spatial.StaticPolygon import StaticPolygon
 _T_Poly = TypeVar("_T_Poly", bound=GraphPolygon)
 class ContinuousTimePolygon(Generic[_T_Poly]):
 	INF_NS: Final[int] = 2 ** 100
-	def __init__(self, polyConfigs: list[_T_Poly], historyDepth = 2) -> None:
-		self.__MAX_HISTORY: Final[int] = historyDepth
+	def __init__(self, polyConfigs: list[_T_Poly]) -> None:
 		self.__sortedConfigs: list[_T_Poly] = []
 		for poly in polyConfigs: self.addPolygon(poly, -1)
 		return
@@ -23,7 +22,7 @@ class ContinuousTimePolygon(Generic[_T_Poly]):
 		tStr = f"{self.earliestNanoSecs}, {self.latestNanoSecs}"
 		if self.isStatic or self.earliestNanoSecs == self.latestNanoSecs:
 			tStr = f"{self.earliestNanoSecs}"
-		return f"CTR-{self.name}[{tStr}]"
+		return f"CTR-{self.name}[{tStr}](#{self.length})"
 
 	def __getitem__(self, timeNanoSecs: int) -> _T_Poly:
 		"""Get polygonal shape at time.
@@ -210,13 +209,9 @@ class ContinuousTimePolygon(Generic[_T_Poly]):
 		self.__sortedConfigs.append(polygon)
 		self.__sortedConfigs = sorted(self.__sortedConfigs, key=lambda p: p.timeNanoSecs)
 
-		Ros.Log(f"CTR{self.id.shortNames()} is told to keep from {keepFromNs} onward.")
-		if self.length > self.__MAX_HISTORY:
-			popIndex = 0
-			for i in range(1, self.length):
-				if self.__sortedConfigs[i].timeNanoSecs >= keepFromNs:
-					popIndex = i - 1
-					break
-			c = self.__sortedConfigs.pop(popIndex)
-			Ros.Log(f"Dropping index {popIndex} from {self.id}: {c.timeNanoSecs}")
+		while self.length > 2 and self.__sortedConfigs[0].timeNanoSecs < keepFromNs:
+			if self.length == 1: return
+			if self.__sortedConfigs[1].timeNanoSecs > keepFromNs: return
+			c = self.__sortedConfigs.pop(0)
+			Ros.Log(f"Dropped {c.timeNanoSecs} from {repr(self)}: Cutoff = {keepFromNs}.")
 		return

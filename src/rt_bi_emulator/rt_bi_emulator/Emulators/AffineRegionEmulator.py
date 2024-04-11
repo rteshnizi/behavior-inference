@@ -55,7 +55,7 @@ class AffineRegionEmulator(RtBiNode, ABC):
 		saPoses = list(self.get_parameter("saPoses").get_parameter_value().string_array_value)
 		centersOfRotation = list(self.get_parameter("centersOfRotation").get_parameter_value().string_array_value)
 		fovs = list(self.get_parameter("fovs").get_parameter_value().string_array_value)
-		self.__ctPoly = ContinuousTimePolygon([], len(timePoints))
+		self.__ctPoly = ContinuousTimePolygon([])
 		for i in range(len(timePoints)):
 			cor = json.loads(centersOfRotation[i])
 			fov = [tuple(p) for p in json.loads(fovs[i])]

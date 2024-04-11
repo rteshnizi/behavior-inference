@@ -142,13 +142,7 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 			toCoords = (nodePositions[to][0], nodePositions[to][1], nodePositions[to][2] + zOffset)
 			edgeData = outEdgeView[frm, to]
 			color = self.__getEdgeRenderColor(frmType, toType, "isTemporal" in edgeData and edgeData["isTemporal"])
-			# (dx, dy, dz) = GeometryLib.subtractCoords(toCoords, frmCoords)
-			# dVect = GeometryLib.getUnitVector((dx, dy, dz))
-			# dVect = GeometryLib.scaleCoords(dVect, self.__RENDER_RADIUS)
-			# fromCoords = GeometryLib.addCoords(frmCoords, dVect)
-			# toCoords = GeometryLib.subtractCoords(toCoords, dVect)
-			# marker = RViz.createLine(frm, coordsList=[fromCoords, toCoords], outline=color, width=2, idSuffix=repr(to))
-			marker = RViz.createLine(frm, coordsList=[frmCoords, toCoords], outline=color, width=2, idSuffix=repr(to))
+			marker = RViz.createLine(frm, coordsList=[frmCoords, toCoords], outline=color, width=1, idSuffix=repr(to))
 			Ros.AppendMessage(markers, marker)
 		return markers
 
@@ -253,7 +247,7 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 	def __replaceInHistory(self, index: int, graph: ConnectivityGraph) -> None:
 		""" **Does not add nodes.** This just manipulates `self.__history` variable. """
 		self.__removeFromHistory(index, False)
-		Ros.Log(f"REPLACE graph with {len(graph.antiShadows)} anti-shadows and {len(graph.shadows)} shadows.")
+		Ros.Log(f"REPLACE graph with {len(graph.shadows)} shadows and {len(graph.antiShadows)} anti-shadows.")
 		# graph.logGraphNodes()
 		hIndex = cast(int, self.__history[index].hIndex)
 		graph.hIndex = hIndex
@@ -269,7 +263,7 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 			Ros.Log("Isomorphic graph detected.")
 			self.__replaceInHistory(self.depth - 1, graph)
 		else:
-			Ros.Log(f"APPENDING graph with {len(graph.antiShadows)} anti-shadows and {len(graph.shadows)} shadows.")
+			Ros.Log(f"APPENDING graph with {len(graph.shadows)} shadows and {len(graph.antiShadows)} anti-shadows.")
 			graph.hIndex = self.hIndex
 			self.__history.append(graph)
 			self.hIndex += 1
@@ -368,12 +362,14 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 			Ros.Log(f"Out of sync update: {poly.timeNanoSecs} < {self.processedTime} processed already.")
 			return
 		idSansTime = poly.id.sansTime()
-		Ros.Log(f"Updating CTR: {idSansTime}.")
 		if idSansTime not in self.__ctrs:
+			Ros.Log("Creating CTR...")
 			self.__ctrs[idSansTime] = ContinuousTimePolygon(polyConfigs=[poly])
+			Ros.Log(f"Created {repr(self.__ctrs[idSansTime])}")
 			return
-
+		Ros.Log(f"Updating -> {repr(self.__ctrs[idSansTime])}")
 		self.__ctrs[idSansTime].addPolygon(poly, self.processedTime)
+		Ros.Log(f"Updated  -> {repr(self.__ctrs[idSansTime])}")
 		return
 
 	def __latestNanoSecsBounds(self) -> tuple[int, int]:
@@ -387,9 +383,8 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 		return (minNs, maxNs)
 
 	def updatePolygon(self, polygon: GraphPolygon) -> None:
-		Ros.Log(f"↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ {repr(self)} ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓")
-		Ros.Log(f"<=============================== {polygon.timeNanoSecs:20} =====================================>")
-		Ros.Log(f"New Poly = {polygon}")
+		Ros.Log(f"↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ {repr(self)} ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓")
+		Ros.Log(f"New Poly -> {polygon}, T={polygon.timeNanoSecs}")
 		if self.depth == 0 and polygon.type != StaticPolygon.type:
 			Ros.Log("Initial CGraph must be created from a static map.")
 			return

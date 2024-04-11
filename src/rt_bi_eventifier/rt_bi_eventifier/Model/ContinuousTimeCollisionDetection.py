@@ -159,9 +159,9 @@ class ContinuousTimeCollisionDetection:
 					intervals += cls.__obbTest(ctRegion1, ctRegion2, processUpToNs)
 				elif ctRegion2.isSlice:
 					# If ctRegion2 is a slice, it will be tested when it is selected as ctRegion1 above.
-					Ros.Log(f"Not testing {ctRegion1.name} vs {ctRegion2.name}: SLICE.")
+					Ros.Log(f"Not testing {repr(ctRegion1)} vs {repr(ctRegion2)}: SLICE.")
 				elif processUpToNs < ctRegion2.earliestNanoSecs:
-					Ros.Log(f"Not testing {ctRegion1.name} vs {ctRegion2.name}: STARTS LATER.")
+					Ros.Log(f"Not testing {repr(ctRegion1)} vs {repr(ctRegion2)}: STARTS LATER.")
 				else:
 					raise AssertionError(f"Does this ever happen? ctr1 = {ctRegion1.name} vs ctr2 = {ctRegion2.name}")
 				checked.add((ctRegion1.id, ctRegion2.id))

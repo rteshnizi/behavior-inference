@@ -1,6 +1,6 @@
-from abc import ABC, abstractproperty
+from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Any, Literal, Sequence, cast
+from typing import Literal
 
 from rt_bi_commons.Shared.Color import RGBA, ColorNames, ColorUtils
 from rt_bi_commons.Shared.NodeId import NodeId
@@ -181,7 +181,10 @@ class Polygon(ABC):
 	@property
 	def centroid(self) -> GeometryLib.Coords:
 		"""The centroid of the interior."""
-		p = self.__interiorPolygon.centroid
+		p: Shapely.Point = self.__interiorPolygon.centroid
+		if p.is_empty:
+			Ros.Logger().error(f"Attempted to get centroid of the empty polygon {repr(self.id)}.")
+			return (-25.0, -25.0)
 		return GeometryLib.toCoords(p)
 
 	@property
@@ -209,7 +212,8 @@ class Polygon(ABC):
 	def hasCommonEdge(self, other: "Polygon") -> bool:
 		return GeometryLib.haveOverlappingEdge(self.interior, other.interior)
 
-	@abstractproperty
+	@property
+	@abstractmethod
 	def centerOfRotation(self) -> GeometryLib.Coords:
 		"""The center of rotation of a polygonal region."""
 		...
