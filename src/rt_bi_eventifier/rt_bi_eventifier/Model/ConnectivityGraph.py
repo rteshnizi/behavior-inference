@@ -204,9 +204,9 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 	def createNodeMarkers(self) -> list[RViz.Msgs.Marker]:
 		markers = []
 		for antiShadow in self.antiShadows:
-			Ros.ConcatMessageArray(markers, antiShadow.createMarkers(stamped=False))
+			Ros.ConcatMessageArray(markers, antiShadow.createMarkers(renderText=True, stamped=False))
 		for shadow in self.shadows:
-			Ros.ConcatMessageArray(markers, shadow.createMarkers(stamped=False))
+			Ros.ConcatMessageArray(markers, shadow.createMarkers(renderText=True, stamped=False))
 		id = RViz.Id(hIndex=-1, timeNanoSecs=-1, regionId="CGraph", polygonId="Name", subPartId="")
 		marker = RViz.createText(id, coords=(100, -10), text=f"{repr(self)}", outline=ColorNames.WHITE, idSuffix="txt")
 		Ros.AppendMessage(markers, marker)

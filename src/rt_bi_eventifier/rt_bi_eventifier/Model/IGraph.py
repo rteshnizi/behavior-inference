@@ -95,8 +95,8 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 
 	def __getNodeRenderZOffset(self, type_: StaticPolygon.Type | SensingPolygon.Type | MovingPolygon.Type) -> float:
 		if type_ == StaticPolygon.type: return 0
-		elif type_ == SensingPolygon.type: return self.__RENDER_RADIUS
-		elif type_ == MovingPolygon.type: return -1 * self.__RENDER_RADIUS
+		elif type_ == SensingPolygon.type: return 2 * self.__RENDER_RADIUS
+		elif type_ == MovingPolygon.type: return -2 * self.__RENDER_RADIUS
 		else: return 0
 
 	def createNodeMarkers(self) -> list[RViz.Msgs.Marker]:
@@ -111,10 +111,10 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 			marker = RViz.createSphere(id, center=coords, radius=self.__RENDER_RADIUS, color=color)
 			Ros.AppendMessage(markers, marker)
 			coords = (coords[0], coords[1], coords[2] + self.__RENDER_RADIUS)
-			marker = RViz.createText(id, coords=coords, text=poly.shortName, outline=ColorNames.WHITE, idSuffix="txt")
+			marker = RViz.createText(id, coords=coords, text=poly.shortName, outline=ColorNames.WHITE, fontSize=8.0, idSuffix="txt")
 			Ros.AppendMessage(markers, marker)
 		id = RViz.Id(hIndex=-1, timeNanoSecs=-1, regionId="IGraph", polygonId="Name", subPartId="")
-		marker = RViz.createText(id, coords=(-100, -100), text=f"{repr(self)}", fontSize=15.0, outline=ColorNames.WHITE, idSuffix="txt")
+		marker = RViz.createText(id, coords=(250, -50), text=f"{repr(self)}", outline=ColorNames.WHITE, idSuffix="txt")
 		Ros.AppendMessage(markers, marker)
 		return markers
 

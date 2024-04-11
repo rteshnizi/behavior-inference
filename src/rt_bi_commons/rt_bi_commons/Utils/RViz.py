@@ -11,9 +11,12 @@ from rt_bi_commons.Shared.NodeId import NodeId
 from rt_bi_commons.Shared.Pose import Coords2d, Coords3d
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Geometry import GeometryLib
-from rt_bi_commons.Utils.Msgs import NANO_CONVERSION_CONSTANT, Msgs as MsgsUtils
+from rt_bi_commons.Utils.Msgs import Msgs as MsgsUtils
 
-DEFAULT_RENDER_DURATION_NS: Final[int] = int(3 * NANO_CONVERSION_CONSTANT)
+# DEFAULT_RENDER_DURATION_NS: Final[int] = int(3 * NANO_CONVERSION_CONSTANT)
+DEFAULT_RENDER_DURATION_NS: Final[int] = 0
+""" How long the object should last before being automatically deleted, 0 means forever. """
+# https://docs.ros.org/en/api/visualization_msgs/html/msg/Marker.html
 
 class RViz:
 	"""
