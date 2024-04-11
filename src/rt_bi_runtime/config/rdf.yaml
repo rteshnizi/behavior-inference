@@ -3,8 +3,8 @@ rt_bi_runtime:
     ros__parameters:
       fuseki_server: "http://192.168.1.164:8090"
       rdf_store: "rt-bi-2"
-      rdf_dir: "rdf"
-      sparql_dir: "rdf"
+      rdf_dir: "rdf" # Don't forget to add the resource directories to setup.py
+      sparql_dir: "sparql" # Don't forget to add the resource directories to setup.py
       sparql_query_template: "template.spatial.rq"
       sparql_var_selectors:
         - '["color", "var.color.rq"]'
@@ -17,5 +17,5 @@ rt_bi_runtime:
       placeholder_selector_end: "# SELECTOR END #############################"
       placeholder_selector_start: "# SELECTOR START ###########################"
       placeholder_variables: "# SELECTED VARIABLES ###########################"
-      transition_grammar_dir: "rdf"
+      transition_grammar_dir: "rdf" # Don't forget to add the resource directories to setup.py
       transition_grammar_file: "transition.lark"
