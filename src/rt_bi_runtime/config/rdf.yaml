@@ -5,17 +5,18 @@ rt_bi_runtime:
       rdf_store: "rt-bi-2"
       rdf_dir: "rdf" # Don't forget to add the resource directories to setup.py
       sparql_dir: "sparql" # Don't forget to add the resource directories to setup.py
-      sparql_query_template: "template.spatial.rq"
+      sparql_template_spatial: "template.spatial.rq"
+      sparql_template_ids: "template.setIds.rq"
       sparql_var_selectors:
         - '["color", "var.color.rq"]'
         - '["name", "var.name.rq"]'
         - '["accessible-times", "var.accessibility.rq"]'
         - '["polygons", "var.polygons.rq"]'
         - '["traversability", "var.traversability.rq"]'
-      placeholder_bind: "# BIND END #################################"
-      placeholder_order_by: "# OTHER ORDER VARS #######"
-      placeholder_selector_end: "# SELECTOR END #############################"
-      placeholder_selector_start: "# SELECTOR START ###########################"
-      placeholder_variables: "# SELECTED VARIABLES ###########################"
+      placeholder_bind: "# BIND ######################################"
+      placeholder_id_values: "# ID VALUES #############################"
+      placeholder_order: "# ORDER VARIABLES ###########################"
+      placeholder_selector: "# SELECTOR ##################################"
+      placeholder_variables: "# SELECTED VARIABLES ########################"
       transition_grammar_dir: "rdf" # Don't forget to add the resource directories to setup.py
       transition_grammar_file: "transition.lark"

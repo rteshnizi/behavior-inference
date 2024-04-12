@@ -17,15 +17,13 @@ PREFIX xsd:            <http://www.w3.org/2001/XMLSchema#>
 PREFIX y:              <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/ys#>
 
 SELECT
-	?regularSetId ?spatial_type
-	# SELECTED VARIABLES ###########################
+	?regularSetId ?setType
+	# SELECTED VARIABLES ########################
 WHERE {
-	GRAPH tower_bridge:definition {
-		?regularSetId rdf:type/rdfs:subClassOf* rt_bi:RegularSpace ;
-		# SELECTOR START ###########################
-		# SELECTOR END #############################
-		# BIND START ###############################
-		# BIND END #################################
+	VALUES ?regularSetId {
+		# ID VALUES #############################
 	}
+	?regularSetId a ?setType.
+	# SELECTOR ##################################
 }
-ORDER BY ?regularSetId
+ORDER BY ?regularSetId # ORDER VARIABLES ###########################

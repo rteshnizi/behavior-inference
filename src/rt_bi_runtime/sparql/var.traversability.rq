@@ -18,14 +18,15 @@ PREFIX y:              <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/ys#>
 
 SELECT
 	?regularSetId
+	# SELECTED VARIABLES ########################
 	?legs ?wheels ?swim
+	# SELECTED VARIABLES ########################
 WHERE {
-	# SELECTOR START ###########################
+	# SELECTOR ##################################
 	OPTIONAL { ?regularSetId
 		world_props:traversability/world_props:legs ?legs ;
 		world_props:traversability/world_props:wheels ?wheels ;
 		world_props:traversability/world_props:swims ?swims .
 	}
-	# SELECTOR END #############################
+	# SELECTOR ##################################
 }
-ORDER BY ?regularSetId

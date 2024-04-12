@@ -50,20 +50,34 @@ class PredicateToVariable(TransitionTransformer):
 
 
 class PredicateToQueryStr:
-	def __init__(self, baseDir: str, transitionGrammarDir: str, transitionGrammarFileName: str, sparqlDir: str, queryFiles: list[tuple[str, str]]) -> None:
+	def __init__(
+		self,
+		baseDir: str,
+		transitionGrammarDir: str,
+		transitionGrammarFileName: str,
+		sparqlDir: str,
+		orderPlaceholder: str,
+		selectorPlaceholder: str,
+		variablesPlaceholder: str,
+		queryFiles: list[tuple[str, str]],
+	) -> None:
 		super().__init__()
 		self.__baseDir = baseDir
 		self.__sparqlDir = sparqlDir
 		self.__queryFiles: dict[str, str] = { pair[0]: pair[1] for pair in queryFiles }
 		self.__transitionParser = TransitionParser(baseDir, transitionGrammarDir, transitionGrammarFileName)
+		self.__orderPlaceholder = orderPlaceholder
+		self.__selectorPlaceholder = selectorPlaceholder
+		self.__variablesPlaceholder = variablesPlaceholder
 		return
 
-	def __toSelector(self, parsedPred: Tree[str], tagStart: str, tagEnd: str) -> str:
-		queryName = cast(str, PredicateToQueryName().transform(parsedPred))
-		selector = self.selector(queryName, tagStart, tagEnd)
-		namespace = cast(str, PredicateToNamespace().transform(parsedPred))
-		selector = selector.replace("?namespace", namespace)
-		return selector
+	def __regexMatchPlaceholders(self, queryName: str, placeholder: str) -> str:
+		queryContent = Path(self.__baseDir, self.__sparqlDir, self.__queryFiles[queryName]).read_text()
+		import re
+		pattern = f"{placeholder}(.*){placeholder}"
+		result = re.search(pattern, queryContent, re.RegexFlag.DOTALL)
+		if result: return result.group(1)
+		raise RuntimeError(f"The query file for variable \"{queryName}\" does not contain the required placeholder comments.")
 
 	def __toBind(self, parsedPred: Tree[str], index: int) -> tuple[str, str]:
 		bindStatement = cast(str, PredicateToVariable().transform(parsedPred))
@@ -72,29 +86,23 @@ class PredicateToQueryStr:
 		bindStatement = bindStatement.replace(PREDICATE_VARNAME, varName)
 		return (bindStatement, varName)
 
-	def transform(self, predicate: str, index: int, tagStart: str, tagEnd: str) -> tuple[str, str, str]:
+	def transformPredicates(self, predicate: str, index: int) -> tuple[str, str, str, str]:
 		parsedPred = self.__transitionParser.parse(predicate)
 		parsedPred = cast(Tree[str], parsedPred)
-		selector = self.__toSelector(parsedPred, tagStart, tagEnd)
-		(bindStatement, varName) = self.__toBind(parsedPred, index)
-		return (varName, selector, bindStatement)
+		# For predicates, we add the bound boolean variables rather than the sparql variable
+		(whereClause, _, orders) = self.selector(PredicateToQueryName().transform(parsedPred))
+		(varBindings, variables) = self.__toBind(parsedPred, index)
+		return (whereClause, variables, varBindings, orders)
 
-	def selector(self, queryName: str, tagStart: str, tagEnd: str) -> str:
-		if queryName == "": return ""
-		if queryName not in self.__queryFiles: raise KeyError(f"Unexpected variable name: {queryName}")
-		selector = Path(self.__baseDir, self.__sparqlDir, self.__queryFiles[queryName]).read_text()
-		import re
-		pattern = f"{tagStart}(.*){tagEnd}"
-		result = re.search(pattern, selector, re.RegexFlag.DOTALL)
-		if result:
-			selector = result.group(1)
-			return selector
-		raise RuntimeError(f"The query file for variable \"{queryName}\" does not contain the required comment markers.")
-
-	@property
-	def polygonVarNames(self) -> str:
-		return "?polygonId ?vertInd ?x ?y"
-
-	@property
-	def intervalVarNames(self) -> str:
-		return "?min ?max ?include_min ?include_min"
+	def selector(self, queryName: str) -> tuple[str, str, str]:
+		if queryName == "": return ("", "", "")
+		whereClause = self.__regexMatchPlaceholders(queryName, self.__selectorPlaceholder)
+		try: # Not all queries have variables
+			variables = self.__regexMatchPlaceholders(queryName, self.__variablesPlaceholder)
+		except:
+			variables = ""
+		try: # Not all queries have order by
+			orders = self.__regexMatchPlaceholders(queryName, self.__orderPlaceholder)
+		except:
+			orders = ""
+		return (whereClause, variables, orders)

@@ -28,7 +28,11 @@ class MapEmulator(ColdStartableNode):
 
 	def onColdStartAllowed(self, payload: ColdStartPayload) -> None:
 		req = Msgs.RtBiSrv.SpaceTime.Request()
-		req.json_payload = payload.stringify()
+		req.json_payload = ColdStartPayload({
+			"nodeName": self.get_fully_qualified_name(),
+			"phase": payload.phase,
+			"predicates": list(payload.predicates),
+		}).stringify()
 		Ros.SendClientRequest(self, self.rdfClient, req, self.__onSpaceTimeResponse)
 		return
 
@@ -39,15 +43,32 @@ class MapEmulator(ColdStartableNode):
 		)
 		return list(dynamics)
 
+	def __extractAffineSetIds(self, matches: list[Msgs.RtBi.RegularSpace]) -> list[str]:
+		aff = map(
+			lambda m: m.id,
+			filter(lambda m: m.space_type == Msgs.RtBi.RegularSpace.AFFINE, matches)
+		)
+		return list(aff)
+
 	def __onSpaceTimeResponse(self, req: Msgs.RtBiSrv.SpaceTime.Request, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
 		msg = Msgs.RtBi.RegularSpaceArray(spaces=res.spatial_matches)
-		coldStartPayload = ColdStartPayload(req.json_payload)
+		payload = ColdStartPayload(req.json_payload)
 		self.__mapRegionsPublisher.publish(msg)
-		self.coldStartCompleted({
+		responsePayload = ColdStartPayload({
+			"nodeName": self.get_fully_qualified_name(),
 			"done": True,
-			"phase": coldStartPayload.phase,
+			"phase": payload.phase,
+			"affine": self.__extractAffineSetIds(Ros.AsList(res.spatial_matches, Msgs.RtBi.RegularSpace)),
 			"dynamic": self.__extractDynamicSetIds(Ros.AsList(res.spatial_matches, Msgs.RtBi.RegularSpace)),
 		})
+		self.coldStartCompleted(responsePayload)
+		# Request information about dynamic sets from the ontology
+		dySetReq = Msgs.RtBiSrv.SpaceTime.Request()
+		dySetReq.json_payload = responsePayload.stringify()
+		Ros.SendClientRequest(self, self.rdfClient, dySetReq, self.__onDynamicSetsResponse)
+		return res
+
+	def __onDynamicSetsResponse(self, req: Msgs.RtBiSrv.SpaceTime.Request, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
 		return res
 
 	def declareParameters(self) -> None:

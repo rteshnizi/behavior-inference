@@ -16,10 +16,6 @@
 		"${workspaceFolder}/install/rt_bi_interfaces/lib/python3.10/site-packages",
 	],
 	"cSpell.words": [
-		"Rcutils",
-		"STRAFTER",
-		"STRSTARTS",
-		"Startable",
 		"agraph",
 		"colcon",
 		"ctcd",
@@ -33,6 +29,7 @@
 		"networkx",
 		"pyplot",
 		"rclpy",
+		"Rcutils",
 		"rdfs",
 		"rtbi",
 		"rviz",
@@ -41,6 +38,10 @@
 		"seealso",
 		"skimage",
 		"slerp",
+		"sparqls",
+		"startable",
+		"STRAFTER",
+		"STRSTARTS",
 		"tracklet",
 		"tracklets",
 		"traj",
@@ -49,7 +50,8 @@
 		"traversabilitys",
 		"vect",
 		"vects",
-		"verts"
+		"verts",
+		"xfmr"
 	],
 	"cSpell.enableFiletypes": [
 		"lark",

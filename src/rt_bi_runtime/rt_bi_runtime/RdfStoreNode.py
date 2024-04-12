@@ -24,12 +24,13 @@ _Parameters = Literal[
 	"rdf_dir",
 	"rdf_store",
 	"sparql_dir",
-	"sparql_query_template",
+	"sparql_template_spatial",
+	"sparql_template_ids",
 	"sparql_var_selectors",
 	"placeholder_bind",
-	"placeholder_order_by",
-	"placeholder_selector_end",
-	"placeholder_selector_start",
+	"placeholder_id_values",
+	"placeholder_order",
+	"placeholder_selector",
 	"placeholder_variables",
 	"transition_grammar_dir",
 	"transition_grammar_file",
@@ -45,23 +46,25 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 			"rdf_dir": StrParser[_Parameters](self, "rdf_dir"),
 			"rdf_store": StrParser[_Parameters](self, "rdf_store"),
 			"sparql_dir": StrParser[_Parameters](self, "sparql_dir"),
-			"sparql_query_template": StrParser[_Parameters](self, "sparql_query_template"),
+			"sparql_template_spatial": StrParser[_Parameters](self, "sparql_template_spatial"),
 			"sparql_var_selectors": ListJsonParser[_Parameters, tuple[str, str], list[str], Any](self, "sparql_var_selectors"),
 			"placeholder_bind": StrParser[_Parameters](self, "placeholder_bind"),
-			"placeholder_order_by": StrParser[_Parameters](self, "placeholder_order_by"),
-			"placeholder_selector_end": StrParser[_Parameters](self, "placeholder_selector_end"),
-			"placeholder_selector_start": StrParser[_Parameters](self, "placeholder_selector_start"),
+			"placeholder_order": StrParser[_Parameters](self, "placeholder_order"),
+			"placeholder_selector": StrParser[_Parameters](self, "placeholder_selector"),
 			"placeholder_variables": StrParser[_Parameters](self, "placeholder_variables"),
 			"transition_grammar_dir": StrParser[_Parameters](self, "transition_grammar_dir"),
 			"transition_grammar_file": StrParser[_Parameters](self, "transition_grammar_file"),
 		}
-		newKw = { "node_name": "dd_rdf", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
+		newKw = { "node_name": "dd_rdf", "loggingSeverity": LoggingSeverity.WARN, **kwArgs}
 		super().__init__(parsers, **newKw)
-		self.__varToSparql = PredicateToQueryStr(
+		self.__sparqlXfmr = PredicateToQueryStr(
 			get_package_share_directory(package_name),
 			self["transition_grammar_dir"][0],
 			self["transition_grammar_file"][0],
 			self["sparql_dir"][0],
+			self["placeholder_order"][0],
+			self["placeholder_selector"][0],
+			self["placeholder_variables"][0],
 			self["sparql_var_selectors"],
 		)
 		self.__httpInterface = FusekiInterface(self, self["fuseki_server"][0], self["rdf_store"][0])
@@ -79,27 +82,51 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 
 	def __onSpaceTimeRequest(self, req: SpaceTime.Request, res: SpaceTime.Response) -> SpaceTime.Response:
 		payload = ColdStartPayload(req.json_payload)
-		sparqls: list[str] = [] # CSpell: ignore - sparqls
+		if payload.nodeName == RtBiInterfaces.DYNAMIC_MAP_NODE_NAME:
+			if not payload.done: res = self.__fetchRegularSpatialSets(payload, res)
+			else: res = self.__fetchAccessibility(payload, res)
+		else:
+			self.log(f"Unexpected request payload in {self.__class__.__name__}: \n\t{req.json_payload}")
+		return res
+
+	def __fetchRegularSpatialSets(self, payload: ColdStartPayload, res: SpaceTime.Response) -> SpaceTime.Response:
+		whereClauses: list[str] = []
 		variables: list[str] = []
 		binds: list[str] = []
-		# Polygon SPARQL must come first, order in optional statements matter. https://stackoverflow.com/a/61395608/750567
-		variables.append(self.__varToSparql.polygonVarNames)
-		sparqls.append(self.__varToSparql.selector("polygons", self["placeholder_selector_start"][0], self["placeholder_selector_end"][0]))
+		orders: list[str] = []
+		(extractedSelector, extractedVars, extractedOrders) = self.__sparqlXfmr.selector("polygons")
+		whereClauses.append(extractedSelector)
+		variables.append(extractedVars)
+		orders.append(extractedOrders)
 		i = 0
 		for predicate in payload.predicates:
-			(variable, sparql, bindStatement) = self.__varToSparql.transform(predicate, i, self["placeholder_selector_start"][0], self["placeholder_selector_end"][0])
-			if variable == "" and sparql == "": continue
-			variables.append(variable)
-			sparqls.append(sparql)
-			binds.append(bindStatement)
+			(extractedSelector, extractedVars, extractedBindings, extractedOrders) = self.__sparqlXfmr.transformPredicates(predicate, i)
+			if extractedVars == "" and extractedSelector == "": continue
+			variables.append(extractedVars)
+			whereClauses.append(extractedSelector)
+			binds.append(extractedBindings)
+			orders.append(extractedOrders)
 			i += 1
 		binds.append(self.__varsToFilter(variables))
 
-		query = Path(get_package_share_directory(package_name), self["sparql_dir"][0], self["sparql_query_template"][0]).read_text()
-		query = query.replace(self["placeholder_variables"][0], self.__joinList(variables, " "))
-		query = query.replace(self["placeholder_selector_end"][0], self.__joinList(sparqls, ""))
+		query = Path(get_package_share_directory(package_name), self["sparql_dir"][0], self["sparql_template_spatial"][0]).read_text()
+		query = query.replace(self["placeholder_variables"][0], self.__joinList(variables, "\n\t"))
+		query = query.replace(self["placeholder_selector"][0], self.__joinList(whereClauses, ""))
 		query = query.replace(self["placeholder_bind"][0], self.__joinList(binds, "\n\t"))
-		query = query.replace(self["placeholder_order_by"][0], self.__varToSparql.polygonVarNames)
+		query = query.replace(self["placeholder_order"][0], self.__joinList(orders, " "))
+		return self.__httpInterface.staticReachability(query, res)
+
+	def __fetchAccessibility(self, payload: ColdStartPayload, res: SpaceTime.Response) -> SpaceTime.Response:
+		return res
+		sparqls: list[str] = []
+		variables: list[str] = []
+		ids = payload.dynamic
+		sparqls.append(self.__sparqlXfmr.selector("accessible-times", self["placeholder_selector"][0]))
+
+		query = Path(get_package_share_directory(package_name), self["sparql_dir"][0], self["sparql_template_spatial"][0]).read_text()
+		query = query.replace(self["placeholder_variables"][0], self.__joinList(variables, " "))
+		query = query.replace(self["placeholder_selector"][0], self.__joinList(sparqls, ""))
+		query = query.replace(self["placeholder_order"][0], self.__varToSparql.polygonVarNames)
 		return self.__httpInterface.staticReachability(query, res)
 
 	def render(self) -> None:

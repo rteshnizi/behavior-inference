@@ -18,13 +18,11 @@ PREFIX y:              <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/ys#>
 
 SELECT
 	?regularSetId ?setType
-	# SELECTED VARIABLES ###########################
+	# SELECTED VARIABLES ########################
 WHERE {
 	?regularSetId a/rdfs:subClassOf* rt_bi:RegularSpace .
 	?regularSetId a ?setType.
-	# SELECTOR START ###########################
-	# SELECTOR END #############################
-	# BIND START ###############################
-	# BIND END #################################
+	# SELECTOR ##################################
+	# BIND ######################################
 }
-ORDER BY ?regularSetId # OTHER ORDER VARS #######
+ORDER BY ?regularSetId # ORDER VARIABLES ###########################

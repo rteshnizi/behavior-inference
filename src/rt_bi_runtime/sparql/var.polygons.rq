@@ -17,10 +17,11 @@ PREFIX xsd:            <http://www.w3.org/2001/XMLSchema#>
 PREFIX y:              <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/ys#>
 
 SELECT
-	?regularSetId
+	# SELECTED VARIABLES ########################
 	?polygonId ?vertInd ?x ?y
+	# SELECTED VARIABLES ########################
 WHERE {
-	# SELECTOR START ###########################
+	# SELECTOR ##################################
 	OPTIONAL { ?regularSetId world_props:polygons ?polygonId .
 		?polygonId spatial_props:vertices ?vertexSeq .
 		?vertexSeq ?vertInd ?vertex .
@@ -28,6 +29,9 @@ WHERE {
 			spatial_props:x/spatial_props:x_val ?x ;
 			spatial_props:y/spatial_props:y_val ?y .
 	}
-	# SELECTOR END #############################
+	# SELECTOR ##################################
 }
-ORDER BY ?regularSetId ?polygonId ?vertInd
+ORDER BY
+	# ORDER VARIABLES ###########################
+	?polygonId ?vertInd ?x ?y
+	# ORDER VARIABLES ###########################
