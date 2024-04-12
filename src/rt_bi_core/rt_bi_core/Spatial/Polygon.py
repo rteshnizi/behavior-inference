@@ -233,7 +233,7 @@ class Polygon(ABC):
 		msgs = []
 		coords = GeometryLib.getGeometryCoords(self.interior)
 		if len(coords) == 0:
-			Ros.Logger().error(f"Empty polygon? {self.shortName}")
+			Ros.Logger().error(f"Empty polygon detected in createMarkers(): {self.shortName}")
 			return msgs
 		envelopColor = envelopeColor if envelopeColor is not None else self.__DEFAULT_ENVELOPE_COLOR
 		unstampedId = self.id if stamped else self.id.sansTime()
@@ -273,6 +273,6 @@ class Polygon(ABC):
 		msg = Msgs.RtBi.RegularSpace()
 		msg.id = self.id
 		msg.polygons = [Msgs.toStdPolygon(self.interior)]
-		msg.spec.color = ColorNames.toStr(self.envelopeColor)
-		msg.spec.name = []
+		msg.color = ColorNames.toStr(self.envelopeColor)
+		msg.name = []
 		return msg

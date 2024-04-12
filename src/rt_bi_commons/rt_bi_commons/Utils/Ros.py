@@ -147,16 +147,7 @@ def AsList(array: Sequence[__Topic] | AbstractSet[__Topic] | list[__Topic], t: t
 	assert isinstance(array, list), (f"Failed to cast messages to array. Array type: {type(array)}")
 	return array
 
-def PopMessage(array: Sequence[__Topic] | AbstractSet[__Topic] | list[__Topic], i: int, t: type[__Topic] | Any = Any) -> __Topic:
-	"""Appends a message to a message array.
-
-	Parameters
-	----------
-	array : Union[Sequence, AbstractSet, UserList]
-		The array.
-	msg : Any
-		The message.
-	"""
+def PopMessage(array: Sequence[__Topic] | AbstractSet[__Topic] | list[__Topic], i: int, t: type[__Topic]) -> __Topic:
 	assert isinstance(array, list), (f"Failed to append messages to array. Array type: {type(array)}")
 	return array.pop(i)
 
@@ -173,16 +164,7 @@ def AppendMessage(array: Sequence[__Topic] | AbstractSet[__Topic] | list[__Topic
 	assert isinstance(array, list), (f"Failed to append messages to array. Array type: {type(array)}")
 	array.append(msg)
 
-def GetMessage(array: Sequence[__Topic] | AbstractSet[__Topic] | list[__Topic], i: int, t: type[__Topic] | Any = Any) -> __Topic:
-	"""Appends a message to a message array.
-
-	Parameters
-	----------
-	array : Union[Sequence, AbstractSet, UserList]
-		The array.
-	msg : Any
-		The message.
-	"""
+def GetMessage(array: Sequence[__Topic] | AbstractSet[__Topic] | list[__Topic], i: int, t: type[__Topic]) -> __Topic:
 	assert isinstance(array, list), (f"Failed to append messages to array. Array type: {type(array)}")
 	return array[i]
 

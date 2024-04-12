@@ -13,7 +13,7 @@ from rt_bi_emulator.Emulators.AffineRegionEmulator import AffineRegionEmulator
 
 class SensorEmulator(AffineRegionEmulator, TargetSubscriber):
 	def __init__(self):
-		newKw = { "node_name": "emulator_sensor", "loggingSeverity": LoggingSeverity.INFO }
+		newKw = { "node_name": "emulator_sensor", "loggingSeverity": LoggingSeverity.WARN }
 		super().__init__(pauseQueuingMsgs=False, **newKw)
 		self.__observedTargetIds = set()
 		(self.__regionPublisher, _) = RtBiInterfaces.createSensorPublisher(self, self.__publishUpdate, self.updateInterval)
@@ -25,23 +25,31 @@ class SensorEmulator(AffineRegionEmulator, TargetSubscriber):
 
 	def onPolygonUpdated(self, rType: TargetPolygon.Type, polygon: TargetPolygon) -> None:
 		for regionId in self.targetRegions:
-			polys = self.targetRegions[regionId]
-			if len(polys) > 1: raise RuntimeError(f"We do not expect a target region with more than one member.")
-			(_, index) = self.targetPolyIdMap[polys[0].id]
-			target = self.targetRegions[regionId][index]
+			targetPolys = self.targetRegions[regionId]
+			if len(targetPolys) > 1: raise RuntimeError(f"We do not expect a target region with more than one member.")
+			target = targetPolys[0]
 			trackletMsg = Msgs.RtBi.Tracklet(spawned=False, vanished=False)
-			trackletMsg.id = target.id
-			trackletMsg.pose = Msgs.toStdPose(target.interior.centroid)
+			trackletMsg.id = regionId
+			trackletMsg.pose = Msgs.toStdPose(target.centroid)
 			if GeometryLib.intersects(target.interior, self.getRegionAtTime(target.timeNanoSecs).interior):
 				estMsg = Msgs.RtBi.Estimation()
 				estMsg.robot = self.asRegularSpaceMsg()
-				if target.id not in self.__observedTargetIds:
+				if target.id.sansTime() not in self.__observedTargetIds:
 					self.log(f"TG {target.id} spawned.")
 					trackletMsg.spawned = True
-					self.__observedTargetIds.add(target.id)
+					self.__observedTargetIds.add(target.id.sansTime())
 				Ros.AppendMessage(estMsg.estimations, trackletMsg)
 				self.__estPublisher.publish(estMsg)
 				return
+			else:
+				if target.id.sansTime() in self.__observedTargetIds:
+					self.log(f"TG {target.id} vanished.")
+					estMsg = Msgs.RtBi.Estimation()
+					estMsg.robot = self.asRegularSpaceMsg()
+					trackletMsg.vanished = True
+					self.__observedTargetIds.remove(target.id.sansTime())
+					Ros.AppendMessage(estMsg.estimations, trackletMsg)
+					self.__estPublisher.publish(estMsg)
 		return
 
 	def createMarkers(self) -> list[RViz.Msgs.Marker]:

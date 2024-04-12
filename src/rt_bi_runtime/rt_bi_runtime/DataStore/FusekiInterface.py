@@ -74,15 +74,19 @@ class FusekiInterface:
 		"""http://192.168.1.164:8090/rt-bi/"""
 		return f"{self.__fusekiServerAdr}/{self.__rdfStoreName}/"
 
-	def __parseInterval(self, helper: SparqlResultHelper, i: int) -> tuple[Msgs.RtBi.TimeInterval, int]:
-		msg = Msgs.RtBi.TimeInterval(
-			start=Msgs.toTimeMsg(helper.floatVarValue(i, "minT")),
-			end=Msgs.toTimeMsg(helper.floatVarValue(i, "maxT")),
-			include_left=json.loads(helper.boolVarValue(i, "minInclusive")),
-			include_right=json.loads(helper.boolVarValue(i, "maxInclusive")),
-		)
-		i += 1
-		return (msg, i)
+	def __parseIntervals(self, helper: SparqlResultHelper, i: int, regularSetId: str) -> tuple[list[Msgs.RtBi.TimeInterval], int]:
+		intervals = []
+		while i < len(helper):
+			if helper.strVarValue(i, "regularSetId") != regularSetId:
+					return (intervals, i)
+			intervals.append(Msgs.RtBi.TimeInterval(
+				min=Msgs.toTimeMsg(helper.floatVarValue(i, "min")),
+				max=Msgs.toTimeMsg(helper.floatVarValue(i, "max")),
+				include_min=json.loads(helper.boolVarValue(i, "include_min")),
+				include_max=json.loads(helper.boolVarValue(i, "include_max")),
+			))
+			i += 1
+		return (intervals, i)
 
 	def __parsePolygons(self, helper: SparqlResultHelper, i: int, regularSetId: str) -> tuple[list[Msgs.RtBi.Polygon], int]:
 		polys = []
@@ -134,22 +138,38 @@ class FusekiInterface:
 		if t.endswith("AffineSpace"): return Msgs.RtBi.RegularSpace.AFFINE
 		raise ValueError(f"Unexpected spatial set type: {t}")
 
-	def staticReachability(self, queryStr: str, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
-		Ros.Log(queryStr)
-		r = requests.post(self.__SPARQL_URL, data={ "query": queryStr })
+	def __sendQuery(self, query: str) -> SparqlResultHelper:
+		Ros.Log(query)
+		r = requests.post(self.__SPARQL_URL, data={ "query": query })
 		try:
-			helper = SparqlResultHelper(r)
-			stamp = Ros.Now(self.__node).to_msg()
-			i = 0
-			while i < len(helper):
-				msg = Msgs.RtBi.RegularSpace()
-				msg.id = helper.strVarValue(i, "regularSetId")
-				msg.stamp = stamp
-				msg.space_type = self.__parseSpaceType(helper, i)
-				msg.predicates = self.__parsePredicates(helper, i)
-				(msg.polygons, i) = self.__parsePolygons(helper, i, msg.id)
-				Ros.AppendMessage(res.spatial_matches, msg)
+			return SparqlResultHelper(r)
 		except Exception as e:
 			Ros.Logger().error(f"SPARQL request failed with the following message: {repr(e)}")
 			raise e
+
+	def staticReachability(self, query: str, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
+		resultHelper = self.__sendQuery(query)
+		stamp = Ros.Now(self.__node).to_msg()
+		i = 0
+		while i < len(resultHelper):
+			msg = Msgs.RtBi.RegularSpace()
+			msg.id = resultHelper.strVarValue(i, "regularSetId")
+			msg.stamp = stamp
+			msg.space_type = self.__parseSpaceType(resultHelper, i)
+			msg.predicates = self.__parsePredicates(resultHelper, i)
+			(msg.polygons, i) = self.__parsePolygons(resultHelper, i, msg.id)
+			Ros.AppendMessage(res.spatial_matches, msg)
+		return res
+
+	def accessibility(self, query: str, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
+		resultHelper = self.__sendQuery(query)
+		stamp = Ros.Now(self.__node).to_msg()
+		i = 0
+		while i < len(resultHelper):
+			msg = Msgs.RtBi.RegularSpace()
+			msg.id = resultHelper.strVarValue(i, "regularSetId")
+			msg.stamp = stamp
+			msg.space_type = self.__parseSpaceType(resultHelper, i)
+			(msg.accessible_times, i) = self.__parseIntervals(resultHelper, i, msg.id)
+			Ros.AppendMessage(res.spatial_matches, msg)
 		return res

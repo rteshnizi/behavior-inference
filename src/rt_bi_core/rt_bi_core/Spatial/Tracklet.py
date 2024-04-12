@@ -18,7 +18,8 @@ class Tracklet(Pose):
 		return self.__rVizId.hIndex
 
 	def __repr__(self) -> str:
-		s = f"{self.id}/{Tracklet.__ID_PREFIX}"
+		(rId, polyId) = self.__rVizId.shortNames()
+		s = f"{rId}/{polyId}"
 		if self.spawned and self.vanished: return "%s%s" % ("[+/-]", s)
 		if self.spawned: return "%s%s" % ("[+]", s)
 		if self.vanished: return "%s%s" % ("[-]", s)
@@ -30,8 +31,8 @@ class Tracklet(Pose):
 		elif self.vanished: color: RGBA = ColorNames.RED
 		else: color: RGBA = ColorNames.CYAN
 		coords = (self.x, self.y)
-		msgs.append(RViz.createCircle(self.__rVizId, coords, radius=13, outline=color, width=3.0, durationNs=durationNs))
-		msgs.append(RViz.createText(self.__rVizId, coords, repr(self), ColorNames.WHITE, durationNs=durationNs, idSuffix="txt"))
+		msgs.append(RViz.createCircle(self.__rVizId.sansTime(), coords, radius=13, outline=color, width=3.0, durationNs=durationNs))
+		msgs.append(RViz.createText(self.__rVizId.sansTime(), coords, repr(self), ColorNames.WHITE, durationNs=durationNs, idSuffix="txt"))
 		return msgs
 
 	def deleteMarkers(self) -> list[RViz.Msgs.Marker]:

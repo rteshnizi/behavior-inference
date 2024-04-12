@@ -48,18 +48,10 @@ class SensorRenderer(SensorSubscriber):
 				x=pose.position.x,
 				y=pose.position.y,
 				angleFromX=Msgs.toAngle(pose.orientation),
-				spawned=tracklet.spawned,
-				vanished=tracklet.vanished,
+				spawned=trackletMsg.spawned,
+				vanished=trackletMsg.vanished,
 			)
-			id = SensingPolygon.Id(
-				hIndex=-1,
-				timeNanoSecs=Msgs.toNanoSecs(msg.robot.stamp),
-				regionId=msg.robot.id,
-				polygonId=Ros.GetMessage(msg.robot.polygons, 0, Msgs.RtBi.Polygon).id,
-				subPartId="",
-			)
-			(regionId, index) = self.sensorPolyIdMap[id]
-			self.sensorRegions[regionId][index].tracklets[tracklet.id] = tracklet
+			self.sensorRegions[msg.robot.id][0].tracklets[tracklet.id] = tracklet
 		self.render()
 		return
 

@@ -14,7 +14,7 @@ rt_bi_runtime:
         - '["polygons", "var.polygons.rq"]'
         - '["traversability", "var.traversability.rq"]'
       placeholder_bind: "# BIND ######################################"
-      placeholder_id_values: "# ID VALUES #############################"
+      placeholder_ids: "# ID VALUES #############################"
       placeholder_order: "# ORDER VARIABLES ###########################"
       placeholder_selector: "# SELECTOR ##################################"
       placeholder_variables: "# SELECTED VARIABLES ########################"

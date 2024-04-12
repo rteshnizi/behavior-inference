@@ -27,7 +27,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Predicate.msg"
   "msg/RegularSpace.msg"
   "msg/RegularSpaceArray.msg"
-  "msg/SpaceSpec.msg"
   "msg/TimeInterval.msg"
   "msg/Tracklet.msg"
   "msg/Traversability.msg"

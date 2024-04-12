@@ -28,7 +28,7 @@ _Parameters = Literal[
 	"sparql_template_ids",
 	"sparql_var_selectors",
 	"placeholder_bind",
-	"placeholder_id_values",
+	"placeholder_ids",
 	"placeholder_order",
 	"placeholder_selector",
 	"placeholder_variables",
@@ -47,8 +47,10 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 			"rdf_store": StrParser[_Parameters](self, "rdf_store"),
 			"sparql_dir": StrParser[_Parameters](self, "sparql_dir"),
 			"sparql_template_spatial": StrParser[_Parameters](self, "sparql_template_spatial"),
+			"sparql_template_ids": StrParser[_Parameters](self, "sparql_template_ids"),
 			"sparql_var_selectors": ListJsonParser[_Parameters, tuple[str, str], list[str], Any](self, "sparql_var_selectors"),
 			"placeholder_bind": StrParser[_Parameters](self, "placeholder_bind"),
+			"placeholder_ids": StrParser[_Parameters](self, "placeholder_ids"),
 			"placeholder_order": StrParser[_Parameters](self, "placeholder_order"),
 			"placeholder_selector": StrParser[_Parameters](self, "placeholder_selector"),
 			"placeholder_variables": StrParser[_Parameters](self, "placeholder_variables"),
@@ -75,10 +77,23 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 		l = list(dict.fromkeys(l))
 		return separator.join(l)
 
-	def __varsToFilter(self, variables: list[str]) -> str:
+	def __createFilterStatement(self, variables: list[str]) -> str:
 		variables = list(filter(lambda s: s.startswith("?p_"), variables))
 		condition = self.__joinList(variables, " || ")
 		return f"FILTER ({condition})"
+
+	def __fillTemplate(self, templateName: str, ids: list[str], whereClauses: list[str], variables: list[str], binds: list[str], orders: list[str]) -> str:
+		sparql = Path(
+			get_package_share_directory(package_name),
+			self["sparql_dir"][0],
+			templateName,
+		).read_text()
+		sparql = sparql.replace(self["placeholder_variables"][0], self.__joinList(variables, "\n\t"))
+		sparql = sparql.replace(self["placeholder_ids"][0], self.__joinList(ids, "\n\t\t"))
+		sparql = sparql.replace(self["placeholder_selector"][0], self.__joinList(whereClauses, ""))
+		sparql = sparql.replace(self["placeholder_bind"][0], self.__joinList(binds, "\n\t"))
+		sparql = sparql.replace(self["placeholder_order"][0], self.__joinList(orders, " "))
+		return sparql
 
 	def __onSpaceTimeRequest(self, req: SpaceTime.Request, res: SpaceTime.Response) -> SpaceTime.Response:
 		payload = ColdStartPayload(req.json_payload)
@@ -107,27 +122,36 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 			binds.append(extractedBindings)
 			orders.append(extractedOrders)
 			i += 1
-		binds.append(self.__varsToFilter(variables))
+		binds.append(self.__createFilterStatement(variables))
 
-		query = Path(get_package_share_directory(package_name), self["sparql_dir"][0], self["sparql_template_spatial"][0]).read_text()
-		query = query.replace(self["placeholder_variables"][0], self.__joinList(variables, "\n\t"))
-		query = query.replace(self["placeholder_selector"][0], self.__joinList(whereClauses, ""))
-		query = query.replace(self["placeholder_bind"][0], self.__joinList(binds, "\n\t"))
-		query = query.replace(self["placeholder_order"][0], self.__joinList(orders, " "))
-		return self.__httpInterface.staticReachability(query, res)
+		sparql = self.__fillTemplate(
+			self["sparql_template_spatial"][0],
+			[""],
+			whereClauses,
+			variables,
+			binds,
+			orders
+		)
+		return self.__httpInterface.staticReachability(sparql, res)
 
 	def __fetchAccessibility(self, payload: ColdStartPayload, res: SpaceTime.Response) -> SpaceTime.Response:
-		return res
-		sparqls: list[str] = []
+		whereClauses: list[str] = []
 		variables: list[str] = []
-		ids = payload.dynamic
-		sparqls.append(self.__sparqlXfmr.selector("accessible-times", self["placeholder_selector"][0]))
-
-		query = Path(get_package_share_directory(package_name), self["sparql_dir"][0], self["sparql_template_spatial"][0]).read_text()
-		query = query.replace(self["placeholder_variables"][0], self.__joinList(variables, " "))
-		query = query.replace(self["placeholder_selector"][0], self.__joinList(sparqls, ""))
-		query = query.replace(self["placeholder_order"][0], self.__varToSparql.polygonVarNames)
-		return self.__httpInterface.staticReachability(query, res)
+		binds: list[str] = []
+		orders: list[str] = []
+		(extractedSelector, extractedVars, extractedOrders) = self.__sparqlXfmr.selector("accessible-times")
+		whereClauses.append(extractedSelector)
+		variables.append(extractedVars)
+		orders.append(extractedOrders)
+		sparql = self.__fillTemplate(
+			self["sparql_template_ids"][0],
+			[f"<{iri}>" for iri in payload.dynamic],
+			whereClauses,
+			variables,
+			binds,
+			orders
+		)
+		return self.__httpInterface.accessibility(sparql, res)
 
 	def render(self) -> None:
 		return super().render()

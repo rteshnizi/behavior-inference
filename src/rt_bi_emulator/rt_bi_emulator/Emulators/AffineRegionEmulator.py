@@ -40,9 +40,8 @@ class AffineRegionEmulator(RtBiNode, ABC):
 		self.declare_parameter("updateInterval", Parameter.Type.DOUBLE)
 		self.declare_parameter("timesSecs", Parameter.Type.DOUBLE_ARRAY)
 		self.declare_parameter("cutOffTime", Parameter.Type.DOUBLE)
-		self.declare_parameter("saPoses", Parameter.Type.STRING_ARRAY)
 		self.declare_parameter("centersOfRotation", Parameter.Type.STRING_ARRAY)
-		self.declare_parameter("fovs", Parameter.Type.STRING_ARRAY)
+		self.declare_parameter("polygons", Parameter.Type.STRING_ARRAY)
 		return
 
 	def parseParameters(self) -> None:
@@ -52,26 +51,24 @@ class AffineRegionEmulator(RtBiNode, ABC):
 		try: self.__cutOffTimeSecs = self.get_parameter("cutOffTime").get_parameter_value().double_value
 		except: self.__cutOffTimeSecs = inf
 		timePoints = self.get_parameter("timesSecs").get_parameter_value().double_array_value
-		saPoses = list(self.get_parameter("saPoses").get_parameter_value().string_array_value)
 		centersOfRotation = list(self.get_parameter("centersOfRotation").get_parameter_value().string_array_value)
-		fovs = list(self.get_parameter("fovs").get_parameter_value().string_array_value)
+		polygons = list(self.get_parameter("polygons").get_parameter_value().string_array_value)
 		self.__ctPoly = ContinuousTimePolygon([])
 		for i in range(len(timePoints)):
 			cor = json.loads(centersOfRotation[i])
-			fov = [tuple(p) for p in json.loads(fovs[i])]
-			pose = json.loads(saPoses[i])
+			poly = [tuple(p) for p in json.loads(polygons[i])]
 			timeNanoSecs = int(timePoints[i] * self.NANO_CONVERSION_CONSTANT) + self.__initTimeNs
 			poly = MovingPolygon(
 				polygonId="0",
 				regionId=self.id,
 				subPartId="",
-				envelope=fov,
+				envelope=poly,
 				predicates=self.__predicates,
 				centerOfRotation=cor,
 				timeNanoSecs=timeNanoSecs,
 				hIndex=-1,
 			)
-			self.log(f"Parsed {fov} config @ {timeNanoSecs}")
+			self.log(f"Parsed {poly} config @ {timeNanoSecs}")
 			self.__ctPoly.addPolygon(poly)
 		return
 

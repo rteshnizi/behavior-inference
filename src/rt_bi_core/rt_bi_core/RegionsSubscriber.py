@@ -33,15 +33,9 @@ class __RegionsSubscriberBase(RtBiNode, ABC):
 		self.__msgPq: MinQueue[_RegSpaceUpdate] = MinQueue(key=self.__eventPqKey)
 		self.__processingTimer: Ros.Timer | None = None
 		self.mapRegions: dict[str, list[MapPolygon]] = {}
-		self.mapPolyIdMap: dict[MovingPolygon.Id | StaticPolygon.Id, tuple[str, int]] = {}
 		self.sensorRegions: dict[str, list[SensingPolygon]] = {}
-		self.sensorPolyIdMap: dict[SensingPolygon.Id, tuple[str, int]] = {}
 		self.targetRegions: dict[str, list[TargetPolygon]] = {}
-		self.targetPolyIdMap: dict[TargetPolygon.Id, tuple[str, int]] = {}
 		(self.__rvizPublisher, _) = RViz.createRVizPublisher(self, Ros.CreateTopicName("map"))
-
-	def __minPqKey(self, poly: SubscriberPolygon) -> int:
-		return poly.timeNanoSecs
 
 	def __eventPqKey(self, val: _RegSpaceUpdate) -> numeric:
 		(_, region) = val
@@ -54,19 +48,16 @@ class __RegionsSubscriberBase(RtBiNode, ABC):
 				poly = cast(MapPolygon, poly)
 				if regionId not in self.mapRegions:
 					self.mapRegions[regionId] = []
-				self.mapPolyIdMap[poly.id] = (regionId, len(self.mapRegions[regionId]))
 				self.mapRegions[regionId].append(poly)
 			case SensingPolygon.type:
 				poly = cast(SensingPolygon, poly)
 				if regionId not in self.sensorRegions:
 					self.sensorRegions[regionId] = []
-				self.sensorPolyIdMap[poly.id] = (regionId, len(self.sensorRegions[regionId]))
 				self.sensorRegions[regionId].append(poly)
 			case TargetPolygon.type:
 				poly = cast(TargetPolygon, poly)
 				if regionId not in self.sensorRegions:
 					self.targetRegions[regionId] = []
-				self.targetPolyIdMap[poly.id] = (regionId, len(self.targetRegions[regionId]))
 				self.targetRegions[regionId].append(poly)
 			case _:
 				raise RuntimeError(f"Unexpected region type: {poly.type}")
@@ -178,7 +169,7 @@ class MapSubscriber(__RegionsSubscriberBase, ABC):
 	"""This object subscribes to the relevant map topics."""
 	def __init__(self, pauseQueuingMsgs: bool, **kwArgs):
 		super().__init__(pauseQueuingMsgs=pauseQueuingMsgs, **kwArgs)
-		RtBiInterfaces.subscribeToMapColdStart(self, self.__parseMap)
+		RtBiInterfaces.subscribeToMap(self, self.__parseMap)
 		RtBiInterfaces.subscribeToKnownRegions(self, self.__parseKnownRegion)
 
 	def __parseMap(self, regions: Msgs.RtBi.RegularSpaceArray) -> None:
@@ -198,7 +189,7 @@ class TargetSubscriber(__RegionsSubscriberBase, ABC):
 	def __init__(self, pauseQueuingMsgs: bool, **kwArgs):
 		super().__init__(pauseQueuingMsgs=pauseQueuingMsgs, **kwArgs)
 		self.pauseQueuingMsgs = False
-		RtBiInterfaces.subscribeToSymbols(self, self.__parseTarget)
+		RtBiInterfaces.subscribeToTargets(self, self.__parseTarget)
 
 	def __parseTarget(self, regions: Msgs.RtBi.RegularSpaceArray) -> None:
 		super()._enqueueUpdate(TargetPolygon.type, regions)

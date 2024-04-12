@@ -2,48 +2,48 @@ from rt_bi_commons.Utils.Msgs import Msgs
 
 
 class TimeInterval:
-	def __init__(self ,startNanoSecs: int, endNanoSecs: int, includeLeft: bool, includeRight: bool) -> None:
-		self.startNanoSecs: int = startNanoSecs
-		self.endNanoSecs: int = endNanoSecs
-		self.includeLeft: bool = includeLeft
-		self.includeRight: bool = includeRight
+	def __init__(self, minNanoSecs: int, maxNanoSecs: int, includeMin: bool, includeMax: bool) -> None:
+		self.minNanoSecs: int = minNanoSecs
+		self.maxNanoSecs: int = maxNanoSecs
+		self.includeMin: bool = includeMin
+		self.includeMax: bool = includeMax
 		return
 
 	def __contains__(self, time: float) -> bool:
-		if self.includeLeft and time == self.startNanoSecs: return True
-		if self.startNanoSecs < time and time < self.endNanoSecs: return True
-		if self.includeRight and time == self.includeRight: return True
+		if self.includeMin and time == self.minNanoSecs: return True
+		if self.minNanoSecs < time and time < self.maxNanoSecs: return True
+		if self.includeMax and time == self.includeMax: return True
 		return False
 
 	def __repr__(self) -> str:
-		startSym = "[" if self.includeLeft else "("
-		endSym = "]" if self.includeRight else ")"
-		return "T%s%d, %d%s" % (startSym, self.startNanoSecs, self.endNanoSecs, endSym)
+		startSym = "[" if self.includeMin else "("
+		endSym = "]" if self.includeMax else ")"
+		return "T%s%d, %d%s" % (startSym, self.minNanoSecs, self.maxNanoSecs, endSym)
 
 	def intersects(self, other: "TimeInterval") -> bool:
-		if self.includeLeft and other.includeLeft and self.startNanoSecs == other.startNanoSecs: return True
-		if self.includeRight and other.includeRight and self.endNanoSecs == other.endNanoSecs: return True
-		if self.includeRight and other.includeLeft and self.endNanoSecs == other.startNanoSecs: return True
-		if self.includeLeft and other.includeRight and self.startNanoSecs == other.endNanoSecs: return True
-		if other.startNanoSecs < self.startNanoSecs and self.startNanoSecs < other.endNanoSecs: return True
-		if other.startNanoSecs < self.endNanoSecs and self.endNanoSecs < other.endNanoSecs: return True
-		if self.startNanoSecs < other.startNanoSecs and other.startNanoSecs < self.endNanoSecs: return True
-		if self.startNanoSecs < other.endNanoSecs and other.endNanoSecs < self.endNanoSecs: return True
+		if self.includeMin and other.includeMin and self.minNanoSecs == other.minNanoSecs: return True
+		if self.includeMax and other.includeMax and self.maxNanoSecs == other.maxNanoSecs: return True
+		if self.includeMax and other.includeMin and self.maxNanoSecs == other.minNanoSecs: return True
+		if self.includeMin and other.includeMax and self.minNanoSecs == other.maxNanoSecs: return True
+		if other.minNanoSecs < self.minNanoSecs and self.minNanoSecs < other.maxNanoSecs: return True
+		if other.minNanoSecs < self.maxNanoSecs and self.maxNanoSecs < other.maxNanoSecs: return True
+		if self.minNanoSecs < other.minNanoSecs and other.minNanoSecs < self.maxNanoSecs: return True
+		if self.minNanoSecs < other.maxNanoSecs and other.maxNanoSecs < self.maxNanoSecs: return True
 		return False
 
 	def toMsg(self) -> Msgs.RtBi.TimeInterval:
 		msg = Msgs.RtBi.TimeInterval()
-		msg.start = Msgs.toTimeMsg(self.startNanoSecs)
-		msg.end = Msgs.toTimeMsg(self.endNanoSecs)
-		msg.include_left = msg.include_left
-		msg.include_right = msg.include_right
+		msg.min = Msgs.toTimeMsg(self.minNanoSecs)
+		msg.max = Msgs.toTimeMsg(self.maxNanoSecs)
+		msg.include_min = self.includeMin
+		msg.include_max = self.includeMax
 		return msg
 
 	@classmethod
 	def fromMsg(cls, msg: Msgs.RtBi.TimeInterval) -> "TimeInterval":
 		return TimeInterval(
-			startNanoSecs=Msgs.toNanoSecs(msg.start),
-			endNanoSecs=Msgs.toNanoSecs(msg.end),
-			includeLeft=msg.include_left,
-			includeRight=msg.include_right,
+			minNanoSecs=Msgs.toNanoSecs(msg.min),
+			maxNanoSecs=Msgs.toNanoSecs(msg.max),
+			includeMin=msg.include_min,
+			includeMax=msg.include_max,
 		)

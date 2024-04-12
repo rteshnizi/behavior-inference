@@ -84,10 +84,14 @@ class Msgs:
 		return cls.Geometry.Point32(x=p[0], y=p[1], z=0.0)
 
 	@classmethod
-	def toStdPose(cls, pose: Pose) -> Geometry.Pose:
-		pointMsg = cls.Geometry.Point32(x=pose.x, y=pose.y, z=0.0)
-		quat = pose.angleAsQuaternion()
-		quadMsg = cls.Geometry.Quaternion(x=quat[0], y=quat[1], z=quat[2], w=quat[3])
+	def toStdPose(cls, p: Pose | Coords) -> Geometry.Pose:
+		point32 = cls.toStdPoint(p)
+		pointMsg = cls.Geometry.Point(x=point32.x, y=point32.y, z=point32.z)
+		if isinstance(p, Pose):
+			quat = p.angleAsQuaternion()
+			quadMsg = cls.Geometry.Quaternion(x=quat[0], y=quat[1], z=quat[2], w=quat[3])
+		else:
+			quadMsg = cls.Geometry.Quaternion()
 		return cls.Geometry.Pose(position=pointMsg, orientation=quadMsg)
 
 	@classmethod
