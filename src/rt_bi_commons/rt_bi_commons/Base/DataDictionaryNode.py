@@ -19,6 +19,17 @@ _K = TypeVar("_K", bound=LiteralString)
 _P = TypeVar("_P", bound=ParserBase)
 
 class DataDictionaryNode(Generic[_K], RtBiNode, ABC):
+	"""
+	### Note
+	This class was made to make ROS nodes act like RDF resources.
+	After we used RDF, the reference parsing became irrelevant.
+	However, the code is good, so I am keeping it.
+	I also noticed that ROS may have this as built-in feature.
+
+	(＾皿＾)
+	### Description
+	The parameters of an instance of this ROS node are available through ROS services.
+	"""
 	def __init__(self, parsers: dict[_K, ParserBase[_K, Any, Any]], **kwArgs) -> None:
 		newKw = { "node_name": "dd_base", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
 		super().__init__(**newKw)
