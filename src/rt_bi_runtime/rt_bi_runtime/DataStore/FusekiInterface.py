@@ -47,7 +47,7 @@ class SparqlResultHelper:
 
 	def boolVarValue(self, i: int, varName: str) -> str:
 		strVal = self.strVarValue(i, varName)
-		if strVal == Msgs.RtBi.Traversability.TRUE or strVal == Msgs.RtBi.Traversability.FALSE: return strVal
+		if strVal == Msgs.RtBi.Predicate.TRUE or strVal == Msgs.RtBi.Predicate.FALSE: return strVal
 		return ""
 
 	def floatVarValue(self, i: int, varName: str) -> float:
@@ -106,15 +106,6 @@ class FusekiInterface:
 		polys.append(polyMsg)
 		return (polys, i)
 
-	def __parseTraversability(self, helper: SparqlResultHelper, i: int) -> tuple[Msgs.RtBi.Traversability, int]:
-		msg = Msgs.RtBi.Traversability(
-			legs=helper.boolVarValue(i, "legs"),
-			wheels=helper.boolVarValue(i, "wheels"),
-			swim=helper.boolVarValue(i, "swims"),
-		)
-		i += 1
-		return (msg, i)
-
 	def __parsePredicates(self, helper: SparqlResultHelper, i: int) -> list[Msgs.RtBi.Predicate]:
 		predicates = []
 		for var in helper.variables:
@@ -129,17 +120,19 @@ class FusekiInterface:
 			else:
 				predicate.value = Msgs.RtBi.Predicate.FALSE
 			predicates.append(predicate)
+		# Static Map is always reachable
+		predicates.append(Msgs.RtBi.Predicate(name="reachable", value=Msgs.RtBi.Predicate.TRUE))
 		return predicates
 
 	def __parseSpaceType(self, helper: SparqlResultHelper, i: int) -> str:
 		t = helper.strVarValue(i, "setType")
-		if t.endswith("StaticSpace"): return Msgs.RtBi.RegularSpace.STATIC
-		if t.endswith("DynamicSpace"): return Msgs.RtBi.RegularSpace.DYNAMIC
-		if t.endswith("AffineSpace"): return Msgs.RtBi.RegularSpace.AFFINE
+		if t.endswith("StaticSpace"): return Msgs.RtBi.RegularSet.STATIC
+		if t.endswith("DynamicSpace"): return Msgs.RtBi.RegularSet.DYNAMIC
+		if t.endswith("AffineSpace"): return Msgs.RtBi.RegularSet.AFFINE
 		raise ValueError(f"Unexpected spatial set type: {t}")
 
 	def __sendQuery(self, query: str) -> SparqlResultHelper:
-		Ros.Log(query)
+		Ros.Log(f"Sending Query to Fuseki:\n{query}")
 		r = requests.post(self.__SPARQL_URL, data={ "query": query })
 		try:
 			return SparqlResultHelper(r)
@@ -152,24 +145,25 @@ class FusekiInterface:
 		stamp = Ros.Now(self.__node).to_msg()
 		i = 0
 		while i < len(resultHelper):
-			msg = Msgs.RtBi.RegularSpace()
+			msg = Msgs.RtBi.RegularSet()
 			msg.id = resultHelper.strVarValue(i, "regularSetId")
 			msg.stamp = stamp
 			msg.space_type = self.__parseSpaceType(resultHelper, i)
 			msg.predicates = self.__parsePredicates(resultHelper, i)
 			(msg.polygons, i) = self.__parsePolygons(resultHelper, i, msg.id)
-			Ros.AppendMessage(res.spatial_matches, msg)
+			Ros.AppendMessage(res.sets, msg)
 		return res
 
-	def accessibility(self, query: str, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
+	def dynamicReachability(self, query: str, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
 		resultHelper = self.__sendQuery(query)
 		stamp = Ros.Now(self.__node).to_msg()
 		i = 0
 		while i < len(resultHelper):
-			msg = Msgs.RtBi.RegularSpace()
+			msg = Msgs.RtBi.RegularSet()
 			msg.id = resultHelper.strVarValue(i, "regularSetId")
-			msg.stamp = stamp
 			msg.space_type = self.__parseSpaceType(resultHelper, i)
-			(msg.accessible_times, i) = self.__parseIntervals(resultHelper, i, msg.id)
-			Ros.AppendMessage(res.spatial_matches, msg)
+			msg.stamp = stamp
+			Ros.AppendMessage(res.sets, msg)
+			(accessible_times, i) = self.__parseIntervals(resultHelper, i, msg.id)
+			Ros.ConcatMessageArray(msg.intervals, accessible_times)
 		return res

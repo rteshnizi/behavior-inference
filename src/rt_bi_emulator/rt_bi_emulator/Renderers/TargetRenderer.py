@@ -20,7 +20,7 @@ class TargetRenderer(TargetSubscriber):
 				Ros.ConcatMessageArray(markers, poly.createMarkers(durationNs=-1, stamped=False))
 		return markers
 
-	def onPolygonUpdated(self, rType: TargetPolygon.Type, polygon: TargetPolygon) -> None:
+	def onPolygonUpdated(self, polygon: TargetPolygon) -> None:
 		self.log("Targets updated.")
 		self.render()
 		return

@@ -4,7 +4,7 @@ from typing import Callable, Generic, TypeAlias, TypeVar
 numeric: TypeAlias = int | float
 
 DataType = TypeVar("DataType")
-QueueTuple = tuple[float, int, DataType]
+QueueTuple = tuple[numeric, int, DataType]
 
 class MinQueue(Generic[DataType]):
 	"""
@@ -14,7 +14,7 @@ class MinQueue(Generic[DataType]):
 	See https://stackoverflow.com/a/8875823/750567
 	"""
 
-	def __init__(self, key: Callable[[DataType], float], initial: list[DataType]=[]) -> None:
+	def __init__(self, key: Callable[[DataType], numeric], initial: list[DataType]=[]) -> None:
 		"""
 		Create a priority queue, whose elements are sorted using the given key function.
 

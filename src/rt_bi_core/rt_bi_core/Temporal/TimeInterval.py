@@ -9,10 +9,10 @@ class TimeInterval:
 		self.includeMax: bool = includeMax
 		return
 
-	def __contains__(self, time: float) -> bool:
-		if self.includeMin and time == self.minNanoSecs: return True
-		if self.minNanoSecs < time and time < self.maxNanoSecs: return True
-		if self.includeMax and time == self.includeMax: return True
+	def __contains__(self, timeNanoSecs: int) -> bool:
+		if self.includeMin and timeNanoSecs == self.minNanoSecs: return True
+		if self.minNanoSecs < timeNanoSecs and timeNanoSecs < self.maxNanoSecs: return True
+		if self.includeMax and timeNanoSecs == self.includeMax: return True
 		return False
 
 	def __repr__(self) -> str:

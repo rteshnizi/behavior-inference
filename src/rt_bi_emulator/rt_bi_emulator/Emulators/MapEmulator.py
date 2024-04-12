@@ -2,6 +2,7 @@ import rclpy
 from rclpy.logging import LoggingSeverity
 
 from rt_bi_commons.Base.ColdStartableNode import ColdStartableNode, ColdStartPayload
+from rt_bi_commons.Shared.MinQueue import MinQueue
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Msgs import Msgs
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
@@ -18,8 +19,8 @@ class MapEmulator(ColdStartableNode):
 	def __init__(self) -> None:
 		newKw = { "node_name": "dynamic_map", "loggingSeverity": LoggingSeverity.WARN }
 		super().__init__(**newKw)
-		self.__dynamicRegionsMsgs: dict[str, Msgs.RtBi.RegularSpace] = {}
-		self.__timeNanoSecsToRegionIds: dict[int, list[str]] = {}
+		self.__timeOriginNanoSecs: int = -1
+		self.__reachabilityTimeQueue: MinQueue[tuple[int, TimeInterval, str]] = MinQueue(key=lambda r: r[0])
 		self.__mapPublisher = RtBiInterfaces.createMapPublisher(self)
 		self.rdfClient = RtBiInterfaces.createSpaceTimeClient(self)
 		Ros.WaitForServiceToStart(self, self.rdfClient)
@@ -36,29 +37,36 @@ class MapEmulator(ColdStartableNode):
 		Ros.SendClientRequest(self, self.rdfClient, req, self.__onSpaceTimeResponse)
 		return
 
-	def __extractDynamicSetIds(self, matches: list[Msgs.RtBi.RegularSpace]) -> list[str]:
-		for space in matches:
-			if space.space_type == Msgs.RtBi.RegularSpace.DYNAMIC:
-				self.__dynamicRegionsMsgs[space.id] = space
-		return list(self.__dynamicRegionsMsgs.keys())
-
-	def __extractAffineSetIds(self, matches: list[Msgs.RtBi.RegularSpace]) -> list[str]:
-		aff = map(
+	def __extractSetIdsByType(self, matches: list[Msgs.RtBi.RegularSet], filterType: str) -> list[str]:
+		extracted = map(
 			lambda m: m.id,
-			filter(lambda m: m.space_type == Msgs.RtBi.RegularSpace.AFFINE, matches)
+			filter(lambda m: m.space_type == filterType, matches)
 		)
-		return list(aff)
+		return list(extracted)
+
+	def __extractDynamicSetIds(self, matches: list[Msgs.RtBi.RegularSet]) -> list[str]:
+		return self.__extractSetIdsByType(matches, Msgs.RtBi.RegularSet.DYNAMIC)
+
+	def __extractAffineSetIds(self, matches: list[Msgs.RtBi.RegularSet]) -> list[str]:
+		return self.__extractSetIdsByType(matches, Msgs.RtBi.RegularSet.AFFINE)
+
+	def __extractOriginOfTime(self, matches: list[Msgs.RtBi.RegularSet]) -> None:
+		if self.__timeOriginNanoSecs < 0 and len(matches) > 0:
+			self.__timeOriginNanoSecs = Msgs.toNanoSecs(matches[0].stamp)
+		return
 
 	def __onSpaceTimeResponse(self, req: Msgs.RtBiSrv.SpaceTime.Request, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
-		msg = Msgs.RtBi.RegularSpaceArray(spaces=res.spatial_matches)
+		res.sets = Ros.AsList(res.sets, Msgs.RtBi.RegularSet)
+		self.__extractOriginOfTime(res.sets)
+		msg = Msgs.RtBi.RegularSetArray(sets=res.sets)
 		payload = ColdStartPayload(req.json_payload)
 		self.__mapPublisher.publish(msg)
 		responsePayload = ColdStartPayload({
 			"nodeName": self.get_fully_qualified_name(),
 			"done": True,
 			"phase": payload.phase,
-			"affine": self.__extractAffineSetIds(Ros.AsList(res.spatial_matches, Msgs.RtBi.RegularSpace)),
-			"dynamic": self.__extractDynamicSetIds(Ros.AsList(res.spatial_matches, Msgs.RtBi.RegularSpace)),
+			"affine": self.__extractAffineSetIds(res.sets),
+			"dynamic": self.__extractDynamicSetIds(res.sets),
 		})
 		self.coldStartCompleted(responsePayload)
 		# Request information about dynamic sets from the ontology
@@ -67,18 +75,33 @@ class MapEmulator(ColdStartableNode):
 		Ros.SendClientRequest(self, self.rdfClient, dySetReq, self.__onDynamicSetsResponse)
 		return res
 
-	def __addTimePointToDict(self, t: int, setId: str) -> None:
-		if t not in self.__timeNanoSecsToRegionIds: self.__timeNanoSecsToRegionIds[t] = []
-		self.__timeNanoSecsToRegionIds[t].append(setId)
+	def __processReachabilityEvents(self) -> None:
+		nowNanoSecs = self.get_clock().now().nanoseconds
+		msgArr = Msgs.RtBi.RegularSetArray()
+		while not self.__reachabilityTimeQueue.isEmpty:
+			(relativeTime, interval, setId) = self.__reachabilityTimeQueue.dequeue()
+			eventTime = relativeTime + self.__timeOriginNanoSecs
+			msg = Msgs.RtBi.RegularSet()
+			msg.id = setId
+			msg.space_type = Msgs.RtBi.RegularSet.DYNAMIC
+			p = Msgs.RtBi.Predicate(
+				name="reachable",
+				value=Msgs.RtBi.Predicate.TRUE if nowNanoSecs in interval else Msgs.RtBi.Predicate.FALSE,
+			)
+			Ros.AppendMessage(msg.predicates, p)
+			msg.stamp = Msgs.toTimeMsg(eventTime)
+			Ros.AppendMessage(msgArr.sets, msg)
+		self.__mapPublisher.publish(msgArr)
 		return
 
 	def __onDynamicSetsResponse(self, req: Msgs.RtBiSrv.SpaceTime.Request, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
-		for i in range(len(res.spatial_matches)):
-			space = Ros.GetMessage(res.spatial_matches, i, Msgs.RtBi.RegularSpace)
-			for intervalMsg in space.accessible_times:
+		for i in range(len(res.sets)):
+			match = Ros.GetMessage(res.sets, i, Msgs.RtBi.RegularSet)
+			for intervalMsg in match.intervals:
 				interval = TimeInterval.fromMsg(intervalMsg)
-				self.__addTimePointToDict(interval.minNanoSecs, space.id)
-				self.__addTimePointToDict(interval.maxNanoSecs, space.id)
+				self.__reachabilityTimeQueue.enqueue((interval.minNanoSecs, interval, match.id))
+				self.__reachabilityTimeQueue.enqueue((interval.maxNanoSecs, interval, match.id))
+		self.__processReachabilityEvents()
 		return res
 
 	def declareParameters(self) -> None:

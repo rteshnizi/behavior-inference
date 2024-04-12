@@ -63,9 +63,8 @@ class Msgs:
 		elif isinstance(time, Time):
 			(secs, nanoSecs) = cast(tuple[int, int], time.seconds_nanoseconds())
 		elif isinstance(time, float):
-			secs = time
-			secs = int(secs)
-			nanoSecs = int((secs % 1) * NANO_CONVERSION_CONSTANT)
+			secs = int(time)
+			nanoSecs = int((time % 1) * NANO_CONVERSION_CONSTANT)
 		else:
 			raise ValueError(f"Value is of unknown type: {repr(time)}")
 		return ((secs * NANO_CONVERSION_CONSTANT) + nanoSecs)

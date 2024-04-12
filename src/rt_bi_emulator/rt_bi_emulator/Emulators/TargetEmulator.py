@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.logging import LoggingSeverity
 
+from rt_bi_commons.Utils.Msgs import Msgs
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_emulator.Emulators.AffineRegionEmulator import AffineRegionEmulator
 
@@ -12,8 +13,8 @@ class TargetEmulator(AffineRegionEmulator):
 		(self.__publisher, _) = RtBiInterfaces.createTargetPublisher(self, self.publishUpdate, self.updateInterval)
 
 	def publishUpdate(self) -> None:
-		msg = self.asRegularSpaceArrayMsg()
-		self.__publisher.publish(msg)
+		msgArr = self.asRegularSpaceArrayMsg(Msgs.RtBi.RegularSet.TARGET)
+		self.__publisher.publish(msgArr)
 
 def main(args=None):
 	rclpy.init(args=args)

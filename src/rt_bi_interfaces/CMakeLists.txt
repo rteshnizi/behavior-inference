@@ -25,11 +25,10 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Id.msg"
   "msg/Polygon.msg"
   "msg/Predicate.msg"
-  "msg/RegularSpace.msg"
-  "msg/RegularSpaceArray.msg"
+  "msg/RegularSet.msg"
+  "msg/RegularSetArray.msg"
   "msg/TimeInterval.msg"
   "msg/Tracklet.msg"
-  "msg/Traversability.msg"
   # Services
   "srv/DataReference.srv"
   "srv/SpaceTime.srv"

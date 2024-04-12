@@ -22,7 +22,7 @@ class MapRenderer(MapSubscriber):
 				Ros.ConcatMessageArray(markers, marker)
 		return markers
 
-	def onPolygonUpdated(self, rType: MovingPolygon.Type | StaticPolygon.Type, polygon: MapPolygon) -> None:
+	def onPolygonUpdated(self, polygon: MapPolygon) -> None:
 		self.log("Map updated.")
 		return self.render()
 

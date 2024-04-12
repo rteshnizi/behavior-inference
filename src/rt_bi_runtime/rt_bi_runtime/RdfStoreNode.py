@@ -10,10 +10,7 @@ from rt_bi_commons.Base.DataDictionaryNode import DataDictionaryNode
 from rt_bi_commons.RosParamParsers.AtomicParsers import StrParser
 from rt_bi_commons.RosParamParsers.JsonParser import ListJsonParser
 from rt_bi_commons.RosParamParsers.ParamParser import ParserBase
-from rt_bi_commons.RosParamParsers.ReferenceParser import ListReferenceParser
-from rt_bi_commons.Shared.Pose import CoordsList
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
-from rt_bi_core.Temporal.TimeInterval import TimeInterval
 from rt_bi_interfaces.srv import SpaceTime
 from rt_bi_runtime import package_name
 from rt_bi_runtime.DataStore.FusekiInterface import FusekiInterface
@@ -37,9 +34,6 @@ _Parameters = Literal[
 ]
 # FIXME: Upload the rdf data at the startup via cold start.
 class RdfStoreNode(DataDictionaryNode[_Parameters]):
-	CoordsListParser = ListReferenceParser[_Parameters, CoordsList, Any]
-	OffIntervalsParser = ListReferenceParser[_Parameters, list[TimeInterval], Any]
-
 	def __init__(self, **kwArgs) -> None:
 		parsers: dict[_Parameters, ParserBase[_Parameters, Any, Any]] = {
 			"fuseki_server": StrParser[_Parameters](self, "fuseki_server"),
@@ -98,13 +92,13 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 	def __onSpaceTimeRequest(self, req: SpaceTime.Request, res: SpaceTime.Response) -> SpaceTime.Response:
 		payload = ColdStartPayload(req.json_payload)
 		if payload.nodeName == RtBiInterfaces.DYNAMIC_MAP_NODE_NAME:
-			if not payload.done: res = self.__fetchRegularSpatialSets(payload, res)
-			else: res = self.__fetchAccessibility(payload, res)
+			if not payload.done: res = self.__fetchStaticReachability(payload, res)
+			else: res = self.__fetchDynamicReachability(payload, res)
 		else:
 			self.log(f"Unexpected request payload in {self.__class__.__name__}: \n\t{req.json_payload}")
 		return res
 
-	def __fetchRegularSpatialSets(self, payload: ColdStartPayload, res: SpaceTime.Response) -> SpaceTime.Response:
+	def __fetchStaticReachability(self, payload: ColdStartPayload, res: SpaceTime.Response) -> SpaceTime.Response:
 		whereClauses: list[str] = []
 		variables: list[str] = []
 		binds: list[str] = []
@@ -134,7 +128,7 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 		)
 		return self.__httpInterface.staticReachability(sparql, res)
 
-	def __fetchAccessibility(self, payload: ColdStartPayload, res: SpaceTime.Response) -> SpaceTime.Response:
+	def __fetchDynamicReachability(self, payload: ColdStartPayload, res: SpaceTime.Response) -> SpaceTime.Response:
 		whereClauses: list[str] = []
 		variables: list[str] = []
 		binds: list[str] = []
@@ -151,7 +145,7 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 			binds,
 			orders
 		)
-		return self.__httpInterface.accessibility(sparql, res)
+		return self.__httpInterface.dynamicReachability(sparql, res)
 
 	def render(self) -> None:
 		return super().render()

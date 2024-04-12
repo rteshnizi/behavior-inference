@@ -19,7 +19,7 @@ class SensorRenderer(SensorSubscriber):
 		super().__init__(pauseQueuingMsgs=False, **newKw)
 		RtBiInterfaces.subscribeToEstimation(self, self.__onEstimation)
 
-	def onPolygonUpdated(self, rType: Any, msgs: Any) -> None:
+	def onPolygonUpdated(self, polygon: Any) -> None:
 		self.log("Sensors updated.")
 		self.render()
 		return
@@ -43,7 +43,7 @@ class SensorRenderer(SensorSubscriber):
 			pose = cast(Msgs.Geometry.Pose, trackletMsg.pose)
 			tracklet = Tracklet(
 				idStr=trackletMsg.id,
-				timeNanoSecs=Msgs.toNanoSecs(msg.robot.stamp),
+				timeNanoSecs=Msgs.toNanoSecs(msg.sensor.stamp),
 				hIndex=-1,
 				x=pose.position.x,
 				y=pose.position.y,
@@ -51,7 +51,7 @@ class SensorRenderer(SensorSubscriber):
 				spawned=trackletMsg.spawned,
 				vanished=trackletMsg.vanished,
 			)
-			self.sensorRegions[msg.robot.id][0].tracklets[tracklet.id] = tracklet
+			self.sensorRegions[msg.sensor.id][0].tracklets[tracklet.id] = tracklet
 		self.render()
 		return
 

@@ -176,8 +176,6 @@ def ConcatMessageArray(first: Sequence[__Topic] | AbstractSet[__Topic] | list[__
 	:type array: `Sequence[__Topic]` or `AbstractSet[__Topic]` or `list[__Topic]`
 	:param toConcat: The second part of the new array.
 	:type toConcat: `Sequence[__Topic]`
-	:return: The concatenated array.
-	:rtype: `list[__Topic]`
 	"""
 	assert isinstance(first, list), (f"Failed to append messages to array. Array type: {type(first)}")
 	first += second

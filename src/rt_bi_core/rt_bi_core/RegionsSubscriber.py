@@ -1,8 +1,10 @@
 from abc import ABC, abstractmethod
-from typing import Any, NamedTuple, TypeAlias, cast, final
+from typing import Any, TypeAlias, cast, final
+
+from typing_extensions import deprecated
 
 from rt_bi_commons.Base.RtBiNode import RtBiNode
-from rt_bi_commons.Shared.MinQueue import MinQueue, numeric
+from rt_bi_commons.Shared.MinQueue import MinQueue
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Msgs import Msgs
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
@@ -11,11 +13,6 @@ from rt_bi_core.Spatial import MapPolygon, MovingPolygon, PolygonFactory, Sensin
 from rt_bi_core.Spatial.Polygon import PolygonFactoryKeys
 
 SubscriberPolygon: TypeAlias = MapPolygon | SensingPolygon | TargetPolygon
-
-
-class _RegSpaceUpdate(NamedTuple):
-	type: MovingPolygon.Types
-	spaces: list[Msgs.RtBi.RegularSpace]
 
 class __RegionsSubscriberBase(RtBiNode, ABC):
 	"""
@@ -30,83 +27,81 @@ class __RegionsSubscriberBase(RtBiNode, ABC):
 		newKw = { "node_name": "map_base", "loggingSeverity": Ros.LoggingSeverity.INFO, **kwArgs}
 		super().__init__(**newKw)
 		self.pauseQueuingMsgs = pauseQueuingMsgs
-		self.__msgPq: MinQueue[_RegSpaceUpdate] = MinQueue(key=self.__eventPqKey)
+		self.__msgPq: MinQueue[Msgs.RtBi.RegularSet] = MinQueue(key=self.__eventPqKey)
 		self.__processingTimer: Ros.Timer | None = None
 		self.mapRegions: dict[str, list[MapPolygon]] = {}
 		self.sensorRegions: dict[str, list[SensingPolygon]] = {}
 		self.targetRegions: dict[str, list[TargetPolygon]] = {}
 		(self.__rvizPublisher, _) = RViz.createRVizPublisher(self, Ros.CreateTopicName("map"))
 
-	def __eventPqKey(self, val: _RegSpaceUpdate) -> numeric:
-		(_, region) = val
-		if len(region) == 0: raise AssertionError("Empty RegularSpaceArray message has been recorded.")
-		return float(Msgs.toNanoSecs(region[0].stamp))
+	def __eventPqKey(self, val: Msgs.RtBi.RegularSet) -> int:
+		nanoSecs = Msgs.toNanoSecs(val.stamp)
+		if nanoSecs == 0: raise AssertionError("Update with no timestamp: ")
+		return nanoSecs
 
-	def __storePolygon(self, regionId: str, poly: SubscriberPolygon) -> None:
+	def __storePolygon(self, setId: str, poly: SubscriberPolygon) -> None:
 		match poly.type:
 			case StaticPolygon.type | MovingPolygon.type:
 				poly = cast(MapPolygon, poly)
-				if regionId not in self.mapRegions:
-					self.mapRegions[regionId] = []
-				self.mapRegions[regionId].append(poly)
+				if setId not in self.mapRegions:
+					self.mapRegions[setId] = []
+				self.mapRegions[setId].append(poly)
 			case SensingPolygon.type:
 				poly = cast(SensingPolygon, poly)
-				if regionId not in self.sensorRegions:
-					self.sensorRegions[regionId] = []
-				self.sensorRegions[regionId].append(poly)
+				if setId not in self.sensorRegions:
+					self.sensorRegions[setId] = []
+				self.sensorRegions[setId].append(poly)
 			case TargetPolygon.type:
 				poly = cast(TargetPolygon, poly)
-				if regionId not in self.sensorRegions:
-					self.targetRegions[regionId] = []
-				self.targetRegions[regionId].append(poly)
+				if setId not in self.sensorRegions:
+					self.targetRegions[setId] = []
+				self.targetRegions[setId].append(poly)
 			case _:
 				raise RuntimeError(f"Unexpected region type: {poly.type}")
 		return
 
-	def __createPolygon(self, rType: MovingPolygon.Types, regularSpace: Msgs.RtBi.RegularSpace, polyMsg: Msgs.RtBi.Polygon) -> SubscriberPolygon:
+	def __createPolygon(self, regularSet: Msgs.RtBi.RegularSet, polyMsg: Msgs.RtBi.Polygon) -> SubscriberPolygon:
 		kwArgs: dict[PolygonFactoryKeys, Any] = {
 			"polygonId": polyMsg.id,
-			"regionId": regularSpace.id,
+			"regionId": regularSet.id,
 			"subPartId": "",
 			"envelope": Msgs.toCoordsList(polyMsg.region.points),
-			"timeNanoSecs": Msgs.toNanoSecs(regularSpace.stamp),
-			"predicates": regularSpace.predicates if isinstance(regularSpace.predicates, list) else [],
+			"timeNanoSecs": Msgs.toNanoSecs(regularSet.stamp),
+			"predicates": regularSet.predicates if isinstance(regularSet.predicates, list) else [],
 			"hIndex": -1,
 			"centerOfRotation": Msgs.toCoords(polyMsg.center_of_rotation),
 		}
-		match rType:
-			case StaticPolygon.type:
+		match regularSet.space_type:
+			case Msgs.RtBi.RegularSet.STATIC:
 				PolyCls = StaticPolygon
-			case MovingPolygon.type:
+			case Msgs.RtBi.RegularSet.DYNAMIC:
+				PolyCls = StaticPolygon
+			case Msgs.RtBi.RegularSet.AFFINE:
 				PolyCls = MovingPolygon
-			case SensingPolygon.type:
+			case Msgs.RtBi.RegularSet.SENSING:
 				PolyCls = SensingPolygon
-			case TargetPolygon.type:
+			case Msgs.RtBi.RegularSet.TARGET:
 				PolyCls = TargetPolygon
 			case _:
-				raise RuntimeError(f"Unexpected region type: {rType}")
+				raise RuntimeError(f"Unexpected space type event queue: {regularSet.space_type}\n\tMSG = {repr(regularSet)}")
 		poly = PolygonFactory(PolyCls, kwArgs)
 		return poly
 
+	@deprecated("For debugging only")
 	def __processEnqueuedUpdatesSlow(self) -> None:
 		if self.__processingTimer is not None: self.__processingTimer.destroy()
 		if self.__msgPq.isEmpty: self.log("No updates to process.. see you next time!")
 		else:
 			self.log(f"[SLOW] Processing enqueued updates.")
-			(rType, msgs) = self.__msgPq.peek
-			if len(msgs) == 0:
+			regularSet = self.__msgPq.peek
+			if len(regularSet.polygons) == 0:
 				self.__msgPq.dequeue()
 				self.__processingTimer = Ros.CreateTimer(self, self.__processEnqueuedUpdatesSlow, intervalNs=50)
 				return
-			regularSpace = msgs[-1]
-			if len(regularSpace.polygons) == 0:
-				msgs.pop()
-				self.__processingTimer = Ros.CreateTimer(self, self.__processEnqueuedUpdatesSlow, intervalNs=50)
-				return
-			polyMsg = Ros.PopMessage(regularSpace.polygons, 0, Msgs.RtBi.Polygon)
-			poly = self.__createPolygon(rType, regularSpace, polyMsg)
-			self.__storePolygon(regularSpace.id, poly)
-			self.onPolygonUpdated(rType, poly)
+			polyMsg = Ros.PopMessage(regularSet.polygons, 0, Msgs.RtBi.Polygon)
+			poly = self.__createPolygon(regularSet, polyMsg)
+			self.__storePolygon(regularSet.id, poly)
+			self.onPolygonUpdated(poly)
 		self.__processingTimer = Ros.CreateTimer(self, self.__processEnqueuedUpdatesSlow, intervalNs=1000)
 		return
 
@@ -115,22 +110,21 @@ class __RegionsSubscriberBase(RtBiNode, ABC):
 		if not self.__msgPq.isEmpty: self.log("Processing enqueued updates.")
 		else: self.log("No updates to process.. see you next time!")
 		while not self.__msgPq.isEmpty:
-			(rType, msgs) = self.__msgPq.dequeue()
-			for regularSpace in msgs:
-				for polyMsg in regularSpace.polygons:
-					poly = self.__createPolygon(rType, regularSpace, polyMsg)
-					self.__storePolygon(regularSpace.id, poly)
-					self.onPolygonUpdated(rType, poly)
+			regularSet = self.__msgPq.dequeue()
+			for polyMsg in regularSet.polygons:
+				poly = self.__createPolygon(regularSet, polyMsg)
+				self.__storePolygon(regularSet.id, poly)
+				self.onPolygonUpdated(poly)
 		self.__processingTimer = Ros.CreateTimer(self, self.__processEnqueuedUpdates)
 		return
 
 	@final
-	def _enqueueUpdate(self, rType: MovingPolygon.Types, regions: Msgs.RtBi.RegularSpaceArray) -> None:
+	def _enqueueUpdates(self, setArr: Msgs.RtBi.RegularSetArray) -> None:
 		"""Enqueues the update. Subclasses must call this function upon subscription message."""
-		if len(regions.spaces) == 0: return
+		if len(setArr.sets) == 0: return
 		if self.pauseQueuingMsgs: return
-		self.log(f"Record {len(regions.spaces)} updated regions in event pQ.")
-		self.__msgPq.enqueue(_RegSpaceUpdate(type=rType, spaces=list(regions.spaces)))
+		self.log(f"Record {len(setArr.sets)} updated regions in event pQ.")
+		for match in setArr.sets: self.__msgPq.enqueue(match)
 		self.__processEnqueuedUpdates()
 		return
 
@@ -156,12 +150,11 @@ class __RegionsSubscriberBase(RtBiNode, ABC):
 		return
 
 	@abstractmethod
-	def onPolygonUpdated(self, rType: MovingPolygon.Types, polygon: SubscriberPolygon) -> None:
+	def onPolygonUpdated(self, polygon: SubscriberPolygon) -> None:
 		"""Override to customize processing of updates.
 
-		:param MovingPolygon.Types rType: The type of the region updated.
 		:param regions: The list of regular spaces updated.
-		:type regions: list[Msgs.RtBi.RegularSpace]
+		:type regions: list[Msgs.RtBi.RegularSet]
 		"""
 		...
 
@@ -172,17 +165,17 @@ class MapSubscriber(__RegionsSubscriberBase, ABC):
 		RtBiInterfaces.subscribeToMap(self, self.__parseMap)
 		RtBiInterfaces.subscribeToKnownRegions(self, self.__parseKnownRegion)
 
-	def __parseMap(self, regions: Msgs.RtBi.RegularSpaceArray) -> None:
+	def __parseMap(self, setArr: Msgs.RtBi.RegularSetArray) -> None:
 		self.pauseQueuingMsgs = False
-		super()._enqueueUpdate(StaticPolygon.type, regions)
+		super()._enqueueUpdates(setArr)
 		return
 
-	def __parseKnownRegion(self, regions: Msgs.RtBi.RegularSpaceArray) -> None:
-		super()._enqueueUpdate(MovingPolygon.type, regions)
+	def __parseKnownRegion(self, setArr: Msgs.RtBi.RegularSetArray) -> None:
+		super()._enqueueUpdates(setArr)
 		return
 
 	@abstractmethod
-	def onPolygonUpdated(self, rType: MovingPolygon.Type | StaticPolygon.Type, polygon: MapPolygon) -> None: ...
+	def onPolygonUpdated(self, polygon: MapPolygon) -> None: ...
 
 class TargetSubscriber(__RegionsSubscriberBase, ABC):
 	"""This object subscribes to the relevant target topics."""
@@ -191,12 +184,12 @@ class TargetSubscriber(__RegionsSubscriberBase, ABC):
 		self.pauseQueuingMsgs = False
 		RtBiInterfaces.subscribeToTargets(self, self.__parseTarget)
 
-	def __parseTarget(self, regions: Msgs.RtBi.RegularSpaceArray) -> None:
-		super()._enqueueUpdate(TargetPolygon.type, regions)
+	def __parseTarget(self, setArr: Msgs.RtBi.RegularSetArray) -> None:
+		super()._enqueueUpdates(setArr)
 		return
 
 	@abstractmethod
-	def onPolygonUpdated(self, rType: TargetPolygon.Type, polygon: TargetPolygon) -> None: ...
+	def onPolygonUpdated(self, polygon: TargetPolygon) -> None: ...
 
 class SensorSubscriber(__RegionsSubscriberBase, ABC):
 	"""This object subscribes to the relevant sensor topics."""
@@ -204,9 +197,9 @@ class SensorSubscriber(__RegionsSubscriberBase, ABC):
 		super().__init__(pauseQueuingMsgs=pauseQueuingMsgs, **kwArgs)
 		RtBiInterfaces.subscribeToSensors(self, self.__parseSensor)
 
-	def __parseSensor(self, regions: Msgs.RtBi.RegularSpaceArray) -> None:
-		super()._enqueueUpdate(SensingPolygon.type, regions)
+	def __parseSensor(self, setArr: Msgs.RtBi.RegularSetArray) -> None:
+		super()._enqueueUpdates(setArr)
 		return
 
 	@abstractmethod
-	def onPolygonUpdated(self, rType: SensingPolygon.Type, polygon: SensingPolygon) -> None: ...
+	def onPolygonUpdated(self, polygon: SensingPolygon) -> None: ...

@@ -32,8 +32,8 @@ class Eventifier(MapSubscriber, SensorSubscriber):
 		ePublisher = RtBiInterfaces.createEventPublisher(self)
 		self.__shadowTree: IGraph = IGraph((gPublisher, ePublisher), modulePublishers)
 
-	def onPolygonUpdated(self, rType: MovingPolygon.Type | StaticPolygon.Type | SensingPolygon.Type, polygon: MapPolygon | SensingPolygon) -> None:
-		self.log(f"Updating polygons of type {rType}.")
+	def onPolygonUpdated(self, polygon: MapPolygon | SensingPolygon) -> None:
+		self.log(f"Updating polygons of type {polygon.type.name}.")
 		self.__shadowTree.updatePolygon(polygon)
 		self.__shadowTree.renderLatestCGraph()
 		if self.shouldRender: self.render()

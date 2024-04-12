@@ -47,18 +47,18 @@ class RtBiInterfaces:
 
 	@staticmethod
 	def createSpacePublisher(node: RtBiNode, topic: TopicNames, callbackFunc: Callable = lambda: None, intervalSecs: float = nan) -> tuple[Publisher, Timer | None]:
-		return Ros.CreatePublisher(node, Msgs.RtBi.RegularSpaceArray, topic.value, callbackFunc, intervalSecs)
+		return Ros.CreatePublisher(node, Msgs.RtBi.RegularSetArray, topic.value, callbackFunc, intervalSecs)
 
 	@staticmethod
-	def subscribeToSpace(node: RtBiNode, topic: TopicNames, callbackFunc: Callable[[Msgs.RtBi.RegularSpaceArray], None]) -> None:
-		Ros.CreateSubscriber(node, Msgs.RtBi.RegularSpaceArray, topic.value, callbackFunc) # pyright: ignore[reportArgumentType]
+	def subscribeToSpace(node: RtBiNode, topic: TopicNames, callbackFunc: Callable[[Msgs.RtBi.RegularSetArray], None]) -> None:
+		Ros.CreateSubscriber(node, Msgs.RtBi.RegularSetArray, topic.value, callbackFunc) # pyright: ignore[reportArgumentType]
 
 	@staticmethod
 	def createSensorPublisher(node: RtBiNode, callbackFunc: Callable = lambda: None, intervalSecs: float = nan) -> tuple[Publisher, Timer | None]:
 		return RtBiInterfaces.createSpacePublisher(node, RtBiInterfaces.TopicNames.RT_BI_EMULATOR_SENSOR, callbackFunc, intervalSecs)
 
 	@staticmethod
-	def subscribeToSensors(node: RtBiNode, callbackFunc: Callable[[Msgs.RtBi.RegularSpaceArray], None]) -> None:
+	def subscribeToSensors(node: RtBiNode, callbackFunc: Callable[[Msgs.RtBi.RegularSetArray], None]) -> None:
 		RtBiInterfaces.subscribeToSpace(node, RtBiInterfaces.TopicNames.RT_BI_EMULATOR_SENSOR, callbackFunc)
 
 	@staticmethod
@@ -66,7 +66,7 @@ class RtBiInterfaces:
 		return RtBiInterfaces.createSpacePublisher(node, RtBiInterfaces.TopicNames.RT_BI_EMULATOR_KNOWN, callbackFunc, intervalSecs)
 
 	@staticmethod
-	def subscribeToKnownRegions(node: RtBiNode, callbackFunc: Callable[[Msgs.RtBi.RegularSpaceArray], None]) -> None:
+	def subscribeToKnownRegions(node: RtBiNode, callbackFunc: Callable[[Msgs.RtBi.RegularSetArray], None]) -> None:
 		RtBiInterfaces.subscribeToSpace(node, RtBiInterfaces.TopicNames.RT_BI_EMULATOR_KNOWN, callbackFunc)
 
 	@staticmethod
@@ -74,7 +74,7 @@ class RtBiInterfaces:
 		return RtBiInterfaces.createSpacePublisher(node, RtBiInterfaces.TopicNames.RT_BI_EMULATOR_TARGET, callbackFunc, intervalSecs)
 
 	@staticmethod
-	def subscribeToTargets(node: RtBiNode, callbackFunc: Callable[[Msgs.RtBi.RegularSpaceArray], None]) -> None:
+	def subscribeToTargets(node: RtBiNode, callbackFunc: Callable[[Msgs.RtBi.RegularSetArray], None]) -> None:
 		RtBiInterfaces.subscribeToSpace(node, RtBiInterfaces.TopicNames.RT_BI_EMULATOR_TARGET, callbackFunc)
 
 	@staticmethod
@@ -87,12 +87,12 @@ class RtBiInterfaces:
 
 	@staticmethod
 	def createMapPublisher(node: RtBiNode) -> Publisher:
-		(publisher, _) = Ros.CreatePublisher(node, Msgs.RtBi.RegularSpaceArray, RtBiInterfaces.TopicNames.RT_BI_EMULATOR_MAP.value)
+		(publisher, _) = Ros.CreatePublisher(node, Msgs.RtBi.RegularSetArray, RtBiInterfaces.TopicNames.RT_BI_EMULATOR_MAP.value)
 		return publisher
 
 	@staticmethod
-	def subscribeToMap(node: RtBiNode, callbackFunc: Callable[[Msgs.RtBi.RegularSpaceArray], None]) -> None:
-		Ros.CreateSubscriber(node, Msgs.RtBi.RegularSpaceArray, RtBiInterfaces.TopicNames.RT_BI_EMULATOR_MAP.value, callbackFunc) # pyright: ignore[reportArgumentType]
+	def subscribeToMap(node: RtBiNode, callbackFunc: Callable[[Msgs.RtBi.RegularSetArray], None]) -> None:
+		Ros.CreateSubscriber(node, Msgs.RtBi.RegularSetArray, RtBiInterfaces.TopicNames.RT_BI_EMULATOR_MAP.value, callbackFunc) # pyright: ignore[reportArgumentType]
 		return
 
 	@staticmethod

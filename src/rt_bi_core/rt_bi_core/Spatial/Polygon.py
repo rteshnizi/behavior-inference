@@ -43,12 +43,12 @@ class Polygon(ABC):
 	class Types(Enum):
 		BASE = "B"
 		"""Indicates unset value."""
-		DYNAMIC = "D"
-		MOVING = "M"
-		SENSING = "Z"
+		DYNAMIC = Msgs.RtBi.RegularSet.DYNAMIC
+		AFFINE = Msgs.RtBi.RegularSet.AFFINE
+		SENSING = Msgs.RtBi.RegularSet.SENSING
 		SHADOW = "X"
-		STATIC = "S"
-		TARGET = "T"
+		STATIC = Msgs.RtBi.RegularSet.STATIC
+		TARGET = Msgs.RtBi.RegularSet.TARGET
 
 	type = Types.BASE
 	Type = Literal[Types.BASE]
@@ -269,8 +269,8 @@ class Polygon(ABC):
 		msgs.append(RViz.removeMarker(self.id, idSuffix="txt"))
 		return msgs
 
-	def toRegularSpaceMsg(self) -> Msgs.RtBi.RegularSpace:
-		msg = Msgs.RtBi.RegularSpace()
+	def toRegularSpaceMsg(self) -> Msgs.RtBi.RegularSet:
+		msg = Msgs.RtBi.RegularSet()
 		msg.id = self.id
 		msg.polygons = [Msgs.toStdPolygon(self.interior)]
 		msg.color = ColorNames.toStr(self.envelopeColor)

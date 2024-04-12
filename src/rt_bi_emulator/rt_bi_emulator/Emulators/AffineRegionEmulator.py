@@ -78,7 +78,7 @@ class AffineRegionEmulator(RtBiNode, ABC):
 		if timeNanoSecs in self.__ctPoly: return self.__ctPoly[timeNanoSecs]
 		return self.__ctPoly.configs[-1]
 
-	def asRegularSpaceMsg(self) -> Msgs.RtBi.RegularSpace:
+	def asRegularSpaceMsg(self, spaceType: str) -> Msgs.RtBi.RegularSet:
 		timeOfPublish = self.get_clock().now()
 		self.log(f"{self.id} is publishing @ {timeOfPublish.nanoseconds}")
 		poly = self.getRegionAtTime(timeOfPublish.nanoseconds)
@@ -87,18 +87,19 @@ class AffineRegionEmulator(RtBiNode, ABC):
 		polyMsg.region = Msgs.toStdPolygon(poly.interior)
 		polyMsg.id = "0" # All emulated dynamic regions currently only hold a single polygon.
 		polyMsg.center_of_rotation = Msgs.toStdPoint(currentCor)
-		msg = Msgs.RtBi.RegularSpace()
+		msg = Msgs.RtBi.RegularSet()
 		msg.id = self.id
 		msg.stamp = timeOfPublish.to_msg()
 		msg.polygons = [polyMsg]
 		msg.ros_node = self.get_fully_qualified_name()
 		msg.predicates = [] # Inherit all other predicates
+		msg.space_type= spaceType
 		return msg
 
-	def asRegularSpaceArrayMsg(self) -> Msgs.RtBi.RegularSpaceArray:
-		msg = self.asRegularSpaceMsg()
-		arr = Msgs.RtBi.RegularSpaceArray()
-		arr.spaces = [msg]
+	def asRegularSpaceArrayMsg(self, spaceType: str) -> Msgs.RtBi.RegularSetArray:
+		msg = self.asRegularSpaceMsg(spaceType)
+		arr = Msgs.RtBi.RegularSetArray()
+		arr.sets = [msg]
 		return arr
 
 	def render(self) -> None:
