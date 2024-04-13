@@ -51,7 +51,7 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 			"transition_grammar_dir": StrParser[_Parameters](self, "transition_grammar_dir"),
 			"transition_grammar_file": StrParser[_Parameters](self, "transition_grammar_file"),
 		}
-		newKw = { "node_name": "dd_rdf", "loggingSeverity": LoggingSeverity.WARN, **kwArgs}
+		newKw = { "node_name": "dd_rdf", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
 		super().__init__(parsers, **newKw)
 		self.__sparqlXfmr = PredicateToQueryStr(
 			get_package_share_directory(package_name),

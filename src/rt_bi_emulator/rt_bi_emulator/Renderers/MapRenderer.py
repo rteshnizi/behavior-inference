@@ -4,13 +4,13 @@ from rclpy.logging import LoggingSeverity
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.RViz import RViz
 from rt_bi_core.RegionsSubscriber import MapSubscriber
-from rt_bi_core.Spatial import MapPolygon, MovingPolygon, StaticPolygon
+from rt_bi_core.Spatial import MapPolygon
 
 
 class MapRenderer(MapSubscriber):
 	""" This Node listens to all static and dynamic map region updates and renders them. """
 	def __init__(self, **kwArgs):
-		newKw = { "node_name": "renderer_map", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
+		newKw = { "node_name": "renderer_map", "loggingSeverity": LoggingSeverity.WARN, **kwArgs}
 		super().__init__(pauseQueuingMsgs=False, **newKw)
 
 	def createMarkers(self) -> list[RViz.Msgs.Marker]:
@@ -23,7 +23,7 @@ class MapRenderer(MapSubscriber):
 		return markers
 
 	def onPolygonUpdated(self, polygon: MapPolygon) -> None:
-		self.log("Map updated.")
+		self.log(f"Map updated region {repr(polygon)}")
 		return self.render()
 
 def main(args=None):

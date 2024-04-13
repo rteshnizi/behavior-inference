@@ -24,8 +24,7 @@ class __RegionsSubscriberBase(RtBiNode, ABC):
 	* Subclasses do not need to create a publisher to RViz. Just call :meth:`~RegionsSubscriberBase.render`
 	"""
 	def __init__(self, pauseQueuingMsgs: bool, **kwArgs):
-		newKw = { "node_name": "map_base", "loggingSeverity": Ros.LoggingSeverity.INFO, **kwArgs}
-		super().__init__(**newKw)
+		super().__init__(**kwArgs)
 		self.pauseQueuingMsgs = pauseQueuingMsgs
 		self.__msgPq: MinQueue[Msgs.RtBi.RegularSet] = MinQueue(key=self.__eventPqKey)
 		self.__processingTimer: Ros.Timer | None = None
@@ -87,30 +86,16 @@ class __RegionsSubscriberBase(RtBiNode, ABC):
 		poly = PolygonFactory(PolyCls, kwArgs)
 		return poly
 
-	@deprecated("For debugging only")
-	def __processEnqueuedUpdatesSlow(self) -> None:
-		if self.__processingTimer is not None: self.__processingTimer.destroy()
-		if self.__msgPq.isEmpty: self.log("No updates to process.. see you next time!")
-		else:
-			self.log(f"[SLOW] Processing enqueued updates.")
-			regularSet = self.__msgPq.peek
-			if len(regularSet.polygons) == 0:
-				self.__msgPq.dequeue()
-				self.__processingTimer = Ros.CreateTimer(self, self.__processEnqueuedUpdatesSlow, intervalNs=50)
-				return
-			polyMsg = Ros.PopMessage(regularSet.polygons, 0, Msgs.RtBi.Polygon)
-			poly = self.__createPolygon(regularSet, polyMsg)
-			self.__storePolygon(regularSet.id, poly)
-			self.onPolygonUpdated(poly)
-		self.__processingTimer = Ros.CreateTimer(self, self.__processEnqueuedUpdatesSlow, intervalNs=1000)
-		return
-
 	def __processEnqueuedUpdates(self) -> None:
 		if self.__processingTimer is not None: self.__processingTimer.destroy()
 		if not self.__msgPq.isEmpty: self.log("Processing enqueued updates.")
 		else: self.log("No updates to process.. see you next time!")
 		while not self.__msgPq.isEmpty:
 			regularSet = self.__msgPq.dequeue()
+			stampNanoSecs = Msgs.toNanoSecs(regularSet.stamp)
+			nowNanoSecs = Msgs.toNanoSecs(self.get_clock().now())
+			if stampNanoSecs > nowNanoSecs:
+				self.get_logger().error(f"Event is in the future:\n\t{repr(regularSet)}")
 			for polyMsg in regularSet.polygons:
 				poly = self.__createPolygon(regularSet, polyMsg)
 				self.__storePolygon(regularSet.id, poly)
@@ -123,8 +108,11 @@ class __RegionsSubscriberBase(RtBiNode, ABC):
 		"""Enqueues the update. Subclasses must call this function upon subscription message."""
 		if len(setArr.sets) == 0: return
 		if self.pauseQueuingMsgs: return
-		self.log(f"Record {len(setArr.sets)} updated regions in event pQ.")
-		for match in setArr.sets: self.__msgPq.enqueue(match)
+		setArr.sets = Ros.AsList(setArr.sets, Msgs.RtBi.RegularSet)
+		self.log(f"{len(setArr.sets)} updates arrived.")
+		for match in setArr.sets:
+			self.log(f"Recording update of type {match.space_type} in event pQ.")
+			self.__msgPq.enqueue(match)
 		self.__processEnqueuedUpdates()
 		return
 

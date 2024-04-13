@@ -274,5 +274,6 @@ class Polygon(ABC):
 		msg.id = self.id
 		msg.polygons = [Msgs.toStdPolygon(self.interior)]
 		msg.color = ColorNames.toStr(self.envelopeColor)
+		msg.space_type = self.type.value
 		msg.name = []
 		return msg
