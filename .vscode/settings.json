@@ -31,6 +31,7 @@
 		"Rcutils",
 		"rdfs",
 		"rtbi",
+		"rtype",
 		"rviz",
 		"scikit",
 		"scipy",
