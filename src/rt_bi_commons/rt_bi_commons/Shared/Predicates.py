@@ -49,13 +49,13 @@ class Predicates:
 		return self.__ior__(other)
 
 	def __ior__(self, other: "Predicates") -> Self:
-		for p in self:
-			if p not in other: continue
+		for p in other:
 			self[p] = other[p]
 		return self
 
 	def __or__(self, other: "Predicates") -> "Predicates":
 		updated = Predicates([])
+		updated.update(self)
 		updated.update(other)
 		return updated
 
