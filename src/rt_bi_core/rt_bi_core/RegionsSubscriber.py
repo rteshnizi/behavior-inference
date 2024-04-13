@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Any, TypeAlias, cast, final
 
-from typing_extensions import deprecated
-
 from rt_bi_commons.Base.RtBiNode import RtBiNode
 from rt_bi_commons.Shared.MinQueue import MinQueue
 from rt_bi_commons.Utils import Ros
@@ -88,19 +86,24 @@ class __RegionsSubscriberBase(RtBiNode, ABC):
 
 	def __processEnqueuedUpdates(self) -> None:
 		if self.__processingTimer is not None: self.__processingTimer.destroy()
-		if not self.__msgPq.isEmpty: self.log("Processing enqueued updates.")
+		if not self.__msgPq.isEmpty: self.log(f"** Processing enqueued updates. Queue Size = {len(self.__msgPq)}")
 		else: self.log("No updates to process.. see you next time!")
+		nowNanoSecs = Msgs.toNanoSecs(self.get_clock().now())
+		timerInterval = 1000
 		while not self.__msgPq.isEmpty:
+			nextTimeStamp = Msgs.toNanoSecs(self.__msgPq.peek.stamp)
+			if nowNanoSecs < nextTimeStamp:
+				delta = nextTimeStamp - nowNanoSecs
+				timerInterval = delta if delta < timerInterval else timerInterval
+				break
 			regularSet = self.__msgPq.dequeue()
-			stampNanoSecs = Msgs.toNanoSecs(regularSet.stamp)
-			nowNanoSecs = Msgs.toNanoSecs(self.get_clock().now())
-			if stampNanoSecs > nowNanoSecs:
-				self.get_logger().error(f"Event is in the future:\n\t{repr(regularSet)}")
 			for polyMsg in regularSet.polygons:
 				poly = self.__createPolygon(regularSet, polyMsg)
 				self.__storePolygon(regularSet.id, poly)
 				self.onPolygonUpdated(poly)
-		self.__processingTimer = Ros.CreateTimer(self, self.__processEnqueuedUpdates)
+		if self.__msgPq.isEmpty: self.log(f"** Processing finished -- EXHAUSTED the event queue.")
+		else: self.log(f"** Processing finished. Queue Size = {len(self.__msgPq)}\n\tNext event is in the future @ {repr(nextTimeStamp)} -- timer started for {timerInterval}ns.")
+		self.__processingTimer = Ros.CreateTimer(self, self.__processEnqueuedUpdates, timerInterval)
 		return
 
 	@final
