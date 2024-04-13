@@ -3,7 +3,6 @@ from typing import Literal
 from rt_bi_commons.Shared.Color import RGBA, ColorNames
 from rt_bi_commons.Shared.Pose import Coords, CoordsList
 from rt_bi_commons.Shared.Predicates import Predicates
-from rt_bi_commons.Utils.Msgs import Msgs
 from rt_bi_commons.Utils.RViz import RViz
 from rt_bi_core.Spatial.Polygon import Polygon
 
@@ -17,7 +16,7 @@ class StaticPolygon(Polygon):
 			regionId: str,
 			subPartId: str,
 			envelope: CoordsList,
-			predicates: list[Msgs.RtBi.Predicate] | Predicates,
+			predicates: Predicates,
 			timeNanoSecs: int,
 			hIndex: int,
 			**kwArgs

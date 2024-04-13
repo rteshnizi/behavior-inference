@@ -3,6 +3,7 @@ from typing import Any, TypeAlias, cast, final
 
 from rt_bi_commons.Base.RtBiNode import RtBiNode
 from rt_bi_commons.Shared.MinQueue import MinQueue
+from rt_bi_commons.Shared.Predicates import Predicates
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Msgs import Msgs
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
@@ -21,9 +22,8 @@ class __RegionsSubscriberBase(RtBiNode, ABC):
 	* Subclasses of this class must subscribe to the relevant topics.
 	* Subclasses do not need to create a publisher to RViz. Just call :meth:`~RegionsSubscriberBase.render`
 	"""
-	def __init__(self, pauseQueuingMsgs: bool, **kwArgs):
+	def __init__(self, **kwArgs):
 		super().__init__(**kwArgs)
-		self.pauseQueuingMsgs = pauseQueuingMsgs
 		self.__msgPq: MinQueue[Msgs.RtBi.RegularSet] = MinQueue(key=self.__eventPqKey)
 		self.__processingTimer: Ros.Timer | None = None
 		self.mapRegions: dict[str, list[MapPolygon]] = {}
@@ -84,13 +84,14 @@ class __RegionsSubscriberBase(RtBiNode, ABC):
 				raise RuntimeError(f"Unexpected region type: {regularSet.space_type}")
 		if poly is None: raise RuntimeError(f"No polygon stored for id: {regularSet.id}")
 
+		predicates = Predicates(regularSet.predicates) if isinstance(regularSet.predicates, list) else Predicates([])
 		kwArgs: dict[PolygonFactoryKeys, Any] = {
 			"polygonId": poly.id.polygonId,
 			"regionId": regularSet.id,
 			"subPartId": "",
 			"envelope": poly.envelope,
 			"timeNanoSecs": Msgs.toNanoSecs(regularSet.stamp),
-			"predicates": regularSet.predicates if isinstance(regularSet.predicates, list) else [],
+			"predicates": predicates,
 			"hIndex": -1,
 			"centerOfRotation": poly.centerOfRotation,
 		}
@@ -101,13 +102,14 @@ class __RegionsSubscriberBase(RtBiNode, ABC):
 		return
 
 	def __createGeometry(self, regularSet: Msgs.RtBi.RegularSet, polyMsg: Msgs.RtBi.Polygon) -> None:
+		predicates = Predicates(regularSet.predicates) if isinstance(regularSet.predicates, list) else Predicates([])
 		kwArgs: dict[PolygonFactoryKeys, Any] = {
 			"polygonId": polyMsg.id,
 			"regionId": regularSet.id,
 			"subPartId": "",
 			"envelope": Msgs.toCoordsList(polyMsg.region.points),
 			"timeNanoSecs": Msgs.toNanoSecs(regularSet.stamp),
-			"predicates": regularSet.predicates if isinstance(regularSet.predicates, list) else [],
+			"predicates": predicates,
 			"hIndex": -1,
 			"centerOfRotation": Msgs.toCoords(polyMsg.center_of_rotation),
 		}
@@ -159,7 +161,6 @@ class __RegionsSubscriberBase(RtBiNode, ABC):
 	def _enqueueUpdates(self, setArr: Msgs.RtBi.RegularSetArray) -> None:
 		"""Enqueues the update. Subclasses must call this function upon subscription message."""
 		if len(setArr.sets) == 0: return
-		if self.pauseQueuingMsgs: return
 		setArr.sets = Ros.AsList(setArr.sets, Msgs.RtBi.RegularSet)
 		self.log(f"{len(setArr.sets)} updates arrived.")
 		for match in setArr.sets:
@@ -200,13 +201,15 @@ class __RegionsSubscriberBase(RtBiNode, ABC):
 
 class MapSubscriber(__RegionsSubscriberBase, ABC):
 	"""This object subscribes to the relevant map topics."""
-	def __init__(self, pauseQueuingMsgs: bool, **kwArgs):
-		super().__init__(pauseQueuingMsgs=pauseQueuingMsgs, **kwArgs)
+	def __init__(self, **kwArgs):
+		super().__init__(**kwArgs)
+		self.mapInitPhasesRemaining = 2
+		# Hold off from taking affine region updates until map is initialized
 		RtBiInterfaces.subscribeToMap(self, self.__parseMap)
 		RtBiInterfaces.subscribeToKnownRegions(self, self.__parseKnownRegion)
 
 	def __parseMap(self, setArr: Msgs.RtBi.RegularSetArray) -> None:
-		self.pauseQueuingMsgs = False
+		if self.mapInitPhasesRemaining > 0: self.mapInitPhasesRemaining -= 1
 		super()._enqueueUpdates(setArr)
 		return
 
@@ -219,9 +222,8 @@ class MapSubscriber(__RegionsSubscriberBase, ABC):
 
 class TargetSubscriber(__RegionsSubscriberBase, ABC):
 	"""This object subscribes to the relevant target topics."""
-	def __init__(self, pauseQueuingMsgs: bool, **kwArgs):
-		super().__init__(pauseQueuingMsgs=pauseQueuingMsgs, **kwArgs)
-		self.pauseQueuingMsgs = False
+	def __init__(self, **kwArgs):
+		super().__init__(**kwArgs)
 		RtBiInterfaces.subscribeToTargets(self, self.__parseTarget)
 
 	def __parseTarget(self, setArr: Msgs.RtBi.RegularSetArray) -> None:
@@ -233,8 +235,8 @@ class TargetSubscriber(__RegionsSubscriberBase, ABC):
 
 class SensorSubscriber(__RegionsSubscriberBase, ABC):
 	"""This object subscribes to the relevant sensor topics."""
-	def __init__(self, pauseQueuingMsgs: bool, **kwArgs):
-		super().__init__(pauseQueuingMsgs=pauseQueuingMsgs, **kwArgs)
+	def __init__(self, **kwArgs):
+		super().__init__(**kwArgs)
 		RtBiInterfaces.subscribeToSensors(self, self.__parseSensor)
 
 	def __parseSensor(self, setArr: Msgs.RtBi.RegularSetArray) -> None:

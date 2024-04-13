@@ -6,7 +6,7 @@ from rt_bi_core.Spatial.AffinePolygonBase import AffinePolygonBase
 
 
 class AffinePolygon(AffinePolygonBase):
-	"""A Polygon with a timestamp."""
+	"""A mobile polygon with a timestamp."""
 
 	type: Literal[AffinePolygonBase.Types.AFFINE] = AffinePolygonBase.Types.AFFINE
 	Type = Literal[AffinePolygonBase.Types.AFFINE]

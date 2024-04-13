@@ -17,8 +17,8 @@ from rt_bi_eventifier.Model.IGraph import IGraph
 
 class Eventifier(MapSubscriber, SensorSubscriber):
 	def __init__(self, **kwArgs) -> None:
-		newKw = { "node_name": "eventifier", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
-		super().__init__(pauseQueuingMsgs=True, **newKw)
+		newKw = { "node_name": "eventifier", "loggingSeverity": LoggingSeverity.WARN, **kwArgs}
+		super().__init__(**newKw)
 		self.declareParameters()
 		self.__renderModules: list[IGraph.SUBMODULE] = []
 		self.parseParameters()
@@ -34,6 +34,10 @@ class Eventifier(MapSubscriber, SensorSubscriber):
 
 	def onPolygonUpdated(self, polygon: MapPolygon | SensingPolygon) -> None:
 		self.log(f"Updating polygons of type {polygon.type.name}.")
+		# While initializing the map, don't take affine updates
+		if self.mapInitPhasesRemaining > 0:
+			if polygon.type == AffinePolygon.type or polygon.type == SensingPolygon.type:
+				return
 		self.__iGraph.updatePolygon(polygon)
 		self.__iGraph.renderLatestCGraph()
 		if self.shouldRender: self.render()

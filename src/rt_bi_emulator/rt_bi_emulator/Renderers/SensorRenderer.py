@@ -16,7 +16,7 @@ class SensorRenderer(SensorSubscriber):
 	""" This Node listens to all the messages published on the topics related to sensors and renders them. """
 	def __init__(self, **kwArgs):
 		newKw = { "node_name": "renderer_sensor", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
-		super().__init__(pauseQueuingMsgs=False, **newKw)
+		super().__init__(**newKw)
 		RtBiInterfaces.subscribeToEstimation(self, self.__onEstimation)
 
 	def onPolygonUpdated(self, polygon: Any) -> None:

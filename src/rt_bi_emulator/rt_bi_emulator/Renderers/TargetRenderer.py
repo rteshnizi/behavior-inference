@@ -10,7 +10,7 @@ class TargetRenderer(TargetSubscriber):
 	""" This Node listens to all the messages published on the topics related to targets and renders them. """
 	def __init__(self, **kwArgs):
 		newKw = { "node_name": "renderer_target", "loggingSeverity": Ros.LoggingSeverity.INFO, **kwArgs}
-		super().__init__(pauseQueuingMsgs=False, **newKw)
+		super().__init__(**newKw)
 
 	def createMarkers(self) -> list[RViz.Msgs.Marker]:
 		markers = []

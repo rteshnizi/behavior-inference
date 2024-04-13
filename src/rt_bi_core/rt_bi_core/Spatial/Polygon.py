@@ -60,7 +60,7 @@ class Polygon(ABC):
 			subPartId: str,
 			envelope: GeometryLib.CoordsList,
 			envelopeColor: RGBA,
-			predicates: list[Msgs.RtBi.Predicate] | Predicates,
+			predicates: Predicates,
 			timeNanoSecs: int,
 			hIndex: int,
 			interiorColor: RGBA = ColorNames.GREY_DARK,
@@ -95,7 +95,7 @@ class Polygon(ABC):
 		self.__DEFAULT_ENVELOPE_COLOR = envelopeColor
 		self.__INTERIOR_COLOR = interiorColor
 		self.__TEXT_COLOR = ColorNames.BLACK if ColorUtils.isLightColor(interiorColor) else ColorNames.WHITE
-		self.__predicates = predicates if isinstance(predicates, Predicates) else Predicates(predicates)
+		self.__predicates = predicates
 		if len(kwArgs) > 0 : Ros.Log(f"Unassigned keyword args ignored: {repr(kwArgs)}")
 		self.__edges: list[Shapely.LineString] = []
 		self.__buildEdges()
@@ -139,14 +139,13 @@ class Polygon(ABC):
 	def predicates(self) -> Predicates:
 		return self.__predicates
 
+	@predicates.setter
+	def predicates(self, val: Predicates) -> None:
+		self.__predicates = val
+
 	@property
 	def isAccessible(self) -> bool:
 		return "accessible" not in self.predicates or self.predicates["accessible"]
-
-	@predicates.setter
-	def predicates(self, val: Predicates) -> None:
-		Ros.Logger().debug(f"Updating predicates {self.shortName}: from {repr(self.predicates)} to {repr(val)}")
-		self.__predicates = val
 
 	@property
 	def envelope(self) -> GeometryLib.CoordsList:

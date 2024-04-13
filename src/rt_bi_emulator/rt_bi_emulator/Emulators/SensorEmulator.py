@@ -14,7 +14,7 @@ from rt_bi_emulator.Emulators.AffineRegionEmulator import AffineRegionEmulator
 class SensorEmulator(AffineRegionEmulator, TargetSubscriber):
 	def __init__(self):
 		newKw = { "node_name": "emulator_sensor", "loggingSeverity": LoggingSeverity.INFO }
-		super().__init__(pauseQueuingMsgs=False, **newKw)
+		super().__init__(**newKw)
 		self.__observedTargetIds = set()
 		(self.__regionPublisher, _) = RtBiInterfaces.createSensorPublisher(self, self.__publishUpdate, self.updateInterval)
 		(self.__estPublisher, _) = RtBiInterfaces.createEstimationPublisher(self)

@@ -204,11 +204,18 @@ class ContinuousTimePolygon(Generic[_T_Poly]):
 		return GeometryLib.applyMatrixTransformToLineString(transform, edge)
 
 	def addPolygon(self, polygon: _T_Poly, keepFromNs: int = -1) -> None:
+		"""This method grabs any missing predicate from the previous layer.
+
+		:param polygon: The polygon to be added.
+		:param int keepFromNs: Any configuration prior to this time will be removed from the history,
+		EXCEPT the last update before this stamp, defaults to -1 (keeps everything).
+		"""
 		if self.length > 0:
 			assert self.id.sansTime() == polygon.id.sansTime(), (
 				f"Different ids in poly configs. {self.id} vs {polygon.id}. " +
 				"A ContinuousTimeRegion must describe the evolution of a single polygon."
 			)
+			polygon.predicates = self.__sortedConfigs[-1].predicates.update(polygon.predicates)
 		self.__sortedConfigs.append(polygon)
 		self.__sortedConfigs = sorted(self.__sortedConfigs, key=lambda p: p.timeNanoSecs)
 

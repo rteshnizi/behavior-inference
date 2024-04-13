@@ -24,10 +24,6 @@ class Predicates:
 			val == Msgs.RtBi.Predicate.FALSE or
 			val == Msgs.RtBi.Predicate.TRUE
 		), f"Unexpected value for predicate {p}: {val}"
-		assert (
-			p not in self.__d or
-			not isinstance(self.__d[p], bool)
-		), "The boolean value of a predicate is fixed."
 		if isinstance(val, bool):
 			self.__d[p] = val
 			return
@@ -46,11 +42,8 @@ class Predicates:
 		return True
 
 	def update(self, other: "Predicates") -> Self:
-		return self.__ior__(other)
-
-	def __ior__(self, other: "Predicates") -> Self:
-		for p in other:
-			self[p] = other[p]
+		"""It will not remove predicates. Only adds or updates value."""
+		for p in other: self[p] = other[p]
 		return self
 
 	def __or__(self, other: "Predicates") -> "Predicates":
