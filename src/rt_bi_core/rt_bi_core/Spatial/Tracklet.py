@@ -6,12 +6,12 @@ from rt_bi_commons.Utils.RViz import DEFAULT_RENDER_DURATION_NS, RViz
 class Tracklet(Pose):
 	__ID_PREFIX = "trk"
 
-	def __init__(self, idStr: str, timeNanoSecs: int, hIndex: int, x: float, y: float, angleFromX: float, spawned = False, vanished = False) -> None:
+	def __init__(self, idStr: str, timeNanoSecs: int, hIndex: int, x: float, y: float, angleFromX: float, entered = False, exited = False) -> None:
 		super().__init__(timeNanoSecs, x, y, angleFromX)
 		self.id = idStr
 		self.__rVizId = RViz.Id(hIndex=hIndex, timeNanoSecs=timeNanoSecs, regionId=self.id, polygonId=Tracklet.__ID_PREFIX, subPartId="")
-		self.spawned = spawned
-		self.vanished = vanished
+		self.entered = entered
+		self.exited = exited
 
 	@property
 	def hIndex(self) -> int:
@@ -20,15 +20,15 @@ class Tracklet(Pose):
 	def __repr__(self) -> str:
 		(rId, polyId) = self.__rVizId.shortNames()
 		s = f"{rId}/{polyId}"
-		if self.spawned and self.vanished: return "%s%s" % ("[+/-]", s)
-		if self.spawned: return "%s%s" % ("[+]", s)
-		if self.vanished: return "%s%s" % ("[-]", s)
+		if self.entered and self.exited: return "%s%s" % ("[+/-]", s)
+		if self.entered: return "%s%s" % ("[+]", s)
+		if self.exited: return "%s%s" % ("[-]", s)
 		return s
 
 	def createMarkers(self, durationNs: int = DEFAULT_RENDER_DURATION_NS) -> list[RViz.Msgs.Marker]:
 		msgs = []
-		if self.spawned: color: RGBA = ColorNames.GREEN
-		elif self.vanished: color: RGBA = ColorNames.RED
+		if self.entered: color: RGBA = ColorNames.GREEN
+		elif self.exited: color: RGBA = ColorNames.RED
 		else: color: RGBA = ColorNames.CYAN
 		coords = (self.x, self.y)
 		msgs.append(RViz.createCircle(self.__rVizId.sansTime(), coords, radius=13, outline=color, width=3.0, durationNs=durationNs))

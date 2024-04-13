@@ -27,25 +27,25 @@ class SensorEmulator(AffineRegionEmulator, TargetSubscriber):
 		for regionId in self.targetRegions:
 			targetPolySeq = self.targetRegions[regionId]
 			target = targetPolySeq[-1] # take the latest
-			trackletMsg = Msgs.RtBi.Tracklet(spawned=False, vanished=False)
+			trackletMsg = Msgs.RtBi.Tracklet(entered=False, exited=False)
 			trackletMsg.id = regionId
 			trackletMsg.pose = Msgs.toStdPose(target.centroid)
 			if GeometryLib.intersects(target.interior, self.getRegionAtTime(target.timeNanoSecs).interior):
 				estMsg = Msgs.RtBi.Estimation()
 				estMsg.sensor = self.asRegularSpaceMsg(Msgs.RtBi.RegularSet.SENSING)
 				if target.id.sansTime() not in self.__observedTargetIds:
-					self.log(f"TG {target.id} spawned.")
-					trackletMsg.spawned = True
+					self.log(f"TG {target.id} entered.")
+					trackletMsg.entered = True
 					self.__observedTargetIds.add(target.id.sansTime())
 				Ros.AppendMessage(estMsg.estimations, trackletMsg)
 				self.__estPublisher.publish(estMsg)
 				return
 			else:
 				if target.id.sansTime() in self.__observedTargetIds:
-					self.log(f"TG {target.id} vanished.")
+					self.log(f"TG {target.id} exited.")
 					estMsg = Msgs.RtBi.Estimation()
 					estMsg.sensor = self.asRegularSpaceMsg(Msgs.RtBi.RegularSet.SENSING)
-					trackletMsg.vanished = True
+					trackletMsg.exited = True
 					self.__observedTargetIds.remove(target.id.sansTime())
 					Ros.AppendMessage(estMsg.estimations, trackletMsg)
 					self.__estPublisher.publish(estMsg)

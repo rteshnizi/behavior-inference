@@ -39,7 +39,7 @@ class SensingPolygon(AffinePolygonBase):
 		)
 		self.__tracklets: dict[str, Tracklet] = {}
 		for i in tracklets:
-			if not tracklets[i].vanished:
+			if not tracklets[i].exited:
 				self.__tracklets[i] = tracklets[i]
 
 	@property
@@ -56,6 +56,22 @@ class SensingPolygon(AffinePolygonBase):
 		:rtype: bool
 		"""
 		return len(self.__tracklets) > 0
+
+	@property
+	def trackEntered(self) -> bool:
+		if not self.hasTrack: return False
+		for trackId in self.tracklets:
+			tracklet = self.tracklets[trackId]
+			if tracklet.entered: return True
+		return False
+
+	@property
+	def trackExited(self) -> bool:
+		if not self.hasTrack: return False
+		for trackId in self.tracklets:
+			tracklet = self.tracklets[trackId]
+			if tracklet.exited: return True
+		return False
 
 	def createMarkers(self, durationNs: int = AffinePolygonBase.DEFAULT_RENDER_DURATION_NS, renderText: bool = False, envelopeColor: RGBA | None = None, stamped: bool = True, renderTracklet = True) -> list[RViz.Msgs.Marker]:
 		msgs = super().createMarkers(durationNs=durationNs, renderText=renderText, envelopeColor=envelopeColor, stamped=stamped)

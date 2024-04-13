@@ -8,5 +8,5 @@ geometry_msgs/Pose velocity
 # use np.reshape((4,4)) to reconstruct it
 float32[] covariance
 
-bool spawned
-bool vanished
+bool entered
+bool exited

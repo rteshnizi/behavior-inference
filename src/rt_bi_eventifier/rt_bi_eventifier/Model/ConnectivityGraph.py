@@ -75,7 +75,6 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 
 	def __constructEdges(self) -> None:
 		# Add edges to neighboring nodes
-		# FIXME: What to do with tracklets?
 		for nodeId1 in self.nodes:
 			poly1 = self.getContent(nodeId1, "polygon")
 			if not poly1.isAccessible: continue
@@ -83,8 +82,16 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 				if nodeId1 == nodeId2: continue
 				poly2 = self.getContent(nodeId2, "polygon")
 				if not poly2.isAccessible: continue
+				# Sensors only have outgoing edges to shadows when track has exited
+				if poly1.type == SensingPolygon.type:
+					if poly2.type != SensingPolygon.type:
+						if not poly1.trackExited: continue
+				# Sensors only have ingoing edges from shadows when track has entered
+				if poly2.type == SensingPolygon.type:
+					if poly1.type != SensingPolygon.type:
+						if not poly2.trackEntered: continue
 				if poly1.intersects(poly2) or poly1.hasCommonEdge(poly2):
-					self.addEdge(nodeId1, nodeId2, addReverseEdge=True)
+					self.addEdge(nodeId1, nodeId2)
 		return
 
 	def __constructNodes(self) -> None:

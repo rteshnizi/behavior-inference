@@ -48,8 +48,8 @@ class SensorRenderer(SensorSubscriber):
 				x=pose.position.x,
 				y=pose.position.y,
 				angleFromX=Msgs.toAngle(pose.orientation),
-				spawned=trackletMsg.spawned,
-				vanished=trackletMsg.vanished,
+				entered=trackletMsg.entered,
+				exited=trackletMsg.exited,
 			)
 			self.sensorRegions[msg.sensor.id][0].tracklets[tracklet.id] = tracklet
 		self.render()
