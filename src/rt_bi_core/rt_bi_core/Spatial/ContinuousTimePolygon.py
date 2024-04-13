@@ -58,7 +58,7 @@ class ContinuousTimePolygon(Generic[_T_Poly]):
 			"timeNanoSecs": timeNanoSecs,
 			"interior": poly,
 			"hIndex": -1,
-			"predicates": self.predicates,
+			"predicates": self.predicates(timeNanoSecs),
 		}
 		if self.type == SensingPolygon.type:
 			kwArgs["tracklets"] = cast(SensingPolygon, self.configs[index]).tracklets
@@ -82,10 +82,10 @@ class ContinuousTimePolygon(Generic[_T_Poly]):
 		if timeNanoSecs > self.latestNanoSecs: return False
 		return True
 
-	@property
-	def predicates(self) -> Predicates:
+	def predicates(self, timeNanoSecs: int) -> Predicates:
 		if self.length == 0: return Predicates([])
-		return self.configs[0].predicates
+		i = self.timeNanoSecsToIndex(timeNanoSecs)
+		return self.configs[i].predicates
 
 	@property
 	def name(self) -> str:

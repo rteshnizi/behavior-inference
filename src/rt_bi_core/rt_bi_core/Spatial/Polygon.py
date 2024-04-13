@@ -101,7 +101,8 @@ class Polygon(ABC):
 		self.__buildEdges()
 
 	def __repr__(self) -> str:
-		return self.shortName
+		accState = "O" if self.isAccessible else "|"
+		return f"{self.shortName}[{accState}]"
 
 	def __buildEdges(self) -> None:
 		verts = GeometryLib.getGeometryCoords(self.interior)
@@ -239,7 +240,7 @@ class Polygon(ABC):
 		if len(coords) == 0:
 			Ros.Logger().error(f"Empty polygon detected in createMarkers(): {self.shortName}")
 			return msgs
-		envelopColor = envelopeColor if envelopeColor is not None else self.__DEFAULT_ENVELOPE_COLOR
+		envelopColor = envelopeColor if envelopeColor is not None else self.envelopeColor
 		unstampedId = self.id if stamped else self.id.sansTime()
 		marker = RViz.createPolygon(
 			unstampedId,

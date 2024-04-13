@@ -142,8 +142,8 @@ class ContinuousTimeCollisionDetection:
 		intervals: list[CollisionInterval] = []
 		checked: set[tuple[SensingPolygon.Id, SensingPolygon.Id]] = set()
 		for ctRegion1 in ctrs:
-			if ctRegion1.type == StaticPolygon.type:
-				Ros.Log(f"Not testing {ctRegion1.name}: STATIC")
+			if ctRegion1.isProjective:
+				Ros.Log(f"Not testing {ctRegion1.name}: PROJECTIVE")
 				continue
 			if processUpToNs < ctRegion1.earliestNanoSecs:
 				Ros.Log(f"Not testing {ctRegion1.name}: STARTS LATER.")

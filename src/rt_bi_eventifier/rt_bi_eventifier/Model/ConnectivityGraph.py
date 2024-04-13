@@ -77,10 +77,12 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 		# Add edges to neighboring nodes
 		# FIXME: What to do with tracklets?
 		for nodeId1 in self.nodes:
+			poly1 = self.getContent(nodeId1, "polygon")
+			if not poly1.isAccessible: continue
 			for nodeId2 in self.nodes:
 				if nodeId1 == nodeId2: continue
-				poly1 = self.getContent(nodeId1, "polygon")
 				poly2 = self.getContent(nodeId2, "polygon")
+				if not poly2.isAccessible: continue
 				if poly1.intersects(poly2) or poly1.hasCommonEdge(poly2):
 					self.addEdge(nodeId1, nodeId2, addReverseEdge=True)
 		return

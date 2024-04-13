@@ -4,7 +4,6 @@ from rt_bi_commons.Shared.Color import RGBA, ColorNames
 from rt_bi_commons.Shared.Pose import Coords, CoordsList
 from rt_bi_commons.Shared.Predicates import Predicates
 from rt_bi_commons.Utils.Msgs import Msgs
-from rt_bi_commons.Utils.RViz import RViz
 from rt_bi_core.Spatial.Polygon import Polygon
 
 
@@ -40,5 +39,8 @@ class DynamicPolygon(Polygon):
 	def centerOfRotation(self) -> Coords:
 		return self.centroid
 
-	def createMarkers(self, durationNs: int = Polygon.DEFAULT_RENDER_DURATION_NS, renderText: bool = False, envelopeColor: RGBA | None = None, stamped: bool = False) -> list[RViz.Msgs.Marker]:
-		return super().createMarkers(durationNs, renderText, envelopeColor, stamped)
+	@property
+	def envelopeColor(self) -> RGBA:
+		"""The color used to render the boundary of this polygon."""
+		if self.isAccessible: return super().envelopeColor
+		return ColorNames.RED
