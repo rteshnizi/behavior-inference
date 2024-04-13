@@ -49,6 +49,10 @@ class ColorNames:
 
 class ColorUtils:
 	@staticmethod
+	def avgColor(c1: RGBA, c2: RGBA) -> RGBA:
+		return ((c1[0] + c2[0]) / 2, (c1[1] + c2[1]) / 2, (c1[2] + c2[2]) / 2, (c1[3] + c2[3]) / 2)
+
+	@staticmethod
 	def toHexStr(color: RGBA) -> str:
 		return "#" + "".join(format(int(round(val * 255)), "02x") for val in color)
 

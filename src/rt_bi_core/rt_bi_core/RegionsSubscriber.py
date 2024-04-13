@@ -36,7 +36,7 @@ class __RegionsSubscriberBase(RtBiNode, ABC):
 		if nanoSecs == 0: raise AssertionError("Update with no timestamp: ")
 		return nanoSecs
 
-	def __storePolygon(self, setId: str, poly: SubscriberPolygon) -> None:
+	def __storeGeometry(self, setId: str, poly: SubscriberPolygon) -> None:
 		match poly.type:
 			case StaticPolygon.type | AffinePolygon.type | DynamicPolygon.type:
 				poly = cast(MapPolygon, poly)
@@ -50,14 +50,57 @@ class __RegionsSubscriberBase(RtBiNode, ABC):
 				self.sensorRegions[setId].append(poly)
 			case TargetPolygon.type:
 				poly = cast(TargetPolygon, poly)
-				if setId not in self.sensorRegions:
+				if setId not in self.targetRegions:
 					self.targetRegions[setId] = []
 				self.targetRegions[setId].append(poly)
 			case _:
 				raise RuntimeError(f"Unexpected region type: {poly.type}")
 		return
 
-	def __createPolygon(self, regularSet: Msgs.RtBi.RegularSet, polyMsg: Msgs.RtBi.Polygon) -> SubscriberPolygon:
+	def __useLatestGeometry(self, regularSet: Msgs.RtBi.RegularSet) -> None:
+		poly: SubscriberPolygon | None = None
+		match regularSet.space_type:
+			case StaticPolygon.type.value:
+				PolyCls = StaticPolygon
+				if regularSet.id in self.mapRegions:
+					poly = self.mapRegions[regularSet.id][-1]
+			case DynamicPolygon.type.value:
+				PolyCls = DynamicPolygon
+				if regularSet.id in self.mapRegions:
+					poly = self.mapRegions[regularSet.id][-1]
+			case AffinePolygon.type.value:
+				PolyCls = AffinePolygon
+				if regularSet.id in self.mapRegions:
+					poly = self.mapRegions[regularSet.id][-1]
+			case SensingPolygon.type.value:
+				PolyCls = SensingPolygon
+				if regularSet.id in self.mapRegions:
+					poly = self.sensorRegions[regularSet.id][-1]
+			case TargetPolygon.type.value:
+				PolyCls = TargetPolygon
+				if regularSet.id in self.mapRegions:
+					poly = self.targetRegions[regularSet.id][-1]
+			case _:
+				raise RuntimeError(f"Unexpected region type: {regularSet.space_type}")
+		if poly is None: raise RuntimeError(f"No polygon stored for id: {regularSet.id}")
+
+		kwArgs: dict[PolygonFactoryKeys, Any] = {
+			"polygonId": poly.id.polygonId,
+			"regionId": regularSet.id,
+			"subPartId": "",
+			"envelope": poly.envelope,
+			"timeNanoSecs": Msgs.toNanoSecs(regularSet.stamp),
+			"predicates": regularSet.predicates if isinstance(regularSet.predicates, list) else [],
+			"hIndex": -1,
+			"centerOfRotation": poly.centerOfRotation,
+		}
+		poly = PolygonFactory(PolyCls, kwArgs)
+
+		self.__storeGeometry(regularSet.id, poly)
+		self.onPolygonUpdated(poly)
+		return
+
+	def __createGeometry(self, regularSet: Msgs.RtBi.RegularSet, polyMsg: Msgs.RtBi.Polygon) -> None:
 		kwArgs: dict[PolygonFactoryKeys, Any] = {
 			"polygonId": polyMsg.id,
 			"regionId": regularSet.id,
@@ -82,12 +125,14 @@ class __RegionsSubscriberBase(RtBiNode, ABC):
 			case _:
 				raise RuntimeError(f"Unexpected space type event queue: {regularSet.space_type}\n\tMSG = {repr(regularSet)}")
 		poly = PolygonFactory(PolyCls, kwArgs)
-		return poly
+
+		self.__storeGeometry(regularSet.id, poly)
+		self.onPolygonUpdated(poly)
+		return
 
 	def __processEnqueuedUpdates(self) -> None:
 		if self.__processingTimer is not None: self.__processingTimer.destroy()
 		if not self.__msgPq.isEmpty: self.log(f"** Processing enqueued updates. Queue Size = {len(self.__msgPq)}")
-		else: self.log("No updates to process.. see you next time!")
 		nowNanoSecs = Msgs.toNanoSecs(self.get_clock().now())
 		timerInterval = 1000
 		while not self.__msgPq.isEmpty:
@@ -97,12 +142,16 @@ class __RegionsSubscriberBase(RtBiNode, ABC):
 				timerInterval = delta if delta < timerInterval else timerInterval
 				break
 			regularSet = self.__msgPq.dequeue()
+			if len(regularSet.polygons) == 0:
+				self.__useLatestGeometry(regularSet)
+				continue
 			for polyMsg in regularSet.polygons:
-				poly = self.__createPolygon(regularSet, polyMsg)
-				self.__storePolygon(regularSet.id, poly)
-				self.onPolygonUpdated(poly)
-		if self.__msgPq.isEmpty: self.log(f"** Processing finished -- EXHAUSTED the event queue.")
-		else: self.log(f"** Processing finished. Queue Size = {len(self.__msgPq)}\n\tNext event is in the future @ {repr(nextTimeStamp)} -- timer started for {timerInterval}ns.")
+				self.__createGeometry(regularSet, polyMsg)
+		if self.__msgPq.isEmpty:
+			self.log(f"** Processing finished -- EXHAUSTED the event queue.")
+		else:
+			self.log(f"** Processing finished. Queue Size = {len(self.__msgPq)}")
+			self.log(f"Next event is in the future @ {repr(nextTimeStamp)} -- timer started for {timerInterval}ns.")
 		self.__processingTimer = Ros.CreateTimer(self, self.__processEnqueuedUpdates, timerInterval)
 		return
 
@@ -114,7 +163,7 @@ class __RegionsSubscriberBase(RtBiNode, ABC):
 		setArr.sets = Ros.AsList(setArr.sets, Msgs.RtBi.RegularSet)
 		self.log(f"{len(setArr.sets)} updates arrived.")
 		for match in setArr.sets:
-			self.log(f"Recording update of type {match.space_type} in event pQ.")
+			self.log(f"Recording update of type {match.space_type} in event pQ @{Msgs.toNanoSecs(match.stamp)}.")
 			self.__msgPq.enqueue(match)
 		self.__processEnqueuedUpdates()
 		return

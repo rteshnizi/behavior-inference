@@ -17,7 +17,7 @@ from rt_bi_eventifier.Model.IGraph import IGraph
 
 class Eventifier(MapSubscriber, SensorSubscriber):
 	def __init__(self, **kwArgs) -> None:
-		newKw = { "node_name": "eventifier", "loggingSeverity": LoggingSeverity.WARN, **kwArgs}
+		newKw = { "node_name": "eventifier", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
 		super().__init__(pauseQueuingMsgs=True, **newKw)
 		self.declareParameters()
 		self.__renderModules: list[IGraph.SUBMODULE] = []

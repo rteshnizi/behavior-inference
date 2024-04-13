@@ -44,13 +44,11 @@ class NxUtils:
 	EdgeData = EdgeData
 
 	class Graph(Generic[_Polygon], nx.DiGraph, ABC):
-		__LAYOUT_SCALE = 300
 		__RENDER_DELTA_X = 75
 		__RENDER_DELTA_Y = 90
 		__RENDER_DELTA_Z = 75
 		def __init__(self, rVizPublisher: Ros.Publisher | None):
 			super().__init__()
-			self.__layout: NxUtils.GraphLayout2D | None = None
 			self.rVizPublisher = rVizPublisher
 
 		def __contains__(self, id_: NodeId | Sequence[NodeId]) -> bool:

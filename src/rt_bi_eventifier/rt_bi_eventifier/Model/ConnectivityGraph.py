@@ -103,7 +103,7 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 					hIndex=self.hIndex if self.hIndex is not None else -1,
 					predicates=mapPoly.predicates,
 					centerOfRotation=mapPoly.centerOfRotation,
-					envelopeColor=ColorNames.ORANGE,
+					envelopeColor=mapPoly.envelopeColor,
 				))
 		else:
 			for sensor in self.sensors:
@@ -139,7 +139,7 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 						hIndex=self.hIndex if self.hIndex is not None else -1,
 						predicates=mapPoly.predicates,
 						centerOfRotation=mapPoly.centerOfRotation,
-						envelopeColor=ColorNames.ORANGE,
+						envelopeColor=mapPoly.envelopeColor,
 					))
 
 		if len(shadowPolys) == 0: Ros.Logger().warn("No shadows produced.")

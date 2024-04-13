@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Literal, cast
 
-from rt_bi_commons.Shared.Color import RGBA
+from rt_bi_commons.Shared.Color import RGBA, ColorUtils
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Geometry import GeometryLib, Shapely
 from rt_bi_commons.Utils.Msgs import Msgs
@@ -112,12 +112,9 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 		Ros.AppendMessage(markers, marker)
 		return markers
 
-	def __getEdgeRenderColor(self, frmType: StaticPolygon.Type | SensingPolygon.Type | AffinePolygon.Type | DynamicPolygon.Type, toType: StaticPolygon.Type | SensingPolygon.Type | AffinePolygon.Type | DynamicPolygon.Type, isTemporal: bool) -> RGBA:
+	def __getEdgeRenderColor(self, frmPoly: GraphPolygon, toPoly: GraphPolygon, isTemporal: bool) -> RGBA:
 		if isTemporal: return ColorNames.CYAN_DARK
-		elif (frmType, toType) == (StaticPolygon.type, StaticPolygon.type): return ColorNames.ORANGE
-		elif (frmType, toType) == (SensingPolygon.type, SensingPolygon.type): return ColorNames.GREEN
-		elif (frmType, toType) == (AffinePolygon.type, AffinePolygon.type): return ColorNames.PURPLE
-		else: return ColorNames.MAGENTA_DARK
+		return ColorUtils.avgColor(frmPoly.envelopeColor, toPoly.envelopeColor)
 
 	def createEdgeMarkers(self) -> list[RViz.Msgs.Marker]:
 		markers = []
@@ -128,14 +125,14 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 			frm = cast(NxUtils.Id, frm)
 			to = cast(NxUtils.Id, to)
 			if frm == to: continue
-			frmType = self.getContent(frm, "polygon").type
-			zOffset = self.__getNodeRenderZOffset(frmType)
+			frmPoly = self.getContent(frm, "polygon")
+			zOffset = self.__getNodeRenderZOffset(frmPoly.type)
 			frmCoords = (nodePositions[frm][0], nodePositions[frm][1], nodePositions[frm][2] + zOffset)
-			toType = self.getContent(to, "polygon").type
-			zOffset = self.__getNodeRenderZOffset(toType)
+			toPoly = self.getContent(to, "polygon")
+			zOffset = self.__getNodeRenderZOffset(toPoly.type)
 			toCoords = (nodePositions[to][0], nodePositions[to][1], nodePositions[to][2] + zOffset)
 			edgeData = outEdgeView[frm, to]
-			color = self.__getEdgeRenderColor(frmType, toType, "isTemporal" in edgeData and edgeData["isTemporal"])
+			color = self.__getEdgeRenderColor(frmPoly, toPoly, "isTemporal" in edgeData and edgeData["isTemporal"])
 			marker = RViz.createLine(frm, coordsList=[frmCoords, toCoords], outline=color, width=1, idSuffix=repr(to))
 			Ros.AppendMessage(markers, marker)
 		return markers

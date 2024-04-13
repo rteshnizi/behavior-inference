@@ -25,9 +25,8 @@ class SensorEmulator(AffineRegionEmulator, TargetSubscriber):
 
 	def onPolygonUpdated(self, polygon: TargetPolygon) -> None:
 		for regionId in self.targetRegions:
-			targetPolys = self.targetRegions[regionId]
-			if len(targetPolys) > 1: raise RuntimeError(f"We do not expect a target region with more than one member.")
-			target = targetPolys[0]
+			targetPolySeq = self.targetRegions[regionId]
+			target = targetPolySeq[-1] # take the latest
 			trackletMsg = Msgs.RtBi.Tracklet(spawned=False, vanished=False)
 			trackletMsg.id = regionId
 			trackletMsg.pose = Msgs.toStdPose(target.centroid)
