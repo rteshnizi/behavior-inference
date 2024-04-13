@@ -9,7 +9,7 @@ from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_commons.Utils.RViz import RViz
 from rt_bi_core.RegionsSubscriber import MapSubscriber, SensorSubscriber
 from rt_bi_core.Spatial import MapPolygon
-from rt_bi_core.Spatial.MovingPolygon import MovingPolygon
+from rt_bi_core.Spatial.MovingPolygon import AffinePolygon
 from rt_bi_core.Spatial.SensingPolygon import SensingPolygon
 from rt_bi_core.Spatial.StaticPolygon import StaticPolygon
 from rt_bi_eventifier.Model.IGraph import IGraph
@@ -17,7 +17,7 @@ from rt_bi_eventifier.Model.IGraph import IGraph
 
 class Eventifier(MapSubscriber, SensorSubscriber):
 	def __init__(self, **kwArgs) -> None:
-		newKw = { "node_name": "eventifier", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
+		newKw = { "node_name": "eventifier", "loggingSeverity": LoggingSeverity.WARN, **kwArgs}
 		super().__init__(pauseQueuingMsgs=True, **newKw)
 		self.declareParameters()
 		self.__renderModules: list[IGraph.SUBMODULE] = []
@@ -30,12 +30,12 @@ class Eventifier(MapSubscriber, SensorSubscriber):
 
 		gPublisher = RtBiInterfaces.createEventGraphPublisher(self)
 		ePublisher = RtBiInterfaces.createEventPublisher(self)
-		self.__shadowTree: IGraph = IGraph((gPublisher, ePublisher), modulePublishers)
+		self.__iGraph: IGraph = IGraph((gPublisher, ePublisher), modulePublishers)
 
 	def onPolygonUpdated(self, polygon: MapPolygon | SensingPolygon) -> None:
 		self.log(f"Updating polygons of type {polygon.type.name}.")
-		self.__shadowTree.updatePolygon(polygon)
-		self.__shadowTree.renderLatestCGraph()
+		self.__iGraph.updatePolygon(polygon)
+		self.__iGraph.renderLatestCGraph()
 		if self.shouldRender: self.render()
 		return
 

@@ -5,14 +5,15 @@ from rt_bi_commons.Shared.Predicates import Predicates
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Geometry import AffineTransform, GeometryLib, Shapely
 from rt_bi_core.Spatial import GraphPolygon, PolygonFactory
-from rt_bi_core.Spatial.MovingPolygon import MovingPolygon
+from rt_bi_core.Spatial.DynamicPolygon import DynamicPolygon
+from rt_bi_core.Spatial.MovingPolygon import AffinePolygon
 from rt_bi_core.Spatial.Polygon import PolygonFactoryKeys
 from rt_bi_core.Spatial.SensingPolygon import SensingPolygon
 from rt_bi_core.Spatial.StaticPolygon import StaticPolygon
 
 _T_Poly = TypeVar("_T_Poly", bound=GraphPolygon)
 class ContinuousTimePolygon(Generic[_T_Poly]):
-	INF_NS: Final[int] = 2 ** 100
+	INF_NS: Final[int] = 2 ** 100 #9223372036854775808
 	def __init__(self, polyConfigs: list[_T_Poly]) -> None:
 		self.__sortedConfigs: list[_T_Poly] = []
 		for poly in polyConfigs: self.addPolygon(poly, -1)
@@ -20,7 +21,7 @@ class ContinuousTimePolygon(Generic[_T_Poly]):
 
 	def __repr__(self) -> str:
 		tStr = f"{self.earliestNanoSecs}, {self.latestNanoSecs}"
-		if self.isStatic or self.earliestNanoSecs == self.latestNanoSecs:
+		if self.isProjective or self.earliestNanoSecs == self.latestNanoSecs:
 			tStr = f"{self.earliestNanoSecs}"
 		return f"CTR-{self.name}[{tStr}](#{self.length})"
 
@@ -38,7 +39,7 @@ class ContinuousTimePolygon(Generic[_T_Poly]):
 			The shape.
 		"""
 		index = self.timeNanoSecsToIndex(timeNanoSecs) # This tests for edge-cases as well
-		if self.isStatic: return self.configs[0]
+		if self.isProjective: return self.configs[0]
 		if timeNanoSecs == self.earliestNanoSecs: return self.configs[0]
 		if timeNanoSecs == self.latestNanoSecs: return self.configs[self.length - 1]
 
@@ -62,11 +63,13 @@ class ContinuousTimePolygon(Generic[_T_Poly]):
 		if self.type == SensingPolygon.type:
 			kwArgs["tracklets"] = cast(SensingPolygon, self.configs[index]).tracklets
 			Cls = SensingPolygon
-		elif self.isStatic:
+		elif self.type == StaticPolygon.type:
 			kwArgs["timeNanoSecs"] = self.configs[index].timeNanoSecs
 			Cls = StaticPolygon
-		elif self.type == MovingPolygon.type:
-			Cls = MovingPolygon
+		elif self.type == DynamicPolygon.type:
+			Cls = DynamicPolygon
+		elif self.type == AffinePolygon.type:
+			Cls = AffinePolygon
 		else:
 			raise AssertionError(f"Unexpected region type: {repr(self.type)} in {self.name}")
 		poly = PolygonFactory(Cls, kwArgs)
@@ -92,8 +95,8 @@ class ContinuousTimePolygon(Generic[_T_Poly]):
 		return name
 
 	@property
-	def id(self) -> MovingPolygon.Id:
-		if self.length == 0: return MovingPolygon.Id(hIndex=-1, timeNanoSecs=-1, regionId="", polygonId="", subPartId="")
+	def id(self) -> AffinePolygon.Id:
+		if self.length == 0: return AffinePolygon.Id(hIndex=-1, timeNanoSecs=-1, regionId="", polygonId="", subPartId="")
 		return self.configs[0].id
 
 	@property
@@ -105,14 +108,14 @@ class ContinuousTimePolygon(Generic[_T_Poly]):
 		return self.__sortedConfigs
 
 	@property
-	def type(self) -> MovingPolygon.Types:
-		if self.length == 0: return MovingPolygon.Types.BASE
+	def type(self) -> AffinePolygon.Types:
+		if self.length == 0: return AffinePolygon.Types.BASE
 		return self.configs[0].type
 
 	@property
 	def latestNanoSecs(self) -> int:
 		if self.length == 0: return -1
-		if self.isStatic: return self.INF_NS
+		if self.isProjective: return self.INF_NS
 		return self.__sortedConfigs[-1].timeNanoSecs
 
 	@property
@@ -125,15 +128,15 @@ class ContinuousTimePolygon(Generic[_T_Poly]):
 		return self.earliestNanoSecs == self.latestNanoSecs and self.earliestNanoSecs != -1
 
 	@property
-	def isStatic(self) -> bool:
-		return self.type == StaticPolygon.type
+	def isProjective(self) -> bool:
+		return self.type == StaticPolygon.type or self.type == DynamicPolygon.type
 
 	def timeNanoSecsToIndex(self, timeNanoSecs: int) -> int:
 		if self.length == 0: raise ValueError("Empty CTR.")
 		if self.earliestNanoSecs == -1: raise ValueError(f"earliestNanoSecs is not set in {self.name}.")
 		if self.latestNanoSecs == -1: raise ValueError(f"latestNanoSecs is not set in {self.name}.")
 
-		if self.isStatic: return 0
+		if self.isProjective: return 0
 
 		if timeNanoSecs < self.earliestNanoSecs: raise IndexError(f"{timeNanoSecs} is less than earliestNanoSecs={self.earliestNanoSecs} in {self.name}.")
 		if timeNanoSecs > self.latestNanoSecs: raise IndexError(f"{timeNanoSecs} is greater than latestNanoSecs={self.latestNanoSecs} in {self.name}.")
@@ -190,13 +193,13 @@ class ContinuousTimePolygon(Generic[_T_Poly]):
 		:return: The tightest bounding box around the given line segment.
 		:rtype: `Shapely.Polygon` or `Shapely.LineString`
 		"""
-		if self.isStatic: return edge
+		if self.isProjective: return edge
 		index = self.timeNanoSecsToIndex(upToNs)
 		transform = self.__transformationAt(upToNs)
 		return GeometryLib.getLineSegmentExpandedBb(transform, edge, self.configs[index].centerOfRotation)
 
 	def getEdgeAt(self, edge: Shapely.LineString, timeNanoSecs: int) -> Shapely.LineString:
-		if self.isStatic or self.length == 1: return edge
+		if self.isProjective or self.length == 1: return edge
 		transform = self.__transformationAt(timeNanoSecs)
 		return GeometryLib.applyMatrixTransformToLineString(transform, edge)
 

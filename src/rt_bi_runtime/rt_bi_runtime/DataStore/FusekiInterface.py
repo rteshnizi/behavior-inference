@@ -121,7 +121,7 @@ class FusekiInterface:
 				predicate.value = Msgs.RtBi.Predicate.FALSE
 			predicates.append(predicate)
 		# Static Map is always reachable
-		predicates.append(Msgs.RtBi.Predicate(name="reachable", value=Msgs.RtBi.Predicate.TRUE))
+		predicates.append(Msgs.RtBi.Predicate(name="accessible", value=Msgs.RtBi.Predicate.TRUE))
 		return predicates
 
 	def __parseSpaceType(self, helper: SparqlResultHelper, i: int) -> str:

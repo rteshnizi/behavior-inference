@@ -1,39 +1,20 @@
-from abc import ABC
+from typing import Literal
 
-from rt_bi_commons.Shared.Color import RGBA
-from rt_bi_commons.Shared.Pose import Coords, CoordsList
-from rt_bi_commons.Shared.Predicates import Predicates
-from rt_bi_core.Spatial.Polygon import Polygon
+from rt_bi_commons.Shared.Color import RGBA, ColorNames
+from rt_bi_commons.Utils.RViz import RViz
+from rt_bi_core.Spatial.AffinePolygonBase import AffinePolygonBase
 
 
-class AffinePolygon(Polygon, ABC):
-	"""The base class for all moving polygons."""
-	def __init__(
-			self,
-			polygonId: str,
-			regionId: str,
-			subPartId: str,
-			envelope: CoordsList,
-			predicates: Predicates,
-			envelopeColor: RGBA,
-			centerOfRotation: Coords,
-			timeNanoSecs: int,
-			hIndex: int,
-			**kwArgs
-		) -> None:
+class AffinePolygon(AffinePolygonBase):
+	"""A Polygon with a timestamp."""
+
+	type: Literal[AffinePolygonBase.Types.AFFINE] = AffinePolygonBase.Types.AFFINE
+	Type = Literal[AffinePolygonBase.Types.AFFINE]
+	def __init__(self, **kwArgs) -> None:
 		super().__init__(
-			polygonId=polygonId,
-			regionId=regionId,
-			subPartId=subPartId,
-			envelope=envelope,
-			predicates=predicates,
-			envelopeColor=envelopeColor,
-			timeNanoSecs=timeNanoSecs,
-			hIndex=hIndex,
+			envelopeColor=kwArgs.pop("envelopeColor", ColorNames.PURPLE),
 			**kwArgs
 		)
-		self.__centerOfRotation = centerOfRotation
 
-	@property
-	def centerOfRotation(self) -> Coords:
-		return self.__centerOfRotation
+	def createMarkers(self, durationNs: int = AffinePolygonBase.DEFAULT_RENDER_DURATION_NS, renderText: bool = False, envelopeColor: RGBA | None = None, stamped: bool = True) -> list[RViz.Msgs.Marker]:
+		return super().createMarkers(durationNs, renderText, envelopeColor, stamped)

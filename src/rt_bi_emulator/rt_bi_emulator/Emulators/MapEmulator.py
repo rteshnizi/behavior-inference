@@ -34,7 +34,7 @@ class MapEmulator(ColdStartableNode):
 			"phase": payload.phase,
 			"predicates": list(payload.predicates),
 		}).stringify()
-		Ros.SendClientRequest(self, self.rdfClient, req, self.__onSpaceTimeResponse)
+		Ros.SendClientRequest(self, self.rdfClient, req, self.__onSpatialSetsResponse)
 		return
 
 	def __extractSetIdsByType(self, matches: list[Msgs.RtBi.RegularSet], filterType: str) -> list[str]:
@@ -55,7 +55,7 @@ class MapEmulator(ColdStartableNode):
 			self.__timeOriginNanoSecs = Msgs.toNanoSecs(matches[0].stamp)
 		return
 
-	def __onSpaceTimeResponse(self, req: Msgs.RtBiSrv.SpaceTime.Request, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
+	def __onSpatialSetsResponse(self, req: Msgs.RtBiSrv.SpaceTime.Request, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
 		res.sets = Ros.AsList(res.sets, Msgs.RtBi.RegularSet)
 		self.__extractOriginOfTime(res.sets)
 		msg = Msgs.RtBi.RegularSetArray(sets=res.sets)
@@ -79,7 +79,7 @@ class MapEmulator(ColdStartableNode):
 		msg = Msgs.RtBi.RegularSet()
 		msg.id = setId
 		msg.space_type = Msgs.RtBi.RegularSet.DYNAMIC
-		p = Msgs.RtBi.Predicate(name="reachable", value=Msgs.RtBi.Predicate.TRUE if reachable else Msgs.RtBi.Predicate.FALSE)
+		p = Msgs.RtBi.Predicate(name="accessible", value=Msgs.RtBi.Predicate.TRUE if reachable else Msgs.RtBi.Predicate.FALSE)
 		Ros.AppendMessage(msg.predicates, p)
 		msg.stamp = Msgs.toTimeMsg(eventTime)
 		return msg

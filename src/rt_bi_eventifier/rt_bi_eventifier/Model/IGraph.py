@@ -9,7 +9,8 @@ from rt_bi_commons.Utils.NetworkX import NxUtils
 from rt_bi_commons.Utils.RViz import ColorNames, RViz
 from rt_bi_core.Spatial import GraphPolygon, MapPolygon
 from rt_bi_core.Spatial.ContinuousTimePolygon import ContinuousTimePolygon
-from rt_bi_core.Spatial.MovingPolygon import MovingPolygon
+from rt_bi_core.Spatial.DynamicPolygon import DynamicPolygon
+from rt_bi_core.Spatial.MovingPolygon import AffinePolygon
 from rt_bi_core.Spatial.SensingPolygon import SensingPolygon
 from rt_bi_core.Spatial.StaticPolygon import StaticPolygon
 from rt_bi_eventifier.Model.ConnectivityGraph import ConnectivityGraph
@@ -53,7 +54,7 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 		""" The reason this is a list of lists is that the time of event is relative to the time between. """
 		(self.__graphPublisher, self.__eventPublisher) = eventPublishers
 		self.__rvizPublishers = rvizPublishers
-		self.__ctrs: dict[MovingPolygon.Id, ContinuousTimePolygon[GraphPolygon]] = {}
+		self.__ctrs: dict[AffinePolygon.Id, ContinuousTimePolygon[GraphPolygon]] = {}
 
 	@property
 	def depth(self) -> int:
@@ -87,16 +88,9 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 		content = NxUtils.EdgeData(isTemporal=fromCGraph.timeNanoSecs != toCGraph.timeNanoSecs)
 		return super().addEdge(fromId, toId, addReverseEdge=False, content=content)
 
-	def __getNodeRenderColor(self, type_: StaticPolygon.Type | SensingPolygon.Type | MovingPolygon.Type) -> RGBA:
-		if type_ == StaticPolygon.type: return ColorNames.ORANGE
-		elif type_ == SensingPolygon.type: return ColorNames.GREEN
-		elif type_ == MovingPolygon.type: return ColorNames.PURPLE
-		else: return ColorNames.RED
-
-	def __getNodeRenderZOffset(self, type_: StaticPolygon.Type | SensingPolygon.Type | MovingPolygon.Type) -> float:
-		if type_ == StaticPolygon.type: return 0
-		elif type_ == SensingPolygon.type: return 2 * self.__RENDER_RADIUS
-		elif type_ == MovingPolygon.type: return -2 * self.__RENDER_RADIUS
+	def __getNodeRenderZOffset(self, type_: StaticPolygon.Type | SensingPolygon.Type | AffinePolygon.Type | DynamicPolygon.Type) -> float:
+		if type_ == SensingPolygon.type: return 2 * self.__RENDER_RADIUS
+		elif type_ == AffinePolygon.type: return -2 * self.__RENDER_RADIUS
 		else: return 0
 
 	def createNodeMarkers(self) -> list[RViz.Msgs.Marker]:
@@ -105,7 +99,7 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 		nodePositions = self._3dLayout()
 		for id in nodePositions:
 			poly = self.getContent(id, "polygon")
-			color = self.__getNodeRenderColor(poly.type)
+			color = poly.envelopeColor
 			zOffset = self.__getNodeRenderZOffset(poly.type)
 			coords = (nodePositions[id][0], nodePositions[id][1], nodePositions[id][2] + zOffset)
 			marker = RViz.createSphere(id, center=coords, radius=self.__RENDER_RADIUS, color=color)
@@ -118,11 +112,11 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 		Ros.AppendMessage(markers, marker)
 		return markers
 
-	def __getEdgeRenderColor(self, frmType: StaticPolygon.Type | SensingPolygon.Type | MovingPolygon.Type, toType: StaticPolygon.Type | SensingPolygon.Type | MovingPolygon.Type, isTemporal: bool) -> RGBA:
+	def __getEdgeRenderColor(self, frmType: StaticPolygon.Type | SensingPolygon.Type | AffinePolygon.Type | DynamicPolygon.Type, toType: StaticPolygon.Type | SensingPolygon.Type | AffinePolygon.Type | DynamicPolygon.Type, isTemporal: bool) -> RGBA:
 		if isTemporal: return ColorNames.CYAN_DARK
 		elif (frmType, toType) == (StaticPolygon.type, StaticPolygon.type): return ColorNames.ORANGE
 		elif (frmType, toType) == (SensingPolygon.type, SensingPolygon.type): return ColorNames.GREEN
-		elif (frmType, toType) == (MovingPolygon.type, MovingPolygon.type): return ColorNames.PURPLE
+		elif (frmType, toType) == (AffinePolygon.type, AffinePolygon.type): return ColorNames.PURPLE
 		else: return ColorNames.MAGENTA_DARK
 
 	def createEdgeMarkers(self) -> list[RViz.Msgs.Marker]:
@@ -357,20 +351,20 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 			self.__eventPublisher.publish(eventsMsg)
 		return
 
-	def __updateCTRs(self, poly: GraphPolygon) -> None:
+	def __updateCTRs(self, poly: GraphPolygon) -> ContinuousTimePolygon[GraphPolygon] | None:
 		if poly.timeNanoSecs < self.processedTime:
 			Ros.Log(f"Out of sync update: {poly.timeNanoSecs} < {self.processedTime} processed already.")
-			return
+			return None
 		idSansTime = poly.id.sansTime()
 		if idSansTime not in self.__ctrs:
 			Ros.Log("Creating CTR...")
 			self.__ctrs[idSansTime] = ContinuousTimePolygon(polyConfigs=[poly])
 			Ros.Log(f"Created {repr(self.__ctrs[idSansTime])}")
-			return
+			return self.__ctrs[idSansTime]
 		Ros.Log(f"Updating -> {repr(self.__ctrs[idSansTime])}")
 		self.__ctrs[idSansTime].addPolygon(poly, self.processedTime)
 		Ros.Log(f"Updated  -> {repr(self.__ctrs[idSansTime])}")
-		return
+		return self.__ctrs[idSansTime]
 
 	def __latestNanoSecsBounds(self) -> tuple[int, int]:
 		minNs = ContinuousTimePolygon.INF_NS + 1
@@ -383,12 +377,15 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 		return (minNs, maxNs)
 
 	def updatePolygon(self, polygon: GraphPolygon) -> None:
-		Ros.Log(f"↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓ {repr(self)} ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓")
-		Ros.Log(f"New Poly -> {polygon}, T={polygon.timeNanoSecs}")
+		Ros.Log(128 * "↓") # A separator in the logs
+		Ros.Log(f"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX {repr(self)} XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+		Ros.Log(f"Updated Poly -> {polygon}, T={polygon.timeNanoSecs}")
 		if self.depth == 0 and polygon.type != StaticPolygon.type:
 			Ros.Log("Initial CGraph must be created from a static map.")
 			return
-		self.__updateCTRs(polygon)
+		updatedCTR = self.__updateCTRs(polygon)
+		if updatedCTR is None: return
+
 		(minLatestNs, maxLatestNs) = self.__latestNanoSecsBounds()
 		Ros.Log("Post Update", [
 			f"Processed up to {self.processedTime}",
@@ -398,7 +395,7 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 		if self.processedTime > 0 and minLatestNs <= self.processedTime:
 			Ros.Log(f"Not ready to process yet: Min LatestNs <= processedTime")
 			return
-		minLatestNs = polygon.timeNanoSecs if polygon.type == StaticPolygon.type else minLatestNs
+		minLatestNs = polygon.timeNanoSecs if updatedCTR.isProjective else minLatestNs
 		Ros.Log(f"Processing {minLatestNs:20}.")
 
 		if self.depth == 0:

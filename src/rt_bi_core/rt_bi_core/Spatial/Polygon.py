@@ -138,6 +138,10 @@ class Polygon(ABC):
 	def predicates(self) -> Predicates:
 		return self.__predicates
 
+	@property
+	def isAccessible(self) -> bool:
+		return "accessible" not in self.predicates or self.predicates["accessible"]
+
 	@predicates.setter
 	def predicates(self, val: Predicates) -> None:
 		Ros.Logger().debug(f"Updating predicates {self.shortName}: from {repr(self.predicates)} to {repr(val)}")

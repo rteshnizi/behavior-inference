@@ -4,7 +4,7 @@ from networkx.algorithms.isomorphism import is_isomorphic
 
 from rt_bi_core.Spatial import GraphPolygon
 from rt_bi_core.Spatial.ContinuousTimePolygon import ContinuousTimePolygon
-from rt_bi_core.Spatial.MovingPolygon import MovingPolygon
+from rt_bi_core.Spatial.MovingPolygon import AffinePolygon
 from rt_bi_core.Spatial.SensingPolygon import SensingPolygon
 from rt_bi_core.Spatial.Tracklet import Tracklet
 from rt_bi_eventifier.Model.ConnectivityGraph import ConnectivityGraph
@@ -63,7 +63,7 @@ class EventAggregator:
 		return Tracklet(nowTracklet.id, eventTimeNs, nowTracklet.hIndex, x, y, psi)
 
 	@classmethod
-	def __interpolateRegion(cls, oldPolys: list[_T_Poly], newPolys: list[_T_Poly], eventTimeNs: int, excludeRegions: list[MovingPolygon.Id], tracklets: list[Tracklet] = []) -> list[_T_Poly]:
+	def __interpolateRegion(cls, oldPolys: list[_T_Poly], newPolys: list[_T_Poly], eventTimeNs: int, excludeRegions: list[AffinePolygon.Id], tracklets: list[Tracklet] = []) -> list[_T_Poly]:
 		regions: list[_T_Poly] = []
 		for oldPoly in oldPolys:
 			if oldPoly.id in excludeRegions: continue

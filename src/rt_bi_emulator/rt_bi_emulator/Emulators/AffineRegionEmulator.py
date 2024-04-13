@@ -10,7 +10,7 @@ from rt_bi_commons.Shared.Predicates import Predicates
 from rt_bi_commons.Utils.Geometry import Shapely
 from rt_bi_commons.Utils.Msgs import Msgs
 from rt_bi_core.Spatial.ContinuousTimePolygon import ContinuousTimePolygon
-from rt_bi_core.Spatial.MovingPolygon import MovingPolygon
+from rt_bi_core.Spatial.MovingPolygon import AffinePolygon
 
 
 class AffineRegionEmulator(RtBiNode, ABC):
@@ -30,7 +30,7 @@ class AffineRegionEmulator(RtBiNode, ABC):
 		self.updateInterval = 1
 		self.__initTimeNs: int = self.get_clock().now().nanoseconds
 		self.__cutOffTimeSecs: float = inf
-		self.__ctPoly: ContinuousTimePolygon[MovingPolygon] = ContinuousTimePolygon([])
+		self.__ctPoly: ContinuousTimePolygon[AffinePolygon] = ContinuousTimePolygon([])
 		self.__predicates = Predicates([])
 		self.parseParameters()
 
@@ -58,7 +58,7 @@ class AffineRegionEmulator(RtBiNode, ABC):
 			cor = json.loads(centersOfRotation[i])
 			poly = [tuple(p) for p in json.loads(polygons[i])]
 			timeNanoSecs = int(timePoints[i] * self.NANO_CONVERSION_CONSTANT) + self.__initTimeNs
-			poly = MovingPolygon(
+			poly = AffinePolygon(
 				polygonId="0",
 				regionId=self.id,
 				subPartId="",
@@ -72,7 +72,7 @@ class AffineRegionEmulator(RtBiNode, ABC):
 			self.__ctPoly.addPolygon(poly)
 		return
 
-	def getRegionAtTime(self, timeNanoSecs: int) -> MovingPolygon:
+	def getRegionAtTime(self, timeNanoSecs: int) -> AffinePolygon:
 		if ((timeNanoSecs - self.__initTimeNs) / AffineRegionEmulator.NANO_CONVERSION_CONSTANT) > self.__cutOffTimeSecs:
 			timeNanoSecs = int(self.__cutOffTimeSecs * AffineRegionEmulator.NANO_CONVERSION_CONSTANT)
 		if timeNanoSecs in self.__ctPoly: return self.__ctPoly[timeNanoSecs]

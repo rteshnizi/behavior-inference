@@ -7,7 +7,7 @@ from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Msgs import Msgs
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_commons.Utils.RViz import RViz
-from rt_bi_core.Spatial import MapPolygon, MovingPolygon, PolygonFactory, SensingPolygon, StaticPolygon, TargetPolygon
+from rt_bi_core.Spatial import AffinePolygon, DynamicPolygon, MapPolygon, PolygonFactory, SensingPolygon, StaticPolygon, TargetPolygon
 from rt_bi_core.Spatial.Polygon import PolygonFactoryKeys
 
 SubscriberPolygon: TypeAlias = MapPolygon | SensingPolygon | TargetPolygon
@@ -38,7 +38,7 @@ class __RegionsSubscriberBase(RtBiNode, ABC):
 
 	def __storePolygon(self, setId: str, poly: SubscriberPolygon) -> None:
 		match poly.type:
-			case StaticPolygon.type | MovingPolygon.type:
+			case StaticPolygon.type | AffinePolygon.type | DynamicPolygon.type:
 				poly = cast(MapPolygon, poly)
 				if setId not in self.mapRegions:
 					self.mapRegions[setId] = []
@@ -72,9 +72,9 @@ class __RegionsSubscriberBase(RtBiNode, ABC):
 			case Msgs.RtBi.RegularSet.STATIC:
 				PolyCls = StaticPolygon
 			case Msgs.RtBi.RegularSet.DYNAMIC:
-				PolyCls = StaticPolygon
+				PolyCls = DynamicPolygon
 			case Msgs.RtBi.RegularSet.AFFINE:
-				PolyCls = MovingPolygon
+				PolyCls = AffinePolygon
 			case Msgs.RtBi.RegularSet.SENSING:
 				PolyCls = SensingPolygon
 			case Msgs.RtBi.RegularSet.TARGET:

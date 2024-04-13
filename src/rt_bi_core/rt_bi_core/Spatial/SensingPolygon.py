@@ -5,16 +5,16 @@ from rt_bi_commons.Shared.Pose import Coords, CoordsList
 from rt_bi_commons.Shared.Predicates import Predicates
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.RViz import RViz
-from rt_bi_core.Spatial.AffinePolygon import AffinePolygon
+from rt_bi_core.Spatial.AffinePolygonBase import AffinePolygonBase
 from rt_bi_core.Spatial.Tracklet import Tracklet
 
 
-class SensingPolygon(AffinePolygon):
+class SensingPolygon(AffinePolygonBase):
 	"""
 	An Affine Polygon within which we are able to observe moving targets.
 	"""
-	type: Literal[AffinePolygon.Types.SENSING] = AffinePolygon.Types.SENSING
-	Type = Literal[AffinePolygon.Types.SENSING]
+	type: Literal[AffinePolygonBase.Types.SENSING] = AffinePolygonBase.Types.SENSING
+	Type = Literal[AffinePolygonBase.Types.SENSING]
 	def __init__(self,
 			polygonId: str,
 			regionId: str,
@@ -57,7 +57,7 @@ class SensingPolygon(AffinePolygon):
 		"""
 		return len(self.__tracklets) > 0
 
-	def createMarkers(self, durationNs: int = AffinePolygon.DEFAULT_RENDER_DURATION_NS, renderText: bool = False, envelopeColor: RGBA | None = None, stamped: bool = True, renderTracklet = True) -> list[RViz.Msgs.Marker]:
+	def createMarkers(self, durationNs: int = AffinePolygonBase.DEFAULT_RENDER_DURATION_NS, renderText: bool = False, envelopeColor: RGBA | None = None, stamped: bool = True, renderTracklet = True) -> list[RViz.Msgs.Marker]:
 		msgs = super().createMarkers(durationNs=durationNs, renderText=renderText, envelopeColor=envelopeColor, stamped=stamped)
 		if renderTracklet:
 			for i in self.__tracklets: Ros.ConcatMessageArray(msgs, self.__tracklets[i].createMarkers())

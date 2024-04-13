@@ -8,7 +8,7 @@ from rt_bi_commons.Utils.Geometry import GeometryLib, Shapely
 from rt_bi_commons.Utils.NetworkX import EdgeData, NxUtils
 from rt_bi_commons.Utils.RViz import RViz
 from rt_bi_core.Spatial import GraphPolygon, MapPolygon
-from rt_bi_core.Spatial.MovingPolygon import MovingPolygon
+from rt_bi_core.Spatial.MovingPolygon import AffinePolygon
 from rt_bi_core.Spatial.SensingPolygon import SensingPolygon
 from rt_bi_core.Spatial.StaticPolygon import StaticPolygon
 
@@ -55,7 +55,7 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 	def __constructMap(self, polys: Sequence[MapPolygon]) -> None:
 		if len(polys) == 0: return
 		assert (
-			polys[0].type == MovingPolygon.type or
+			polys[0].type == AffinePolygon.type or
 			polys[0].type == StaticPolygon.type
 		), f"Unexpected input polygon type: {polys[0].type}"
 		for poly in polys:
