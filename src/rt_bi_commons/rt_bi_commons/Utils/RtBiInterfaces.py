@@ -29,7 +29,7 @@ class ReferenceDescriptor(NamedTuple):
 		return ReferenceDescriptor(node=parts[1].lower(), param=parts[2].lower())
 
 class RtBiInterfaces:
-	BA_NODE_PREFIX = "/rt_bi_runtime/ba"
+	BA_NODE_PREFIX = "/rt_bi_behavior/ba"
 	KNOWN_REGION_NODE_PREFIX = "/rt_bi_emulator/kn"
 	DYNAMIC_MAP_NODE_NAME = "/rt_bi_emulator/dynamic_map"
 	class TopicNames(Enum):

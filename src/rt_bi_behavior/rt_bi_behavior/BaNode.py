@@ -3,13 +3,13 @@ from ament_index_python.packages import get_package_share_directory
 from rclpy.logging import LoggingSeverity
 from rclpy.parameter import Parameter
 
+from rt_bi_behavior import package_name
 from rt_bi_commons.Base.ColdStartableNode import ColdStartableNode, ColdStartPayload
 from rt_bi_commons.Shared.NodeId import NodeId
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Msgs import Msgs
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_commons.Utils.RViz import RViz
-from rt_bi_runtime import package_name
 from rt_bi_runtime.Model.BehaviorAutomaton import BehaviorAutomaton
 from rt_bi_runtime.Model.TopologicalGraph import TopologicalGraph
 

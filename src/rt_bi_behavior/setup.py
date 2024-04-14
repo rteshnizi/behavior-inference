@@ -3,7 +3,7 @@ from glob import glob
 
 from setuptools import find_packages, setup
 
-packageName = "rt_bi_runtime"
+packageName = "rt_bi_behavior"
 
 setup(
 	name=packageName,
@@ -14,22 +14,20 @@ setup(
 		("share/" + packageName, ["package.xml"]),
 		(os.path.join("share", packageName, "launch"), glob("launch/*")),
 		(os.path.join("share", packageName, "config"), glob("config/*")),
-		(os.path.join("share", packageName, "rdf"), glob("rdf/*")),
-		(os.path.join("share", packageName, "sparql"), glob("sparql/*")),
 	],
 	install_requires= [
-		"requests~=2.25",
+		"matplotlib~=3.5",
+		"networkx~=3.2",
 		"setuptools==58.2.0",
 	],
 	zip_safe=True,
 	maintainer="Reza Teshnizi",
 	maintainer_email="reza.teshnizi@gmail.com",
-	description="The runtime environment of the Behavior Inference project.",
+	description="The behavior automaton implementation for the Behavior Inference project.",
 	license="UNLICENSED",
 	entry_points={
 		"console_scripts": [
-			"DD_RDF = rt_bi_runtime.RdfStoreNode:main",
-			"CS_MGR = rt_bi_runtime.ColdStartManager:main"
+			"BA = rt_bi_behavior.BaNode:main",
 		],
 	},
 )

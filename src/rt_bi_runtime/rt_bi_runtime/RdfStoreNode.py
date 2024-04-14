@@ -13,8 +13,8 @@ from rt_bi_commons.RosParamParsers.ParamParser import ParserBase
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_interfaces.srv import SpaceTime
 from rt_bi_runtime import package_name
-from rt_bi_runtime.DataStore.FusekiInterface import FusekiInterface
-from rt_bi_runtime.DataStore.SparqlTransformer import PredicateToQueryStr
+from rt_bi_runtime.Model.FusekiInterface import FusekiInterface
+from rt_bi_runtime.Model.SparqlTransformer import PredicateToQueryStr
 
 _Parameters = Literal[
 	"fuseki_server",

@@ -14,7 +14,7 @@ class ColdStartManager(RtBiNode):
 		super().__init__(**newKw)
 		self.__awaitingColdStart: list[str] = [
 			# The order in this list is significant
-			"/rt_bi_runtime/ba1",
+			"/rt_bi_behavior/ba1",
 			"/rt_bi_emulator/dynamic_map",
 		]
 		self.__allPredicates: set[str] = set()

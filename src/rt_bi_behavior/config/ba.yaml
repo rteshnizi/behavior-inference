@@ -1,8 +1,8 @@
-rt_bi_runtime:
+rt_bi_behavior:
   ba1:
     ros__parameters:
       render: True
-      grammar_dir: "rdf"
+      grammar_dir: "config"
       grammar_file: "transition.lark"
       states:
         - "Q0"
