@@ -65,7 +65,7 @@ class RtBiInterfaces:
 		return RtBiInterfaces.createSpacePublisher(node, RtBiInterfaces.TopicNames.RT_BI_EMULATOR_KNOWN, callbackFunc, intervalSecs)
 
 	@staticmethod
-	def subscribeToKnownRegions(node: RtBiNode, callbackFunc: Callable[[Msgs.RtBi.RegularSetArray], None]) -> None:
+	def subscribeToAffineMap(node: RtBiNode, callbackFunc: Callable[[Msgs.RtBi.RegularSetArray], None]) -> None:
 		RtBiInterfaces.subscribeToSpace(node, RtBiInterfaces.TopicNames.RT_BI_EMULATOR_KNOWN, callbackFunc)
 
 	@staticmethod
@@ -82,7 +82,7 @@ class RtBiInterfaces:
 		return publisher
 
 	@staticmethod
-	def subscribeToMap(node: RtBiNode, callbackFunc: Callable[[Msgs.RtBi.RegularSetArray], None]) -> None:
+	def subscribeToProjectiveMap(node: RtBiNode, callbackFunc: Callable[[Msgs.RtBi.RegularSetArray], None]) -> None:
 		Ros.CreateSubscriber(node, Msgs.RtBi.RegularSetArray, RtBiInterfaces.TopicNames.RT_BI_EMULATOR_MAP.value, callbackFunc) # pyright: ignore[reportArgumentType]
 		return
 

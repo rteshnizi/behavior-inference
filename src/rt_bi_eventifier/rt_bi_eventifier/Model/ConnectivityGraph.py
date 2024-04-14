@@ -102,8 +102,8 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 		tracklets = {}
 		for tId in sensor.tracklets:
 			tracklet = sensor.tracklets[tId]
+			p = GeometryLib.toPoint(tracklet)
 			if not tracklet.exited:
-				p = GeometryLib.toPoint(tracklet)
 				if GeometryLib.intersects(subPoly, p):
 					tracklets[tId] = tracklet
 			else:

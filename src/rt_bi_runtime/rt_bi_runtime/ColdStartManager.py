@@ -10,7 +10,7 @@ from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 
 class ColdStartManager(RtBiNode):
 	def __init__(self, **kwArgs) -> None:
-		newKw = { "node_name": "cs_mgr", "loggingSeverity": LoggingSeverity.WARN, **kwArgs}
+		newKw = { "node_name": "cs_mgr", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
 		super().__init__(**newKw)
 		self.__awaitingColdStart: list[str] = [
 			# The order in this list is significant

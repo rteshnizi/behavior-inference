@@ -17,14 +17,15 @@ SubscriberPolygon: TypeAlias = MapPolygon | SensingPolygon | TargetPolygon
 # TODO: Optimization -- History keeps all of the updates.
 # Fix it if memory usage is high?
 # Maybe remove a polygon (except for the last) once it is processed.
-class __RegionsSubscriberBase(RtBiNode, ABC):
+class RegionsSubscriber(RtBiNode, ABC):
 	"""
 	This Node provides an API to listen to all the messages about polygonal regions.
-	It also creates a publisher for RViz and a :meth:`~RegionsSubscriberBase.render` method.
+	It also creates a publisher for RViz and a :meth:`~RegionsSubscriber.render` method.
 
 	**NOTICE**
-	* Subclasses of this class must subscribe to the relevant topics.
-	* Subclasses do not need to create a publisher to RViz. Just call :meth:`~RegionsSubscriberBase.render`
+	* Subclasses of this class must subscribe to the relevant topics and
+		assign :meth:`~RegionSubscriber.subscriptionListener` to handle the messages.
+	* Subclasses do not need to create a publisher to RViz. Just call :meth:`~RegionsSubscriber.render`
 	"""
 	def __init__(self, **kwArgs):
 		super().__init__(**kwArgs)
@@ -39,6 +40,16 @@ class __RegionsSubscriberBase(RtBiNode, ABC):
 		nanoSecs = Msgs.toNanoSecs(val.stamp)
 		if nanoSecs == 0: raise AssertionError("Update with no timestamp: ")
 		return nanoSecs
+
+	def __notifySubclasses(self, poly: SubscriberPolygon) -> None:
+		if poly.type == StaticPolygon.type or poly.type == DynamicPolygon.type or poly.type == AffinePolygon.type:
+			self.onMapUpdated(poly)
+		elif poly.type == SensingPolygon.type:
+			self.onSensorUpdated(poly)
+		elif poly.type == TargetPolygon.type:
+			self.onTargetUpdated(poly)
+		else: raise RuntimeError("This should never happen") # No update goes missing
+		return
 
 	def __storeGeometry(self, setId: str, poly: SubscriberPolygon) -> None:
 		match poly.type:
@@ -59,6 +70,7 @@ class __RegionsSubscriberBase(RtBiNode, ABC):
 				self.targetRegions[setId].append(poly)
 			case _:
 				raise RuntimeError(f"Unexpected region type: {poly.type}")
+		self.__notifySubclasses(poly)
 		return
 
 	def __useLatestGeometry(self, regularSet: Msgs.RtBi.RegularSet) -> None:
@@ -101,9 +113,7 @@ class __RegionsSubscriberBase(RtBiNode, ABC):
 		}
 		if poly.type == SensingPolygon.type: kwArgs["tracklets"] = poly.tracklets
 		poly = PolygonFactory(PolyCls, kwArgs)
-
 		self.__storeGeometry(regularSet.id, poly)
-		self.onPolygonUpdated(poly)
 		return
 
 	def __createTracklets(self, regularSet: Msgs.RtBi.RegularSet) -> dict[str, Tracklet]:
@@ -150,9 +160,7 @@ class __RegionsSubscriberBase(RtBiNode, ABC):
 			case _:
 				raise RuntimeError(f"Unexpected space type event queue: {regularSet.space_type}\n\tMSG = {repr(regularSet)}")
 		poly = PolygonFactory(PolyCls, kwArgs)
-
 		self.__storeGeometry(regularSet.id, poly)
-		self.onPolygonUpdated(poly)
 		return
 
 	def __processEnqueuedUpdates(self) -> None:
@@ -181,7 +189,7 @@ class __RegionsSubscriberBase(RtBiNode, ABC):
 		return
 
 	@final
-	def _enqueueUpdates(self, setArr: Msgs.RtBi.RegularSetArray) -> None:
+	def enqueueUpdate(self, setArr: Msgs.RtBi.RegularSetArray) -> None:
 		"""Enqueues the update. Subclasses must call this function upon subscription message."""
 		if len(setArr.sets) == 0: return
 		setArr.sets = Ros.AsList(setArr.sets, Msgs.RtBi.RegularSet)
@@ -214,66 +222,10 @@ class __RegionsSubscriberBase(RtBiNode, ABC):
 		return
 
 	@abstractmethod
-	def onPolygonUpdated(self, polygon: SubscriberPolygon) -> None:
-		"""Override to customize processing of updates.
-
-		:param regions: The list of regular spaces updated.
-		:type regions: list[Msgs.RtBi.RegularSet]
-		"""
-		...
-
-class MapSubscriber(__RegionsSubscriberBase, ABC):
-	"""This object subscribes to the relevant map topics."""
-	def __init__(self, **kwArgs):
-		super().__init__(**kwArgs)
-		self.mapInitPhasesRemaining = 2
-		# Hold off from taking affine region updates until map is initialized
-		RtBiInterfaces.subscribeToMap(self, self.__parseMap)
-		RtBiInterfaces.subscribeToKnownRegions(self, self.__parseKnownRegion)
-
-	def __parseMap(self, setArr: Msgs.RtBi.RegularSetArray) -> None:
-		if self.mapInitPhasesRemaining > 0: self.mapInitPhasesRemaining -= 1
-		super()._enqueueUpdates(setArr)
-		return
-
-	def __parseKnownRegion(self, setArr: Msgs.RtBi.RegularSetArray) -> None:
-		super()._enqueueUpdates(setArr)
-		return
-
-	@abstractmethod
-	def onMapUpdated(self, polygon: MapPolygon) -> None: ...
-
-	def onPolygonUpdated(self, polygon: MapPolygon) -> None:
-		return self.onMapUpdated(polygon)
-
-class TargetSubscriber(__RegionsSubscriberBase, ABC):
-	"""This object subscribes to the relevant target topics."""
-	def __init__(self, **kwArgs):
-		super().__init__(**kwArgs)
-		RtBiInterfaces.subscribeToTargets(self, self.__parseTarget)
-
-	def __parseTarget(self, setArr: Msgs.RtBi.RegularSetArray) -> None:
-		super()._enqueueUpdates(setArr)
-		return
+	def onSensorUpdated(self, polygon: SensingPolygon) -> None: ...
 
 	@abstractmethod
 	def onTargetUpdated(self, polygon: TargetPolygon) -> None: ...
 
-	def onPolygonUpdated(self, polygon: TargetPolygon) -> None:
-		return self.onTargetUpdated(polygon)
-
-class SensorSubscriber(__RegionsSubscriberBase, ABC):
-	"""This object subscribes to the relevant sensor topics."""
-	def __init__(self, **kwArgs):
-		super().__init__(**kwArgs)
-		RtBiInterfaces.subscribeToSensors(self, self.__parseSensor)
-
-	def __parseSensor(self, setArr: Msgs.RtBi.RegularSetArray) -> None:
-		super()._enqueueUpdates(setArr)
-		return
-
 	@abstractmethod
-	def onSensorUpdated(self, polygon: SensingPolygon) -> None: ...
-
-	def onPolygonUpdated(self, polygon: SensingPolygon) -> None:
-		return self.onSensorUpdated(polygon)
+	def onMapUpdated(self, polygon: MapPolygon) -> None: ...

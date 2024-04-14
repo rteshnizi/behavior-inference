@@ -1,20 +1,20 @@
-from typing import Any
-
 import rclpy
 from rclpy.logging import LoggingSeverity
 
 from rt_bi_commons.Utils import Ros
+from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_commons.Utils.RViz import RViz
-from rt_bi_core.RegionsSubscriber import SensorSubscriber
+from rt_bi_core.RegionsSubscriber import RegionsSubscriber
 
 
-class SensorRenderer(SensorSubscriber):
+class SensorRenderer(RegionsSubscriber):
 	""" This Node listens to all the messages published on the topics related to sensors and renders them. """
 	def __init__(self, **kwArgs):
 		newKw = { "node_name": "renderer_sensor", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
 		super().__init__(**newKw)
+		RtBiInterfaces.subscribeToSensors(self, self.enqueueUpdate)
 
-	def onSensorUpdated(self, polygon: Any) -> None:
+	def onSensorUpdated(self, _) -> None:
 		self.log("Sensors updated.")
 		self.render()
 		return
@@ -24,15 +24,15 @@ class SensorRenderer(SensorSubscriber):
 		for regionId in self.sensorRegions:
 			polys = self.sensorRegions[regionId]
 			for poly in polys:
-				marker = poly.createMarkers(durationNs=-1, stamped=False, renderTracklet=True)
+				marker = poly.createMarkers(durationNs=-1, stamped=False, renderTracklet=False)
 				Ros.ConcatMessageArray(markers, marker)
 		return markers
 
-	def declareParameters(self) -> None:
-		return super().declareParameters()
+	def onMapUpdated(self, _) -> None:
+		return
 
-	def parseParameters(self) -> None:
-		return super().parseParameters()
+	def onTargetUpdated(self, _) -> None:
+		return
 
 def main(args=None):
 	rclpy.init(args=args)

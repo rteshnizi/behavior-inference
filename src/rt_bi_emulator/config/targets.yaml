@@ -2,7 +2,7 @@ rt_bi_emulator:
   tg1:
     ros__parameters:
       render: False
-      id: "https://rezateshnizi.com/rt-bi/tower_bridge/defintion/tg1"
+      id: "tg1"
       updateInterval: 0.25
       timesSecs:
         - 0.0
@@ -14,3 +14,19 @@ rt_bi_emulator:
       polygons:
         - "[[12.0, 25.0], [21.0, 25.0], [21.0, 31.0], [12.0, 31.0]]"
         - "[[485.0, 25.0], [495.0, 25.0], [495.0, 31.0], [485.0, 31.0]]"
+
+  tg2:
+    ros__parameters:
+      render: False
+      id: "tg2"
+      updateInterval: 0.25
+      timesSecs:
+        - 0.0
+        - 30.0
+      cutOffTime: inf
+      centersOfRotation:
+        - "[115.0, 108.0]"
+        - "[290.0, 108.0]"
+      polygons:
+        - "[[112.0, 105.0], [118.0, 105.0], [118.0, 111.0], [112.0, 111.0]]"
+        - "[[287.0, 105.0], [293.0, 105.0], [293.0, 111.0], [287.0, 111.0]]"

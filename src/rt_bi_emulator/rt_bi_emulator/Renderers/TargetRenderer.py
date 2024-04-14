@@ -1,16 +1,17 @@
 import rclpy
 
 from rt_bi_commons.Utils import Ros
+from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_commons.Utils.RViz import RViz
-from rt_bi_core.RegionsSubscriber import TargetSubscriber
-from rt_bi_core.Spatial import TargetPolygon
+from rt_bi_core.RegionsSubscriber import RegionsSubscriber
 
 
-class TargetRenderer(TargetSubscriber):
+class TargetRenderer(RegionsSubscriber):
 	""" This Node listens to all the messages published on the topics related to targets and renders them. """
 	def __init__(self, **kwArgs):
 		newKw = { "node_name": "renderer_target", "loggingSeverity": Ros.LoggingSeverity.INFO, **kwArgs}
 		super().__init__(**newKw)
+		RtBiInterfaces.subscribeToTargets(self, self.enqueueUpdate)
 
 	def createMarkers(self) -> list[RViz.Msgs.Marker]:
 		markers = []
@@ -20,15 +21,15 @@ class TargetRenderer(TargetSubscriber):
 				Ros.ConcatMessageArray(markers, poly.createMarkers(durationNs=-1, stamped=False))
 		return markers
 
-	def onTargetUpdated(self, polygon: TargetPolygon) -> None:
+	def onTargetUpdated(self, _) -> None:
 		self.log("Targets updated.")
 		self.render()
 		return
 
-	def declareParameters(self) -> None:
+	def onMapUpdated(self, _) -> None:
 		return
 
-	def parseParameters(self) -> None:
+	def onSensorUpdated(self, _) -> None:
 		return
 
 def main(args=None):

@@ -2,16 +2,19 @@ import rclpy
 from rclpy.logging import LoggingSeverity
 
 from rt_bi_commons.Utils import Ros
+from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_commons.Utils.RViz import RViz
-from rt_bi_core.RegionsSubscriber import MapSubscriber
+from rt_bi_core.RegionsSubscriber import RegionsSubscriber
 from rt_bi_core.Spatial import MapPolygon
 
 
-class MapRenderer(MapSubscriber):
+class MapRenderer(RegionsSubscriber):
 	""" This Node listens to all static and dynamic map region updates and renders them. """
 	def __init__(self, **kwArgs):
 		newKw = { "node_name": "renderer_map", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
 		super().__init__(**newKw)
+		RtBiInterfaces.subscribeToProjectiveMap(self, self.enqueueUpdate)
+		RtBiInterfaces.subscribeToAffineMap(self, self.enqueueUpdate)
 
 	def createMarkers(self) -> list[RViz.Msgs.Marker]:
 		markers = []
@@ -25,6 +28,12 @@ class MapRenderer(MapSubscriber):
 	def onMapUpdated(self, polygon: MapPolygon) -> None:
 		self.log(f"Map updated region {repr(polygon.id)}")
 		return self.render()
+
+	def onSensorUpdated(self, _) -> None:
+		return
+
+	def onTargetUpdated(self, _) -> None:
+		return
 
 def main(args=None):
 	rclpy.init(args=args)

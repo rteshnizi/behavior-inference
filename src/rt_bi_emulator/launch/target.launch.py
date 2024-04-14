@@ -26,7 +26,7 @@ def generate_launch_description():
 			package=packageName,
 			namespace=packageName,
 			executable="ETG",
-			name="tg1",
+			name="tg2",
 			arguments= [
 				"--ros-args",
 				"--log-level",
