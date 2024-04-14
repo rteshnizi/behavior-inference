@@ -273,11 +273,17 @@ class Polygon(ABC):
 		msgs.append(RViz.removeMarker(self.id, idSuffix="txt"))
 		return msgs
 
-	def toRegularSpaceMsg(self) -> Msgs.RtBi.RegularSet:
+	def asRegularSetMsg(self) -> Msgs.RtBi.RegularSet:
 		msg = Msgs.RtBi.RegularSet()
-		msg.id = self.id
-		msg.polygons = [Msgs.toStdPolygon(self.interior)]
-		msg.color = ColorNames.toStr(self.envelopeColor)
+		msg.id = self.id.regionId
+		msg.stamp = Msgs.toTimeMsg(self.timeNanoSecs)
+		msg.predicates = self.predicates.asMsgArr()
+		polyMsg = Msgs.RtBi.Polygon()
+		polyMsg.id = self.id.polygonId
+		polyMsg.region = Msgs.toStdPolygon(self.interior)
+		polyMsg.center_of_rotation = Msgs.toStdPoint(self.centerOfRotation)
+		msg.polygons = [polyMsg]
 		msg.space_type = self.type.value
-		msg.name = []
+		# msg.color = ColorNames.toStr(self.envelopeColor)
+		# msg.name = []
 		return msg

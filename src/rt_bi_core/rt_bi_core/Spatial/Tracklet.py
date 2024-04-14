@@ -1,5 +1,6 @@
 from rt_bi_commons.Shared.Color import RGBA, ColorNames
 from rt_bi_commons.Shared.Pose import Pose
+from rt_bi_commons.Utils.Msgs import NANO_CONVERSION_CONSTANT, Msgs
 from rt_bi_commons.Utils.RViz import DEFAULT_RENDER_DURATION_NS, RViz
 
 
@@ -25,13 +26,22 @@ class Tracklet(Pose):
 		if self.exited: return "%s%s" % ("[-]", s)
 		return s
 
+	def asMsg(self) -> Msgs.RtBi.Tracklet:
+		msg = Msgs.RtBi.Tracklet()
+		msg.id = self.id
+		msg.pose = Msgs.toStdPose(self)
+		msg.entered = self.entered
+		msg.exited = self.exited
+		return msg
+
 	def createMarkers(self, durationNs: int = DEFAULT_RENDER_DURATION_NS) -> list[RViz.Msgs.Marker]:
 		msgs = []
 		if self.entered: color: RGBA = ColorNames.GREEN
 		elif self.exited: color: RGBA = ColorNames.RED
 		else: color: RGBA = ColorNames.CYAN
 		coords = (self.x, self.y)
-		msgs.append(RViz.createCircle(self.__rVizId.sansTime(), coords, radius=13, outline=color, width=3.0, durationNs=durationNs))
+		durationNs = 3 * NANO_CONVERSION_CONSTANT if self.exited else durationNs
+		msgs.append(RViz.createCircle(self.__rVizId.sansTime(), coords, radius=5, outline=color, width=2.0, durationNs=durationNs))
 		msgs.append(RViz.createText(self.__rVizId.sansTime(), coords, repr(self), ColorNames.WHITE, durationNs=durationNs, idSuffix="txt"))
 		return msgs
 

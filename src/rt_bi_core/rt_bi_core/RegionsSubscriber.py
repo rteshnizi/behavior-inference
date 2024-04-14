@@ -10,9 +10,13 @@ from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_commons.Utils.RViz import RViz
 from rt_bi_core.Spatial import AffinePolygon, DynamicPolygon, MapPolygon, PolygonFactory, SensingPolygon, StaticPolygon, TargetPolygon
 from rt_bi_core.Spatial.Polygon import PolygonFactoryKeys
+from rt_bi_core.Spatial.Tracklet import Tracklet
 
 SubscriberPolygon: TypeAlias = MapPolygon | SensingPolygon | TargetPolygon
 
+# TODO: Optimization -- History keeps all of the updates.
+# Fix it if memory usage is high?
+# Maybe remove a polygon (except for the last) once it is processed.
 class __RegionsSubscriberBase(RtBiNode, ABC):
 	"""
 	This Node provides an API to listen to all the messages about polygonal regions.
@@ -95,11 +99,29 @@ class __RegionsSubscriberBase(RtBiNode, ABC):
 			"hIndex": -1,
 			"centerOfRotation": poly.centerOfRotation,
 		}
+		if poly.type == SensingPolygon.type: kwArgs["tracklets"] = poly.tracklets
 		poly = PolygonFactory(PolyCls, kwArgs)
 
 		self.__storeGeometry(regularSet.id, poly)
 		self.onPolygonUpdated(poly)
 		return
+
+	def __createTracklets(self, regularSet: Msgs.RtBi.RegularSet) -> dict[str, Tracklet]:
+		tracklets = {}
+		for i in range(len(regularSet.estimations)):
+			trackletMsg = Ros.GetMessage(regularSet.estimations, i, Msgs.RtBi.Tracklet)
+			tracklet = Tracklet(
+				idStr=trackletMsg.id,
+				timeNanoSecs=Msgs.toNanoSecs(regularSet.stamp),
+				hIndex=-1,
+				x=trackletMsg.pose.position.x,
+				y=trackletMsg.pose.position.y,
+				angleFromX=Msgs.toAngle(trackletMsg.pose.orientation),
+				entered=trackletMsg.entered,
+				exited=trackletMsg.exited,
+			)
+			tracklets[trackletMsg.id] = tracklet
+		return tracklets
 
 	def __createGeometry(self, regularSet: Msgs.RtBi.RegularSet, polyMsg: Msgs.RtBi.Polygon) -> None:
 		predicates = Predicates(regularSet.predicates) if isinstance(regularSet.predicates, list) else Predicates([])
@@ -122,6 +144,7 @@ class __RegionsSubscriberBase(RtBiNode, ABC):
 				PolyCls = AffinePolygon
 			case Msgs.RtBi.RegularSet.SENSING:
 				PolyCls = SensingPolygon
+				kwArgs["tracklets"] = self.__createTracklets(regularSet)
 			case Msgs.RtBi.RegularSet.TARGET:
 				PolyCls = TargetPolygon
 			case _:
@@ -218,7 +241,10 @@ class MapSubscriber(__RegionsSubscriberBase, ABC):
 		return
 
 	@abstractmethod
-	def onPolygonUpdated(self, polygon: MapPolygon) -> None: ...
+	def onMapUpdated(self, polygon: MapPolygon) -> None: ...
+
+	def onPolygonUpdated(self, polygon: MapPolygon) -> None:
+		return self.onMapUpdated(polygon)
 
 class TargetSubscriber(__RegionsSubscriberBase, ABC):
 	"""This object subscribes to the relevant target topics."""
@@ -231,7 +257,10 @@ class TargetSubscriber(__RegionsSubscriberBase, ABC):
 		return
 
 	@abstractmethod
-	def onPolygonUpdated(self, polygon: TargetPolygon) -> None: ...
+	def onTargetUpdated(self, polygon: TargetPolygon) -> None: ...
+
+	def onPolygonUpdated(self, polygon: TargetPolygon) -> None:
+		return self.onTargetUpdated(polygon)
 
 class SensorSubscriber(__RegionsSubscriberBase, ABC):
 	"""This object subscribes to the relevant sensor topics."""
@@ -244,4 +273,7 @@ class SensorSubscriber(__RegionsSubscriberBase, ABC):
 		return
 
 	@abstractmethod
-	def onPolygonUpdated(self, polygon: SensingPolygon) -> None: ...
+	def onSensorUpdated(self, polygon: SensingPolygon) -> None: ...
+
+	def onPolygonUpdated(self, polygon: SensingPolygon) -> None:
+		return self.onSensorUpdated(polygon)

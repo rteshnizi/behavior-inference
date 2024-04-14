@@ -3,6 +3,7 @@ from rclpy.logging import LoggingSeverity
 
 from rt_bi_commons.Utils.Msgs import Msgs
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
+from rt_bi_core.Spatial.AffinePolygon import AffinePolygon
 from rt_bi_emulator.Emulators.AffineRegionEmulator import AffineRegionEmulator
 
 
@@ -10,12 +11,14 @@ class KnownRegionEmulator(AffineRegionEmulator):
 	""" This class provides a ROS node which emulates a *known* moving region. """
 	def __init__(self):
 		newKw = { "node_name": "emulator_map_region", "loggingSeverity": LoggingSeverity.INFO }
-		super().__init__(**newKw)
+		super().__init__(AffinePolygon, **newKw)
 		(self.__publisher, _) = RtBiInterfaces.createKnownRegionPublisher(self, self.publishUpdate, self.updateInterval)
 
 	def publishUpdate(self) -> None:
-		msg = self.asRegularSpaceArrayMsg(Msgs.RtBi.RegularSet.AFFINE)
-		self.__publisher.publish(msg)
+		timeNanoSecs = Msgs.toNanoSecs(self.get_clock().now())
+		arr = Msgs.RtBi.RegularSetArray()
+		arr.sets = [self.asRegularSpaceMsg(timeNanoSecs)]
+		self.__publisher.publish(arr)
 		return
 
 

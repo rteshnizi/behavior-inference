@@ -1,15 +1,11 @@
-from typing import Any, cast
+from typing import Any
 
 import rclpy
 from rclpy.logging import LoggingSeverity
 
 from rt_bi_commons.Utils import Ros
-from rt_bi_commons.Utils.Msgs import Msgs
-from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_commons.Utils.RViz import RViz
 from rt_bi_core.RegionsSubscriber import SensorSubscriber
-from rt_bi_core.Spatial.SensingPolygon import SensingPolygon
-from rt_bi_core.Spatial.Tracklet import Tracklet
 
 
 class SensorRenderer(SensorSubscriber):
@@ -17,9 +13,8 @@ class SensorRenderer(SensorSubscriber):
 	def __init__(self, **kwArgs):
 		newKw = { "node_name": "renderer_sensor", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
 		super().__init__(**newKw)
-		RtBiInterfaces.subscribeToEstimation(self, self.__onEstimation)
 
-	def onPolygonUpdated(self, polygon: Any) -> None:
+	def onSensorUpdated(self, polygon: Any) -> None:
 		self.log("Sensors updated.")
 		self.render()
 		return
@@ -29,31 +24,9 @@ class SensorRenderer(SensorSubscriber):
 		for regionId in self.sensorRegions:
 			polys = self.sensorRegions[regionId]
 			for poly in polys:
-				marker = poly.createMarkers(durationNs=-1, stamped=False)
+				marker = poly.createMarkers(durationNs=-1, stamped=False, renderTracklet=True)
 				Ros.ConcatMessageArray(markers, marker)
 		return markers
-
-	def __onEstimation(self, msg: Msgs.RtBi.Estimation) -> None:
-		if msg is None:
-			self.get_logger().warn("Received empty Estimation!")
-			return
-
-		for trackletMsg in msg.estimations:
-			trackletMsg = cast(Msgs.RtBi.Tracklet, trackletMsg)
-			pose = cast(Msgs.Geometry.Pose, trackletMsg.pose)
-			tracklet = Tracklet(
-				idStr=trackletMsg.id,
-				timeNanoSecs=Msgs.toNanoSecs(msg.sensor.stamp),
-				hIndex=-1,
-				x=pose.position.x,
-				y=pose.position.y,
-				angleFromX=Msgs.toAngle(pose.orientation),
-				entered=trackletMsg.entered,
-				exited=trackletMsg.exited,
-			)
-			self.sensorRegions[msg.sensor.id][0].tracklets[tracklet.id] = tracklet
-		self.render()
-		return
 
 	def declareParameters(self) -> None:
 		return super().declareParameters()

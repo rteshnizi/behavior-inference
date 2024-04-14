@@ -54,3 +54,13 @@ class Predicates:
 
 	def __contains__(self, p: str) -> bool:
 		return p in self.__d
+
+	def asMsgArr(self) -> list[Msgs.RtBi.Predicate]:
+		pList = []
+		for pName in self.__d:
+			pred = Msgs.RtBi.Predicate()
+			pred.name = pName
+			pred.value = Msgs.RtBi.Predicate.TRUE if self[pName] else Msgs.RtBi.Predicate.FALSE
+			pred.meta = self.__meta[pName]
+			pList.append(pred)
+		return pList

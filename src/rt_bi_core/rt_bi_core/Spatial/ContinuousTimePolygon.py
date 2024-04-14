@@ -4,14 +4,15 @@ from typing import Any, Final, Generic, TypeVar, cast
 from rt_bi_commons.Shared.Predicates import Predicates
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Geometry import AffineTransform, GeometryLib, Shapely
-from rt_bi_core.Spatial import GraphPolygon, PolygonFactory
+from rt_bi_core.Spatial import PolygonFactory, PolygonFactoryKeys
 from rt_bi_core.Spatial.DynamicPolygon import DynamicPolygon
 from rt_bi_core.Spatial.MovingPolygon import AffinePolygon
-from rt_bi_core.Spatial.Polygon import PolygonFactoryKeys
+from rt_bi_core.Spatial.Polygon import Polygon
 from rt_bi_core.Spatial.SensingPolygon import SensingPolygon
 from rt_bi_core.Spatial.StaticPolygon import StaticPolygon
+from rt_bi_core.Spatial.TargetPolygon import TargetPolygon
 
-_T_Poly = TypeVar("_T_Poly", bound=GraphPolygon)
+_T_Poly = TypeVar("_T_Poly", bound=Polygon)
 class ContinuousTimePolygon(Generic[_T_Poly]):
 	INF_NS: Final[int] = 2 ** 100 #9223372036854775808
 	def __init__(self, polyConfigs: list[_T_Poly]) -> None:
@@ -69,6 +70,8 @@ class ContinuousTimePolygon(Generic[_T_Poly]):
 		elif self.type == DynamicPolygon.type:
 			Cls = DynamicPolygon
 		elif self.type == AffinePolygon.type:
+			Cls = AffinePolygon
+		elif self.type == TargetPolygon.type:
 			Cls = AffinePolygon
 		else:
 			raise AssertionError(f"Unexpected region type: {repr(self.type)} in {self.name}")
@@ -180,11 +183,6 @@ class ContinuousTimePolygon(Generic[_T_Poly]):
 		transform = self.__transformation(index)
 		transformationAtT = GeometryLib.getParameterizedAffineTransformation(transform, param)
 		return transformationAtT
-
-	def getCenterOfRotationAt(self, timeNanoSecs: int) -> GeometryLib.Coords:
-		index = self.timeNanoSecsToIndex(timeNanoSecs)
-		transform = self.__transformationAt(timeNanoSecs)
-		return GeometryLib.applyMatrixTransformToCoords(transform, self.configs[index].centerOfRotation)
 
 	def getEdgeBb(self, edge: Shapely.LineString, upToNs: int) -> Shapely.Polygon | Shapely.LineString:
 		"""Get Edge Bounding Box

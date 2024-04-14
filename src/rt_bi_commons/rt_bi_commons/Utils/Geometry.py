@@ -6,7 +6,7 @@ from scipy.spatial.transform import Rotation, Slerp
 from skimage.transform import AffineTransform as AffineTransform, matrix_transform
 from typing_extensions import Callable, Final, Sequence, TypeAlias, TypeVar, cast
 
-from rt_bi_commons.Shared.Pose import Coords, Coords3d, CoordsList, Pose, Quaternion, angleToQuat, quatToAngle
+from rt_bi_commons.Shared.Pose import Coords, Coords2d, Coords3d, CoordsList, Pose, Quaternion, angleToQuat, quatToAngle
 from rt_bi_commons.Utils import Ros
 
 
@@ -214,6 +214,17 @@ class GeometryLib:
 	# endregion: Basic operations
 
 	# region: Shapely wrappers
+	@staticmethod
+	def toPoint(p: Pose | Coords2d) -> Shapely.Point:
+		x = 0
+		y = 0
+		if isinstance(p, Pose):
+			x = p.x
+			y = p.y
+		else:
+			x = p[0]
+			y = p[1]
+		return Shapely.Point(x, y)
 
 	@staticmethod
 	def filterPolygons(geom: Shapely.AnyObj) -> list[Shapely.Polygon]:

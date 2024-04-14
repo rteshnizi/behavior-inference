@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Sequence
+from typing import Final, Sequence
 
 from rt_bi_commons.Shared.Color import ColorNames
 from rt_bi_commons.Shared.NodeId import NodeId
@@ -18,6 +18,7 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 	@dataclass(frozen=True)
 	class NodeData(NxUtils.NodeData[GraphPolygon]): ...
 
+	TRACKLET_EXIT_MAX_DISTANCE: Final[int] = 5
 	def __init__(
 			self,
 			timeNanoSecs: int,
@@ -94,6 +95,22 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 					self.addEdge(nodeId1, nodeId2)
 		return
 
+	def __extractTracklets(self, sensor: SensingPolygon, subPoly: Shapely.Polygon) -> dict:
+		""" Only the subpart of the sensor that contains the tracklets should get it.
+		* In cases of tracklet exiting, the closest subpart, takes it
+		"""
+		tracklets = {}
+		for tId in sensor.tracklets:
+			tracklet = sensor.tracklets[tId]
+			if not tracklet.exited:
+				p = GeometryLib.toPoint(tracklet)
+				if GeometryLib.intersects(subPoly, p):
+					tracklets[tId] = tracklet
+			else:
+				if GeometryLib.distance(subPoly, p) <= self.TRACKLET_EXIT_MAX_DISTANCE:
+					tracklets[tId] = tracklet
+		return tracklets
+
 	def __constructNodes(self) -> None:
 		from uuid import uuid4
 		shadowPolys: list[MapPolygon] = []
@@ -118,6 +135,7 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 					sensedPolys = GeometryLib.intersection(mapPoly.interior, sensor.interior)
 					sensedPolys = GeometryLib.filterPolygons(sensedPolys)
 					for i in range(len(sensedPolys)):
+						tracklets = self.__extractTracklets(sensor, sensedPolys[i])
 						antiShadowPolys.append(SensingPolygon(
 							polygonId=sensor.id.polygonId,
 							regionId=sensor.id.regionId,
@@ -128,6 +146,7 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 							hIndex=self.hIndex if self.hIndex is not None else -1,
 							predicates=mapPoly.predicates,
 							centerOfRotation=sensor.centerOfRotation,
+							tracklets=tracklets,
 						))
 			for mapPoly in self.map:
 				diff = mapPoly.interior

@@ -2,11 +2,12 @@
 string id
 # Information about dynamic's of a moving body
 geometry_msgs/Pose pose
-geometry_msgs/Pose velocity
 
+# The props below are commented since this is not used here. But they are part of the design
+# geometry_msgs/Pose velocity
 # Confidence of detection, a 4x4 matrix of covariance of [x, y, vx, vy]
 # use np.reshape((4,4)) to reconstruct it
-float32[] covariance
+# float32[] covariance
 
 bool entered
 bool exited

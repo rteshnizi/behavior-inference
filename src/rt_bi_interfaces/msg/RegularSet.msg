@@ -10,6 +10,9 @@ builtin_interfaces/Time stamp
 
 # Symbolized region predicates
 rt_bi_interfaces/Predicate[] predicates
+# All the detected tracklets
+# Tracklet can be thought of as a special predicate (only sensors have data about it)
+rt_bi_interfaces/Tracklet[] estimations
 
 # The spatial geometry associated with this update
 rt_bi_interfaces/Polygon[] polygons
@@ -18,8 +21,8 @@ rt_bi_interfaces/TimeInterval[] intervals
 
 ######################### Properties #########################
 # Name of the object. It is not necessarily unique.
-string name
-string color
+# string name
+# string color
 # The fully qualified name of the associated ROS node.
 string ros_node
 

@@ -36,7 +36,6 @@ class RtBiInterfaces:
 		RT_BI_EMULATOR_SENSOR = "/__rt_bi_emulator/sensor"
 		RT_BI_EMULATOR_KNOWN = "/__rt_bi_emulator/known"
 		RT_BI_EMULATOR_TARGET = "/__rt_bi_emulator/target"
-		RT_BI_EMULATOR_ESTIMATION = "/__rt_bi_emulator/estimation"
 		RT_BI_EMULATOR_MAP = "/__rt_bi_runtime/map"
 		RT_BI_EVENTIFIER_INIT_GRAPH = "/__rt_bi_eventifier/init_graph"
 		RT_BI_EVENTIFIER_EVENT = "/__rt_bi_eventifier/event"
@@ -76,14 +75,6 @@ class RtBiInterfaces:
 	@staticmethod
 	def subscribeToTargets(node: RtBiNode, callbackFunc: Callable[[Msgs.RtBi.RegularSetArray], None]) -> None:
 		RtBiInterfaces.subscribeToSpace(node, RtBiInterfaces.TopicNames.RT_BI_EMULATOR_TARGET, callbackFunc)
-
-	@staticmethod
-	def createEstimationPublisher(node: RtBiNode, callbackFunc: Callable = lambda: None, intervalSecs: float = nan) -> tuple[Publisher, Timer | None]:
-		return Ros.CreatePublisher(node, Msgs.RtBi.Estimation, RtBiInterfaces.TopicNames.RT_BI_EMULATOR_ESTIMATION.value, callbackFunc, intervalSecs)
-
-	@staticmethod
-	def subscribeToEstimation(node: RtBiNode, callbackFunc: Callable[[Msgs.RtBi.Estimation], None]) -> None:
-		Ros.CreateSubscriber(node, Msgs.RtBi.Estimation, RtBiInterfaces.TopicNames.RT_BI_EMULATOR_ESTIMATION.value, callbackFunc) # pyright: ignore[reportArgumentType]
 
 	@staticmethod
 	def createMapPublisher(node: RtBiNode) -> Publisher:

@@ -22,7 +22,7 @@ class MapRenderer(MapSubscriber):
 				Ros.ConcatMessageArray(markers, marker)
 		return markers
 
-	def onPolygonUpdated(self, polygon: MapPolygon) -> None:
+	def onMapUpdated(self, polygon: MapPolygon) -> None:
 		self.log(f"Map updated region {repr(polygon.id)}")
 		return self.render()
 

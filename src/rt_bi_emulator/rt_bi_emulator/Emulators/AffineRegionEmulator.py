@@ -1,19 +1,23 @@
 import json
 from abc import ABC
 from math import inf
+from typing import Any, Generic, TypeVar
 
 from rclpy.logging import LoggingSeverity
 from rclpy.parameter import Parameter
 
 from rt_bi_commons.Base.RtBiNode import RtBiNode
+from rt_bi_commons.Shared.Pose import Coords
 from rt_bi_commons.Shared.Predicates import Predicates
-from rt_bi_commons.Utils.Geometry import Shapely
 from rt_bi_commons.Utils.Msgs import Msgs
+from rt_bi_core.Spatial import PolygonFactory, PolygonFactoryKeys
+from rt_bi_core.Spatial.AffinePolygon import AffinePolygon
 from rt_bi_core.Spatial.ContinuousTimePolygon import ContinuousTimePolygon
-from rt_bi_core.Spatial.MovingPolygon import AffinePolygon
+from rt_bi_core.Spatial.SensingPolygon import SensingPolygon
+from rt_bi_core.Spatial.TargetPolygon import TargetPolygon
 
-
-class AffineRegionEmulator(RtBiNode, ABC):
+_T_Poly = TypeVar("_T_Poly", AffinePolygon, SensingPolygon, TargetPolygon )
+class AffineRegionEmulator(Generic[_T_Poly], RtBiNode, ABC):
 	"""
 	This class provides a ROS node which emulates a moving polygonal region.
 	It provides the base functionality to read config files and
@@ -22,15 +26,16 @@ class AffineRegionEmulator(RtBiNode, ABC):
 	**NOTICE**, this class does not contain any publishers. The relevant publishers has to be made in ``__init__`` of the subclasses.
 	"""
 	NANO_CONVERSION_CONSTANT = 10 ** 9
-	def __init__(self, **kwArgs):
+	def __init__(self, PolyCls: type[_T_Poly], **kwArgs):
 		newKw = { "node_name": "emulator_region_base", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
 		super().__init__(**newKw)
 		self.declareParameters()
 		self.id = ""
 		self.updateInterval = 1
+		self.__polyClass = PolyCls
 		self.__initTimeNs: int = self.get_clock().now().nanoseconds
 		self.__cutOffTimeSecs: float = inf
-		self.__ctPoly: ContinuousTimePolygon[AffinePolygon] = ContinuousTimePolygon([])
+		self.__ctPoly: ContinuousTimePolygon[PolyCls] = ContinuousTimePolygon([])
 		self.__predicates = Predicates([])
 		self.parseParameters()
 
@@ -58,49 +63,43 @@ class AffineRegionEmulator(RtBiNode, ABC):
 			cor = json.loads(centersOfRotation[i])
 			poly = [tuple(p) for p in json.loads(polygons[i])]
 			timeNanoSecs = int(timePoints[i] * self.NANO_CONVERSION_CONSTANT) + self.__initTimeNs
-			poly = AffinePolygon(
-				polygonId="0",
-				regionId=self.id,
-				subPartId="",
-				envelope=poly,
-				predicates=self.__predicates,
-				centerOfRotation=cor,
-				timeNanoSecs=timeNanoSecs,
-				hIndex=-1,
-			)
+
+			kwArgs: dict[PolygonFactoryKeys, Any] = {
+				"polygonId": "0",
+				"regionId": self.id,
+				"subPartId": "",
+				"envelope": poly,
+				"predicates": self.__predicates,
+				"centerOfRotation": cor,
+				"timeNanoSecs": timeNanoSecs,
+				"hIndex": -1,
+			}
+			poly = PolygonFactory(self.__polyClass, kwArgs)
 			self.log(f"Parsed {poly} config @ {timeNanoSecs}")
 			self.__ctPoly.addPolygon(poly)
 		return
 
-	def getRegionAtTime(self, timeNanoSecs: int) -> AffinePolygon:
+	def getRegionAtTime(self, timeNanoSecs: int) -> _T_Poly:
 		if ((timeNanoSecs - self.__initTimeNs) / AffineRegionEmulator.NANO_CONVERSION_CONSTANT) > self.__cutOffTimeSecs:
 			timeNanoSecs = int(self.__cutOffTimeSecs * AffineRegionEmulator.NANO_CONVERSION_CONSTANT)
 		if timeNanoSecs in self.__ctPoly: return self.__ctPoly[timeNanoSecs]
 		return self.__ctPoly.configs[-1]
 
-	def asRegularSpaceMsg(self, spaceType: str) -> Msgs.RtBi.RegularSet:
-		timeOfPublish = self.get_clock().now()
-		self.log(f"{self.id} is publishing @ {timeOfPublish.nanoseconds}")
-		poly = self.getRegionAtTime(timeOfPublish.nanoseconds)
-		currentCor = self.__ctPoly.getCenterOfRotationAt(timeOfPublish.nanoseconds)
+	def asRegularSpaceMsg(self, timeNanoSecs: int) -> Msgs.RtBi.RegularSet:
+		self.log(f"{self.id} is publishing @ {timeNanoSecs}")
+		poly = self.getRegionAtTime(timeNanoSecs)
 		polyMsg = Msgs.RtBi.Polygon()
 		polyMsg.region = Msgs.toStdPolygon(poly.interior)
 		polyMsg.id = "0" # All emulated dynamic regions currently only hold a single polygon.
-		polyMsg.center_of_rotation = Msgs.toStdPoint(currentCor)
+		polyMsg.center_of_rotation = Msgs.toStdPoint(poly.centerOfRotation)
 		msg = Msgs.RtBi.RegularSet()
 		msg.id = self.id
-		msg.stamp = timeOfPublish.to_msg()
+		msg.stamp = Msgs.toTimeMsg(timeNanoSecs)
 		msg.polygons = [polyMsg]
 		msg.ros_node = self.get_fully_qualified_name()
 		msg.predicates = [] # Inherit all other predicates
-		msg.space_type= spaceType
+		msg.space_type= self.__ctPoly.type.value
 		return msg
-
-	def asRegularSpaceArrayMsg(self, spaceType: str) -> Msgs.RtBi.RegularSetArray:
-		msg = self.asRegularSpaceMsg(spaceType)
-		arr = Msgs.RtBi.RegularSetArray()
-		arr.sets = [msg]
-		return arr
 
 	def render(self) -> None:
 		self.log(f"No render for {self.get_fully_qualified_name()}.")

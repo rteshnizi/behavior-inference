@@ -18,7 +18,6 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ColdStart.msg"
   "msg/DataRefRequest.msg"
   "msg/DataRefResponse.msg"
-  "msg/Estimation.msg"
   "msg/Event.msg"
   "msg/Events.msg"
   "msg/Graph.msg"

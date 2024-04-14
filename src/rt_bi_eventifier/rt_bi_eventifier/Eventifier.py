@@ -1,3 +1,5 @@
+from typing import cast
+
 import rclpy
 from rclpy.logging import LoggingSeverity
 from rclpy.node import Publisher
@@ -12,12 +14,13 @@ from rt_bi_core.Spatial import MapPolygon
 from rt_bi_core.Spatial.MovingPolygon import AffinePolygon
 from rt_bi_core.Spatial.SensingPolygon import SensingPolygon
 from rt_bi_core.Spatial.StaticPolygon import StaticPolygon
+from rt_bi_core.Spatial.Tracklet import Tracklet
 from rt_bi_eventifier.Model.IGraph import IGraph
 
 
 class Eventifier(MapSubscriber, SensorSubscriber):
 	def __init__(self, **kwArgs) -> None:
-		newKw = { "node_name": "eventifier", "loggingSeverity": LoggingSeverity.WARN, **kwArgs}
+		newKw = { "node_name": "eventifier", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
 		super().__init__(**newKw)
 		self.declareParameters()
 		self.__renderModules: list[IGraph.SUBMODULE] = []
@@ -32,7 +35,7 @@ class Eventifier(MapSubscriber, SensorSubscriber):
 		ePublisher = RtBiInterfaces.createEventPublisher(self)
 		self.__iGraph: IGraph = IGraph((gPublisher, ePublisher), modulePublishers)
 
-	def onPolygonUpdated(self, polygon: MapPolygon | SensingPolygon) -> None:
+	def __onUpdate(self, polygon: MapPolygon | SensingPolygon) -> None:
 		self.log(f"Updating polygons of type {polygon.type.name}.")
 		# While initializing the map, don't take affine updates
 		if self.mapInitPhasesRemaining > 0:
@@ -42,6 +45,12 @@ class Eventifier(MapSubscriber, SensorSubscriber):
 		self.__iGraph.renderLatestCGraph()
 		if self.shouldRender: self.render()
 		return
+
+	def onMapUpdated(self, polygon: MapPolygon) -> None:
+		return self.__onUpdate(polygon)
+
+	def onSensorUpdated(self, polygon: SensingPolygon) -> None:
+		return self.__onUpdate(polygon)
 
 	def declareParameters(self) -> None:
 		self.log(f"{self.get_fully_qualified_name()} is setting node parameters.")
