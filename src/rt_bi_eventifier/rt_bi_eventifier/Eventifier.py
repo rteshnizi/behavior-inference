@@ -9,7 +9,7 @@ from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_commons.Utils.RViz import RViz
 from rt_bi_core.RegionsSubscriber import RegionsSubscriber
 from rt_bi_core.Spatial import MapPolygon
-from rt_bi_core.Spatial.MovingPolygon import AffinePolygon
+from rt_bi_core.Spatial.AffinePolygon import AffinePolygon
 from rt_bi_core.Spatial.SensingPolygon import SensingPolygon
 from rt_bi_eventifier.Model.IGraph import IGraph
 

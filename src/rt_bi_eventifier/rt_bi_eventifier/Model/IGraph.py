@@ -8,9 +8,9 @@ from rt_bi_commons.Utils.Msgs import Msgs
 from rt_bi_commons.Utils.NetworkX import NxUtils
 from rt_bi_commons.Utils.RViz import ColorNames, RViz
 from rt_bi_core.Spatial import GraphPolygon, MapPolygon
+from rt_bi_core.Spatial.AffinePolygon import AffinePolygon
 from rt_bi_core.Spatial.ContinuousTimePolygon import ContinuousTimePolygon
 from rt_bi_core.Spatial.DynamicPolygon import DynamicPolygon
-from rt_bi_core.Spatial.MovingPolygon import AffinePolygon
 from rt_bi_core.Spatial.SensingPolygon import SensingPolygon
 from rt_bi_core.Spatial.StaticPolygon import StaticPolygon
 from rt_bi_eventifier.Model.ConnectivityGraph import ConnectivityGraph
