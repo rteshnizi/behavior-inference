@@ -48,9 +48,8 @@ class BaNode(ColdStartableNode):
 		self.waitForColdStartPermission(self.onColdStartAllowed)
 		RtBiInterfaces.subscribeToEventGraph(self, self.__onInitGraph)
 		RtBiInterfaces.subscribeToEvent(self, self.__onEvent)
-		(rVizPublisher, _) = RViz.createRVizPublisher(self, Ros.CreateTopicName("topological_graph"))
-		self.__topologicalGraph = TopologicalGraph([], [], rVizPublisher=rVizPublisher)
-		if self.shouldRender: self.render()
+		if self.shouldRender:
+			self.render()
 		return
 
 	def __onInitGraph(self, msg: Msgs.RtBi.Graph) -> None:

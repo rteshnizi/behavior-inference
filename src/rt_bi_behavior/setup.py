@@ -16,7 +16,6 @@ setup(
 		(os.path.join("share", packageName, "config"), glob("config/*")),
 	],
 	install_requires= [
-		"matplotlib~=3.5",
 		"networkx~=3.2",
 		"setuptools==58.2.0",
 	],
@@ -28,6 +27,7 @@ setup(
 	entry_points={
 		"console_scripts": [
 			"BA = rt_bi_behavior.BaNode:main",
+			"BA_RENDERER = rt_bi_behavior.DotRenderer:main",
 		],
 	},
 )

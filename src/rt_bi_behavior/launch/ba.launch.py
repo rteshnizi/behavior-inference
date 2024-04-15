@@ -24,4 +24,14 @@ def generate_launch_description():
 			],
 			parameters=[baYamlPath]
 		),
+		Node(
+			package=package_name,
+			namespace=package_name,
+			executable="BA_RENDERER",
+			arguments= [
+				"--ros-args",
+				"--log-level",
+				"info",
+			],
+		),
 	])
