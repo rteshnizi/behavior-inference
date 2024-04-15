@@ -2,8 +2,8 @@ from typing import Any, TypeAlias
 
 from typing_extensions import TypeVar
 
+from rt_bi_core.Spatial.AffinePolygon import AffinePolygon
 from rt_bi_core.Spatial.DynamicPolygon import DynamicPolygon
-from rt_bi_core.Spatial.MovingPolygon import AffinePolygon
 from rt_bi_core.Spatial.Polygon import Polygon, PolygonFactoryKeys
 from rt_bi_core.Spatial.SensingPolygon import SensingPolygon
 from rt_bi_core.Spatial.StaticPolygon import StaticPolygon
