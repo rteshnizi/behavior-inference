@@ -69,7 +69,7 @@ def Now(node: Node | None) -> Time:
 		raise RuntimeError("ROS context not OK!")
 	return rclpy.get_global_executor()._clock.now()
 
-def CreatePublisher(node: Node, topic: __Topic, topicName: str, callbackFunc: Callable[[__Topic], None] = lambda _: None, intervalSecs: float = nan) -> tuple[Publisher, Timer | None]:
+def CreatePublisher(node: Node, topic: type[__Topic], topicName: str, callbackFunc: Callable[[__Topic], None] = lambda _: None, intervalSecs: float = nan) -> tuple[Publisher, Timer | None]:
 	"""
 	Create and return the tuple of `(Publisher, Timer | None)`.
 
@@ -100,7 +100,7 @@ def CreatePublisher(node: Node, topic: __Topic, topicName: str, callbackFunc: Ca
 	node.get_logger().debug(f"{node.get_fully_qualified_name()} publishes topic \"{topicName}\"{freq}")
 	return (publisher, timer)
 
-def CreateSubscriber(node: Node, topic: __Topic, topicName: str, callbackFunc: Callable[[__Topic], None]) -> Subscription:
+def CreateSubscriber(node: Node, topic: type[__Topic], topicName: str, callbackFunc: Callable[[__Topic], None]) -> Subscription:
 	"""
 	Create and return the `Subscription`.
 
@@ -200,7 +200,8 @@ def CreateClient(node: Node, interface: __ServiceInterface, serviceName: str) ->
 	if len(l) == 1: return l[0]
 	raise RuntimeError("This should never happen.")
 
-def SendClientRequest(node: Node, client: Client, request: __ServiceInterface_Request, responseCallback: Callable[[__ServiceInterface_Request, __ServiceInterface_Response], __ServiceInterface_Response]) -> None:
+def SendClientRequest(node: Node, client: Client, request: __ServiceInterface_Request, responseCallback: Callable[[__ServiceInterface_Request, __ServiceInterface_Response], __ServiceInterface_Response] | None = None) -> None:
+	if responseCallback is None: responseCallback = lambda _1, _2: _2
 	future = client.call_async(request)
 	rclpy.spin_until_future_complete(node, future)
 	responseCallback(request, cast(__ServiceInterface_Response, future.result()))
