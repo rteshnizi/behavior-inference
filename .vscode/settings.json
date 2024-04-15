@@ -23,6 +23,7 @@
 		"ctcd",
 		"ctrs",
 		"eventifier",
+		"eventlet",
 		"fuseki",
 		"graphviz",
 		"levelname",
