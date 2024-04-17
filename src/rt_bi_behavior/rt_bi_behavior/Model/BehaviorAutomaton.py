@@ -1,10 +1,10 @@
 import networkx as nx
 
+from rt_bi_behavior.Model.State import State, StateToken
+from rt_bi_behavior.Model.Transition import Transition
 from rt_bi_commons.Shared.NodeId import NodeId
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Msgs import Msgs
-from rt_bi_runtime.Model.State import State, StateToken
-from rt_bi_runtime.Model.Transition import Transition
 
 
 class BehaviorAutomaton(nx.DiGraph):

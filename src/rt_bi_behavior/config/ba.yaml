@@ -1,4 +1,9 @@
 rt_bi_behavior:
+  dot_renderer:
+    ros__parameters:
+      template_dir: "config"
+      template_file: "graphviz.html"
+      dot_string: ""
   ba1:
     ros__parameters:
       render: True

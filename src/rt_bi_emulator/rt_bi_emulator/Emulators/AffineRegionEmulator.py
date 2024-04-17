@@ -89,9 +89,9 @@ class AffineRegionEmulator(Generic[_T_Poly], RtBiNode, ABC):
 		self.log(f"{self.id} is publishing @ {timeNanoSecs}")
 		poly = self.getRegionAtTime(timeNanoSecs)
 		polyMsg = Msgs.RtBi.Polygon()
-		polyMsg.region = Msgs.toStdPolygon(poly.interior)
+		polyMsg.region = Msgs.toPolygonMsg(poly.interior)
 		polyMsg.id = "0" # All emulated dynamic regions currently only hold a single polygon.
-		polyMsg.center_of_rotation = Msgs.toStdPoint(poly.centerOfRotation)
+		polyMsg.center_of_rotation = Msgs.toPointMsg(poly.centerOfRotation)
 		msg = Msgs.RtBi.RegularSet()
 		msg.id = self.id
 		msg.stamp = Msgs.toTimeMsg(timeNanoSecs)

@@ -29,7 +29,7 @@ class Tracklet(Pose):
 	def asMsg(self) -> Msgs.RtBi.Tracklet:
 		msg = Msgs.RtBi.Tracklet()
 		msg.id = self.id
-		msg.pose = Msgs.toStdPose(self)
+		msg.pose = Msgs.toPoseMsg(self)
 		msg.entered = self.entered
 		msg.exited = self.exited
 		return msg

@@ -1,17 +1,29 @@
-import os
 from pathlib import Path
 
 from ament_index_python.packages import get_package_share_directory
 from launch_ros.actions import Node
 
 from launch import LaunchDescription
+from launch.actions import ExecuteProcess
 
 package_name = Path(__file__).parent.parent.name
 
 def generate_launch_description():
-	baYamlPath = os.path.join(get_package_share_directory(package_name), "config", "ba.yaml")
+	baYamlPath = str(Path(get_package_share_directory(package_name), "config", "ba.yaml"))
 
 	return LaunchDescription([
+		ExecuteProcess(
+			cmd=["flask", "--app", "flaskApp", "run", "--host=0.0.0.0"],
+			cwd=str(Path(get_package_share_directory(package_name), "launch")),
+			name="FLASK",
+			log_cmd=True,
+		),
+		Node(
+			package="rosbridge_server",
+			namespace="rosbridge_server",
+			executable="rosbridge_websocket",
+			name="ROSBRIDGE",
+		),
 		Node(
 			package=package_name,
 			namespace=package_name,
@@ -23,15 +35,5 @@ def generate_launch_description():
 				"warn",
 			],
 			parameters=[baYamlPath]
-		),
-		Node(
-			package=package_name,
-			namespace=package_name,
-			executable="BA_RENDERER",
-			arguments= [
-				"--ros-args",
-				"--log-level",
-				"info",
-			],
 		),
 	])

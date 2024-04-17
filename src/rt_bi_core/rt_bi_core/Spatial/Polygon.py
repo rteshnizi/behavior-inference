@@ -280,8 +280,8 @@ class Polygon(ABC):
 		msg.predicates = self.predicates.asMsgArr()
 		polyMsg = Msgs.RtBi.Polygon()
 		polyMsg.id = self.id.polygonId
-		polyMsg.region = Msgs.toStdPolygon(self.interior)
-		polyMsg.center_of_rotation = Msgs.toStdPoint(self.centerOfRotation)
+		polyMsg.region = Msgs.toPolygonMsg(self.interior)
+		polyMsg.center_of_rotation = Msgs.toPointMsg(self.centerOfRotation)
 		msg.polygons = [polyMsg]
 		msg.space_type = self.type.value
 		# msg.color = ColorNames.toStr(self.envelopeColor)

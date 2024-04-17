@@ -42,7 +42,7 @@ class SensorEmulator(AffineRegionEmulator[SensingPolygon], RegionsSubscriber):
 			exited = self.__observedTargets[targetId] == "exited"
 			trackletMsg = Msgs.RtBi.Tracklet(entered=entered, exited=exited)
 			trackletMsg.id = targetId
-			trackletMsg.pose = Msgs.toStdPose(target.centroid)
+			trackletMsg.pose = Msgs.toPoseMsg(target.centroid)
 			Ros.AppendMessage(updateMsg.estimations, trackletMsg)
 			# Now that we published the enter event, change it so it doesn't affect next updates
 			if entered: self.__observedTargets[targetId] = "stayed"

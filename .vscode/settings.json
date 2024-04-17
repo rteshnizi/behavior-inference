@@ -34,6 +34,8 @@
 		"rclpy",
 		"Rcutils",
 		"rdfs",
+		"rosbridge",
+		"ROSLIB",
 		"rtbi",
 		"rtype",
 		"rviz",

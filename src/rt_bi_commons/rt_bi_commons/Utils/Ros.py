@@ -1,7 +1,7 @@
 import logging
 from functools import partial
 from math import inf, isnan, nan
-from typing import AbstractSet, Any, Callable, Iterable, Sequence, TypeAlias, TypeVar, cast
+from typing import AbstractSet, Callable, Iterable, Sequence, TypeAlias, TypeVar, cast
 
 import rclpy
 from rclpy.clock import Time
