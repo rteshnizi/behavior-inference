@@ -1,4 +1,8 @@
+from json import dumps
+from tempfile import TemporaryFile
+
 import networkx as nx
+from networkx.drawing import nx_agraph
 
 from rt_bi_behavior.Model.State import State, StateToken
 from rt_bi_behavior.Model.Transition import Transition
@@ -19,6 +23,7 @@ class BehaviorAutomaton(nx.DiGraph):
 			grammarFileName: str,
 		):
 		super().__init__()
+		self.__dotPublisher: Ros.Publisher | None = None
 		self.__specName: str = specName
 		self.name = f"NFA({self.__specName})"
 		self.__states: list[str] = states
@@ -31,7 +36,6 @@ class BehaviorAutomaton(nx.DiGraph):
 		self.__grammarFileName: str = grammarFileName
 		self.__tokens: set[StateToken] = set()
 		self.__buildGraph()
-		self.renderLayout = nx.circular_layout(self)
 		return
 
 	def __repr__(self):
@@ -73,4 +77,24 @@ class BehaviorAutomaton(nx.DiGraph):
 				stateName=self.__start,
 				graphNode=n,
 			))
+		return
+
+	def initFlask(self, rosNode: Ros.Node) -> None:
+		(self.__dotPublisher, _) = Ros.CreatePublisher(
+			rosNode,
+			Msgs.Std.String,
+			"/rt_bi_behavior/dot_renderer",
+			callbackFunc=self.render,
+			intervalSecs=1,
+		)
+		return
+
+	def render(self) -> None:
+		if self.__dotPublisher is None: return
+		# self.get_logger().error("HERE IN BA RENDER")
+		with TemporaryFile() as f:
+			nx_agraph.to_agraph(self).draw(path=f, prog="dot", format="svg")
+			f.seek(0)
+			svg = f.read().decode()
+			self.__dotPublisher.publish(Msgs.Std.String(data=dumps({"name": self.name, "svg": svg})))
 		return

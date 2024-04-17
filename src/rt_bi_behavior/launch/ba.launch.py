@@ -16,13 +16,16 @@ def generate_launch_description():
 			cmd=["flask", "--app", "flaskApp", "run", "--host=0.0.0.0"],
 			cwd=str(Path(get_package_share_directory(package_name), "launch")),
 			name="FLASK",
-			log_cmd=True,
 		),
 		Node(
 			package="rosbridge_server",
 			namespace="rosbridge_server",
 			executable="rosbridge_websocket",
-			name="ROSBRIDGE",
+			arguments= [
+				"--ros-args",
+				"--log-level",
+				"warn",
+			],
 		),
 		Node(
 			package=package_name,

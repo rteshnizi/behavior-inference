@@ -69,7 +69,7 @@ def Now(node: Node | None) -> Time:
 		raise RuntimeError("ROS context not OK!")
 	return rclpy.get_global_executor()._clock.now()
 
-def CreatePublisher(node: Node, topic: type[__Topic], topicName: str, callbackFunc: Callable[[__Topic], None] = lambda _: None, intervalSecs: float = nan) -> tuple[Publisher, Timer | None]:
+def CreatePublisher(node: Node, topic: type[__Topic], topicName: str, callbackFunc: Callable = lambda _: None, intervalSecs: float = nan) -> tuple[Publisher, Timer | None]:
 	"""
 	Create and return the tuple of `(Publisher, Timer | None)`.
 
