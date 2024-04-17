@@ -49,7 +49,7 @@ class BehaviorAutomaton(nx.DiGraph):
 	def __addEdge(self, source: str, transitionStr: str, destination: str) -> None:
 		transition = Transition(transitionStr, self.__baseDir, self.__transitionGrammarDir, self.__grammarFileName)
 		self.__predicates |= transition.predicates
-		self.add_edge(source, destination, descriptor=transition)
+		self.add_edge(source, destination, label=str(transition), descriptor=transition)
 		return
 
 	def __buildGraph(self) -> None:

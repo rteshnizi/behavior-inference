@@ -39,20 +39,23 @@ class PredicateCollector(TransitionInterpreter):
 
 class Transition:
 	def __init__(self, transitionStr: str, baseDir: str, transitionGrammarDir: str, grammarFileName: str) -> None:
-		self.transitionStr: str = transitionStr
+		self.__str: str = transitionStr
 		tree = TransitionParser(baseDir, transitionGrammarDir, grammarFileName).parse(transitionStr)
 		self.__predCollector = PredicateCollector()
 		self.__predCollector.visit(tree)
 		return
 
+	def __str__(self) -> str:
+		return self.__str
+
 	def __repr__(self) -> str:
-		return f"{self.transitionStr}"
+		return f"{self.__str}"
 
 	def __hash__(self) -> int:
-		return hash(self.transitionStr)
+		return hash(self.__str)
 
 	def __eq__(self, other: "Transition") -> bool:
-		return self.transitionStr == other.transitionStr
+		return self.__str == other.__str
 
 	@property
 	def predicates(self) -> set[str]:
