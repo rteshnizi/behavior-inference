@@ -7,7 +7,7 @@ packageName = "rt_bi_behavior"
 
 setup(
 	name=packageName,
-	version="0.4.0",
+	version="0.5.0",
 	packages = find_packages(exclude=["test", "launch"]),
 	data_files=[
 		("share/ament_index/resource_index/packages", ["resource/" + packageName]),
