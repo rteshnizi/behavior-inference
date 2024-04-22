@@ -5,7 +5,7 @@ from typing import Any, cast
 import networkx as nx
 from networkx.drawing import nx_agraph
 
-from rt_bi_behavior.Model.State import State, StateToken
+from rt_bi_behavior.Model.State import State
 from rt_bi_behavior.Model.Transition import Transition
 from rt_bi_commons.Shared.NodeId import NodeId
 from rt_bi_commons.Utils import Ros
@@ -36,7 +36,6 @@ class BehaviorAutomaton(nx.DiGraph):
 		self.__baseDir: str = baseDir
 		self.__transitionGrammarDir: str = transitionGrammarDir
 		self.__grammarFileName: str = grammarFileName
-		self.__tokens: set[StateToken] = set()
 		self.__buildGraph()
 		return
 
@@ -45,9 +44,17 @@ class BehaviorAutomaton(nx.DiGraph):
 
 	def __addNode(self, name: str) -> None:
 		state = State(name, starting=(name == self.__start), accepting=(name in self.__accepting))
-		style = "filled" if state.start else ""
-		shape = "doublecircle" if state.accepting else "circle"
-		self.add_node(name, label=state, shape=shape, style=style)
+		styles = ["rounded"]
+		if state.start: styles.append("filled")
+		peripheries = 2 if state.accepting else 1
+		self.add_node(
+			name,
+			label=state.graphVizLabel(),
+			stateObj=state,
+			shape="box",
+			style=", ".join(styles),
+			peripheries=peripheries,
+		)
 		return
 
 	def __addEdge(self, source: str, transitionStr: str, destination: str) -> None:
@@ -88,15 +95,23 @@ class BehaviorAutomaton(nx.DiGraph):
 		return
 
 	@property
-	def tokens(self) -> set[StateToken]:
-		return self.__tokens
+	def tokens(self) -> str:
+		tokens: dict[str, list[str]] = {}
+		for node in self.nodes:
+			state: State = self.nodes[node]["stateObj"]
+			tokens[node] = []
+			for t in state.tokens:
+				tokens[node].append(repr(t))
+		return repr(tokens)
 
 	def resetTokens(self, shadowNodesStr: str) -> None:
 		shadowNodes: list[str] = loads(shadowNodesStr)
-		self.__tokens = set()
-		for nodeIdJson in shadowNodes:
-			token = StateToken.fromNodeIdJson(stateName=self.__start, nodeIdJson=nodeIdJson)
-			self.__tokens.add(token)
+		startState: State = self.nodes[self.__start]["stateObj"]
+		startState.tokens = []
+		# Ros.Logger().error(f"RESET: {repr(startState.tokens)}")
+		for shadowJson in shadowNodes:
+			startState.addTokenFromJson(shadowJson)
+		self.nodes[self.__start]["label"] = startState.graphVizLabel()
 		return
 
 	def initFlask(self, rosNode: Ros.Node) -> None:
@@ -112,12 +127,12 @@ class BehaviorAutomaton(nx.DiGraph):
 	def __prepareDot(self) -> str:
 		with TemporaryFile() as f:
 			aGraph = nx_agraph.to_agraph(self)
-			aGraph.graph_attr["fontname"] = "Courier"
+			# aGraph.graph_attr["fontname"] = "Courier"
 			aGraph.draw(path=f, prog="dot", format="svg")
 			f.seek(0)
-			# Ros.Logger().error(str(aGraph))
+			Ros.Logger().error(str(aGraph))
 			svg = f.read().decode()
-			return dumps({"name": self.name, "svg": svg, "tokens": [t.asDict() for t in self.tokens]})
+			return dumps({"name": self.name, "svg": svg, "tokens": self.tokens})
 
 	def render(self) -> None:
 		if self.__dotPublisher is None: return

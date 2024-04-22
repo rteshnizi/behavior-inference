@@ -19,7 +19,7 @@ class NodeId:
 
 	def __repr__(self) -> str:
 		hIndex = f"[{self.hIndex}]" if self.hIndex > 0 else ""
-		return f"{hIndex}@{self.timeNanoSecs}>{self.regionId}>{self.polygonId}/{self.subPartId}"
+		return f"{hIndex}@{self.timeNanoSecs}--{self.regionId}--{self.polygonId}=={self.subPartId}"
 
 	def copy(self, timeNanoSecs: int | None = None, hIndex: int | None = None, subPartId: str | None = None) -> "NodeId":
 		timeNanoSecs = timeNanoSecs if timeNanoSecs is not None else self.timeNanoSecs

@@ -66,6 +66,6 @@ class Transition:
 	def setPredicatesSymbol(self, predicate: str, symbol: str) -> None:
 		if predicate == "" or symbol == "": return
 		self.__symStr = self.__symStr.replace(predicate, symbol)
-		Ros.Logger().error(f"Predicate = {predicate}, Syms = {symbol}")
-		Ros.Logger().error(f"STR = {self.__str}, SYM = {self.__symStr}")
+		# Ros.Logger().error(f"Predicate = {predicate}, Syms = {symbol}")
+		# Ros.Logger().error(f"STR = {self.__str}, SYM = {self.__symStr}")
 		return

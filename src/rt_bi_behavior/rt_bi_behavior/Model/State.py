@@ -9,6 +9,7 @@ class State:
 		self.name = name
 		self.start = starting
 		self.accepting = accepting
+		self.tokens: list[NodeId] = []
 
 	def __str__(self) -> str:
 		return self.name
@@ -28,20 +29,31 @@ class State:
 	def __eq__(self, other: "State") -> bool:
 		return self.name == other.name
 
-@dataclass(frozen=True)
-class StateToken:
-	stateName: str
-	graphNode: NodeId
+	def graphVizLabel(self) -> str:
+		rows = [self.name]
+		for token in self.tokens: rows.append(repr(token))
+		rowsStr = "</TD></TR><TR><TD>".join(rows)
+		label = f"<<TABLE border='0' cellborder='0' cellpadding='2'><TR><TD>{rowsStr}</TD></TR></TABLE>>"
+		return label
 
-	@staticmethod
-	def fromNodeIdJson(stateName: str, nodeIdJson: str) -> "StateToken":
-		return StateToken(
-			stateName=stateName,
-			graphNode=NodeId.fromJson(nodeIdJson),
-		)
+	def addTokenFromJson(self, nodeIdJson: str) -> None:
+		self.tokens.append(NodeId.fromJson(nodeIdJson))
+		return
 
-	def asDict(self) -> dict[str, Any]:
-		return {
-			"stateName": self.stateName,
-			"graphNode": asdict(self.graphNode),
-		}
+# @dataclass(frozen=True)
+# class StateToken:
+# 	stateName: str
+# 	graphNode: NodeId
+
+# 	@staticmethod
+# 	def fromNodeIdJson(stateName: str, nodeIdJson: str) -> "StateToken":
+# 		return StateToken(
+# 			stateName=stateName,
+# 			graphNode=NodeId.fromJson(nodeIdJson),
+# 		)
+
+# 	def asDict(self) -> dict[str, Any]:
+# 		return {
+# 			"stateName": self.stateName,
+# 			"graphNode": asdict(self.graphNode),
+# 		}
