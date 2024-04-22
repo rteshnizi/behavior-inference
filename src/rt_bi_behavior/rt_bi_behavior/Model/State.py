@@ -1,8 +1,7 @@
-from dataclasses import asdict, dataclass
-from typing import Any
-
 from rt_bi_commons.Shared.NodeId import NodeId
 
+# from dataclasses import asdict, dataclass
+# from typing import Any
 
 class State:
 	def __init__(self, name: str, starting: bool, accepting: bool) -> None:
@@ -30,10 +29,13 @@ class State:
 		return self.name == other.name
 
 	def graphVizLabel(self) -> str:
-		rows = [self.name]
-		for token in self.tokens: rows.append(repr(token))
-		rowsStr = "</TD></TR><TR><TD>".join(rows)
-		label = f"<<TABLE border='0' cellborder='0' cellpadding='2'><TR><TD>{rowsStr}</TD></TR></TABLE>>"
+		cols: list[str] = []
+		for token in self.tokens:
+			cols.append("<TD width='10' height='10' fixedsize='true' bgcolor='red'></TD>")
+		colsStr = "".join(cols)
+		if len(colsStr) > 0:
+			colsStr = f"<TR>{colsStr}</TR>"
+		label = f"<<TABLE border='0' cellborder='0' cellpadding='2'><TR><TD colspan='{1 if len(cols) == 0 else len(cols)}'>{self.name}</TD></TR>{colsStr}</TABLE>>"
 		return label
 
 	def addTokenFromJson(self, nodeIdJson: str) -> None:
