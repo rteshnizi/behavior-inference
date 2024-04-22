@@ -33,8 +33,7 @@ class Eventifier(RegionsSubscriber):
 			modulePublishers[module] = publisher
 
 		gPublisher = RtBiInterfaces.createEventGraphPublisher(self)
-		ePublisher = RtBiInterfaces.createEventPublisher(self)
-		self.__iGraph: IGraph = IGraph((gPublisher, ePublisher), modulePublishers)
+		self.__iGraph: IGraph = IGraph(gPublisher, modulePublishers)
 		RtBiInterfaces.subscribeToProjectiveMap(self, self.enqueueUpdate)
 		RtBiInterfaces.subscribeToAffineMap(self, self.enqueueUpdate)
 		RtBiInterfaces.subscribeToSensors(self, self.enqueueUpdate)

@@ -51,8 +51,9 @@
     // Then we add a callback to be called every time a message is published on this topic.
     listener.subscribe(function (msg) {
       data = JSON.parse(msg.data)
-      el = document.getElementById("ba-name").innerHTML = data.name
-      el = document.getElementById("dot-graph").innerHTML = data.svg
+      document.getElementById("ba-name").innerHTML = data.name
+      document.getElementById("dot-graph").innerHTML = data.svg
+      document.getElementById("state-tokens").innerHTML = JSON.stringify(data.tokens)
     });
 
     // Create a connection to the rosbridge WebSocket server.
@@ -61,21 +62,23 @@
 </head>
 
 <body>
-  <h1>Behavior Automaton: <span id="ba-name"></span></h1>
   <div id="statusIndicator">
+    ROS Bridge Connection State:
     <p id="connecting">
-      Connecting to rosbridge...
+      Connecting...
     </p>
     <p id="connected" style="color:#00D600; display:none">
-      Connected
+      Connected.
     </p>
     <p id="error" style="color:#FF0000; display:none">
-      Error in the backend!
+      Error!
     </p>
     <p id="closed" style="display:none">
-      Connection closed.
+      Closed.
     </p>
   </div>
+  <h1>Behavior Automaton: <span id="ba-name"></span></h1>
+  <div id="state-tokens"></div>
   <div id="dot-graph" style="text-align: center;">
     <h2>SVG</h2>
   </div>

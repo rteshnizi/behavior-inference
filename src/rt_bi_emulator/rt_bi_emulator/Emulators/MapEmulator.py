@@ -16,12 +16,13 @@ class MapEmulator(ColdStartableNode):
 	* Information about dynamic regions are provided by :class:`KnownRegionEmulator` instances.
 	"""
 	def __init__(self) -> None:
-		newKw = { "node_name": "dynamic_map", "loggingSeverity": LoggingSeverity.INFO }
+		newKw = { "node_name": "dynamic_map", "loggingSeverity": LoggingSeverity.WARN }
 		super().__init__(**newKw)
 		self.__timeOriginNanoSecs: int = -1
 		self.__reachabilityInformation: dict[str, list[TimeInterval]] = {}
 		self.__reachabilityState: dict[str, bool] = {}
 		self.__mapPublisher = RtBiInterfaces.createMapPublisher(self)
+		self.__predicatesPublisher = RtBiInterfaces.createPredicatesPublisher(self)
 		self.rdfClient = RtBiInterfaces.createSpaceTimeClient(self)
 		Ros.WaitForServiceToStart(self, self.rdfClient)
 		self.waitForColdStartPermission(self.onColdStartAllowed)
@@ -56,9 +57,14 @@ class MapEmulator(ColdStartableNode):
 		return
 
 	def __onSpatialSetsResponse(self, req: Msgs.RtBiSrv.SpaceTime.Request, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
+		self.log(f"{self.get_fully_qualified_name()} received SpaceTime query response.")
 		res.sets = Ros.AsList(res.sets, Msgs.RtBi.RegularSet)
 		self.__extractOriginOfTime(res.sets)
 		msg = Msgs.RtBi.RegularSetArray(sets=res.sets)
+		self.__mapPublisher.publish(msg)
+		res.json_predicate_symbols = res.json_predicate_symbols.replace("?p_", "p_")
+		self.log(f"Predicates map: {res.json_predicate_symbols}")
+		self.__predicatesPublisher.publish(Msgs.Std.String(data=res.json_predicate_symbols))
 		payload = ColdStartPayload(req.json_payload)
 		self.__mapPublisher.publish(msg)
 		responsePayload = ColdStartPayload({

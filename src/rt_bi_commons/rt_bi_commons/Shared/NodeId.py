@@ -1,4 +1,6 @@
-from dataclasses import dataclass, replace
+from dataclasses import asdict, dataclass, replace
+from json import dumps, loads
+from typing import Any
 
 
 @dataclass(frozen=True, order=True)
@@ -32,3 +34,21 @@ class NodeId:
 		polyId = self.polygonId.split('#')[-1].strip("_")
 		regionId = self.regionId.split('/')[-1].strip("_")
 		return (regionId, polyId)
+
+	@staticmethod
+	def fromJson(jsonStr: str) -> "NodeId":
+		try:
+			d: dict[str, Any] = loads(jsonStr)
+			return NodeId(
+				hIndex=d["hIndex"],
+				timeNanoSecs=d["timeNanoSecs"],
+				regionId=d["regionId"],
+				polygonId=d["polygonId"],
+				subPartId=d["subPartId"],
+			)
+		except Exception as e:
+			raise RuntimeError(f"Unable to parse string to NodeId: {jsonStr}")
+
+	def stringify(self) -> str:
+		d = asdict(self)
+		return dumps(d)

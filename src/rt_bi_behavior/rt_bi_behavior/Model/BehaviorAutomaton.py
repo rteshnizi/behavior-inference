@@ -1,5 +1,6 @@
-from json import dumps
+from json import dumps, loads
 from tempfile import TemporaryFile
+from typing import Any, cast
 
 import networkx as nx
 from networkx.drawing import nx_agraph
@@ -30,7 +31,8 @@ class BehaviorAutomaton(nx.DiGraph):
 		self.__transitions: dict[str, dict[str, str]] = transitions
 		self.__start: str = start
 		self.__accepting: set[str] = set(accepting)
-		self.__predicates: set[str] = set()
+		self.__predicates: dict[str, str] = {}
+		"""Predicate to Symbol name map."""
 		self.__baseDir: str = baseDir
 		self.__transitionGrammarDir: str = transitionGrammarDir
 		self.__grammarFileName: str = grammarFileName
@@ -43,13 +45,15 @@ class BehaviorAutomaton(nx.DiGraph):
 
 	def __addNode(self, name: str) -> None:
 		state = State(name, starting=(name == self.__start), accepting=(name in self.__accepting))
-		self.add_node(name, descriptor=state)
+		style = "filled" if state.start else ""
+		shape = "doublecircle" if state.accepting else "circle"
+		self.add_node(name, label=state, shape=shape, style=style)
 		return
 
 	def __addEdge(self, source: str, transitionStr: str, destination: str) -> None:
 		transition = Transition(transitionStr, self.__baseDir, self.__transitionGrammarDir, self.__grammarFileName)
-		self.__predicates |= transition.predicates
-		self.add_edge(source, destination, label=str(transition), descriptor=transition)
+		for p in transition.predicates: self.__predicates[p] = ""
+		self.add_edge(source, destination, label=repr(transition), transition=transition)
 		return
 
 	def __buildGraph(self) -> None:
@@ -65,18 +69,34 @@ class BehaviorAutomaton(nx.DiGraph):
 
 	@property
 	def predicates(self) -> list[str]:
-		return list(self.__predicates)
+		return list(self.__predicates.keys())
+
+	def setSymbolicNameOfPredicate(self, symMap: dict[str, str]) -> None:
+		"""
+		:param symMap: Dictionary from symbolic name to predicate string
+		:type symMap: `dict[str, str]`
+		"""
+		for p in symMap:
+			if p in self.__predicates:
+				self.__predicates[p] = symMap[p]
+		for (frm, to) in self.edges:
+			for predicate in self.__predicates:
+				symbol = self.__predicates[predicate]
+				transition = cast(Transition, self[frm][to]["transition"])
+				transition.setPredicatesSymbol(predicate, symbol)
+				self[frm][to]["label"] = repr(transition)
+		return
 
 	@property
 	def tokens(self) -> set[StateToken]:
 		return self.__tokens
 
-	def resetTokens(self, topologicalGraphNode: list[NodeId]) -> None:
-		for n in topologicalGraphNode:
-			self.__tokens.add(StateToken(
-				stateName=self.__start,
-				graphNode=n,
-			))
+	def resetTokens(self, shadowNodesStr: str) -> None:
+		shadowNodes: list[str] = loads(shadowNodesStr)
+		self.__tokens = set()
+		for nodeIdJson in shadowNodes:
+			token = StateToken.fromNodeIdJson(stateName=self.__start, nodeIdJson=nodeIdJson)
+			self.__tokens.add(token)
 		return
 
 	def initFlask(self, rosNode: Ros.Node) -> None:
@@ -89,12 +109,18 @@ class BehaviorAutomaton(nx.DiGraph):
 		)
 		return
 
+	def __prepareDot(self) -> str:
+		with TemporaryFile() as f:
+			aGraph = nx_agraph.to_agraph(self)
+			aGraph.graph_attr["fontname"] = "Courier"
+			aGraph.draw(path=f, prog="dot", format="svg")
+			f.seek(0)
+			# Ros.Logger().error(str(aGraph))
+			svg = f.read().decode()
+			return dumps({"name": self.name, "svg": svg, "tokens": [t.asDict() for t in self.tokens]})
+
 	def render(self) -> None:
 		if self.__dotPublisher is None: return
-		# self.get_logger().error("HERE IN BA RENDER")
-		with TemporaryFile() as f:
-			nx_agraph.to_agraph(self).draw(path=f, prog="dot", format="svg")
-			f.seek(0)
-			svg = f.read().decode()
-			self.__dotPublisher.publish(Msgs.Std.String(data=dumps({"name": self.name, "svg": svg})))
+		dataStr = self.__prepareDot()
+		self.__dotPublisher.publish(Msgs.Std.String(data=dataStr))
 		return

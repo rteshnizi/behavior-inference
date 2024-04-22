@@ -1,3 +1,4 @@
+from json import dumps
 from pathlib import Path
 from typing import Any, Literal
 
@@ -99,6 +100,7 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 		return res
 
 	def __fetchStaticReachability(self, payload: ColdStartPayload, res: SpaceTime.Response) -> SpaceTime.Response:
+		predicateMapping: dict[str, str] = {}
 		whereClauses: list[str] = []
 		variables: list[str] = []
 		binds: list[str] = []
@@ -109,8 +111,9 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 		orders.append(extractedOrders)
 		i = 0
 		for predicate in payload.predicates:
-			(extractedSelector, extractedVars, extractedBindings, extractedOrders) = self.__sparqlXfmr.transformPredicates(predicate, i)
+			(extractedSelector, extractedVars, extractedBindings, extractedOrders) = self.__sparqlXfmr.transformPredicate(predicate, i)
 			if extractedVars == "" and extractedSelector == "": continue
+			predicateMapping[predicate] = extractedVars
 			variables.append(extractedVars)
 			whereClauses.append(extractedSelector)
 			binds.append(extractedBindings)
@@ -126,6 +129,7 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 			binds,
 			orders
 		)
+		res.json_predicate_symbols = dumps(predicateMapping)
 		return self.__httpInterface.staticReachability(sparql, res)
 
 	def __fetchDynamicReachability(self, payload: ColdStartPayload, res: SpaceTime.Response) -> SpaceTime.Response:

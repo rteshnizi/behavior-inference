@@ -1,3 +1,4 @@
 string json_payload
 ---
 rt_bi_interfaces/RegularSet[] sets
+string json_predicate_symbols

@@ -92,7 +92,7 @@ FIXME: MATPLOTLIB Blocks ROS thread.
 # 	def __drawEdges(cls, ba: BehaviorAutomaton) -> None:
 # 		ax = cls.__graphToAxes[ba.name]
 # 		nx.draw_networkx_edges(ba, ba.renderLayout, ax=ax)
-# 		labels = nx.get_edge_attributes(ba, "descriptor")
+# 		labels = nx.get_edge_attributes(ba, "label")
 # 		nx.draw_networkx_edge_labels(ba, ba.renderLayout, labels, ax=ax)
 # 		return
 

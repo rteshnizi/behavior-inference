@@ -40,6 +40,7 @@ class PredicateCollector(TransitionInterpreter):
 class Transition:
 	def __init__(self, transitionStr: str, baseDir: str, transitionGrammarDir: str, grammarFileName: str) -> None:
 		self.__str: str = transitionStr
+		self.__symStr: str = transitionStr
 		tree = TransitionParser(baseDir, transitionGrammarDir, grammarFileName).parse(transitionStr)
 		self.__predCollector = PredicateCollector()
 		self.__predCollector.visit(tree)
@@ -49,7 +50,7 @@ class Transition:
 		return self.__str
 
 	def __repr__(self) -> str:
-		return f"{self.__str}"
+		return self.__symStr
 
 	def __hash__(self) -> int:
 		return hash(self.__str)
@@ -60,3 +61,11 @@ class Transition:
 	@property
 	def predicates(self) -> set[str]:
 		return self.__predCollector.allPredicates
+
+
+	def setPredicatesSymbol(self, predicate: str, symbol: str) -> None:
+		if predicate == "" or symbol == "": return
+		self.__symStr = self.__symStr.replace(predicate, symbol)
+		Ros.Logger().error(f"Predicate = {predicate}, Syms = {symbol}")
+		Ros.Logger().error(f"STR = {self.__str}, SYM = {self.__symStr}")
+		return

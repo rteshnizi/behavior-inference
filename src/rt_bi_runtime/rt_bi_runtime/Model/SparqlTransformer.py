@@ -86,7 +86,7 @@ class PredicateToQueryStr:
 		bindStatement = bindStatement.replace(PREDICATE_VARNAME, varName)
 		return (bindStatement, varName)
 
-	def transformPredicates(self, predicate: str, index: int) -> tuple[str, str, str, str]:
+	def transformPredicate(self, predicate: str, index: int) -> tuple[str, str, str, str]:
 		parsedPred = self.__transitionParser.parse(predicate)
 		parsedPred = cast(Tree[str], parsedPred)
 		# For predicates, we add the bound boolean variables rather than the sparql variable

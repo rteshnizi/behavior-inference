@@ -1,3 +1,5 @@
+from json import loads
+
 import rclpy
 from ament_index_python.packages import get_package_share_directory
 from rclpy.logging import LoggingSeverity
@@ -20,7 +22,7 @@ class BaNode(ColdStartableNode):
 	"""
 	def __init__(self, **kwArgs) -> None:
 		""" Create a Behavior Automaton node. """
-		newKw = { "node_name": "ba", "loggingSeverity": LoggingSeverity.WARN, **kwArgs}
+		newKw = { "node_name": "ba", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
 		super().__init__(**newKw)
 		self.declareParameters()
 		self.__name: str = self.get_fully_qualified_name()
@@ -42,21 +44,16 @@ class BaNode(ColdStartableNode):
 			self.__grammarDir,
 			self.__grammarFile
 		)
+		if self.shouldRender: self.__ba.initFlask(self)
 		self.__rdfClient = RtBiInterfaces.createSpaceTimeClient(self)
 		Ros.WaitForServiceToStart(self, self.__rdfClient)
 		self.waitForColdStartPermission(self.onColdStartAllowed)
 		RtBiInterfaces.subscribeToEventGraph(self, self.__onInitGraph)
-		RtBiInterfaces.subscribeToEvent(self, self.__onEvent)
+		RtBiInterfaces.subscribeToPredicates(self, self.__onPredicates)
 		return
 
-	def __onInitGraph(self, msg: Msgs.RtBi.Graph) -> None:
-		assert isinstance(msg.vertices, list)
-		assert isinstance(msg.adjacency, list)
-		assert len(msg.vertices) == len(msg.adjacency), f"Vertices and adjacency must have equal length: V:{len(msg.vertices)}, A:{len(msg.adjacency)}"
-		self.__topologicalGraph = TopologicalGraph(msg.vertices, msg.adjacency, rVizPublisher=None)
-		ids: list[NodeId] = [n for n in self.__topologicalGraph.nodes]
-		self.__ba.resetTokens(ids)
-		Ros.Log(f"Topological Graph: {len(self.__topologicalGraph.nodes)} vertices and {len(self.__topologicalGraph.edges)} edges")
+	def __onInitGraph(self, jsonStr: str) -> None:
+		self.__ba.resetTokens(jsonStr)
 		return
 
 	def __onEvent(self, msg: Msgs.RtBi.Events) -> None:
@@ -67,6 +64,11 @@ class BaNode(ColdStartableNode):
 		# Ros.Log(f"After applying: V={len(self.__topologicalGraph.nodes)}, E={len(self.__topologicalGraph.edges)}.")
 		# Ros.Log("Tokens", self.__ba.tokens)
 		# self.__timer = Ros.CreateTimer(self, self.__evaluateTokens, 500)
+		return
+
+	def __onPredicates(self, predicateJsonStr: str) -> None:
+		symMap = loads(predicateJsonStr)
+		self.__ba.setSymbolicNameOfPredicate(symMap)
 		return
 
 	def onColdStartAllowed(self, payload: ColdStartPayload) -> None:

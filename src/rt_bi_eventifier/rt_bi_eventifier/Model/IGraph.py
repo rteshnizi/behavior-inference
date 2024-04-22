@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from json import dumps
 from typing import Literal, cast
 
 from rt_bi_commons.Shared.Color import RGBA, ColorUtils
@@ -43,7 +44,7 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 				subset=subset
 			)
 
-	def __init__(self, eventPublishers: tuple[Ros.Publisher, Ros.Publisher], rvizPublishers: dict[SUBMODULE, Ros.Publisher | None]):
+	def __init__(self, graphPublisher: Ros.Publisher, rvizPublishers: dict[SUBMODULE, Ros.Publisher | None]):
 		"""Initialize the I-graph."""
 		super().__init__(rVizPublisher=rvizPublishers.pop("i_graph", None))
 		# super().__init__(rVizPublisher=None)
@@ -52,7 +53,7 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 
 		self.componentEvents: list[list[Shapely.Polygon]] = []
 		""" The reason this is a list of lists is that the time of event is relative to the time between. """
-		(self.__graphPublisher, self.__eventPublisher) = eventPublishers
+		self.__graphPublisher = graphPublisher
 		self.__rvizPublishers = rvizPublishers
 		self.__ctrs: dict[AffinePolygon.Id, ContinuousTimePolygon[GraphPolygon]] = {}
 
@@ -273,79 +274,14 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 		return
 
 	def __publishGraph(self) -> None:
-		Ros.Log(f"Publishing topological graph {self.__history[-1]}.")
-		graphMsg = Msgs.RtBi.Graph()
-		for (node, adjDict) in self.__history[-1].adjacency():
-			neighbors = list(adjDict.keys())
-			Ros.AppendMessage(graphMsg.vertices, Msgs.toIdMsg(node))
-			adjacencyMsg = Msgs.RtBi.Adjacency()
-			for neighbor in neighbors:
-				Ros.AppendMessage(adjacencyMsg.neighbors, Msgs.toIdMsg(neighbor))
-			Ros.AppendMessage(graphMsg.adjacency, adjacencyMsg)
-		self.__graphPublisher.publish(graphMsg)
+		l: list[str] = []
+		for mapPoly in self.__history[-1].shadows:
+			l.append(mapPoly.id.stringify())
+		msg = Msgs.Std.String(data=dumps(l))
+		self.__graphPublisher.publish(msg)
 		return
 
 	def __publishEvents(self) -> None:
-		lastCGraph = self.__history[-1]
-		prevCGraph = self.__history[-2]
-		appearedNodes: list[NxUtils.Id] = []
-		disappearedNodes: list[NxUtils.Id] = []
-		temporalChanges: dict[NxUtils.Id, list[NxUtils.Id]] = {}
-		for fromNode in lastCGraph.nodes:
-			fromNode: NxUtils.Id = fromNode
-			id_ = fromNode.copy(hIndex=lastCGraph.hIndex)
-			temporalInEdges: list[tuple[NxUtils.Id, NxUtils.Id]] = [
-				e for e in self.in_edges(nbunch=[id_], data=True) if ( # CSpell: ignore -- nbunch
-					"isTemporal" in e[2] and e[2]["isTemporal"]
-				)
-			]
-			if len(temporalInEdges) == 0: appearedNodes.append(id_)
-
-		for fromNode in prevCGraph.nodes:
-			fromNode: NxUtils.Id = fromNode
-			id_ = fromNode.copy(hIndex=prevCGraph.hIndex)
-			temporalOutEdges: list[tuple[NxUtils.Id, NxUtils.Id]] = [e for e in self.out_edges(nbunch=[id_], data=True) if ( # CSpell: ignore -- nbunch
-				"isTemporal" in e[2] and e[2]["isTemporal"]
-			)]
-			if len(temporalOutEdges) == 0: disappearedNodes.append(id_)
-			if len(temporalOutEdges) > 1:
-				if id_ not in temporalChanges: temporalChanges[id_] = []
-				temporalChanges[id_] += [edge[1] for edge in temporalOutEdges]
-
-		newSpatialEdges: list[tuple[NxUtils.Id, NxUtils.Id]] = [e for e in self.edges(nbunch=appearedNodes, data=True) if (
-			"isTemporal" not in e[2] or not e[2]["isTemporal"]
-		)]
-		eventsMsg = Msgs.RtBi.Events()
-		if len(appearedNodes) > 0:
-			event = Msgs.RtBi.Event()
-			event.time_nano_secs = lastCGraph.timeNanoSecs
-			event.type = "A"
-			for fromNode in appearedNodes:
-				Ros.AppendMessage(event.after, Msgs.toIdMsg(fromNode))
-			for e in newSpatialEdges:
-				Ros.AppendMessage(event.spatial_edge_from, Msgs.toIdMsg(e[0]))
-				Ros.AppendMessage(event.spatial_edge_to, Msgs.toIdMsg(e[1]))
-			if len(event.after) > 0: Ros.AppendMessage(eventsMsg.component_events, event)
-
-		if len(disappearedNodes) > 0:
-			event = Msgs.RtBi.Event()
-			event.time_nano_secs = lastCGraph.timeNanoSecs
-			event.type = "D"
-			for fromNode in disappearedNodes: Ros.AppendMessage(event.before, Msgs.toIdMsg(fromNode))
-			if len(event.before) > 0: Ros.AppendMessage(eventsMsg.component_events, event)
-
-		if len(temporalChanges) > 0:
-			for fromNode in temporalChanges:
-				event = Msgs.RtBi.Event()
-				event.time_nano_secs = lastCGraph.timeNanoSecs
-				event.type = "S"
-				Ros.AppendMessage(event.before, Msgs.toIdMsg(fromNode))
-				for afterNode in temporalChanges[fromNode]: Ros.AppendMessage(event.after, Msgs.toIdMsg(afterNode))
-				if len(event.before) > 0 or len(event.after) > 0: Ros.AppendMessage(eventsMsg.component_events, event)
-
-		if len(eventsMsg.component_events) > 0:
-			Ros.Log("Publishing topological events.")
-			self.__eventPublisher.publish(eventsMsg)
 		return
 
 	def __updateCTRs(self, poly: GraphPolygon) -> ContinuousTimePolygon[GraphPolygon] | None:

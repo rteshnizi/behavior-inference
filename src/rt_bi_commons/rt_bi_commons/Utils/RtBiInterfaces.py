@@ -38,8 +38,8 @@ class RtBiInterfaces:
 		RT_BI_EMULATOR_TARGET = "/__rt_bi_emulator/target"
 		RT_BI_EMULATOR_MAP = "/__rt_bi_runtime/map"
 		RT_BI_EVENTIFIER_INIT_GRAPH = "/__rt_bi_eventifier/init_graph"
-		RT_BI_EVENTIFIER_EVENT = "/__rt_bi_eventifier/event"
 		RT_BI_RUNTIME_COLD_START = "/__rt_bi_runtime/cold_start"
+		RT_BI_RUNTIME_PREDICATES = "/__rt_bi_runtime/predicates"
 
 	class ServiceNames(Enum):
 		RT_BI_RUNTIME_DD_RDF = "/__rt_bi_runtime/dd_rdf"
@@ -87,6 +87,16 @@ class RtBiInterfaces:
 		return
 
 	@staticmethod
+	def createPredicatesPublisher(node: RtBiNode) -> Publisher:
+		(publisher, _) = Ros.CreatePublisher(node, Msgs.Std.String, RtBiInterfaces.TopicNames.RT_BI_RUNTIME_PREDICATES.value)
+		return publisher
+
+	@staticmethod
+	def subscribeToPredicates(node: RtBiNode, callbackFunc: Callable[[str], None]) -> None:
+		Ros.CreateSubscriber(node, Msgs.Std.String, RtBiInterfaces.TopicNames.RT_BI_RUNTIME_PREDICATES.value, lambda m: callbackFunc(m.data))
+		return
+
+	@staticmethod
 	def createDataReferenceService(node: RtBiNode, paramName: str, callbackFunc: Callable[[Msgs.RtBiSrv.DataReference.Request, Msgs.RtBiSrv.DataReference.Response], Msgs.RtBiSrv.DataReference.Response]) -> Service:
 		ddServiceName = RtBiNode.toServiceName(node.get_name(), paramName)
 		return Ros.CreateService(node, Msgs.RtBiSrv.DataReference, ddServiceName, callbackFunc)
@@ -118,20 +128,10 @@ class RtBiInterfaces:
 
 	@staticmethod
 	def createEventGraphPublisher(node: RtBiNode) -> Publisher:
-		(publisher, _) = Ros.CreatePublisher(node, Msgs.RtBi.Graph, RtBiInterfaces.TopicNames.RT_BI_EVENTIFIER_INIT_GRAPH.value)
+		(publisher, _) = Ros.CreatePublisher(node, Msgs.Std.String, RtBiInterfaces.TopicNames.RT_BI_EVENTIFIER_INIT_GRAPH.value)
 		return publisher
 
 	@staticmethod
-	def subscribeToEventGraph(node: RtBiNode, callbackFunc: Callable[[Msgs.RtBi.Graph], None]) -> None:
-		Ros.CreateSubscriber(node, Msgs.RtBi.Graph, RtBiInterfaces.TopicNames.RT_BI_EVENTIFIER_INIT_GRAPH.value, callbackFunc)
-		return
-
-	@staticmethod
-	def createEventPublisher(node: RtBiNode) -> Publisher:
-		(publisher, _) = Ros.CreatePublisher(node, Msgs.RtBi.Events, RtBiInterfaces.TopicNames.RT_BI_EVENTIFIER_EVENT.value)
-		return publisher
-
-	@staticmethod
-	def subscribeToEvent(node: RtBiNode, callbackFunc: Callable[[Msgs.RtBi.Events], None]) -> None:
-		Ros.CreateSubscriber(node, Msgs.RtBi.Events, RtBiInterfaces.TopicNames.RT_BI_EVENTIFIER_EVENT.value, callbackFunc)
+	def subscribeToEventGraph(node: RtBiNode, callbackFunc: Callable[[str], None]) -> None:
+		Ros.CreateSubscriber(node, Msgs.Std.String, RtBiInterfaces.TopicNames.RT_BI_EVENTIFIER_INIT_GRAPH.value, lambda m: callbackFunc(m.data))
 		return
