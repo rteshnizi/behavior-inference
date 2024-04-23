@@ -19,7 +19,6 @@ class ColdStartManager(RtBiNode):
 		]
 		self.__allPredicates: set[str] = set()
 		self.__coldStartPublisher = RtBiInterfaces.createColdStartPublisher(self)
-		self.__coldStartPhase = 0
 		RtBiInterfaces.subscribeToColdStart(self, self.__onColdStartDone)
 		self.__triggerNextColdStart()
 		return
@@ -31,13 +30,12 @@ class ColdStartManager(RtBiNode):
 			Ros.WaitForSubscriber(self, topic, nodeName)
 			self.log(f"Sending cold start to node {nodeName}.")
 			if nodeName.startswith(RtBiInterfaces.BA_NODE_PREFIX):
-				payload = ColdStartPayload({ "phase": self.__coldStartPhase })
+				payload = ColdStartPayload({})
 			elif nodeName.startswith(RtBiInterfaces.KNOWN_REGION_NODE_PREFIX):
 				# TODO: fetch and assign predicates
-				payload = ColdStartPayload({ "phase": self.__coldStartPhase })
+				payload = ColdStartPayload({})
 			else: # Dynamic Map Cold Start
 				payload = ColdStartPayload({
-					"phase": self.__coldStartPhase,
 					"predicates": list(self.__allPredicates),
 				})
 			msg = Msgs.RtBi.ColdStart(node_name=nodeName, json_payload=payload.stringify())
@@ -51,10 +49,8 @@ class ColdStartManager(RtBiNode):
 			if not payload.done: return
 			self.log(f"Cold start done for node {msg.node_name}.")
 			if msg.node_name.startswith(RtBiInterfaces.BA_NODE_PREFIX):
-				self.__coldStartPhase = 0
 				self.__allPredicates |= payload.predicates
 			if msg.node_name.startswith(RtBiInterfaces.KNOWN_REGION_NODE_PREFIX):
-				self.__coldStartPhase = 0
 				pass # TODO:
 			else: # Dynamic Map
 				pass

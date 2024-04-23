@@ -75,7 +75,6 @@ class BaNode(ColdStartableNode):
 		if self.shouldRender: self.__ba.initFlask(self)
 		super().coldStartCompleted({
 			"done": True,
-			"phase": payload.phase,
 			"predicates": self.__ba.predicates,
 		})
 		return
