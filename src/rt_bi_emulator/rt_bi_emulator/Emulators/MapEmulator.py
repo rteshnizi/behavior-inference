@@ -29,19 +29,26 @@ class MapEmulator(ColdStartableNode):
 		return
 
 	def onColdStartAllowed(self, payload: ColdStartPayload) -> None:
-		req = Msgs.RtBiSrv.SpaceTime.Request()
-		req.query_name = "spatial"
-		req.json_payload = ColdStartPayload({
+		reqSpatial = Msgs.RtBiSrv.SpaceTime.Request()
+		reqSpatial.query_name = "spatial"
+		reqSpatial.json_payload = ColdStartPayload({
 			"nodeName": self.get_fully_qualified_name(),
 			"predicates": list(payload.predicates),
 		}).stringify()
-		Ros.SendClientRequest(self, self.rdfClient, req, self.__onStaticReachabilityResponse)
+		Ros.SendClientRequest(self, self.rdfClient, reqSpatial, self.__onStaticReachabilityResponse)
+		reqTemporal = Msgs.RtBiSrv.SpaceTime.Request()
+		reqTemporal.query_name = "temporal"
+		reqTemporal.json_payload = ColdStartPayload({
+			"nodeName": self.get_fully_qualified_name(),
+			"predicates": list(payload.predicates),
+		}).stringify()
+		Ros.SendClientRequest(self, self.rdfClient, reqTemporal, self.__onTemporalResponse)
 		return
 
 	def __extractSetIdsByType(self, matches: list[Msgs.RtBi.RegularSet], filterType: str) -> list[str]:
 		extracted = map(
 			lambda m: m.id,
-			filter(lambda m: m.space_type == filterType, matches)
+			filter(lambda m: m.set_type == filterType, matches)
 		)
 		return list(extracted)
 
@@ -94,10 +101,16 @@ class MapEmulator(ColdStartableNode):
 		self.coldStartCompleted(responsePayload)
 		return res
 
+	def __onTemporalResponse(self, req: Msgs.RtBiSrv.SpaceTime.Request, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
+		self.log("Received TEMPORAL PREDICATES response.")
+		res.sets = Ros.AsList(res.sets, Msgs.RtBi.RegularSet)
+		self.__publishPredicateSymbols(res.json_predicate_symbols)
+		return res
+
 	def __createReachabilityUpdate(self, setId: str, eventTime: int, reachable: bool) -> Msgs.RtBi.RegularSet:
 		msg = Msgs.RtBi.RegularSet()
 		msg.id = setId
-		msg.space_type = Msgs.RtBi.RegularSet.DYNAMIC
+		msg.set_type = Msgs.RtBi.RegularSet.DYNAMIC
 		p = Msgs.RtBi.Predicate(name="accessible", value=Msgs.RtBi.Predicate.TRUE if reachable else Msgs.RtBi.Predicate.FALSE)
 		Ros.AppendMessage(msg.predicates, p)
 		msg.stamp = Msgs.toTimeMsg(eventTime)

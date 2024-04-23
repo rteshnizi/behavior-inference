@@ -65,6 +65,7 @@ class SpatialPredicateToVariable(TransitionTransformer):
 class PredicateToQueryStr:
 	def __init__(
 		self,
+		namespace: Literal["spatial", "temporal"],
 		baseDir: str,
 		transitionGrammarDir: str,
 		transitionGrammarFileName: str,
@@ -75,6 +76,7 @@ class PredicateToQueryStr:
 		queryFiles: list[tuple[str, str]],
 	) -> None:
 		super().__init__()
+		self.__namespace: Literal["spatial", "temporal"] = namespace
 		self.__baseDir = baseDir
 		self.__sparqlDir = sparqlDir
 		self.__queryFiles: dict[str, str] = { pair[0]: pair[1] for pair in queryFiles }
@@ -93,7 +95,8 @@ class PredicateToQueryStr:
 		raise RuntimeError(f"The query file for variable \"{queryName}\" does not contain the required placeholder comments.")
 
 	def __toBind(self, parsedPred: Tree[str], index: int) -> tuple[str, str]:
-		bindStatement = cast(str, SpatialPredicateToVariable().transform(parsedPred))
+		predicateXfmr = SpatialPredicateToVariable() if self.__namespace == "spatial" else TemporalPredicateToVariable()
+		bindStatement = cast(str, predicateXfmr.transform(parsedPred))
 		if bindStatement == "": return ("", "")
 		varName = f"?p_{index}"
 		bindStatement = bindStatement.replace(PREDICATE_VARNAME_PLACEHOLDER, varName)

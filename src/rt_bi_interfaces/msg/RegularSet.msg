@@ -30,5 +30,6 @@ string STATIC = "S"
 string DYNAMIC = "D"
 string AFFINE = "A"
 string SENSING = "Z"
-string TARGET = "T"
-string space_type # One of the above constants
+string TARGET = "O"
+string TEMPORAL = "T"
+string set_type # One of the above constants

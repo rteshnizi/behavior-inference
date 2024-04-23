@@ -75,7 +75,7 @@ class RegionsSubscriber(RtBiNode, ABC):
 
 	def __useLatestGeometry(self, regularSet: Msgs.RtBi.RegularSet) -> None:
 		poly: SubscriberPolygon | None = None
-		match regularSet.space_type:
+		match regularSet.set_type:
 			case StaticPolygon.type.value:
 				PolyCls = StaticPolygon
 				if regularSet.id in self.mapRegions:
@@ -97,7 +97,7 @@ class RegionsSubscriber(RtBiNode, ABC):
 				if regularSet.id in self.mapRegions:
 					poly = self.targetRegions[regularSet.id][-1]
 			case _:
-				raise RuntimeError(f"Unexpected region type: {regularSet.space_type}")
+				raise RuntimeError(f"Unexpected region type: {regularSet.set_type}")
 		if poly is None: raise RuntimeError(f"No polygon stored for id: {regularSet.id}")
 
 		predicates = Predicates(regularSet.predicates) if isinstance(regularSet.predicates, list) else Predicates([])
@@ -145,7 +145,7 @@ class RegionsSubscriber(RtBiNode, ABC):
 			"hIndex": -1,
 			"centerOfRotation": Msgs.toCoords(polyMsg.center_of_rotation),
 		}
-		match regularSet.space_type:
+		match regularSet.set_type:
 			case Msgs.RtBi.RegularSet.STATIC:
 				PolyCls = StaticPolygon
 			case Msgs.RtBi.RegularSet.DYNAMIC:
@@ -158,7 +158,7 @@ class RegionsSubscriber(RtBiNode, ABC):
 			case Msgs.RtBi.RegularSet.TARGET:
 				PolyCls = TargetPolygon
 			case _:
-				raise RuntimeError(f"Unexpected space type event queue: {regularSet.space_type}\n\tMSG = {repr(regularSet)}")
+				raise RuntimeError(f"Unexpected space type event queue: {regularSet.set_type}\n\tMSG = {repr(regularSet)}")
 		poly = PolygonFactory(PolyCls, kwArgs)
 		self.__storeGeometry(regularSet.id, poly)
 		return
@@ -195,7 +195,7 @@ class RegionsSubscriber(RtBiNode, ABC):
 		setArr.sets = Ros.AsList(setArr.sets, Msgs.RtBi.RegularSet)
 		self.log(f"{len(setArr.sets)} updates arrived.")
 		for match in setArr.sets:
-			self.log(f"Recording update of type {match.space_type} in event pQ @{Msgs.toNanoSecs(match.stamp)}.")
+			self.log(f"Recording update of type {match.set_type} in event pQ @{Msgs.toNanoSecs(match.stamp)}.")
 			self.__msgPq.enqueue(match)
 		self.__processEnqueuedUpdates()
 		return

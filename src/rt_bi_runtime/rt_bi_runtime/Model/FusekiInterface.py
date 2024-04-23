@@ -120,15 +120,14 @@ class FusekiInterface:
 			else:
 				predicate.value = Msgs.RtBi.Predicate.FALSE
 			predicates.append(predicate)
-		# Static Map is always reachable
-		predicates.append(Msgs.RtBi.Predicate(name="accessible", value=Msgs.RtBi.Predicate.TRUE))
 		return predicates
 
-	def __parseSpaceType(self, helper: SparqlResultHelper, i: int) -> str:
+	def __parseSetType(self, helper: SparqlResultHelper, i: int) -> str:
 		t = helper.strVarValue(i, "setType")
 		if t.endswith("StaticSpace"): return Msgs.RtBi.RegularSet.STATIC
 		if t.endswith("DynamicSpace"): return Msgs.RtBi.RegularSet.DYNAMIC
 		if t.endswith("AffineSpace"): return Msgs.RtBi.RegularSet.AFFINE
+		if t.endswith("RegularTime"): return Msgs.RtBi.RegularSet.TEMPORAL
 		raise ValueError(f"Unexpected spatial set type: {t}")
 
 	def __sendQuery(self, query: str) -> SparqlResultHelper:
@@ -140,7 +139,7 @@ class FusekiInterface:
 			Ros.Logger().error(f"SPARQL request failed with the following message: {repr(e)}")
 			raise e
 
-	def staticReachability(self, query: str, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
+	def fetchSpatialSets(self, query: str, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
 		resultHelper = self.__sendQuery(query)
 		stamp = Ros.Now(self.__node).to_msg()
 		i = 0
@@ -148,9 +147,25 @@ class FusekiInterface:
 			msg = Msgs.RtBi.RegularSet()
 			msg.id = resultHelper.strVarValue(i, "regularSetId")
 			msg.stamp = stamp
-			msg.space_type = self.__parseSpaceType(resultHelper, i)
+			msg.set_type = self.__parseSetType(resultHelper, i)
 			msg.predicates = self.__parsePredicates(resultHelper, i)
+			# Static Map is always reachable
+			msg.predicates.append(Msgs.RtBi.Predicate(name="accessible", value=Msgs.RtBi.Predicate.TRUE))
 			(msg.polygons, i) = self.__parsePolygons(resultHelper, i, msg.id)
+			Ros.AppendMessage(res.sets, msg)
+		return res
+
+	def fetchTemporalSets(self, query: str, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
+		resultHelper = self.__sendQuery(query)
+		stamp = Ros.Now(self.__node).to_msg()
+		i = 0
+		while i < len(resultHelper):
+			msg = Msgs.RtBi.RegularSet()
+			msg.id = resultHelper.strVarValue(i, "regularSetId")
+			msg.stamp = stamp
+			msg.set_type = self.__parseSetType(resultHelper, i)
+			msg.predicates = self.__parsePredicates(resultHelper, i)
+			(msg.intervals, i) = self.__parseIntervals(resultHelper, i, msg.id)
 			Ros.AppendMessage(res.sets, msg)
 		return res
 
@@ -161,7 +176,7 @@ class FusekiInterface:
 		while i < len(resultHelper):
 			msg = Msgs.RtBi.RegularSet()
 			msg.id = resultHelper.strVarValue(i, "regularSetId")
-			msg.space_type = self.__parseSpaceType(resultHelper, i)
+			msg.set_type = self.__parseSetType(resultHelper, i)
 			msg.stamp = stamp
 			Ros.AppendMessage(res.sets, msg)
 			(accessible_times, i) = self.__parseIntervals(resultHelper, i, msg.id)

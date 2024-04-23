@@ -13,6 +13,7 @@ rt_bi_runtime:
         - '["accessible-times", "var.accessibility.rq"]'
         - '["polygons", "var.polygons.rq"]'
         - '["traversability", "var.traversability.rq"]'
+        - '["intervals", "var.intervals.rq"]'
       placeholder_bind: "# BIND ######################################"
       placeholder_ids: "# ID VALUES #############################"
       placeholder_order: "# ORDER VARIABLES ###########################"
