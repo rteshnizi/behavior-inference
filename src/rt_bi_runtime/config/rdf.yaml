@@ -7,7 +7,6 @@ rt_bi_runtime:
       sparql_dir: "sparql" # Don't forget to add the resource directories to setup.py
       sparql_template_ids: "template.setIds.rq"
       sparql_template_sets: "template.namespace.rq"
-      sparql_template_spatial: "template.spatial.rq"
       sparql_var_selectors:
         - '["color", "var.color.rq"]'
         - '["name", "var.name.rq"]'
