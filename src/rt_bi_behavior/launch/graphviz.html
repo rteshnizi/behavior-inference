@@ -45,15 +45,24 @@
     var listener = new ROSLIB.Topic({
       ros: ros,
       name: "/rt_bi_behavior/dot_renderer",
-      messageType: "std_msgs/String"
+      messageType: "std_msgs/String",
     });
 
     // Then we add a callback to be called every time a message is published on this topic.
     listener.subscribe(function (msg) {
-      data = JSON.parse(msg.data)
-      document.getElementById("ba-name").innerHTML = data.name
-      document.getElementById("dot-graph").innerHTML = data.svg
-      document.getElementById("state-tokens").innerHTML = JSON.stringify(data.tokens)
+      data = JSON.parse(msg.data);
+      document.getElementById("ba-name").innerHTML = data.name;
+      document.getElementById("dot-graph").innerHTML = data.svg;
+      var tbody = document.getElementById("state-tokens");
+      tbody.innerHTML = ""
+      Object.keys(data.tokens).forEach(function(stateName) {
+        data.tokens[stateName].forEach(function(tokenObj) {
+          var row = tbody.insertRow()
+          row.insertCell(0).innerHTML = stateName
+          row.insertCell(1).innerHTML = tokenObj["name"]
+          row.insertCell(2).innerHTML = tokenObj["shadowIdJson"]
+        });
+      });
     });
 
     // Create a connection to the rosbridge WebSocket server.
@@ -78,7 +87,12 @@
     </p>
   </div>
   <h1>Behavior Automaton: <span id="ba-name"></span></h1>
-  <div id="state-tokens"></div>
+  <div>
+    <table>
+      <thead><tr><th>State</th><th>Token</th><th>NodeId</th></tr></thead>
+      <tbody id="state-tokens"></tbody>
+    </table>
+  </div>
   <div id="dot-graph" style="text-align: center;">
     <h2>SVG</h2>
   </div>
