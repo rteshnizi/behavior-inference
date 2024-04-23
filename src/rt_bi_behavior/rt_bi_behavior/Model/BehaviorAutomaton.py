@@ -25,7 +25,7 @@ class BehaviorAutomaton(nx.DiGraph):
 		super().__init__()
 		self.__dotPublisher: Ros.Publisher | None = None
 		self.__specName: str = specName
-		self.name = f"NFA({self.__specName})"
+		self.name = self.__specName
 		self.__states: list[str] = states
 		self.__transitions: dict[str, dict[str, str]] = transitions
 		self.__start: str = start
