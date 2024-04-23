@@ -5,7 +5,6 @@ from typing import Any, Literal, TypeAlias, cast
 import networkx as nx
 from networkx.drawing import nx_agraph
 
-# from rt_bi_behavior.Model.State import StateToken
 from rt_bi_behavior.Model.Transition import Transition
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Msgs import Msgs
