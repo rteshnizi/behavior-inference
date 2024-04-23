@@ -33,8 +33,22 @@ class PredicateToNamespace(TransitionTransformer):
 		if len(subExpressions) != 1: raise UnexpectedToken(subExpressions, {"A single namespace."})
 		return subExpressions[0]
 
-PREDICATE_VARNAME: Final = "?predicate_varname"
-class PredicateToVariable(TransitionTransformer):
+PREDICATE_VARNAME_PLACEHOLDER: Final = "?predicate_varname"
+class TemporalPredicateToVariable(TransitionTransformer):
+	def EQ(self, _: Any) -> Literal["="]: return "="
+	def connector(self, _: Token) -> Any: raise UnexpectedToken(_, {"No connectors are expected in a single predicate."})
+	def value(self, v: list[str]) -> str: return v[0]
+	def test(self, t: list[str]) -> str: return t[0]
+
+	def simple_expression(self, subExpressions: list[str]) -> str:
+		if len(subExpressions) != 4: raise UnexpectedToken(subExpressions, {"4 strings: namespace, variable, test, value"})
+		if subExpressions[0] == "S": return ""
+		return f"BIND ({subExpressions[1]} {subExpressions[2]} {subExpressions[3]} AS {PREDICATE_VARNAME_PLACEHOLDER})"
+
+	def property_seq(self, variables: list[str]) -> str:
+		return f"?{variables[-1]}"
+
+class SpatialPredicateToVariable(TransitionTransformer):
 	def EQ(self, _: Any) -> Literal["="]: return "="
 	def connector(self, _: Token) -> Any: raise UnexpectedToken(_, {"No connectors are expected in a single predicate."})
 	def value(self, v: list[str]) -> str: return v[0]
@@ -43,11 +57,10 @@ class PredicateToVariable(TransitionTransformer):
 	def simple_expression(self, subExpressions: list[str]) -> str:
 		if len(subExpressions) != 4: raise UnexpectedToken(subExpressions, {"4 strings: namespace, variable, test, value"})
 		if subExpressions[0] == "T": return ""
-		return f"BIND ({subExpressions[1]} {subExpressions[2]} {subExpressions[3]} AS {PREDICATE_VARNAME})"
+		return f"BIND ({subExpressions[1]} {subExpressions[2]} {subExpressions[3]} AS {PREDICATE_VARNAME_PLACEHOLDER})"
 
 	def property_seq(self, variables: list[str]) -> str:
 		return f"?{variables[-1]}"
-
 
 class PredicateToQueryStr:
 	def __init__(
@@ -80,10 +93,10 @@ class PredicateToQueryStr:
 		raise RuntimeError(f"The query file for variable \"{queryName}\" does not contain the required placeholder comments.")
 
 	def __toBind(self, parsedPred: Tree[str], index: int) -> tuple[str, str]:
-		bindStatement = cast(str, PredicateToVariable().transform(parsedPred))
+		bindStatement = cast(str, SpatialPredicateToVariable().transform(parsedPred))
 		if bindStatement == "": return ("", "")
 		varName = f"?p_{index}"
-		bindStatement = bindStatement.replace(PREDICATE_VARNAME, varName)
+		bindStatement = bindStatement.replace(PREDICATE_VARNAME_PLACEHOLDER, varName)
 		return (bindStatement, varName)
 
 	def transformPredicate(self, predicate: str, index: int) -> tuple[str, str, str, str]:

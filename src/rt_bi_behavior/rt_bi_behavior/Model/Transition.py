@@ -62,7 +62,6 @@ class Transition:
 	def predicates(self) -> set[str]:
 		return self.__predCollector.allPredicates
 
-
 	def setPredicatesSymbol(self, predicate: str, symbol: str) -> None:
 		if predicate == "" or symbol == "": return
 		self.__symStr = self.__symStr.replace(predicate, symbol)

@@ -30,6 +30,7 @@ class MapEmulator(ColdStartableNode):
 
 	def onColdStartAllowed(self, payload: ColdStartPayload) -> None:
 		req = Msgs.RtBiSrv.SpaceTime.Request()
+		self.log(repr(payload.predicates))
 		req.json_payload = ColdStartPayload({
 			"nodeName": self.get_fully_qualified_name(),
 			"phase": payload.phase,
@@ -63,7 +64,6 @@ class MapEmulator(ColdStartableNode):
 		msg = Msgs.RtBi.RegularSetArray(sets=res.sets)
 		self.__mapPublisher.publish(msg)
 		res.json_predicate_symbols = res.json_predicate_symbols.replace("?p_", "p_")
-		self.log(f"Predicates map: {res.json_predicate_symbols}")
 		self.__predicatesPublisher.publish(Msgs.Std.String(data=res.json_predicate_symbols))
 		payload = ColdStartPayload(req.json_payload)
 		self.__mapPublisher.publish(msg)

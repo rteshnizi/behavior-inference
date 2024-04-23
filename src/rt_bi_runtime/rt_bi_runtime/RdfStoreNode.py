@@ -23,6 +23,7 @@ _Parameters = Literal[
 	"rdf_store",
 	"sparql_dir",
 	"sparql_template_spatial",
+	"sparql_template_sets",
 	"sparql_template_ids",
 	"sparql_var_selectors",
 	"placeholder_bind",
@@ -42,6 +43,7 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 			"rdf_store": StrParser[_Parameters](self, "rdf_store"),
 			"sparql_dir": StrParser[_Parameters](self, "sparql_dir"),
 			"sparql_template_spatial": StrParser[_Parameters](self, "sparql_template_spatial"),
+			"sparql_template_sets": StrParser[_Parameters](self, "sparql_template_sets"),
 			"sparql_template_ids": StrParser[_Parameters](self, "sparql_template_ids"),
 			"sparql_var_selectors": ListJsonParser[_Parameters, tuple[str, str], list[str], Any](self, "sparql_var_selectors"),
 			"placeholder_bind": StrParser[_Parameters](self, "placeholder_bind"),
@@ -68,8 +70,7 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 		RtBiInterfaces.createSpaceTimeService(self, self.__onSpaceTimeRequest)
 
 	def __joinList(self, l: list[str], separator: str) -> str:
-		# Remove duplicates
-		l = list(dict.fromkeys(l))
+		l = list(dict.fromkeys(l)) # Remove duplicates
 		return separator.join(l)
 
 	def __createFilterStatement(self, variables: list[str]) -> str:
@@ -77,12 +78,13 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 		condition = self.__joinList(variables, " || ")
 		return f"FILTER ({condition})"
 
-	def __fillTemplate(self, templateName: str, ids: list[str], whereClauses: list[str], variables: list[str], binds: list[str], orders: list[str]) -> str:
+	def __fillTemplate(self, templateName: str, namespace: str, ids: list[str], whereClauses: list[str], variables: list[str], binds: list[str], orders: list[str]) -> str:
 		sparql = Path(
 			get_package_share_directory(package_name),
 			self["sparql_dir"][0],
 			templateName,
 		).read_text()
+		sparql = sparql.replace("?namespace", namespace)
 		sparql = sparql.replace(self["placeholder_variables"][0], self.__joinList(variables, "\n\t"))
 		sparql = sparql.replace(self["placeholder_ids"][0], self.__joinList(ids, "\n\t\t"))
 		sparql = sparql.replace(self["placeholder_selector"][0], self.__joinList(whereClauses, ""))
@@ -122,7 +124,8 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 		binds.append(self.__createFilterStatement(variables))
 
 		sparql = self.__fillTemplate(
-			self["sparql_template_spatial"][0],
+			self["sparql_template_sets"][0],
+			"rt_bi:RegularSpace",
 			[""],
 			whereClauses,
 			variables,
@@ -143,6 +146,7 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 		orders.append(extractedOrders)
 		sparql = self.__fillTemplate(
 			self["sparql_template_ids"][0],
+			"rt_bi:RegularSpace",
 			[f"<{iri}>" for iri in payload.dynamic],
 			whereClauses,
 			variables,
