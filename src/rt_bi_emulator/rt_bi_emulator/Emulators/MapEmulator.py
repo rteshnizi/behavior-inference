@@ -22,23 +22,15 @@ class MapEmulator(ColdStartableNode):
 		super().__init__(**newKw)
 		self.__timeOriginNanoSecs: int = -1
 		self.__mapPublisher = RtBiInterfaces.createMapPublisher(self)
+		self.__coldStartPayload: ColdStartPayload | None = None
 		self.__predicatesPublisher = RtBiInterfaces.createPredicatesPublisher(self)
-		self.__spatialEvaluationCompleted: bool = False
-		self.__temporalEvaluationCompleted: bool = False
 		self.rdfClient = RtBiInterfaces.createSpaceTimeClient(self)
 		Ros.WaitForServiceToStart(self, self.rdfClient)
 		self.waitForColdStartPermission(self.onColdStartAllowed)
 		return
 
 	def onColdStartAllowed(self, payload: ColdStartPayload) -> None:
-		self.log(f"ColdStartPayload = {repr(payload)}.")
-		reqSpatial = Msgs.RtBiSrv.SpaceTime.Request()
-		reqSpatial.query_name = "spatial"
-		reqSpatial.json_payload = ColdStartPayload({
-			"nodeName": self.get_fully_qualified_name(),
-			"spatialPredicates": list(payload.spatialPredicates),
-		}).stringify()
-		Ros.SendClientRequest(self, self.rdfClient, reqSpatial, self.__onSpatialPredicatesResponse)
+		self.__coldStartPayload = payload
 		reqTemporal = Msgs.RtBiSrv.SpaceTime.Request()
 		reqTemporal.query_name = "temporal"
 		reqTemporal.json_payload = ColdStartPayload({
@@ -48,28 +40,9 @@ class MapEmulator(ColdStartableNode):
 		Ros.SendClientRequest(self, self.rdfClient, reqTemporal, self.__onTemporalResponse)
 		return
 
-
-	def __extractSetIdsByType(self, matches: list[Msgs.RtBi.RegularSet], filterType: str) -> list[str]:
-		extracted = map(
-			lambda m: m.id,
-			filter(lambda m: m.set_type == filterType, matches)
-		)
-		return list(extracted)
-
-	def __extractDynamicSetIds(self, matches: list[Msgs.RtBi.RegularSet]) -> list[str]:
-		return self.__extractSetIdsByType(matches, Msgs.RtBi.RegularSet.DYNAMIC)
-
-	def __extractAffineSetIds(self, matches: list[Msgs.RtBi.RegularSet]) -> list[str]:
-		return self.__extractSetIdsByType(matches, Msgs.RtBi.RegularSet.AFFINE)
-
 	def __extractOriginOfTime(self, matches: list[Msgs.RtBi.RegularSet]) -> None:
 		if self.__timeOriginNanoSecs < 0 and len(matches) > 0:
 			self.__timeOriginNanoSecs = Msgs.toNanoSecs(matches[0].stamp)
-		return
-
-	def __publishProjectiveMap(self, matches: list[Msgs.RtBi.RegularSet]) -> None:
-		msg = Msgs.RtBi.RegularSetArray(sets=matches)
-		self.__mapPublisher.publish(msg)
 		return
 
 	def __publishPredicateSymbols(self, predicateSymMapJson: str, namespace: Literal["spatial", "temporal"]) -> None:
@@ -78,27 +51,6 @@ class MapEmulator(ColdStartableNode):
 		msg = Msgs.Std.String(data=predicateSymMapJson)
 		self.__predicatesPublisher.publish(msg)
 		return
-
-	def __queryDynamicReach(self, matches: list[Msgs.RtBi.RegularSet]) -> None:
-		"""Request information about dynamic sets from the ontology."""
-		req = Msgs.RtBiSrv.SpaceTime.Request()
-		req.query_name = "dynamic"
-		req.json_payload = ColdStartPayload({
-			"nodeName": self.get_fully_qualified_name(),
-			"affine": self.__extractAffineSetIds(matches),
-			"dynamic": self.__extractDynamicSetIds(matches),
-		}).stringify()
-		Ros.SendClientRequest(self, self.rdfClient, req, self.__onDynamicSetsResponse)
-		return
-
-	def __onSpatialPredicatesResponse(self, req: Msgs.RtBiSrv.SpaceTime.Request, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
-		self.log("Received SPATIAL PREDICATES response.")
-		res.sets = Ros.AsList(res.sets, Msgs.RtBi.RegularSet)
-		self.__extractOriginOfTime(res.sets)
-		self.__publishProjectiveMap(res.sets)
-		self.__publishPredicateSymbols(res.json_predicate_symbols, "spatial")
-		self.__queryDynamicReach(res.sets)
-		return res
 
 	def __addTimePointToDict(self, setId: str, interval: TimeInterval, setDict: dict[str, list[TimeInterval]]) -> dict[str, list[TimeInterval]]:
 		if setId not in setDict: setDict[setId] = []
@@ -172,6 +124,7 @@ class MapEmulator(ColdStartableNode):
 		self.log("Received TEMPORAL PREDICATES response.")
 		self.__publishPredicateSymbols(res.json_predicate_symbols, "temporal")
 		res.sets = Ros.AsList(res.sets, Msgs.RtBi.RegularSet)
+		self.__extractOriginOfTime(res.sets)
 		nowNanoSecs = Msgs.toNanoSecs(self.get_clock().now())
 		setDict: dict[str, list[TimeInterval]] = {}
 		for match in res.sets:
@@ -184,8 +137,49 @@ class MapEmulator(ColdStartableNode):
 		# reachabilityUpdates = self.__evaluateTemporalPredicates(nowNanoSecs, setDict, reachabilityUpdates, "accessible")
 		# reachabilityUpdates = self.__futureTemporalEvents(accessibilityInfo, reachabilityUpdates, "accessible")
 		# if len(reachabilityUpdates.sets) > 0: self.__mapPublisher.publish(reachabilityUpdates)
-		self.__temporalEvaluationCompleted = True
-		if self.__spatialEvaluationCompleted and self.__temporalEvaluationCompleted: self.coldStartCompleted()
+		assert self.__coldStartPayload is not None, "self.__coldStartPayload is None"
+		reqSpatial = Msgs.RtBiSrv.SpaceTime.Request()
+		reqSpatial.query_name = "spatial"
+		reqSpatial.json_payload = ColdStartPayload({
+			"nodeName": self.get_fully_qualified_name(),
+			"spatialPredicates": list(self.__coldStartPayload.spatialPredicates),
+		}).stringify()
+		Ros.SendClientRequest(self, self.rdfClient, reqSpatial, self.__onSpatialPredicatesResponse)
+		return res
+
+	def __extractSetIdsByType(self, matches: list[Msgs.RtBi.RegularSet], filterType: str) -> list[str]:
+		extracted = map(
+			lambda m: m.id,
+			filter(lambda m: m.set_type == filterType, matches)
+		)
+		return list(extracted)
+
+	def __extractDynamicSetIds(self, matches: list[Msgs.RtBi.RegularSet]) -> list[str]:
+		return self.__extractSetIdsByType(matches, Msgs.RtBi.RegularSet.DYNAMIC)
+
+	def __extractAffineSetIds(self, matches: list[Msgs.RtBi.RegularSet]) -> list[str]:
+		return self.__extractSetIdsByType(matches, Msgs.RtBi.RegularSet.AFFINE)
+
+	def __publishProjectiveMap(self, matches: list[Msgs.RtBi.RegularSet]) -> None:
+		msg = Msgs.RtBi.RegularSetArray(sets=matches)
+		self.__mapPublisher.publish(msg)
+		return
+
+	def __onSpatialPredicatesResponse(self, req: Msgs.RtBiSrv.SpaceTime.Request, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
+		self.log("Received SPATIAL PREDICATES response.")
+		res.sets = Ros.AsList(res.sets, Msgs.RtBi.RegularSet)
+		self.__extractOriginOfTime(res.sets)
+		self.__publishProjectiveMap(res.sets)
+		self.__publishPredicateSymbols(res.json_predicate_symbols, "spatial")
+		# Request information about dynamic sets from the ontology.
+		req = Msgs.RtBiSrv.SpaceTime.Request()
+		req.query_name = "dynamic"
+		req.json_payload = ColdStartPayload({
+			"nodeName": self.get_fully_qualified_name(),
+			"affine": self.__extractAffineSetIds(res.sets),
+			"dynamic": self.__extractDynamicSetIds(res.sets),
+		}).stringify()
+		Ros.SendClientRequest(self, self.rdfClient, req, self.__onDynamicSetsResponse)
 		return res
 
 	def __onDynamicSetsResponse(self, req: Msgs.RtBiSrv.SpaceTime.Request, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
@@ -202,8 +196,7 @@ class MapEmulator(ColdStartableNode):
 		reachabilityUpdates = self.__evaluateTemporalPredicates(nowNanoSecs, accessibilityInfo, reachabilityUpdates, "accessible")
 		reachabilityUpdates = self.__futureTemporalEvents(accessibilityInfo, reachabilityUpdates, "accessible")
 		if len(reachabilityUpdates.sets) > 0: self.__mapPublisher.publish(reachabilityUpdates)
-		self.__spatialEvaluationCompleted = True
-		if self.__spatialEvaluationCompleted and self.__temporalEvaluationCompleted: self.coldStartCompleted()
+		self.coldStartCompleted()
 		return res
 
 	def declareParameters(self) -> None:
