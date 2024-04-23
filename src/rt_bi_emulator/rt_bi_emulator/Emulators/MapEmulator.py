@@ -30,11 +30,12 @@ class MapEmulator(ColdStartableNode):
 
 	def onColdStartAllowed(self, payload: ColdStartPayload) -> None:
 		req = Msgs.RtBiSrv.SpaceTime.Request()
+		req.query_name = "spatial"
 		req.json_payload = ColdStartPayload({
 			"nodeName": self.get_fully_qualified_name(),
 			"predicates": list(payload.predicates),
 		}).stringify()
-		Ros.SendClientRequest(self, self.rdfClient, req, self.__onSpatialSetsResponse)
+		Ros.SendClientRequest(self, self.rdfClient, req, self.__onStaticReachabilityResponse)
 		return
 
 	def __extractSetIdsByType(self, matches: list[Msgs.RtBi.RegularSet], filterType: str) -> list[str]:
@@ -55,34 +56,42 @@ class MapEmulator(ColdStartableNode):
 			self.__timeOriginNanoSecs = Msgs.toNanoSecs(matches[0].stamp)
 		return
 
-	def __publishProjectiveMap(self, sets: list[Msgs.RtBi.RegularSet]) -> None:
-		msg = Msgs.RtBi.RegularSetArray(sets=sets)
+	def __publishProjectiveMap(self, matches: list[Msgs.RtBi.RegularSet]) -> None:
+		msg = Msgs.RtBi.RegularSetArray(sets=matches)
 		self.__mapPublisher.publish(msg)
 		return
 
 	def __publishPredicateSymbols(self, predicateSymMapJson: str) -> None:
+		self.log(f"PREDICATES = {predicateSymMapJson}")
 		predicateSymMapJson = predicateSymMapJson.replace("?p_", "p_")
 		msg = Msgs.Std.String(data=predicateSymMapJson)
 		self.__predicatesPublisher.publish(msg)
 		return
 
-	def __onSpatialSetsResponse(self, req: Msgs.RtBiSrv.SpaceTime.Request, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
-		self.log(f"{self.get_fully_qualified_name()} received SpaceTime query response.")
+	def __queryDynamicReach(self, matches: list[Msgs.RtBi.RegularSet]) -> None:
+		"""Request information about dynamic sets from the ontology."""
+		req = Msgs.RtBiSrv.SpaceTime.Request()
+		req.query_name = "dynamic"
+		req.json_payload = ColdStartPayload({
+			"nodeName": self.get_fully_qualified_name(),
+			"affine": self.__extractAffineSetIds(matches),
+			"dynamic": self.__extractDynamicSetIds(matches),
+		}).stringify()
+		Ros.SendClientRequest(self, self.rdfClient, req, self.__onDynamicSetsResponse)
+		return
+
+	def __onStaticReachabilityResponse(self, req: Msgs.RtBiSrv.SpaceTime.Request, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
+		self.log("Received STATIC REACH response.")
 		res.sets = Ros.AsList(res.sets, Msgs.RtBi.RegularSet)
 		self.__extractOriginOfTime(res.sets)
 		self.__publishProjectiveMap(res.sets)
 		self.__publishPredicateSymbols(res.json_predicate_symbols)
+		self.__queryDynamicReach(res.sets)
 		responsePayload = ColdStartPayload({
 			"nodeName": self.get_fully_qualified_name(),
 			"done": True,
-			"affine": self.__extractAffineSetIds(res.sets),
-			"dynamic": self.__extractDynamicSetIds(res.sets),
 		})
 		self.coldStartCompleted(responsePayload)
-		# Request information about dynamic sets from the ontology
-		dySetReq = Msgs.RtBiSrv.SpaceTime.Request()
-		dySetReq.json_payload = responsePayload.stringify()
-		Ros.SendClientRequest(self, self.rdfClient, dySetReq, self.__onDynamicSetsResponse)
 		return res
 
 	def __createReachabilityUpdate(self, setId: str, eventTime: int, reachable: bool) -> Msgs.RtBi.RegularSet:
@@ -96,7 +105,7 @@ class MapEmulator(ColdStartableNode):
 
 	def __prepareIntervalsForProcessing(self) -> None:
 		""" Sort reachability intervals and turn the relative time values to absolute. """
-		Ros.Log(f"Preparing reachability information for processing.")
+		Ros.Log("Preparing reachability intervals for processing.")
 		for setId in self.__reachabilityInformation:
 			intervals = self.__reachabilityInformation[setId]
 			intervals = list(sorted(intervals, key=lambda i: i.minNanoSecs))
@@ -159,6 +168,7 @@ class MapEmulator(ColdStartableNode):
 		return
 
 	def __onDynamicSetsResponse(self, req: Msgs.RtBiSrv.SpaceTime.Request, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
+		self.log("Received DYNAMIC REACH response.")
 		nowNanoSecs = Msgs.toNanoSecs(self.get_clock().now())
 		for i in range(len(res.sets)):
 			match = Ros.GetMessage(res.sets, i, Msgs.RtBi.RegularSet)

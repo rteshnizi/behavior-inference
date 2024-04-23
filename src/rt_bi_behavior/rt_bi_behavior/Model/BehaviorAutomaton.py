@@ -138,7 +138,7 @@ class BehaviorAutomaton(nx.DiGraph):
 		if len(colsStr) > 0:
 			colsStr = f"<TR>{colsStr}</TR>"
 		colSpan = 1 if len(cols) == 0 else len(cols)
-		label = f"<<TABLE border='0' cellborder='0' cellpadding='2'><TR><TD colspan='{colSpan}'>{nodeName}</TD></TR>{colsStr}</TABLE>>"
+		label = f"<<TABLE border='0' cellborder='0' cellpadding='2'><TR><TD colspan='{colSpan}'>{nodeName}</TD></TR>{colsStr}</TABLE>>" #CSpell: ignore -- cellborder
 		return label
 
 	def __prepareDot(self) -> str:

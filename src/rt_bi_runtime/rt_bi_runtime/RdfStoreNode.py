@@ -93,8 +93,10 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 	def __onSpaceTimeRequest(self, req: SpaceTime.Request, res: SpaceTime.Response) -> SpaceTime.Response:
 		payload = ColdStartPayload(req.json_payload)
 		if payload.nodeName == RtBiInterfaces.DYNAMIC_MAP_NODE_NAME:
-			if not payload.done: res = self.__fetchStaticReachability(payload, res)
-			else: res = self.__fetchDynamicReachability(payload, res)
+			if req.query_name == "spatial": res = self.__fetchStaticReachability(payload, res)
+			elif req.query_name == "temporal": self.log("TEMPORAL QUERY")
+			elif req.query_name == "dynamic": res = self.__fetchDynamicReachability(payload, res)
+			else: raise RuntimeError(f"Unexpected query name: {req.query_name}")
 		else:
 			self.log(f"Unexpected request payload in {self.__class__.__name__}: \n\t{req.json_payload}")
 		return res
