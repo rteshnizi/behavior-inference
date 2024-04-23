@@ -1,3 +1,5 @@
+from typing import Literal
+
 import rclpy
 from rclpy.logging import LoggingSeverity
 
@@ -19,31 +21,33 @@ class MapEmulator(ColdStartableNode):
 		newKw = { "node_name": "dynamic_map", "loggingSeverity": LoggingSeverity.WARN }
 		super().__init__(**newKw)
 		self.__timeOriginNanoSecs: int = -1
-		self.__reachabilityInformation: dict[str, list[TimeInterval]] = {}
-		self.__reachabilityState: dict[str, bool] = {}
 		self.__mapPublisher = RtBiInterfaces.createMapPublisher(self)
 		self.__predicatesPublisher = RtBiInterfaces.createPredicatesPublisher(self)
+		self.__spatialEvaluationCompleted: bool = False
+		self.__temporalEvaluationCompleted: bool = False
 		self.rdfClient = RtBiInterfaces.createSpaceTimeClient(self)
 		Ros.WaitForServiceToStart(self, self.rdfClient)
 		self.waitForColdStartPermission(self.onColdStartAllowed)
 		return
 
 	def onColdStartAllowed(self, payload: ColdStartPayload) -> None:
+		self.log(f"ColdStartPayload = {repr(payload)}.")
 		reqSpatial = Msgs.RtBiSrv.SpaceTime.Request()
 		reqSpatial.query_name = "spatial"
 		reqSpatial.json_payload = ColdStartPayload({
 			"nodeName": self.get_fully_qualified_name(),
-			"predicates": list(payload.predicates),
+			"spatialPredicates": list(payload.spatialPredicates),
 		}).stringify()
-		Ros.SendClientRequest(self, self.rdfClient, reqSpatial, self.__onStaticReachabilityResponse)
+		Ros.SendClientRequest(self, self.rdfClient, reqSpatial, self.__onSpatialPredicatesResponse)
 		reqTemporal = Msgs.RtBiSrv.SpaceTime.Request()
 		reqTemporal.query_name = "temporal"
 		reqTemporal.json_payload = ColdStartPayload({
 			"nodeName": self.get_fully_qualified_name(),
-			"predicates": list(payload.predicates),
+			"spatialPredicates": list(payload.spatialPredicates),
 		}).stringify()
 		Ros.SendClientRequest(self, self.rdfClient, reqTemporal, self.__onTemporalResponse)
 		return
+
 
 	def __extractSetIdsByType(self, matches: list[Msgs.RtBi.RegularSet], filterType: str) -> list[str]:
 		extracted = map(
@@ -68,8 +72,8 @@ class MapEmulator(ColdStartableNode):
 		self.__mapPublisher.publish(msg)
 		return
 
-	def __publishPredicateSymbols(self, predicateSymMapJson: str) -> None:
-		self.log(f"PREDICATES = {predicateSymMapJson}")
+	def __publishPredicateSymbols(self, predicateSymMapJson: str, namespace: Literal["spatial", "temporal"]) -> None:
+		self.log(f"Publishing {namespace} predicate symbols.")
 		predicateSymMapJson = predicateSymMapJson.replace("?p_", "p_")
 		msg = Msgs.Std.String(data=predicateSymMapJson)
 		self.__predicatesPublisher.publish(msg)
@@ -87,109 +91,119 @@ class MapEmulator(ColdStartableNode):
 		Ros.SendClientRequest(self, self.rdfClient, req, self.__onDynamicSetsResponse)
 		return
 
-	def __onStaticReachabilityResponse(self, req: Msgs.RtBiSrv.SpaceTime.Request, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
-		self.log("Received STATIC REACH response.")
+	def __onSpatialPredicatesResponse(self, req: Msgs.RtBiSrv.SpaceTime.Request, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
+		self.log("Received SPATIAL PREDICATES response.")
 		res.sets = Ros.AsList(res.sets, Msgs.RtBi.RegularSet)
 		self.__extractOriginOfTime(res.sets)
 		self.__publishProjectiveMap(res.sets)
-		self.__publishPredicateSymbols(res.json_predicate_symbols)
+		self.__publishPredicateSymbols(res.json_predicate_symbols, "spatial")
 		self.__queryDynamicReach(res.sets)
-		responsePayload = ColdStartPayload({
-			"nodeName": self.get_fully_qualified_name(),
-			"done": True,
-		})
-		self.coldStartCompleted(responsePayload)
 		return res
 
-	def __onTemporalResponse(self, req: Msgs.RtBiSrv.SpaceTime.Request, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
-		self.log("Received TEMPORAL PREDICATES response.")
-		res.sets = Ros.AsList(res.sets, Msgs.RtBi.RegularSet)
-		self.__publishPredicateSymbols(res.json_predicate_symbols)
-		return res
+	def __addTimePointToDict(self, setId: str, interval: TimeInterval, setDict: dict[str, list[TimeInterval]]) -> dict[str, list[TimeInterval]]:
+		if setId not in setDict: setDict[setId] = []
+		setDict[setId].append(interval)
+		return setDict
 
-	def __createReachabilityUpdate(self, setId: str, eventTime: int, reachable: bool) -> Msgs.RtBi.RegularSet:
-		msg = Msgs.RtBi.RegularSet()
-		msg.id = setId
-		msg.set_type = Msgs.RtBi.RegularSet.DYNAMIC
-		p = Msgs.RtBi.Predicate(name="accessible", value=Msgs.RtBi.Predicate.TRUE if reachable else Msgs.RtBi.Predicate.FALSE)
-		Ros.AppendMessage(msg.predicates, p)
-		msg.stamp = Msgs.toTimeMsg(eventTime)
-		return msg
-
-	def __prepareIntervalsForProcessing(self) -> None:
+	def __prepareIntervalsForProcessing(self, setDict: dict[str, list[TimeInterval]]) -> dict[str, list[TimeInterval]]:
 		""" Sort reachability intervals and turn the relative time values to absolute. """
 		Ros.Log("Preparing reachability intervals for processing.")
-		for setId in self.__reachabilityInformation:
-			intervals = self.__reachabilityInformation[setId]
+		for setId in setDict:
+			intervals = setDict[setId]
 			intervals = list(sorted(intervals, key=lambda i: i.minNanoSecs))
 			for interval in intervals:
 				interval.maxNanoSecs += self.__timeOriginNanoSecs
 				interval.minNanoSecs += self.__timeOriginNanoSecs
-			self.__reachabilityInformation[setId] = intervals
-		return
+			setDict[setId] = intervals
+		return setDict
 
-	def __determineCurrentReachabilityState(self, nowNanoSecs: int, msgArr: Msgs.RtBi.RegularSetArray) -> Msgs.RtBi.RegularSetArray:
-		Ros.Log(f"Processing current reachability states.")
-		for setId in self.__reachabilityInformation:
-			intervals = self.__reachabilityInformation[setId].copy()
-			self.__reachabilityState[setId] = False
-			# Sequentially move forward in the list until now is in the interval, or
-			# the next interval starts later which means the set is not reachable since the list is sorted
-			# and does not have overlap between intervals <-- this is assumed, not verified
+	def __createTemporalPredicateUpdate(self, setId: str, eventTime: int, val: bool, predicateName: str) -> Msgs.RtBi.RegularSet:
+		msg = Msgs.RtBi.RegularSet()
+		msg.id = setId
+		msg.set_type = Msgs.RtBi.RegularSet.DYNAMIC
+		p = Msgs.RtBi.Predicate(name=predicateName, value=Msgs.RtBi.Predicate.TRUE if val else Msgs.RtBi.Predicate.FALSE)
+		Ros.AppendMessage(msg.predicates, p)
+		msg.stamp = Msgs.toTimeMsg(eventTime)
+		return msg
+
+	def __evaluateTemporalPredicates(self, timeNanoSecs: int, temporalSets: dict[str, list[TimeInterval]], msgArr: Msgs.RtBi.RegularSetArray, predicateName: str) -> Msgs.RtBi.RegularSetArray:
+		"""Evaluate the membership of the given time point with respect to all the given temporal sets."""
+		Ros.Log("Evaluating the current value of temporal predicates.")
+		temporalSetState: dict[str, bool] = {}
+		for setId in temporalSets:
+			intervals = temporalSets[setId].copy()
+			temporalSetState[setId] = False
+			# Sequentially move forward in the list until timeNanoSecs is in the interval, or
+			# the next interval starts later which means the set is not reachable,
+			# given that the list is sorted and does not have overlap between intervals <-- this is assumed, not verified
 			for interval in intervals:
-				if nowNanoSecs in interval:
-					self.__reachabilityState[setId] = True
+				if timeNanoSecs in interval:
+					temporalSetState[setId] = True
 					break
-				elif interval.minNanoSecs > nowNanoSecs:
+				elif interval.minNanoSecs > timeNanoSecs:
 					break # It's a future event
-				elif interval.maxNanoSecs < nowNanoSecs:
+				elif interval.maxNanoSecs < timeNanoSecs:
 					# It's a past event
 					# Remove past intervals from the list
-					self.__reachabilityInformation[setId].remove(interval)
-			currentReachability = self.__createReachabilityUpdate(setId, nowNanoSecs, self.__reachabilityState[setId])
-			Ros.Log(f"Current reachability states for {setId} is {self.__reachabilityState[setId]}.")
+					temporalSets[setId].remove(interval)
+			currentReachability = self.__createTemporalPredicateUpdate(setId, timeNanoSecs, temporalSetState[setId], predicateName)
+			Ros.Log(f"Current reachability states for {setId} is {temporalSetState[setId]}.")
 			Ros.AppendMessage(msgArr.sets, currentReachability)
-			if self.__reachabilityState[setId] == True:
-				currentInterval = self.__reachabilityInformation[setId].pop(0)
-				nextReachability = self.__createReachabilityUpdate(setId, currentInterval.maxNanoSecs, False)
+			if temporalSetState[setId] == True:
+				currentInterval = temporalSets[setId].pop(0)
+				nextReachability = self.__createTemporalPredicateUpdate(setId, currentInterval.maxNanoSecs, False, predicateName)
 				Ros.Log(f"Reachability state for {setId} changes to False @ {currentInterval.maxNanoSecs}.")
 				Ros.AppendMessage(msgArr.sets, nextReachability)
 		return msgArr
 
-	def __futureReachabilityEvents(self, msgArr: Msgs.RtBi.RegularSetArray) -> Msgs.RtBi.RegularSetArray:
-		Ros.Log(f"Processing future reachability states.")
-		for setId in self.__reachabilityInformation:
-			intervals = self.__reachabilityInformation[setId]
-			Ros.Log(f"Processing reachability events for {setId}", intervals)
+	def __futureTemporalEvents(self, temporalSets: dict[str, list[TimeInterval]], msgArr: Msgs.RtBi.RegularSetArray, predicateName: str) -> Msgs.RtBi.RegularSetArray:
+		Ros.Log("Evaluating the future values of temporal predicates.")
+		for setId in temporalSets:
+			intervals = temporalSets[setId]
+			Ros.Log(f"Evaluating temporal events for {setId}", intervals)
 			for interval in intervals:
-				update = self.__createReachabilityUpdate(setId, interval.minNanoSecs, True)
+				update = self.__createTemporalPredicateUpdate(setId, interval.minNanoSecs, True, predicateName)
 				Ros.AppendMessage(msgArr.sets, update)
-				update = self.__createReachabilityUpdate(setId, interval.maxNanoSecs, False)
+				update = self.__createTemporalPredicateUpdate(setId, interval.maxNanoSecs, False, predicateName)
 				Ros.AppendMessage(msgArr.sets, update)
 		return msgArr
 
-	def __processReachabilityUpdates(self, nowNanoSecs: int) -> Msgs.RtBi.RegularSetArray:
-		reachabilityUpdates = Msgs.RtBi.RegularSetArray()
-		self.__prepareIntervalsForProcessing()
-		reachabilityUpdates = self.__determineCurrentReachabilityState(nowNanoSecs, reachabilityUpdates)
-		reachabilityUpdates = self.__futureReachabilityEvents(reachabilityUpdates)
-		return reachabilityUpdates
-
-	def __addTimePointToDict(self, setId: str, interval: TimeInterval) -> None:
-		if setId not in self.__reachabilityInformation: self.__reachabilityInformation[setId] = []
-		self.__reachabilityInformation[setId].append(interval)
-		return
+	def __onTemporalResponse(self, req: Msgs.RtBiSrv.SpaceTime.Request, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
+		self.log("Received TEMPORAL PREDICATES response.")
+		self.__publishPredicateSymbols(res.json_predicate_symbols, "temporal")
+		res.sets = Ros.AsList(res.sets, Msgs.RtBi.RegularSet)
+		nowNanoSecs = Msgs.toNanoSecs(self.get_clock().now())
+		setDict: dict[str, list[TimeInterval]] = {}
+		for match in res.sets:
+			match.intervals = Ros.AsList(match.intervals, Msgs.RtBi.TimeInterval)
+			for intervalMsg in match.intervals:
+				interval = TimeInterval.fromMsg(intervalMsg)
+				setDict = self.__addTimePointToDict(match.id, interval, setDict)
+		setDict = self.__prepareIntervalsForProcessing(setDict)
+		# reachabilityUpdates = Msgs.RtBi.RegularSetArray()
+		# reachabilityUpdates = self.__evaluateTemporalPredicates(nowNanoSecs, setDict, reachabilityUpdates, "accessible")
+		# reachabilityUpdates = self.__futureTemporalEvents(accessibilityInfo, reachabilityUpdates, "accessible")
+		# if len(reachabilityUpdates.sets) > 0: self.__mapPublisher.publish(reachabilityUpdates)
+		self.__temporalEvaluationCompleted = True
+		if self.__spatialEvaluationCompleted and self.__temporalEvaluationCompleted: self.coldStartCompleted()
+		return res
 
 	def __onDynamicSetsResponse(self, req: Msgs.RtBiSrv.SpaceTime.Request, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
 		self.log("Received DYNAMIC REACH response.")
 		nowNanoSecs = Msgs.toNanoSecs(self.get_clock().now())
+		accessibilityInfo: dict[str, list[TimeInterval]] = {}
 		for i in range(len(res.sets)):
 			match = Ros.GetMessage(res.sets, i, Msgs.RtBi.RegularSet)
 			for intervalMsg in match.intervals:
 				interval = TimeInterval.fromMsg(intervalMsg)
-				self.__addTimePointToDict(match.id, interval)
-		reachabilityUpdates = self.__processReachabilityUpdates(nowNanoSecs)
+				accessibilityInfo = self.__addTimePointToDict(match.id, interval, accessibilityInfo)
+		accessibilityInfo = self.__prepareIntervalsForProcessing(accessibilityInfo)
+		reachabilityUpdates = Msgs.RtBi.RegularSetArray()
+		reachabilityUpdates = self.__evaluateTemporalPredicates(nowNanoSecs, accessibilityInfo, reachabilityUpdates, "accessible")
+		reachabilityUpdates = self.__futureTemporalEvents(accessibilityInfo, reachabilityUpdates, "accessible")
 		if len(reachabilityUpdates.sets) > 0: self.__mapPublisher.publish(reachabilityUpdates)
+		self.__spatialEvaluationCompleted = True
+		if self.__spatialEvaluationCompleted and self.__temporalEvaluationCompleted: self.coldStartCompleted()
 		return res
 
 	def declareParameters(self) -> None:

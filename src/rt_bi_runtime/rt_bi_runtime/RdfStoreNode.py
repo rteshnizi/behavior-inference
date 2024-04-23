@@ -113,7 +113,7 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 		whereClauses.append(extractedSelector)
 		variables.append(extractedVars)
 		orders.append(extractedOrders)
-		for predicate in payload.predicates:
+		for predicate in payload.spatialPredicates:
 			if predicate not in self.__predicateToIndex: self.__predicateToIndex[predicate] = len(self.__predicateToIndex)
 			(extractedSelector, extractedVars, extractedBindings, extractedOrders) = sparqlXfmr.transformPredicate(predicate, self.__predicateToIndex[predicate])
 			if extractedVars == "" and extractedSelector == "": continue
@@ -157,7 +157,7 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 		whereClauses.append(extractedSelector)
 		variables.append(extractedVars)
 		orders.append(extractedOrders)
-		for predicate in payload.predicates:
+		for predicate in payload.spatialPredicates:
 			if predicate not in self.__predicateToIndex: self.__predicateToIndex[predicate] = len(self.__predicateToIndex)
 			(extractedSelector, extractedVars, extractedBindings, extractedOrders) = sparqlXfmr.transformPredicate(predicate, self.__predicateToIndex[predicate])
 			if extractedVars == "" and extractedSelector == "": continue

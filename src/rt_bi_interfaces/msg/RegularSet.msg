@@ -20,9 +20,6 @@ rt_bi_interfaces/Polygon[] polygons
 rt_bi_interfaces/TimeInterval[] intervals
 
 ######################### Properties #########################
-# Name of the object. It is not necessarily unique.
-# string name
-# string color
 # The fully qualified name of the associated ROS node.
 string ros_node
 

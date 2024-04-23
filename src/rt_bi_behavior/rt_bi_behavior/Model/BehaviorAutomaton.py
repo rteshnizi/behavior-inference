@@ -30,7 +30,7 @@ class BehaviorAutomaton(nx.DiGraph):
 		self.__transitions: dict[str, dict[str, str]] = transitions
 		self.__start: str = start
 		self.__accepting: set[str] = set(accepting)
-		self.__predicates: dict[str, str] = {}
+		self.__spatialPredicates: dict[str, str] = {}
 		"""Predicate to Symbol name map."""
 		self.__tokenCounter = 0
 		self.__baseDir: str = baseDir
@@ -61,7 +61,7 @@ class BehaviorAutomaton(nx.DiGraph):
 
 	def __addEdge(self, source: str, transitionStr: str, destination: str) -> None:
 		transition = Transition(transitionStr, self.__baseDir, self.__transitionGrammarDir, self.__grammarFileName)
-		for p in transition.predicates: self.__predicates[p] = ""
+		for p in transition.predicates: self.__spatialPredicates[p] = ""
 		self.add_edge(source, destination, label=repr(transition), transition=transition)
 		return
 
@@ -85,8 +85,8 @@ class BehaviorAutomaton(nx.DiGraph):
 		return token
 
 	@property
-	def predicates(self) -> list[str]:
-		return list(self.__predicates.keys())
+	def spatialPredicates(self) -> list[str]:
+		return list(self.__spatialPredicates.keys())
 
 	def setSymbolicNameOfPredicate(self, symMap: dict[str, str]) -> None:
 		"""
@@ -94,11 +94,11 @@ class BehaviorAutomaton(nx.DiGraph):
 		:type symMap: `dict[str, str]`
 		"""
 		for p in symMap:
-			if p in self.__predicates:
-				self.__predicates[p] = symMap[p]
+			if p in self.__spatialPredicates:
+				self.__spatialPredicates[p] = symMap[p]
 		for (frm, to) in self.edges:
-			for predicate in self.__predicates:
-				symbol = self.__predicates[predicate]
+			for predicate in self.__spatialPredicates:
+				symbol = self.__spatialPredicates[predicate]
 				transition = cast(Transition, self[frm][to]["transition"])
 				transition.setPredicatesSymbol(predicate, symbol)
 				self[frm][to]["label"] = repr(transition)

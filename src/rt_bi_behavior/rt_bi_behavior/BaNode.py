@@ -22,7 +22,7 @@ class BaNode(ColdStartableNode):
 	"""
 	def __init__(self, **kwArgs) -> None:
 		""" Create a Behavior Automaton node. """
-		newKw = { "node_name": "ba", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
+		newKw = { "node_name": "ba", "loggingSeverity": LoggingSeverity.WARN, **kwArgs}
 		super().__init__(**newKw)
 		self.declareParameters()
 		self.__name: str = self.get_fully_qualified_name()
@@ -73,10 +73,7 @@ class BaNode(ColdStartableNode):
 
 	def onColdStartAllowed(self, payload: ColdStartPayload) -> None:
 		if self.shouldRender: self.__ba.initFlask(self)
-		super().coldStartCompleted({
-			"done": True,
-			"predicates": self.__ba.predicates,
-		})
+		self.coldStartCompleted({"spatialPredicates": self.__ba.spatialPredicates})
 		return
 
 	def declareParameters(self) -> None:

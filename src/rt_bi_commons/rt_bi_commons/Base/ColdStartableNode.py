@@ -9,7 +9,7 @@ from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_interfaces.msg import ColdStart
 
-_K = Literal["nodeName", "done", "predicates", "dynamic", "affine"]
+_K = Literal["nodeName", "done", "spatialPredicates", "dynamic", "affine"]
 # "node_name" is not set in cold start communications since it is in the ROS msg,
 # "node_name" is added here for the RDF node's benefit.
 class ColdStartPayload(dict[_K, Any]):
@@ -46,8 +46,8 @@ class ColdStartPayload(dict[_K, Any]):
 		return self.get("done", False)
 
 	@property
-	def predicates(self) -> set[str]:
-		return self.__getListAsSet("predicates", str)
+	def spatialPredicates(self) -> set[str]:
+		return self.__getListAsSet("spatialPredicates", str)
 
 	@property
 	def dynamic(self) -> set[str]:
@@ -99,9 +99,9 @@ class ColdStartableNode(RtBiNode, ABC):
 		return
 
 	@final
-	def coldStartCompleted(self, payload: dict[_K, Any] | ColdStartPayload) -> None:
-		payload = ColdStartPayload(payload)
+	def coldStartCompleted(self, payload: dict[_K, Any] = {}) -> None:
+		self.log(f"Announcing cold start completion for {self.get_fully_qualified_name()}.")
+		payload = ColdStartPayload({"nodeName": self.get_fully_qualified_name(), "done": True, **payload})
 		coldStartAck = ColdStart(node_name=self.get_fully_qualified_name(), json_payload=payload.stringify())
 		self.__coldStartPublisher.publish(coldStartAck)
-		self.log(f"Announcing cold start completion for {self.get_fully_qualified_name()}.")
 		return
