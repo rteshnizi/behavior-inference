@@ -7,11 +7,16 @@ from rt_bi_commons.Utils import Ros
 class PredicateCollector(TransitionInterpreter):
 	def __init__(self) -> None:
 		super().__init__()
-		self.__allPredicates: set[str] = set()
+		self.__spatialPredicates: set[str] = set()
+		self.__temporalPredicates: set[str] = set()
 
 	@property
-	def allPredicates(self) -> set[str]:
-		return self.__allPredicates
+	def spatialPredicates(self) -> set[str]:
+		return self.__spatialPredicates
+
+	@property
+	def temporalPredicates(self) -> set[str]:
+		return self.__temporalPredicates
 
 	def simple_expression(self, tree: ParseTree) -> str:
 		children: list[str] = self.visit_children(tree)
@@ -20,7 +25,9 @@ class PredicateCollector(TransitionInterpreter):
 		test: str = cast(str, children[2])
 		value: str = cast(str, children[3])
 		interpretationStr = f"{namespace}[{property_seq} {test} {value}]"
-		self.__allPredicates.add(interpretationStr)
+		if namespace == "S": self.__spatialPredicates.add(interpretationStr)
+		elif namespace == "T": self.__temporalPredicates.add(interpretationStr)
+		else: raise UnexpectedToken(tree.children[0], {"T", "S"})
 		return interpretationStr
 
 	def property_seq(self, tree: ParseTree) -> str:
@@ -59,8 +66,12 @@ class Transition:
 		return self.__str == other.__str
 
 	@property
-	def predicates(self) -> set[str]:
-		return self.__predCollector.allPredicates
+	def spatialPredicates(self) -> set[str]:
+		return self.__predCollector.spatialPredicates
+
+	@property
+	def temporalPredicates(self) -> set[str]:
+		return self.__predCollector.temporalPredicates
 
 	def setPredicatesSymbol(self, predicate: str, symbol: str) -> None:
 		if predicate == "" or symbol == "": return

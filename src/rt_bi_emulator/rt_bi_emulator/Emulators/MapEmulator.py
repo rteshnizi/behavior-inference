@@ -43,7 +43,7 @@ class MapEmulator(ColdStartableNode):
 		reqTemporal.query_name = "temporal"
 		reqTemporal.json_payload = ColdStartPayload({
 			"nodeName": self.get_fully_qualified_name(),
-			"spatialPredicates": list(payload.spatialPredicates),
+			"temporalPredicates": list(payload.temporalPredicates),
 		}).stringify()
 		Ros.SendClientRequest(self, self.rdfClient, reqTemporal, self.__onTemporalResponse)
 		return

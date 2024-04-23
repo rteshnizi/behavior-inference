@@ -9,7 +9,7 @@ from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_interfaces.msg import ColdStart
 
-_K = Literal["nodeName", "done", "spatialPredicates", "dynamic", "affine"]
+_K = Literal["nodeName", "done", "spatialPredicates", "temporalPredicates", "dynamic", "affine"]
 # "node_name" is not set in cold start communications since it is in the ROS msg,
 # "node_name" is added here for the RDF node's benefit.
 class ColdStartPayload(dict[_K, Any]):
@@ -48,6 +48,10 @@ class ColdStartPayload(dict[_K, Any]):
 	@property
 	def spatialPredicates(self) -> set[str]:
 		return self.__getListAsSet("spatialPredicates", str)
+
+	@property
+	def temporalPredicates(self) -> set[str]:
+		return self.__getListAsSet("temporalPredicates", str)
 
 	@property
 	def dynamic(self) -> set[str]:

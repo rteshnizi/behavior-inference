@@ -17,7 +17,8 @@ class ColdStartManager(RtBiNode):
 			"/rt_bi_behavior/ba1",
 			"/rt_bi_emulator/dynamic_map",
 		]
-		self.__allPredicates: set[str] = set()
+		self.__spatialPredicates: set[str] = set()
+		self.__temporalPredicates: set[str] = set()
 		self.__coldStartPublisher = RtBiInterfaces.createColdStartPublisher(self)
 		RtBiInterfaces.subscribeToColdStart(self, self.__onColdStartDone)
 		self.__triggerNextColdStart()
@@ -36,7 +37,8 @@ class ColdStartManager(RtBiNode):
 				payload = ColdStartPayload({})
 			else: # Dynamic Map Cold Start
 				payload = ColdStartPayload({
-					"spatialPredicates": list(self.__allPredicates),
+					"spatialPredicates": list(self.__spatialPredicates),
+					"temporalPredicates": list(self.__temporalPredicates),
 				})
 			msg = Msgs.RtBi.ColdStart(node_name=nodeName, json_payload=payload.stringify())
 			self.__coldStartPublisher.publish(msg)
@@ -49,7 +51,8 @@ class ColdStartManager(RtBiNode):
 			if not payload.done: return
 			self.log(f"Cold start done for node {msg.node_name}.")
 			if msg.node_name.startswith(RtBiInterfaces.BA_NODE_PREFIX):
-				self.__allPredicates |= payload.spatialPredicates
+				self.__spatialPredicates |= payload.spatialPredicates
+				self.__temporalPredicates |= payload.temporalPredicates
 			if msg.node_name.startswith(RtBiInterfaces.KNOWN_REGION_NODE_PREFIX):
 				pass # TODO:
 			else: # Dynamic Map

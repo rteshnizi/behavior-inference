@@ -20,6 +20,7 @@ class PredicateToQueryName(TransitionTransformer):
 		return variables[0]
 
 class PredicateToNamespace(TransitionTransformer):
+	# TODO: Use this in RdfStoreNode __temporalQuery and __spatialQuery
 	def NAMESPACE(self, token: Token) -> str:
 		if token == "S": return "rt_bi:RegularSpace"
 		if token == "T": return "rt_bi:RegularTime"
