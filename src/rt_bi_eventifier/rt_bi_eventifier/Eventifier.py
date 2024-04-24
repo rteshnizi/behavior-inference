@@ -1,3 +1,4 @@
+from json import dumps
 
 import rclpy
 from rclpy.logging import LoggingSeverity
@@ -29,8 +30,8 @@ class Eventifier(ColdStartable, RegionsSubscriber):
 			else: publisher = None
 			modulePublishers[module] = publisher
 
-		gPublisher = RtBiInterfaces.createEventGraphPublisher(self)
-		self.__iGraph: IGraph = IGraph(gPublisher, modulePublishers)
+		self.__baResetPublisher = RtBiInterfaces.createBaResetPublisher(self)
+		self.__iGraph: IGraph = IGraph(modulePublishers)
 		RtBiInterfaces.subscribeToProjectiveMap(self, self.enqueueUpdate)
 		self.waitForColdStartPermission()
 		return
@@ -41,11 +42,21 @@ class Eventifier(ColdStartable, RegionsSubscriber):
 		self.publishColdStartDone()
 		return
 
+	def __publishBehaviorAutomataInit(self) -> None:
+		l: list[str] = []
+		for mapPoly in self.__iGraph.history[-1].shadows:
+			l.append(mapPoly.id.stringify())
+		msg = Msgs.Std.String(data=dumps(l))
+		self.__baResetPublisher.publish(msg)
+		return
+
 	def __onUpdate(self, polygon: MapPolygon | SensingPolygon) -> None:
 		self.log(f"Update received for polygon of type {polygon.type.name}.")
 		self.__iGraph.updatePolygon(polygon)
-		self.__iGraph.renderLatestCGraph()
-		if self.shouldRender: self.render()
+		if self.__iGraph.depth == 1: self.__publishBehaviorAutomataInit()
+		if self.shouldRender:
+			self.__iGraph.renderLatestCGraph()
+			self.render()
 		return
 
 	def onMapUpdated(self, polygon: MapPolygon) -> None:

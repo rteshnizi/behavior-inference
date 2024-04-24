@@ -46,7 +46,7 @@ class BaNode(ColdStartable):
 		)
 		if self.shouldRender: self.__ba.initFlask(self)
 		self.waitForColdStartPermission()
-		RtBiInterfaces.subscribeToEventGraph(self, self.__onInitGraph)
+		RtBiInterfaces.subscribeToBaReset(self, self.__onInitGraph)
 		RtBiInterfaces.subscribeToPredicates(self, self.__onPredicates)
 		return
 

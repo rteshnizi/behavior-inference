@@ -1,11 +1,9 @@
 from dataclasses import dataclass
-from json import dumps
 from typing import Literal, cast
 
 from rt_bi_commons.Shared.Color import RGBA, ColorUtils
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Geometry import GeometryLib, Shapely
-from rt_bi_commons.Utils.Msgs import Msgs
 from rt_bi_commons.Utils.NetworkX import NxUtils
 from rt_bi_commons.Utils.RViz import ColorNames, RViz
 from rt_bi_core.Spatial import GraphPolygon, MapPolygon
@@ -44,7 +42,7 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 				subset=subset
 			)
 
-	def __init__(self, graphPublisher: Ros.Publisher, rvizPublishers: dict[SUBMODULE, Ros.Publisher | None]):
+	def __init__(self, rvizPublishers: dict[SUBMODULE, Ros.Publisher | None]):
 		"""Initialize the I-graph."""
 		super().__init__(rVizPublisher=rvizPublishers.pop("i_graph", None))
 		# super().__init__(rVizPublisher=None)
@@ -53,27 +51,30 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 
 		self.componentEvents: list[list[Shapely.Polygon]] = []
 		""" The reason this is a list of lists is that the time of event is relative to the time between. """
-		self.__graphPublisher = graphPublisher
 		self.__rvizPublishers = rvizPublishers
 		self.__ctrs: dict[AffinePolygon.Id, ContinuousTimePolygon[GraphPolygon]] = {}
 
 	@property
+	def history(self) -> list[ConnectivityGraph]:
+		return self.__history
+
+	@property
 	def depth(self) -> int:
 		"""The depth of the I-graph history stack."""
-		return len(self.__history)
+		return len(self.history)
 
 	@property
 	def processedTime(self) -> int:
 		if self.depth == 0: return -1
-		return self.__history[-1].timeNanoSecs
+		return self.history[-1].timeNanoSecs
 
 	def __repr__(self) -> str:
 		if self.depth == 0:
 			timeRangeStr = "0"
 		if self.depth == 1:
-			timeRangeStr = "%d" % self.__history[0].timeNanoSecs
+			timeRangeStr = "%d" % self.history[0].timeNanoSecs
 		if self.depth > 1:
-			timeRangeStr = "%d , %d" % (self.__history[0].timeNanoSecs, self.__history[-1].timeNanoSecs)
+			timeRangeStr = "%d , %d" % (self.history[0].timeNanoSecs, self.history[-1].timeNanoSecs)
 		return f"IGr-[{timeRangeStr})(D={self.depth}, N={len(self.nodes)}, E={len(self.edges)})"
 
 	def addNode(self, id: NxUtils.Id, cGraph: ConnectivityGraph) -> NxUtils.Id:
@@ -153,7 +154,7 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 	def renderLatestCGraph(self) -> None:
 		if self.depth == 0: return
 		Ros.Log(f"{repr(self)} Rendering latest CGraph.")
-		self.__history[-1].render()
+		self.history[-1].render()
 		return
 
 	def __antiShadowsAreConnectedTemporally(self, pastGraph: ConnectivityGraph, nowGraph: ConnectivityGraph, pastPoly: SensingPolygon, nowPoly: SensingPolygon) -> bool:
@@ -216,8 +217,8 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 
 	def __connectTopLayerTemporally(self) -> None:
 		Ros.Log(" ------------------------------- CONNECT-Z - START -----------------------------")
-		fromGraph = self.__history[self.depth - 2]
-		toGraph = self.__history[self.depth - 1]
+		fromGraph = self.history[self.depth - 2]
+		toGraph = self.history[self.depth - 1]
 		assert toGraph.hIndex is not None, f"Cannot connect graph with unset hIndex in I-graph. {repr(toGraph)}"
 		# Add temporal edges between FOVs
 		for fromAntiShadow in fromGraph.antiShadows:
@@ -239,39 +240,39 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 		return
 
 	def __removeFromHistory(self, index: int, delete: bool) -> None:
-		assert index >= 0 and index < len(self.__history), f"Index out of history bounds: index = {index}, Len = {len(self.__history)}"
-		hIndex = self.__history[index].hIndex
-		assert hIndex is not None, f"Graph with unset hIndex found in I-graph. {repr(self.__history[index])}"
+		assert index >= 0 and index < len(self.history), f"Index out of history bounds: index = {index}, Len = {len(self.history)}"
+		hIndex = self.history[index].hIndex
+		assert hIndex is not None, f"Graph with unset hIndex found in I-graph. {repr(self.history[index])}"
 
-		Ros.Log(f"Removing Graph: {repr(self.__history[index])} with {len(self.__history[index].nodes)} nodes.")
+		Ros.Log(f"Removing Graph: {repr(self.history[index])} with {len(self.history[index].nodes)} nodes.")
 		polyId: NxUtils.Id
-		for polyId in self.__history[index].nodes:
+		for polyId in self.history[index].nodes:
 			id_ = NxUtils.Id(hIndex=hIndex, timeNanoSecs=polyId.timeNanoSecs, regionId=polyId.regionId, polygonId=polyId.polygonId, subPartId=polyId.subPartId)
 			self.removeNode(id_)
-		if delete: self.__history.pop(index)
+		if delete: self.history.pop(index)
 
 	def __replaceInHistory(self, index: int, graph: ConnectivityGraph) -> None:
-		""" **Does not add nodes.** This just manipulates `self.__history` variable. """
+		""" **Does not add nodes.** This just manipulates `self.history` variable. """
 		self.__removeFromHistory(index, False)
 		Ros.Log(f"REPLACE graph with {len(graph.shadows)} shadows and {len(graph.antiShadows)} anti-shadows.")
 		# graph.logGraphNodes()
-		hIndex = cast(int, self.__history[index].hIndex)
+		hIndex = cast(int, self.history[index].hIndex)
 		graph.hIndex = hIndex
-		self.__history[index] = graph
+		self.history[index] = graph
 		return
 
 	def __appendToHistory(self, graph: ConnectivityGraph) -> None:
-		if self.depth > 0 and graph.timeNanoSecs < self.__history[-1].timeNanoSecs:
-				Ros.Logger().error(f"Older graph than latest in history --> {graph.timeNanoSecs} vs {self.__history[-1].timeNanoSecs}")
+		if self.depth > 0 and graph.timeNanoSecs < self.history[-1].timeNanoSecs:
+				Ros.Logger().error(f"Older graph than latest in history --> {graph.timeNanoSecs} vs {self.history[-1].timeNanoSecs}")
 				return
 
-		if self.depth > 0 and EventAggregator.isIsomorphic(self.__history[-1], graph):
+		if self.depth > 0 and EventAggregator.isIsomorphic(self.history[-1], graph):
 			Ros.Log("Isomorphic graph detected.")
 			self.__replaceInHistory(self.depth - 1, graph)
 		else:
 			Ros.Log(f"APPENDING graph with {len(graph.shadows)} shadows and {len(graph.antiShadows)} anti-shadows.")
 			graph.hIndex = self.hIndex
-			self.__history.append(graph)
+			self.history.append(graph)
 			self.hIndex += 1
 
 		for id_ in graph.nodes:
@@ -285,17 +286,6 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 			Ros.Log(f"History depth is more than MAX={self.__MAX_HISTORY} graphs.")
 			self.__removeFromHistory(0, True)
 		self.render()
-		return
-
-	def __publishGraph(self) -> None:
-		l: list[str] = []
-		for mapPoly in self.__history[-1].shadows:
-			l.append(mapPoly.id.stringify())
-		msg = Msgs.Std.String(data=dumps(l))
-		self.__graphPublisher.publish(msg)
-		return
-
-	def __publishEvents(self) -> None:
 		return
 
 	def __updateCTRs(self, poly: GraphPolygon) -> ContinuousTimePolygon[GraphPolygon] | None:
@@ -348,7 +338,6 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 		if self.depth == 0:
 			cGraph = self.at(minLatestNs)
 			self.__appendToHistory(cGraph)
-			self.__publishGraph()
 			return
 
 		ctrs = list(self.__ctrs.values())
@@ -364,7 +353,4 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 		if len(eventGraphs) == 0: eventGraphs = [self.at(polygon.timeNanoSecs)] # If no events, just update the locations of polygons.
 		Ros.Log("Aggregated CGraphs", eventGraphs)
 		for graph in eventGraphs: self.__appendToHistory(graph)
-
-		if polygon.type == StaticPolygon.type: self.__publishGraph()
-		else: self.__publishEvents()
 		return
