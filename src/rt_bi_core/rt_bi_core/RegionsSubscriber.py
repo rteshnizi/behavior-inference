@@ -6,7 +6,6 @@ from rt_bi_commons.Shared.MinQueue import MinQueue
 from rt_bi_commons.Shared.Predicates import Predicates
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Msgs import Msgs
-from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_commons.Utils.RViz import RViz
 from rt_bi_core.Spatial import AffinePolygon, DynamicPolygon, MapPolygon, PolygonFactory, SensingPolygon, StaticPolygon, TargetPolygon
 from rt_bi_core.Spatial.Polygon import PolygonFactoryKeys
@@ -103,7 +102,6 @@ class RegionsSubscriber(RtBiNode, ABC):
 			predicates = Predicates(regularSet.predicates) if isinstance(regularSet.predicates, list) else Predicates([])
 			kwArgs: dict[PolygonFactoryKeys, Any] = {
 				"polygonId": poly.id.polygonId,
-				# "regionId": regularSet.id, # FIXME: This is the correct representation, but it made processing so slow. Because practically static and dynamic sets are all duplicated.
 				"regionId": poly.id.regionId,
 				"subPartId": "",
 				"envelope": poly.envelope,
@@ -114,7 +112,7 @@ class RegionsSubscriber(RtBiNode, ABC):
 			}
 			if poly.type == SensingPolygon.type: kwArgs["tracklets"] = poly.tracklets
 			poly = PolygonFactory(type(poly), kwArgs)
-			self.__storeGeometry(regularSet.id, poly)
+			self.__storeGeometry(poly.id.regionId, poly)
 		return
 
 	def __createTracklets(self, regularSet: Msgs.RtBi.RegularSet) -> dict[str, Tracklet]:
