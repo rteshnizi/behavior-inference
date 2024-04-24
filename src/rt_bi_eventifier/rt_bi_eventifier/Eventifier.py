@@ -17,7 +17,7 @@ from rt_bi_eventifier.Model.IGraph import IGraph
 
 class Eventifier(ColdStartable, RegionsSubscriber):
 	def __init__(self, **kwArgs) -> None:
-		newKw = { "node_name": "eventifier", "loggingSeverity": LoggingSeverity.WARN, **kwArgs}
+		newKw = { "node_name": "eventifier", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
 		RegionsSubscriber.__init__(self, **newKw)
 		ColdStartable.__init__(self)
 		self.declareParameters()

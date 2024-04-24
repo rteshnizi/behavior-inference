@@ -157,10 +157,13 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 		return
 
 	def __antiShadowsAreConnectedTemporally(self, pastGraph: ConnectivityGraph, nowGraph: ConnectivityGraph, pastPoly: SensingPolygon, nowPoly: SensingPolygon) -> bool:
+		"""Method assumes polygons have at least a common edge."""
 		try:
 			intersectionOfShadows = GeometryLib.intersection(pastPoly.interior, nowPoly.interior)
 			intersectionOfShadows = GeometryLib.filterPolygons(intersectionOfShadows)
 			if len(intersectionOfShadows) > 0: return True
+			if pastPoly.trackExited and nowPoly.trackEntered: return True
+			if nowPoly.trackExited and pastPoly.trackEntered: return True
 			return False
 		except Exception as e:
 			from traceback import format_exc
