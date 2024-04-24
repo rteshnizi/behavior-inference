@@ -102,13 +102,13 @@ class RtBiInterfaces:
 		Ros.CreateSubscriber(node, Msgs.Std.String, RtBiInterfaces.TopicNames.RT_BI_RUNTIME_PREDICATES.value, lambda m: callbackFunc(m.data))
 		return
 
-	@deprecated("Data ref nodes are replaced by RDF")
+	@deprecated("Data ref nodes are replaced by RDF", category=None)
 	@staticmethod
 	def createDataReferenceService(node: RtBiNode, paramName: str, callbackFunc: Callable[[Msgs.RtBiSrv.DataReference.Request, Msgs.RtBiSrv.DataReference.Response], Msgs.RtBiSrv.DataReference.Response]) -> Service:
 		ddServiceName = RtBiNode.toServiceName(node.get_name(), paramName)
 		return Ros.CreateService(node, Msgs.RtBiSrv.DataReference, ddServiceName, callbackFunc)
 
-	@deprecated("Data ref nodes are replaced by RDF")
+	@deprecated("Data ref nodes are replaced by RDF", category=None)
 	@staticmethod
 	def createDataReferenceClient(node: RtBiNode, ref: ReferenceDescriptor) -> Client:
 		return Ros.CreateClient(node, Msgs.RtBiSrv.DataReference, ref.serviceName)
