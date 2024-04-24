@@ -1,0 +1,1 @@
+string adjacency_json

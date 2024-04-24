@@ -1,6 +1,6 @@
 from json import dumps, loads
 from tempfile import TemporaryFile
-from typing import Any, Literal, TypeAlias, cast
+from typing import Literal, TypeAlias, cast
 
 import networkx as nx
 from networkx.drawing import nx_agraph
@@ -135,8 +135,18 @@ class BehaviorAutomaton(nx.DiGraph):
 		)
 		return
 
-	def tokens(self) -> dict[str, list[str]]:
-		d: dict[str, list[str]] = {}
+	def tokenTransitionPairs(self) -> list[tuple[StateToken, Transition]]:
+		pairs: list[tuple[StateToken, Transition]] = []
+		for node in self.nodes:
+			for token in self.nodes[node]["tokens"]:
+				token = cast(StateToken, token)
+				for (frm, to, transition) in self.out_edges(node, data="transition"): # pyright: ignore[reportArgumentType]
+					Ros.Log("OutEdge", (frm, to, transition))
+				# FIXME: Extract transitions
+		return pairs
+
+	def __tokensPerState(self) -> dict[str, list[StateToken]]:
+		d: dict[str, list[StateToken]] = {}
 		for node in self.nodes:
 			d[node] = self.nodes[node]["tokens"]
 		return d
@@ -160,7 +170,7 @@ class BehaviorAutomaton(nx.DiGraph):
 			f.seek(0)
 			# Ros.Logger().error(str(aGraph))
 			svg = f.read().decode()
-			return dumps({"name": self.name, "svg": svg, "tokens": self.tokens()})
+			return dumps({"name": self.name, "svg": svg, "tokens": self.__tokensPerState()})
 
 	def render(self) -> None:
 		if self.__dotPublisher is None: return

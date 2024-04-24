@@ -30,7 +30,7 @@ class Eventifier(ColdStartable, RegionsSubscriber):
 			else: publisher = None
 			modulePublishers[module] = publisher
 
-		self.__baResetPublisher = RtBiInterfaces.createBaResetPublisher(self)
+		self.__iGraphPublisher = RtBiInterfaces.createIGraphPublisher(self)
 		self.__iGraph: IGraph = IGraph(modulePublishers)
 		RtBiInterfaces.subscribeToProjectiveMap(self, self.enqueueUpdate)
 		self.waitForColdStartPermission()
@@ -42,18 +42,15 @@ class Eventifier(ColdStartable, RegionsSubscriber):
 		self.publishColdStartDone()
 		return
 
-	def __publishBehaviorAutomataInit(self) -> None:
-		l: list[str] = []
-		for mapPoly in self.__iGraph.history[-1].shadows:
-			l.append(mapPoly.id.stringify())
-		msg = Msgs.Std.String(data=dumps(l))
-		self.__baResetPublisher.publish(msg)
+	def __publishBaEvent(self, iGraph: IGraph, init: bool = False) -> None:
+		msg = Msgs.RtBi.IGraph()
+		msg.adjacency_json = iGraph.asJsonStr()
+		self.__iGraphPublisher.publish(msg)
 		return
 
 	def __onUpdate(self, polygon: MapPolygon | SensingPolygon) -> None:
 		self.log(f"Update received for polygon of type {polygon.type.name}.")
-		self.__iGraph.updatePolygon(polygon)
-		if self.__iGraph.depth == 1: self.__publishBehaviorAutomataInit()
+		self.__iGraph.updatePolygon(polygon, self.__publishBaEvent)
 		if self.shouldRender:
 			self.__iGraph.renderLatestCGraph()
 			self.render()

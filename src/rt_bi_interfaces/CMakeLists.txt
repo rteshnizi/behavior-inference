@@ -14,14 +14,10 @@ find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   # Messages
-  "msg/Adjacency.msg"
   "msg/ColdStart.msg"
   "msg/DataRefRequest.msg"
   "msg/DataRefResponse.msg"
-  "msg/Event.msg"
-  "msg/Events.msg"
-  "msg/Graph.msg"
-  "msg/Id.msg"
+  "msg/IGraph.msg"
   "msg/Polygon.msg"
   "msg/Predicate.msg"
   "msg/RegularSet.msg"

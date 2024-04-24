@@ -21,7 +21,7 @@ class BaNode(ColdStartable):
 	"""
 	def __init__(self, **kwArgs) -> None:
 		""" Create a Behavior Automaton node. """
-		newKw = { "node_name": "ba", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
+		newKw = { "node_name": "ba", "loggingSeverity": LoggingSeverity.WARN, **kwArgs}
 		RtBiNode.__init__(self, **newKw)
 		ColdStartable.__init__(self)
 		self.declareParameters()
@@ -44,19 +44,16 @@ class BaNode(ColdStartable):
 			self.__grammarDir,
 			self.__grammarFile
 		)
-		if self.shouldRender: self.__ba.initFlask(self)
 		self.waitForColdStartPermission()
-		RtBiInterfaces.subscribeToBaReset(self, self.__onInitGraph)
+		RtBiInterfaces.subscribeToIGraph(self, self.__onEvent)
 		RtBiInterfaces.subscribeToPredicates(self, self.__onPredicates)
 		return
 
-	def __onInitGraph(self, jsonStr: str) -> None:
-		self.__ba.resetTokens(jsonStr)
-		return
-
-	def __onEvent(self, msg: Msgs.RtBi.Events) -> None:
-		assert isinstance(msg.component_events, list)
-		Ros.Log(f"Topological Events: {len(msg.component_events)}.")
+	def __onEvent(self, msg: Msgs.RtBi.IGraph) -> None:
+		Ros.Log(repr(msg))
+		# for (token, transition) in pairs:
+		# 	pass
+		# Ros.SendClientRequest(self, self.__iGraphClient, req, self.__onIGraphResponse)
 		# Ros.Log(f"Before applying: V={len(self.__topologicalGraph.nodes)}, E={len(self.__topologicalGraph.edges)}.")
 		# for event in msg.component_events: self.__topologicalGraph.apply(event)
 		# Ros.Log(f"After applying: V={len(self.__topologicalGraph.nodes)}, E={len(self.__topologicalGraph.edges)}.")

@@ -133,6 +133,9 @@ class NxUtils:
 		@abstractmethod
 		def createEdgeMarkers(self) -> list[RViz.Msgs.Marker]: ...
 
+		@abstractmethod
+		def asJsonStr(self) -> str: ...
+
 		@final
 		def __createMarkers(self) -> list[RViz.Msgs.Marker]:
 			markers = []

@@ -1,9 +1,8 @@
 from enum import Enum
 from math import nan
-from typing import Callable, NamedTuple
 
 from rclpy.node import Client, Publisher, Service, Timer
-from typing_extensions import deprecated
+from typing_extensions import Callable, NamedTuple, deprecated
 
 from rt_bi_commons.Base.RtBiNode import RtBiNode
 from rt_bi_commons.Utils import Ros
@@ -32,13 +31,12 @@ class ReferenceDescriptor(NamedTuple):
 class RtBiInterfaces:
 	BA_NODE_PREFIX = "/rt_bi_behavior/ba"
 	KNOWN_REGION_NODE_PREFIX = "/rt_bi_emulator/kn"
-	DYNAMIC_MAP_NODE_NAME = "/rt_bi_emulator/dynamic_map"
 	class TopicNames(Enum):
-		RT_BI_BEHAVIOR_RESET = "/__rt_bi_behavior/reset"
-		RT_BI_EMULATOR_SENSOR = "/__rt_bi_emulator/sensor"
 		RT_BI_EMULATOR_KNOWN = "/__rt_bi_emulator/known"
-		RT_BI_EMULATOR_TARGET = "/__rt_bi_emulator/target"
 		RT_BI_EMULATOR_MAP = "/__rt_bi_runtime/map"
+		RT_BI_EMULATOR_SENSOR = "/__rt_bi_emulator/sensor"
+		RT_BI_EMULATOR_TARGET = "/__rt_bi_emulator/target"
+		RT_BI_EVENTIFIER_IGRAPH = "/__rt_bi_eventifier/igraph"
 		RT_BI_RUNTIME_COLD_START = "/__rt_bi_runtime/cold_start"
 		RT_BI_RUNTIME_PREDICATES = "/__rt_bi_runtime/predicates"
 
@@ -135,11 +133,11 @@ class RtBiInterfaces:
 		return
 
 	@staticmethod
-	def createBaResetPublisher(node: RtBiNode) -> Publisher:
-		(publisher, _) = Ros.CreatePublisher(node, Msgs.Std.String, RtBiInterfaces.TopicNames.RT_BI_BEHAVIOR_RESET.value)
+	def createIGraphPublisher(node: RtBiNode) -> Publisher:
+		(publisher, _) = Ros.CreatePublisher(node, Msgs.RtBi.IGraph, RtBiInterfaces.TopicNames.RT_BI_EVENTIFIER_IGRAPH.value)
 		return publisher
 
 	@staticmethod
-	def subscribeToBaReset(node: RtBiNode, callbackFunc: Callable[[str], None]) -> None:
-		Ros.CreateSubscriber(node, Msgs.Std.String, RtBiInterfaces.TopicNames.RT_BI_BEHAVIOR_RESET.value, lambda m: callbackFunc(m.data))
+	def subscribeToIGraph(node: RtBiNode, callbackFunc: Callable[[Msgs.RtBi.IGraph], None]) -> None:
+		Ros.CreateSubscriber(node, Msgs.RtBi.IGraph, RtBiInterfaces.TopicNames.RT_BI_EVENTIFIER_IGRAPH.value, callbackFunc)
 		return

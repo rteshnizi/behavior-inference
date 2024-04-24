@@ -3,7 +3,6 @@ from typing import AbstractSet, Final, cast
 
 from rclpy.clock import Time
 
-from rt_bi_commons.Shared.NodeId import NodeId
 from rt_bi_commons.Shared.Pose import Coords, CoordsList, Pose, quatToAngle
 from rt_bi_commons.Utils.Geometry import GeometryLib, Shapely
 
@@ -104,23 +103,3 @@ class Msgs:
 		points = [cls.Geometry.Point32(x=p[0], y=p[1], z=0.0) for p in GeometryLib.getGeometryCoords(poly)]
 		msg = cls.Geometry.Polygon(points=points)
 		return msg
-
-	@classmethod
-	def toIdMsg(cls, id_: NodeId) -> RtBi.Id:
-		return Msgs.RtBi.Id(
-			h_index=id_.hIndex,
-			time_nano_secs=id_.timeNanoSecs,
-			region_id=id_.regionId,
-			polygon_id=id_.polygonId,
-			sub_part_id=id_.subPartId,
-		)
-
-	@classmethod
-	def toId(cls, id_: RtBi.Id) -> NodeId:
-		return NodeId(
-			hIndex=id_.h_index,
-			timeNanoSecs=id_.time_nano_secs,
-			regionId=id_.region_id,
-			polygonId=id_.polygon_id,
-			subPartId=id_.sub_part_id,
-		)
