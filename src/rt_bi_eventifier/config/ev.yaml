@@ -3,6 +3,6 @@ rt_bi_eventifier:
     ros__parameters:
       render: True
       renderModules:
-        - connectivity_graph
-        - continuous_time_collision_detection
+        - c_graph
+        - ctcd
         - i_graph

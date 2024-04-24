@@ -24,8 +24,8 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 		The implementation of a Region IGraph in python as described in the dissertation.
 	"""
 
-	SUBMODULES = ("connectivity_graph", "continuous_time_collision_detection", "i_graph")
-	SUBMODULE = Literal["connectivity_graph", "continuous_time_collision_detection", "i_graph"]
+	SUBMODULES = ("c_graph", "ctcd", "i_graph")
+	SUBMODULE = Literal["c_graph", "ctcd", "i_graph"]
 	"""The name of a ShadowTree sub-module publisher."""
 	__RENDER_RADIUS = 10
 	__MAX_HISTORY = 4
@@ -147,7 +147,7 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 				sensors.append(ctr[timeNanoSecs])
 			else:
 				map_.append(ctr[timeNanoSecs])
-		cGraph = ConnectivityGraph(timeNanoSecs, map_, sensors, self.__rvizPublishers["connectivity_graph"])
+		cGraph = ConnectivityGraph(timeNanoSecs, map_, sensors, self.__rvizPublishers["c_graph"])
 		return cGraph
 
 	def renderLatestCGraph(self) -> None:
@@ -352,7 +352,7 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 			return
 
 		ctrs = list(self.__ctrs.values())
-		intervals = CtCd.estimateCollisionIntervals(ctrs, minLatestNs, self.__rvizPublishers["continuous_time_collision_detection"])
+		intervals = CtCd.estimateCollisionIntervals(ctrs, minLatestNs, self.__rvizPublishers["ctcd"])
 		intervals = CtCd.refineCollisionIntervals(intervals)
 		Ros.Log(f"After refinement {len(intervals)} intervals remained.")
 		intervals.sort(key=lambda e: (e[-1], e[-2])) # Sort events by their end time, then start-time
