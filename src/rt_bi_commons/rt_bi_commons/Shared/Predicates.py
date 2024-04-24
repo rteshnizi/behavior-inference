@@ -3,21 +3,7 @@ from typing_extensions import Self
 from rt_bi_commons.Utils.Msgs import Msgs
 
 
-class Predicates:
-	def __init__(self, raw: list[Msgs.RtBi.Predicate]) -> None:
-		self.__d: dict[str, bool] = {}
-		self.__meta: dict[str, str] = {}
-		for msg in raw:
-			self[msg.name] = msg.value
-			self.__meta[msg.name] = msg.meta
-
-	def __repr__(self) -> str:
-		return repr(self.__d)
-
-	def __iter__(self): return iter(self.__d)
-
-	def __getitem__(self, p: str): return self.__d[p]
-
+class Predicates(dict[str, bool]):
 	def __setitem__(self, p: str, val: str | bool) -> None:
 		assert (
 			isinstance(val, bool) or
@@ -25,21 +11,15 @@ class Predicates:
 			val == Msgs.RtBi.Predicate.TRUE
 		), f"Unexpected value for predicate {p}: {val}"
 		if isinstance(val, bool):
-			self.__d[p] = val
+			super().__setitem__(p, val)
 			return
 		if val == Msgs.RtBi.Predicate.TRUE:
-			self.__d[p] = True
+			super().__setitem__(p, True)
 			return
 		if val == Msgs.RtBi.Predicate.FALSE:
-			self.__d[p] = False
+			super().__setitem__(p, False)
 			return
 		return
-
-	def __eq__(self, other: "Predicates") -> bool:
-		for p in self:
-			if p not in other: return False
-			if self[p] != other[p]: return False
-		return True
 
 	def update(self, other: "Predicates") -> Self:
 		"""It will not remove predicates. Only adds or updates value."""
@@ -52,15 +32,17 @@ class Predicates:
 		updated.update(other)
 		return updated
 
-	def __contains__(self, p: str) -> bool:
-		return p in self.__d
-
 	def asMsgArr(self) -> list[Msgs.RtBi.Predicate]:
 		pList = []
-		for pName in self.__d:
+		for pName in self:
 			pred = Msgs.RtBi.Predicate()
 			pred.name = pName
 			pred.value = Msgs.RtBi.Predicate.TRUE if self[pName] else Msgs.RtBi.Predicate.FALSE
-			pred.meta = self.__meta[pName]
 			pList.append(pred)
 		return pList
+
+	@classmethod
+	def fromMsgArray(cls, msgs: list[Msgs.RtBi.Predicate]) -> "Predicates":
+		d = {}
+		for msg in msgs: d[msg.name] = msg.value
+		return Predicates(d)

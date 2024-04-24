@@ -1,11 +1,13 @@
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
+from json import dumps
 
 import networkx as nx
-from typing_extensions import Any, Generic, Literal, LiteralString, Protocol, Sequence, TypeAlias, TypeVar, cast, final, overload
+from typing_extensions import Any, Generic, Literal, LiteralString, Optional, Protocol, Sequence, TypeAlias, TypeVar, cast, final, overload
 
 from rt_bi_commons.Shared.NodeId import NodeId
 from rt_bi_commons.Shared.Pose import Coords
+from rt_bi_commons.Shared.Predicates import Predicates
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.RViz import RViz
 
@@ -19,6 +21,9 @@ class _PolygonLike(Protocol):
 	def bounds(self) -> tuple[Coords, Coords]: ...
 	@property
 	def timeNanoSecs(self) -> int: ...
+	@property
+	def predicates(self) -> Predicates: ...
+
 
 _Polygon = TypeVar("_Polygon", bound=_PolygonLike)
 
@@ -26,6 +31,7 @@ _Polygon = TypeVar("_Polygon", bound=_PolygonLike)
 class NodeData(Generic[_Polygon]):
 	"""The variables of this Class will be stored node attribute key-values."""
 	polygon: _Polygon
+	predicates: Optional[Predicates] = None
 
 
 @dataclass(frozen=True)
@@ -86,10 +92,17 @@ class NxUtils:
 		def getContent(self, node: NodeId, contentKey: None) -> NodeData[_Polygon]: ...
 		@overload
 		def getContent(self, node: NodeId, contentKey: Literal["polygon"]) -> _Polygon: ...
+		@overload
+		def getContent(self, node: NodeId, contentKey: Literal["predicates"]) -> list[tuple[str, bool]]: ...
 
-		def getContent(self, node: NodeId, contentKey: LiteralString | None = None) -> NodeData[_Polygon] | Any:
+		def getContent(self, node: NodeId, contentKey: LiteralString | None = None) -> NodeData[_Polygon] | _Polygon | list[tuple[str, bool]]:
 			assert isinstance(node, NodeId), f"Unexpected Id type: {type(node)}, repr = {repr(node)}"
 			if contentKey is None: return NodeData(**self.nodes[node])
+			elif contentKey == "predicates":
+				d = self.getContent(node)
+				if d.predicates is not None: predicates = d.predicates
+				else: predicates = self.getContent(node, "polygon").predicates
+				return [(p, predicates[p]) for p in predicates]
 			else: return self.nodes[node][contentKey]
 
 		def _3dLayout(self) -> "NxUtils.GraphLayout3D":
@@ -133,8 +146,14 @@ class NxUtils:
 		@abstractmethod
 		def createEdgeMarkers(self) -> list[RViz.Msgs.Marker]: ...
 
-		@abstractmethod
-		def asJsonStr(self) -> str: ...
+		def asStr(self) -> str:
+			jsonDict = nx.adjacency_data(self)
+			for node in jsonDict["nodes"]:
+				node = cast(dict[str, Any], node)
+				node["predicates"] = cast(_Polygon, node["polygon"]).predicates
+				node.pop("polygon")
+				node.pop("subset")
+			return dumps(jsonDict, default=vars)
 
 		@final
 		def __createMarkers(self) -> list[RViz.Msgs.Marker]:

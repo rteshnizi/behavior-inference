@@ -118,7 +118,7 @@ class BehaviorAutomaton(nx.DiGraph):
 	def resetTokens(self, shadowNodesStr: str) -> None:
 		shadowNodes: list[str] = loads(shadowNodesStr)
 		self.nodes[self.__start]["tokens"] = []
-		# Ros.Logger().error(f"RESET: {repr(startState.tokens)}")
+		self.__tokenCounter = 0
 		for shadowJson in shadowNodes:
 			token = self.__createToken(shadowJson)
 			self.nodes[self.__start]["tokens"].append(token)
@@ -134,16 +134,6 @@ class BehaviorAutomaton(nx.DiGraph):
 			intervalSecs=1,
 		)
 		return
-
-	def tokenTransitionPairs(self) -> list[tuple[StateToken, Transition]]:
-		pairs: list[tuple[StateToken, Transition]] = []
-		for node in self.nodes:
-			for token in self.nodes[node]["tokens"]:
-				token = cast(StateToken, token)
-				for (frm, to, transition) in self.out_edges(node, data="transition"): # pyright: ignore[reportArgumentType]
-					Ros.Log("OutEdge", (frm, to, transition))
-				# FIXME: Extract transitions
-		return pairs
 
 	def __tokensPerState(self) -> dict[str, list[StateToken]]:
 		d: dict[str, list[StateToken]] = {}

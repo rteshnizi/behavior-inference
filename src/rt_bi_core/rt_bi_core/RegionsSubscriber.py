@@ -99,7 +99,7 @@ class RegionsSubscriber(RtBiNode, ABC):
 			raise RuntimeError(f"No polygon stored for id: {regularSet.id}, set type: {regularSet.set_type}.")
 
 		for poly in polys:
-			predicates = Predicates(regularSet.predicates) if isinstance(regularSet.predicates, list) else Predicates([])
+			predicates = Predicates.fromMsgArray(regularSet.predicates) if isinstance(regularSet.predicates, list) else Predicates()
 			kwArgs: dict[PolygonFactoryKeys, Any] = {
 				"polygonId": poly.id.polygonId,
 				"regionId": poly.id.regionId,
@@ -133,7 +133,7 @@ class RegionsSubscriber(RtBiNode, ABC):
 		return tracklets
 
 	def __createGeometry(self, regularSet: Msgs.RtBi.RegularSet, polyMsg: Msgs.RtBi.Polygon) -> None:
-		predicates = Predicates(regularSet.predicates) if isinstance(regularSet.predicates, list) else Predicates([])
+		predicates = Predicates.fromMsgArray(regularSet.predicates) if isinstance(regularSet.predicates, list) else Predicates()
 		kwArgs: dict[PolygonFactoryKeys, Any] = {
 			"polygonId": polyMsg.id,
 			"regionId": regularSet.id,

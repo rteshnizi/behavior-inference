@@ -7,6 +7,7 @@ from rclpy.parameter import Parameter
 
 from rt_bi_behavior import package_name
 from rt_bi_behavior.Model.BehaviorAutomaton import BehaviorAutomaton
+from rt_bi_behavior.Model.RhsIGraph import RhsIGraph
 from rt_bi_commons.Base.ColdStartableNode import ColdStartable, ColdStartPayload
 from rt_bi_commons.Base.RtBiNode import RtBiNode
 from rt_bi_commons.Utils import Ros
@@ -50,7 +51,7 @@ class BaNode(ColdStartable):
 		return
 
 	def __onEvent(self, msg: Msgs.RtBi.IGraph) -> None:
-		Ros.Log(repr(msg))
+		iGraph = RhsIGraph.fromMsg(msg)
 		# for (token, transition) in pairs:
 		# 	pass
 		# Ros.SendClientRequest(self, self.__iGraphClient, req, self.__onIGraphResponse)

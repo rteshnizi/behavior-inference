@@ -230,9 +230,6 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 		id__ = id_.copy(timeNanoSecs=-1, hIndex=-1, subPartId="")
 		return id__ in self.__sensorIdToIndex
 
-	def asJsonStr(self) -> str:
-		return ""
-
 	def createNodeMarkers(self) -> list[RViz.Msgs.Marker]:
 		markers = []
 		for antiShadow in self.antiShadows:

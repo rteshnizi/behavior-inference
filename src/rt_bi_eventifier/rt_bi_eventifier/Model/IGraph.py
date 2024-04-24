@@ -77,9 +77,6 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 			timeRangeStr = "%d , %d" % (self.history[0].timeNanoSecs, self.history[-1].timeNanoSecs)
 		return f"IGr-[{timeRangeStr})(D={self.depth}, N={len(self.nodes)}, E={len(self.edges)})"
 
-	def asJsonStr(self) -> str:
-		return ""
-
 	def addNode(self, id: NxUtils.Id, cGraph: ConnectivityGraph) -> NxUtils.Id:
 		assert cGraph.hIndex is not None and cGraph.hIndex > -1, f"Unset hIndex is not allowed in ShadowTree: cGraph = {repr(cGraph)}, hIndex = {cGraph.hIndex}"
 		content = cGraph.getContent(id)
@@ -264,15 +261,18 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 		self.history[index] = graph
 		return
 
-	def __appendToHistory(self, graph: ConnectivityGraph, onEvent: Callable[["IGraph"], None]) -> None:
-		shouldCallOnEvent = False
+	def __appendToHistory(self, graph: ConnectivityGraph, eventHandler: Callable[["IGraph", bool], None]) -> None:
+		shouldBroadcastEvent = False
+		isomorphicUpdate = False
 		if self.depth > 0 and graph.timeNanoSecs < self.history[-1].timeNanoSecs:
 				Ros.Logger().error(f"Older graph than latest in history --> {graph.timeNanoSecs} vs {self.history[-1].timeNanoSecs}")
 				return
 
+		shouldBroadcastEvent = True
 		if self.depth > 0 and EventAggregator.isIsomorphic(self.history[-1], graph):
 			Ros.Log("Isomorphic graph detected.")
 			self.__replaceInHistory(self.depth - 1, graph)
+			isomorphicUpdate = True
 		else:
 			Ros.Log(f"APPENDING graph with {len(graph.shadows)} shadows and {len(graph.antiShadows)} anti-shadows.")
 			graph.hIndex = self.hIndex
@@ -289,7 +289,7 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 		if self.depth > self.__MAX_HISTORY:
 			Ros.Log(f"History depth is more than MAX={self.__MAX_HISTORY} graphs.")
 			self.__removeFromHistory(0, True)
-		if shouldCallOnEvent: onEvent(self)
+		if shouldBroadcastEvent: eventHandler(self, isomorphicUpdate)
 		self.render()
 		return
 
@@ -318,7 +318,7 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 				maxNs = ctr.latestNanoSecs
 		return (minNs, maxNs)
 
-	def updatePolygon(self, polygon: GraphPolygon, onEvent: Callable[["IGraph"], None]) -> None:
+	def updatePolygon(self, polygon: GraphPolygon, eventHandler: Callable[["IGraph", bool], None]) -> None:
 		Ros.Log(128 * "↓") # A separator in the logs
 		Ros.Log(f"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX {repr(self)} XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
 		Ros.Log("Updated Poly ->", [ f"{polygon}", f"T={polygon.timeNanoSecs}", f"{polygon.predicates}"])
@@ -342,7 +342,7 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 
 		if self.depth == 0:
 			cGraph = self.at(minLatestNs)
-			self.__appendToHistory(cGraph, onEvent)
+			self.__appendToHistory(cGraph, eventHandler)
 			return
 
 		ctrs = list(self.__ctrs.values())
@@ -357,5 +357,5 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 			eventGraphs.append(self.at(eventTimeNs))
 		if len(eventGraphs) == 0: eventGraphs = [self.at(polygon.timeNanoSecs)] # If no events, just update the locations of polygons.
 		Ros.Log("Aggregated CGraphs", eventGraphs)
-		for graph in eventGraphs: self.__appendToHistory(graph, onEvent)
+		for graph in eventGraphs: self.__appendToHistory(graph, eventHandler)
 		return

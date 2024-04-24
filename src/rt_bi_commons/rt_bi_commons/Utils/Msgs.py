@@ -16,7 +16,8 @@ class Msgs:
 
 	import rt_bi_interfaces.msg as RtBi
 	import rt_bi_interfaces.srv as RtBiSrv
-	__ = RtBiSrv # RtBiSrv is being re-exported. This is here to get rid of unused import warning.
+	__ = RtBiSrv # This is here to get rid of unused import warning.
+	__ = Std # This is here to get rid of unused import warning.
 
 	@classmethod
 	def toSecsNanoSecsPair(cls, nanoSecs: int) -> tuple[int, int]:

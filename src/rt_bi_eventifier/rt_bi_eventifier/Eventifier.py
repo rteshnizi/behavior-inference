@@ -42,9 +42,10 @@ class Eventifier(ColdStartable, RegionsSubscriber):
 		self.publishColdStartDone()
 		return
 
-	def __publishBaEvent(self, iGraph: IGraph, init: bool = False) -> None:
+	def __publishBaEvent(self, iGraph: IGraph, isomorphic: bool = False) -> None:
+		if isomorphic: pass # Tell BA to update their token names
 		msg = Msgs.RtBi.IGraph()
-		msg.adjacency_json = iGraph.asJsonStr()
+		msg.adjacency_json = iGraph.asStr()
 		self.__iGraphPublisher.publish(msg)
 		return
 

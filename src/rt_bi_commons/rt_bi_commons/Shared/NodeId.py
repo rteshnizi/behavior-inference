@@ -39,6 +39,13 @@ class NodeId:
 	def fromJson(jsonStr: str) -> "NodeId":
 		try:
 			d: dict[str, Any] = loads(jsonStr)
+			return NodeId.fromDict(d)
+		except Exception as _:
+			raise RuntimeError(f"Unable to parse string to NodeId: {jsonStr}")
+
+	@staticmethod
+	def fromDict(d: dict[str, Any]) -> "NodeId":
+		try:
 			return NodeId(
 				hIndex=d["hIndex"],
 				timeNanoSecs=d["timeNanoSecs"],
@@ -46,8 +53,8 @@ class NodeId:
 				polygonId=d["polygonId"],
 				subPartId=d["subPartId"],
 			)
-		except Exception as e:
-			raise RuntimeError(f"Unable to parse string to NodeId: {jsonStr}")
+		except Exception as _:
+			raise RuntimeError(f"Unable to parse dictionary to NodeId: {d}")
 
 	def stringify(self) -> str:
 		d = asdict(self)
