@@ -4,7 +4,9 @@ from rclpy.logging import LoggingSeverity
 from rclpy.node import Publisher
 from rclpy.parameter import Parameter
 
+from rt_bi_commons.Base.ColdStartableNode import ColdStartableNode, ColdStartPayload
 from rt_bi_commons.Utils import Ros
+from rt_bi_commons.Utils.Msgs import Msgs
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_commons.Utils.RViz import RViz
 from rt_bi_core.RegionsSubscriber import RegionsSubscriber
@@ -18,11 +20,6 @@ class Eventifier(RegionsSubscriber):
 	def __init__(self, **kwArgs) -> None:
 		newKw = { "node_name": "eventifier", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
 		super().__init__(**newKw)
-		self.mapInitPhasesRemaining = 2
-		"""
-		The first two updates to the map are the static and dynamic regions, so
-		we hold off on other affine updates until it is done.
-		"""
 		self.declareParameters()
 		self.__renderModules: list[IGraph.SUBMODULE] = []
 		self.parseParameters()
@@ -40,17 +37,12 @@ class Eventifier(RegionsSubscriber):
 
 	def __onUpdate(self, polygon: MapPolygon | SensingPolygon) -> None:
 		self.log(f"Update received for polygon of type {polygon.type.name}.")
-		# While initializing the map, don't take affine updates
-		if self.mapInitPhasesRemaining > 0:
-			if polygon.type == AffinePolygon.type or polygon.type == SensingPolygon.type:
-				return
 		self.__iGraph.updatePolygon(polygon)
 		self.__iGraph.renderLatestCGraph()
 		if self.shouldRender: self.render()
 		return
 
 	def onMapUpdated(self, polygon: MapPolygon) -> None:
-		if self.mapInitPhasesRemaining > 0: self.mapInitPhasesRemaining -= 1
 		return self.__onUpdate(polygon)
 
 	def onSensorUpdated(self, polygon: SensingPolygon) -> None:

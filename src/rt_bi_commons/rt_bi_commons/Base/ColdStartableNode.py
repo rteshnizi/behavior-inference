@@ -9,7 +9,7 @@ from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_interfaces.msg import ColdStart
 
-_K = Literal["nodeName", "done", "spatialPredicates", "temporalPredicates", "dynamic", "affine"]
+_K = Literal["done", "spatialPredicates", "temporalPredicates", "dynamic", "affine"]
 # "node_name" is not set in cold start communications since it is in the ROS msg,
 # "node_name" is added here for the RDF node's benefit.
 class ColdStartPayload(dict[_K, Any]):
@@ -36,10 +36,6 @@ class ColdStartPayload(dict[_K, Any]):
 		if isinstance(payload, dict):
 			super().__init__(payload)
 			return
-
-	@property
-	def nodeName(self) -> str:
-		return self.get("nodeName", "")
 
 	@property
 	def done(self) -> bool:
@@ -78,7 +74,7 @@ class ColdStartableNode(RtBiNode, ABC):
 		newKw = { "node_name": "cold_startable_base", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
 		super().__init__(**newKw)
 		self.__coldStartPublisher = RtBiInterfaces.createColdStartPublisher(self)
-		self.__coldStartPermitted = False
+		self.coldStartPermitted = False
 		self.__coldStartPayload = ColdStartPayload({})
 		RtBiInterfaces.subscribeToColdStart(self, self.__onColdStartPermission)
 		return
@@ -93,19 +89,19 @@ class ColdStartableNode(RtBiNode, ABC):
 		if payload.done: return
 		self.__coldStartPayload = payload
 		self.log(f"Received cold start for {msg.node_name} ")
-		self.__coldStartPermitted = True
+		self.coldStartPermitted = True
 		return
 
 	@final
 	def waitForColdStartPermission(self, coldStartFunc: Callable[[ColdStartPayload], None]) -> None:
-		while not self.__coldStartPermitted: Ros.Wait(self, 0.1)
+		while not self.coldStartPermitted: Ros.Wait(self, 0.1)
 		coldStartFunc(self.__coldStartPayload)
 		return
 
 	@final
 	def coldStartCompleted(self, payload: dict[_K, Any] = {}) -> None:
 		self.log(f"Announcing cold start completion for {self.get_fully_qualified_name()}.")
-		payload = ColdStartPayload({"nodeName": self.get_fully_qualified_name(), "done": True, **payload})
+		payload = ColdStartPayload({"done": True, **payload})
 		coldStartAck = ColdStart(node_name=self.get_fully_qualified_name(), json_payload=payload.stringify())
 		self.__coldStartPublisher.publish(coldStartAck)
 		return

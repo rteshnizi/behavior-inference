@@ -24,8 +24,8 @@ class MapEmulator(ColdStartableNode):
 		self.__mapPublisher = RtBiInterfaces.createMapPublisher(self)
 		self.__coldStartPayload: ColdStartPayload | None = None
 		self.__predicatesPublisher = RtBiInterfaces.createPredicatesPublisher(self)
-		self.rdfClient = RtBiInterfaces.createSpaceTimeClient(self)
-		Ros.WaitForServiceToStart(self, self.rdfClient)
+		self.__rdfClient = RtBiInterfaces.createSpaceTimeClient(self)
+		Ros.WaitForServiceToStart(self, self.__rdfClient)
 		self.waitForColdStartPermission(self.onColdStartAllowed)
 		return
 
@@ -33,11 +33,8 @@ class MapEmulator(ColdStartableNode):
 		self.__coldStartPayload = payload
 		reqTemporal = Msgs.RtBiSrv.SpaceTime.Request()
 		reqTemporal.query_name = "temporal"
-		reqTemporal.json_payload = ColdStartPayload({
-			"nodeName": self.get_fully_qualified_name(),
-			"temporalPredicates": list(payload.temporalPredicates),
-		}).stringify()
-		Ros.SendClientRequest(self, self.rdfClient, reqTemporal, self.__onTemporalResponse)
+		reqTemporal.json_payload = ColdStartPayload({"temporalPredicates": list(payload.temporalPredicates)}).stringify()
+		Ros.SendClientRequest(self, self.__rdfClient, reqTemporal, self.__onTemporalResponse)
 		return
 
 	def __extractOriginOfTime(self, matches: list[Msgs.RtBi.RegularSet]) -> None:
@@ -69,17 +66,17 @@ class MapEmulator(ColdStartableNode):
 			setDict[setId] = intervals
 		return setDict
 
-	def __createTemporalPredicateUpdate(self, setId: str, eventTime: int, val: bool, predicateNames: list[str]) -> Msgs.RtBi.RegularSet:
+	def __createTemporalPredicateUpdate(self, setId: str, eventTime: int, val: bool, predicateNames: list[str], setType: str) -> Msgs.RtBi.RegularSet:
 		msg = Msgs.RtBi.RegularSet()
 		msg.id = setId
 		msg.stamp = Msgs.toTimeMsg(eventTime)
-		msg.set_type = Msgs.RtBi.RegularSet.DYNAMIC
+		msg.set_type = setType
 		for predicate in predicateNames:
 			p = Msgs.RtBi.Predicate(name=predicate, value=Msgs.RtBi.Predicate.TRUE if val else Msgs.RtBi.Predicate.FALSE)
 			Ros.AppendMessage(msg.predicates, p)
 		return msg
 
-	def __evaluateTemporalPredicates(self, timeNanoSecs: int, temporalSets: dict[str, list[tuple[TimeInterval, list[str]]]], msgArr: Msgs.RtBi.RegularSetArray) -> Msgs.RtBi.RegularSetArray:
+	def __evaluateTemporalPredicates(self, timeNanoSecs: int, temporalSets: dict[str, list[tuple[TimeInterval, list[str]]]], setType: str, msgArr: Msgs.RtBi.RegularSetArray) -> Msgs.RtBi.RegularSetArray:
 		"""Evaluate the membership of the given time point with respect to all the given temporal sets."""
 		Ros.Log("Evaluating the current value of temporal predicates.")
 		predicateVal: dict[str, bool] = {}
@@ -100,27 +97,27 @@ class MapEmulator(ColdStartableNode):
 					# It's a past event
 					# Remove past intervals from the list
 					temporalSets[setId].remove((interval, predicates))
-			predicateUpdateMsg = self.__createTemporalPredicateUpdate(setId, timeNanoSecs, predicateVal[setId], predicates)
+			predicateUpdateMsg = self.__createTemporalPredicateUpdate(setId, timeNanoSecs, predicateVal[setId], predicates, setType)
 			Ros.Log(f"Evaluated {predicates} @ {timeNanoSecs} for {setId} to {predicateVal[setId]}.")
 			Ros.AppendMessage(msgArr.sets, predicateUpdateMsg)
 			if predicateVal[setId] == True:
 				(currentInterval, predicates) = temporalSets[setId].pop(0)
-				nextPredicateUpdate = self.__createTemporalPredicateUpdate(setId, currentInterval.maxNanoSecs, False, predicates)
+				nextPredicateUpdate = self.__createTemporalPredicateUpdate(setId, currentInterval.maxNanoSecs, False, predicates, setType)
 				Ros.Log(f"Reachability state for {setId} changes to False @ {currentInterval.maxNanoSecs}.")
 				Ros.AppendMessage(msgArr.sets, nextPredicateUpdate)
 		return msgArr
 
-	def __futureTemporalEvents(self, temporalSets: dict[str, list[tuple[TimeInterval, list[str]]]], msgArr: Msgs.RtBi.RegularSetArray) -> Msgs.RtBi.RegularSetArray:
+	def __futureTemporalEvents(self, temporalSets: dict[str, list[tuple[TimeInterval, list[str]]]], setType: str, msgArr: Msgs.RtBi.RegularSetArray) -> Msgs.RtBi.RegularSetArray:
 		Ros.Log("Evaluating the future values of temporal predicates.")
 		for setId in temporalSets:
 			intervals = temporalSets[setId]
 			Ros.Log(f"Evaluating temporal events for {setId}", intervals)
 			for (interval, predicates) in intervals:
 				Ros.Log(f"Evaluated {predicates} @ {interval.minNanoSecs} for {setId} to True.")
-				update = self.__createTemporalPredicateUpdate(setId, interval.minNanoSecs, True, predicates)
+				update = self.__createTemporalPredicateUpdate(setId, interval.minNanoSecs, True, predicates, setType)
 				Ros.AppendMessage(msgArr.sets, update)
 				Ros.Log(f"Evaluated {predicates} @ {interval.maxNanoSecs} for {setId} to False.")
-				update = self.__createTemporalPredicateUpdate(setId, interval.maxNanoSecs, False, predicates)
+				update = self.__createTemporalPredicateUpdate(setId, interval.maxNanoSecs, False, predicates, setType)
 				Ros.AppendMessage(msgArr.sets, update)
 		return msgArr
 
@@ -141,17 +138,15 @@ class MapEmulator(ColdStartableNode):
 				setDict = self.__addTimePointToDict(match.id, interval, predicates, setDict)
 		setDict = self.__prepareIntervalsForProcessing(setDict)
 		temporalEvents = Msgs.RtBi.RegularSetArray()
-		temporalEvents = self.__evaluateTemporalPredicates(nowNanoSecs, setDict, temporalEvents)
-		temporalEvents = self.__futureTemporalEvents(setDict, temporalEvents)
+		setType = Msgs.RtBi.RegularSet.TEMPORAL
+		temporalEvents = self.__evaluateTemporalPredicates(nowNanoSecs, setDict, setType, temporalEvents)
+		temporalEvents = self.__futureTemporalEvents(setDict, setType, temporalEvents)
 		if len(temporalEvents.sets) > 0: self.__mapPublisher.publish(temporalEvents)
 		assert self.__coldStartPayload is not None, "self.__coldStartPayload is None"
 		reqSpatial = Msgs.RtBiSrv.SpaceTime.Request()
 		reqSpatial.query_name = "spatial"
-		reqSpatial.json_payload = ColdStartPayload({
-			"nodeName": self.get_fully_qualified_name(),
-			"spatialPredicates": list(self.__coldStartPayload.spatialPredicates),
-		}).stringify()
-		Ros.SendClientRequest(self, self.rdfClient, reqSpatial, self.__onSpatialPredicatesResponse)
+		reqSpatial.json_payload = ColdStartPayload({"spatialPredicates": list(self.__coldStartPayload.spatialPredicates)}).stringify()
+		Ros.SendClientRequest(self, self.__rdfClient, reqSpatial, self.__onSpatialPredicatesResponse)
 		return res
 
 	def __extractSetIdsByType(self, matches: list[Msgs.RtBi.RegularSet], filterType: str) -> list[str]:
@@ -183,11 +178,10 @@ class MapEmulator(ColdStartableNode):
 		req = Msgs.RtBiSrv.SpaceTime.Request()
 		req.query_name = "dynamic"
 		req.json_payload = ColdStartPayload({
-			"nodeName": self.get_fully_qualified_name(),
 			"affine": self.__extractAffineSetIds(res.sets),
 			"dynamic": self.__extractDynamicSetIds(res.sets),
 		}).stringify()
-		Ros.SendClientRequest(self, self.rdfClient, req, self.__onDynamicSetsResponse)
+		Ros.SendClientRequest(self, self.__rdfClient, req, self.__onDynamicSetsResponse)
 		return res
 
 	def __onDynamicSetsResponse(self, req: Msgs.RtBiSrv.SpaceTime.Request, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
@@ -201,8 +195,9 @@ class MapEmulator(ColdStartableNode):
 				accessibilityInfo = self.__addTimePointToDict(match.id, interval, ["accessible"], accessibilityInfo)
 		accessibilityInfo = self.__prepareIntervalsForProcessing(accessibilityInfo)
 		reachabilityUpdates = Msgs.RtBi.RegularSetArray()
-		reachabilityUpdates = self.__evaluateTemporalPredicates(nowNanoSecs, accessibilityInfo, reachabilityUpdates)
-		reachabilityUpdates = self.__futureTemporalEvents(accessibilityInfo, reachabilityUpdates)
+		setType = Msgs.RtBi.RegularSet.DYNAMIC
+		reachabilityUpdates = self.__evaluateTemporalPredicates(nowNanoSecs, accessibilityInfo, setType, reachabilityUpdates)
+		reachabilityUpdates = self.__futureTemporalEvents(accessibilityInfo, setType, reachabilityUpdates)
 		if len(reachabilityUpdates.sets) > 0: self.__mapPublisher.publish(reachabilityUpdates)
 		self.coldStartCompleted()
 		return res

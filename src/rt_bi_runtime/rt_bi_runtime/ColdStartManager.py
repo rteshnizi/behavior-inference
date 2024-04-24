@@ -16,6 +16,7 @@ class ColdStartManager(RtBiNode):
 			# The order in this list is significant
 			"/rt_bi_behavior/ba1",
 			"/rt_bi_emulator/dynamic_map",
+			# "/rt_bi_eventifier/eventifier", # FIXME: Should be added here
 		]
 		self.__spatialPredicates: set[str] = set()
 		self.__temporalPredicates: set[str] = set()
@@ -33,13 +34,20 @@ class ColdStartManager(RtBiNode):
 			if nodeName.startswith(RtBiInterfaces.BA_NODE_PREFIX):
 				payload = ColdStartPayload({})
 			elif nodeName.startswith(RtBiInterfaces.KNOWN_REGION_NODE_PREFIX):
-				# TODO: fetch and assign predicates
+				# TODO: fetch predicates
 				payload = ColdStartPayload({})
-			else: # Dynamic Map Cold Start
+			elif nodeName.startswith("/rt_bi_emulator/dynamic_map"):
 				payload = ColdStartPayload({
 					"spatialPredicates": list(self.__spatialPredicates),
 					"temporalPredicates": list(self.__temporalPredicates),
 				})
+			elif nodeName.startswith("/rt_bi_eventifier/eventifier"):
+				# FIXME: Tell it which affine regions to subscribe to
+				# This is the right thing to do, but RegionSubscriber and ColdStartableNode have conflicting publishers.
+				# payload = ColdStartPayload({})
+				pass
+			else:
+				raise NotImplementedError(f"ColdStart procedure is not implemented for {nodeName}.")
 			msg = Msgs.RtBi.ColdStart(node_name=nodeName, json_payload=payload.stringify())
 			self.__coldStartPublisher.publish(msg)
 		return
@@ -53,15 +61,14 @@ class ColdStartManager(RtBiNode):
 			if msg.node_name.startswith(RtBiInterfaces.BA_NODE_PREFIX):
 				self.__spatialPredicates |= payload.spatialPredicates
 				self.__temporalPredicates |= payload.temporalPredicates
-			if msg.node_name.startswith(RtBiInterfaces.KNOWN_REGION_NODE_PREFIX):
-				pass # TODO:
-			else: # Dynamic Map
+			elif msg.node_name.startswith(RtBiInterfaces.KNOWN_REGION_NODE_PREFIX):
+				pass # TODO: assign predicates
+			elif msg.node_name.startswith("/rt_bi_emulator/dynamic_map"):
 				pass
-				# if payload.phase == 0:
-				# 	pass # Fetch dynamic region data so that the map can trigger reachability events
-				# 	self.__coldStartPhase = 1
-				# elif payload.phase == 1:
-				# 	self.__coldStartPhase = 0
+			elif msg.node_name.startswith("/rt_bi_eventifier/eventifier"):
+				pass
+			else:
+				self.get_logger().error(f"ColdStart completion is not expected for {msg.node_name}.")
 			self.__triggerNextColdStart()
 		return
 

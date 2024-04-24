@@ -74,46 +74,46 @@ class RegionsSubscriber(RtBiNode, ABC):
 		return
 
 	def __useLatestGeometry(self, regularSet: Msgs.RtBi.RegularSet) -> None:
-		poly: SubscriberPolygon | None = None
+		polys: list[SubscriberPolygon] | None = None # For majority of the cases this is a list with a single poly, except for when initializing temporal events
 		match regularSet.set_type:
 			case StaticPolygon.type.value:
-				PolyCls = StaticPolygon
 				if regularSet.id in self.mapRegions:
-					poly = self.mapRegions[regularSet.id][-1]
+					polys = [self.mapRegions[regularSet.id][-1]]
 			case DynamicPolygon.type.value:
-				PolyCls = DynamicPolygon
 				if regularSet.id in self.mapRegions:
-					poly = self.mapRegions[regularSet.id][-1]
+					polys = [self.mapRegions[regularSet.id][-1]]
 			case AffinePolygon.type.value:
-				PolyCls = AffinePolygon
 				if regularSet.id in self.mapRegions:
-					poly = self.mapRegions[regularSet.id][-1]
+					polys = [self.mapRegions[regularSet.id][-1]]
 			case SensingPolygon.type.value:
-				PolyCls = SensingPolygon
-				if regularSet.id in self.mapRegions:
-					poly = self.sensorRegions[regularSet.id][-1]
+				if regularSet.id in self.sensorRegions:
+					polys = [self.sensorRegions[regularSet.id][-1]]
 			case TargetPolygon.type.value:
-				PolyCls = TargetPolygon
-				if regularSet.id in self.mapRegions:
-					poly = self.targetRegions[regularSet.id][-1]
+				if regularSet.id in self.targetRegions:
+					polys = [self.targetRegions[regularSet.id][-1]]
 			case _:
-				raise RuntimeError(f"Unexpected region type: {regularSet.set_type}")
-		if poly is None: raise RuntimeError(f"No polygon stored for id: {regularSet.id}")
+				self.log(f"Unexpected region type: {regularSet.set_type}")
+		if polys is None and regularSet.set_type == Msgs.RtBi.RegularSet.TEMPORAL:
+			# When it's a purely temporal set, we assign its predicates to all map regions and send updates
+			polys = [self.mapRegions[polyId][-1] for polyId in self.mapRegions]
+		if polys is None:
+			raise RuntimeError(f"No polygon stored for id: {regularSet.id}, set type: {regularSet.set_type}.")
 
-		predicates = Predicates(regularSet.predicates) if isinstance(regularSet.predicates, list) else Predicates([])
-		kwArgs: dict[PolygonFactoryKeys, Any] = {
-			"polygonId": poly.id.polygonId,
-			"regionId": regularSet.id,
-			"subPartId": "",
-			"envelope": poly.envelope,
-			"timeNanoSecs": Msgs.toNanoSecs(regularSet.stamp),
-			"predicates": predicates,
-			"hIndex": -1,
-			"centerOfRotation": poly.centerOfRotation,
-		}
-		if poly.type == SensingPolygon.type: kwArgs["tracklets"] = poly.tracklets
-		poly = PolygonFactory(PolyCls, kwArgs)
-		self.__storeGeometry(regularSet.id, poly)
+		for poly in polys:
+			predicates = Predicates(regularSet.predicates) if isinstance(regularSet.predicates, list) else Predicates([])
+			kwArgs: dict[PolygonFactoryKeys, Any] = {
+				"polygonId": poly.id.polygonId,
+				"regionId": regularSet.id,
+				"subPartId": "",
+				"envelope": poly.envelope,
+				"timeNanoSecs": Msgs.toNanoSecs(regularSet.stamp),
+				"predicates": predicates,
+				"hIndex": -1,
+				"centerOfRotation": poly.centerOfRotation,
+			}
+			if poly.type == SensingPolygon.type: kwArgs["tracklets"] = poly.tracklets
+			poly = PolygonFactory(type(poly), kwArgs)
+			self.__storeGeometry(regularSet.id, poly)
 		return
 
 	def __createTracklets(self, regularSet: Msgs.RtBi.RegularSet) -> dict[str, Tracklet]:

@@ -38,6 +38,7 @@ class RtBiInterfaces:
 		RT_BI_EMULATOR_TARGET = "/__rt_bi_emulator/target"
 		RT_BI_EMULATOR_MAP = "/__rt_bi_runtime/map"
 		RT_BI_EVENTIFIER_INIT_GRAPH = "/__rt_bi_eventifier/init_graph"
+		RT_BI_EVENTIFIER_START = "/__rt_bi_eventifier/start"
 		RT_BI_RUNTIME_COLD_START = "/__rt_bi_runtime/cold_start"
 		RT_BI_RUNTIME_PREDICATES = "/__rt_bi_runtime/predicates"
 
