@@ -18,7 +18,7 @@ class MapEmulator(ColdStartableNode):
 	* Information about dynamic regions are provided by :class:`KnownRegionEmulator` instances.
 	"""
 	def __init__(self) -> None:
-		newKw = { "node_name": "dynamic_map", "loggingSeverity": LoggingSeverity.WARN }
+		newKw = { "node_name": "dynamic_map", "loggingSeverity": LoggingSeverity.INFO }
 		super().__init__(**newKw)
 		self.__timeOriginNanoSecs: int = -1
 		self.__mapPublisher = RtBiInterfaces.createMapPublisher(self)
@@ -31,10 +31,10 @@ class MapEmulator(ColdStartableNode):
 
 	def onColdStartAllowed(self, payload: ColdStartPayload) -> None:
 		self.__coldStartPayload = payload
-		reqTemporal = Msgs.RtBiSrv.SpaceTime.Request()
-		reqTemporal.query_name = "temporal"
-		reqTemporal.json_payload = ColdStartPayload({"temporalPredicates": list(payload.temporalPredicates)}).stringify()
-		Ros.SendClientRequest(self, self.__rdfClient, reqTemporal, self.__onTemporalResponse)
+		reqSpatial = Msgs.RtBiSrv.SpaceTime.Request()
+		reqSpatial.query_name = "spatial"
+		reqSpatial.json_payload = ColdStartPayload({"spatialPredicates": list(self.__coldStartPayload.spatialPredicates)}).stringify()
+		Ros.SendClientRequest(self, self.__rdfClient, reqSpatial, self.__onSpatialPredicatesResponse)
 		return
 
 	def __extractOriginOfTime(self, matches: list[Msgs.RtBi.RegularSet]) -> None:
@@ -142,11 +142,7 @@ class MapEmulator(ColdStartableNode):
 		temporalEvents = self.__evaluateTemporalPredicates(nowNanoSecs, setDict, setType, temporalEvents)
 		temporalEvents = self.__futureTemporalEvents(setDict, setType, temporalEvents)
 		if len(temporalEvents.sets) > 0: self.__mapPublisher.publish(temporalEvents)
-		assert self.__coldStartPayload is not None, "self.__coldStartPayload is None"
-		reqSpatial = Msgs.RtBiSrv.SpaceTime.Request()
-		reqSpatial.query_name = "spatial"
-		reqSpatial.json_payload = ColdStartPayload({"spatialPredicates": list(self.__coldStartPayload.spatialPredicates)}).stringify()
-		Ros.SendClientRequest(self, self.__rdfClient, reqSpatial, self.__onSpatialPredicatesResponse)
+		self.coldStartCompleted()
 		return res
 
 	def __extractSetIdsByType(self, matches: list[Msgs.RtBi.RegularSet], filterType: str) -> list[str]:
@@ -199,7 +195,11 @@ class MapEmulator(ColdStartableNode):
 		reachabilityUpdates = self.__evaluateTemporalPredicates(nowNanoSecs, accessibilityInfo, setType, reachabilityUpdates)
 		reachabilityUpdates = self.__futureTemporalEvents(accessibilityInfo, setType, reachabilityUpdates)
 		if len(reachabilityUpdates.sets) > 0: self.__mapPublisher.publish(reachabilityUpdates)
-		self.coldStartCompleted()
+		assert self.__coldStartPayload is not None, "self.__coldStartPayload is None"
+		reqTemporal = Msgs.RtBiSrv.SpaceTime.Request()
+		reqTemporal.query_name = "temporal"
+		reqTemporal.json_payload = ColdStartPayload({"temporalPredicates": list(self.__coldStartPayload.temporalPredicates)}).stringify()
+		Ros.SendClientRequest(self, self.__rdfClient, reqTemporal, self.__onTemporalResponse)
 		return res
 
 	def declareParameters(self) -> None:

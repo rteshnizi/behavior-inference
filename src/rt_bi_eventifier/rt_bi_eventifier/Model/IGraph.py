@@ -312,7 +312,7 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 	def updatePolygon(self, polygon: GraphPolygon) -> None:
 		Ros.Log(128 * "↓") # A separator in the logs
 		Ros.Log(f"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX {repr(self)} XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
-		Ros.Log(f"Updated Poly -> {polygon}, T={polygon.timeNanoSecs}")
+		Ros.Log("Updated Poly ->", [ f"{polygon}", f"T={polygon.timeNanoSecs}", f"{polygon.predicates}"])
 		if self.depth == 0 and polygon.type != StaticPolygon.type:
 			Ros.Log("Initial CGraph must be created from a static map.")
 			return
