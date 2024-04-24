@@ -13,7 +13,6 @@ class PredicateToQueryName(TransitionTransformer):
 
 	def simple_expression(self, subExpressions: list[str]) -> str:
 		if len(subExpressions) != 2: raise UnexpectedToken(subExpressions, {"2 strings: namespace, variable."})
-		if subExpressions[0] == "T": return ""
 		return subExpressions[1]
 
 	def property_seq(self, variables: list[str]) -> str:
