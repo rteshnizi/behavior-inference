@@ -69,12 +69,12 @@ class ColdStartPayload(dict[_K, Any]):
 		if val is None: return set()
 		return set(val)
 
-class ColdStartableNode(RtBiNode, ABC):
-	def __init__(self, **kwArgs) -> None:
-		newKw = { "node_name": "cold_startable_base", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
-		super().__init__(**newKw)
+class ColdStartable(RtBiNode, ABC):
+	"""This class does not init RtBiNode, subclass should do so"""
+	def __init__(self) -> None:
 		self.__coldStartPublisher = RtBiInterfaces.createColdStartPublisher(self)
 		self.coldStartPermitted = False
+		self.coldStartCompleted = False
 		self.__coldStartPayload = ColdStartPayload({})
 		RtBiInterfaces.subscribeToColdStart(self, self.__onColdStartPermission)
 		return
@@ -93,14 +93,15 @@ class ColdStartableNode(RtBiNode, ABC):
 		return
 
 	@final
-	def waitForColdStartPermission(self, coldStartFunc: Callable[[ColdStartPayload], None]) -> None:
+	def waitForColdStartPermission(self) -> None:
 		while not self.coldStartPermitted: Ros.Wait(self, 0.1)
-		coldStartFunc(self.__coldStartPayload)
+		self.onColdStartAllowed(self.__coldStartPayload)
 		return
 
 	@final
-	def coldStartCompleted(self, payload: dict[_K, Any] = {}) -> None:
+	def publishColdStartDone(self, payload: dict[_K, Any] = {}) -> None:
 		self.log(f"Announcing cold start completion for {self.get_fully_qualified_name()}.")
+		self.coldStartCompleted = True
 		payload = ColdStartPayload({"done": True, **payload})
 		coldStartAck = ColdStart(node_name=self.get_fully_qualified_name(), json_payload=payload.stringify())
 		self.__coldStartPublisher.publish(coldStartAck)

@@ -4,22 +4,22 @@ from rclpy.logging import LoggingSeverity
 from rclpy.node import Publisher
 from rclpy.parameter import Parameter
 
-from rt_bi_commons.Base.ColdStartableNode import ColdStartableNode, ColdStartPayload
+from rt_bi_commons.Base.ColdStartableNode import ColdStartable, ColdStartPayload
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Msgs import Msgs
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_commons.Utils.RViz import RViz
 from rt_bi_core.RegionsSubscriber import RegionsSubscriber
 from rt_bi_core.Spatial import MapPolygon
-from rt_bi_core.Spatial.AffinePolygon import AffinePolygon
 from rt_bi_core.Spatial.SensingPolygon import SensingPolygon
 from rt_bi_eventifier.Model.IGraph import IGraph
 
 
-class Eventifier(RegionsSubscriber):
+class Eventifier(ColdStartable, RegionsSubscriber):
 	def __init__(self, **kwArgs) -> None:
 		newKw = { "node_name": "eventifier", "loggingSeverity": LoggingSeverity.WARN, **kwArgs}
-		super().__init__(**newKw)
+		RegionsSubscriber.__init__(self, **newKw)
+		ColdStartable.__init__(self)
 		self.declareParameters()
 		self.__renderModules: list[IGraph.SUBMODULE] = []
 		self.parseParameters()
@@ -32,8 +32,14 @@ class Eventifier(RegionsSubscriber):
 		gPublisher = RtBiInterfaces.createEventGraphPublisher(self)
 		self.__iGraph: IGraph = IGraph(gPublisher, modulePublishers)
 		RtBiInterfaces.subscribeToProjectiveMap(self, self.enqueueUpdate)
+		self.waitForColdStartPermission()
+		return
+
+	def onColdStartAllowed(self, payload: ColdStartPayload) -> None:
 		RtBiInterfaces.subscribeToAffineMap(self, self.enqueueUpdate)
 		RtBiInterfaces.subscribeToSensors(self, self.enqueueUpdate)
+		self.publishColdStartDone()
+		return
 
 	def __onUpdate(self, polygon: MapPolygon | SensingPolygon) -> None:
 		self.log(f"Update received for polygon of type {polygon.type.name}.")

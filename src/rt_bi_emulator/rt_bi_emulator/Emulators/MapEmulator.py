@@ -3,14 +3,15 @@ from typing import Literal
 import rclpy
 from rclpy.logging import LoggingSeverity
 
-from rt_bi_commons.Base.ColdStartableNode import ColdStartableNode, ColdStartPayload
+from rt_bi_commons.Base.ColdStartableNode import ColdStartable, ColdStartPayload
+from rt_bi_commons.Base.RtBiNode import RtBiNode
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Msgs import Msgs
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_core.Temporal.TimeInterval import TimeInterval
 
 
-class MapEmulator(ColdStartableNode):
+class MapEmulator(ColdStartable):
 	"""
 	This class listens to all static and dynamic map region updates:
 
@@ -19,14 +20,15 @@ class MapEmulator(ColdStartableNode):
 	"""
 	def __init__(self) -> None:
 		newKw = { "node_name": "dynamic_map", "loggingSeverity": LoggingSeverity.INFO }
-		super().__init__(**newKw)
+		RtBiNode.__init__(self, **newKw)
+		ColdStartable.__init__(self)
 		self.__timeOriginNanoSecs: int = -1
 		self.__mapPublisher = RtBiInterfaces.createMapPublisher(self)
 		self.__coldStartPayload: ColdStartPayload | None = None
 		self.__predicatesPublisher = RtBiInterfaces.createPredicatesPublisher(self)
 		self.__rdfClient = RtBiInterfaces.createSpaceTimeClient(self)
 		Ros.WaitForServiceToStart(self, self.__rdfClient)
-		self.waitForColdStartPermission(self.onColdStartAllowed)
+		self.waitForColdStartPermission()
 		return
 
 	def onColdStartAllowed(self, payload: ColdStartPayload) -> None:
@@ -122,7 +124,7 @@ class MapEmulator(ColdStartableNode):
 		return msgArr
 
 	def __onTemporalResponse(self, req: Msgs.RtBiSrv.SpaceTime.Request, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
-		self.log(f"Received TEMPORAL PREDICATES response: {res.sets}")
+		self.log("Received TEMPORAL PREDICATES response.")
 		self.__publishPredicateSymbols(res.json_predicate_symbols, "temporal")
 		res.sets = Ros.AsList(res.sets, Msgs.RtBi.RegularSet)
 		self.__extractOriginOfTime(res.sets)
@@ -142,7 +144,7 @@ class MapEmulator(ColdStartableNode):
 		temporalEvents = self.__evaluateTemporalPredicates(nowNanoSecs, setDict, setType, temporalEvents)
 		temporalEvents = self.__futureTemporalEvents(setDict, setType, temporalEvents)
 		if len(temporalEvents.sets) > 0: self.__mapPublisher.publish(temporalEvents)
-		self.coldStartCompleted()
+		self.publishColdStartDone()
 		return res
 
 	def __extractSetIdsByType(self, matches: list[Msgs.RtBi.RegularSet], filterType: str) -> list[str]:

@@ -103,7 +103,8 @@ class RegionsSubscriber(RtBiNode, ABC):
 			predicates = Predicates(regularSet.predicates) if isinstance(regularSet.predicates, list) else Predicates([])
 			kwArgs: dict[PolygonFactoryKeys, Any] = {
 				"polygonId": poly.id.polygonId,
-				"regionId": regularSet.id,
+				# "regionId": regularSet.id, # FIXME: This is the correct representation, but it made processing so slow. Because practically static and dynamic sets are all duplicated.
+				"regionId": poly.id.regionId,
 				"subPartId": "",
 				"envelope": poly.envelope,
 				"timeNanoSecs": Msgs.toNanoSecs(regularSet.stamp),

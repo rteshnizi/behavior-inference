@@ -1,5 +1,5 @@
 rt_bi_eventifier:
-  ev:
+  eventifier:
     ros__parameters:
       render: True
       renderModules:

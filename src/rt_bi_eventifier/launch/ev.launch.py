@@ -15,7 +15,7 @@ def generate_launch_description():
 			package=corePackageName,
 			namespace=corePackageName,
 			executable="EV",
-			name="ev",
+			name="eventifier",
 			arguments= [
 				"--ros-args",
 				"--log-level",

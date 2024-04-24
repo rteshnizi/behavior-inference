@@ -7,13 +7,14 @@ from rclpy.parameter import Parameter
 
 from rt_bi_behavior import package_name
 from rt_bi_behavior.Model.BehaviorAutomaton import BehaviorAutomaton
-from rt_bi_commons.Base.ColdStartableNode import ColdStartableNode, ColdStartPayload
+from rt_bi_commons.Base.ColdStartableNode import ColdStartable, ColdStartPayload
+from rt_bi_commons.Base.RtBiNode import RtBiNode
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Msgs import Msgs
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 
 
-class BaNode(ColdStartableNode):
+class BaNode(ColdStartable):
 	"""
 	This Node listens to all the messages published on the topics related to the Behavior Automaton.
 	This node combines topic listeners and service clients.
@@ -21,7 +22,8 @@ class BaNode(ColdStartableNode):
 	def __init__(self, **kwArgs) -> None:
 		""" Create a Behavior Automaton node. """
 		newKw = { "node_name": "ba", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
-		super().__init__(**newKw)
+		RtBiNode.__init__(self, **newKw)
+		ColdStartable.__init__(self)
 		self.declareParameters()
 		self.__name: str = self.get_fully_qualified_name()
 		self.__baseDir = get_package_share_directory(package_name)
@@ -43,7 +45,7 @@ class BaNode(ColdStartableNode):
 			self.__grammarFile
 		)
 		if self.shouldRender: self.__ba.initFlask(self)
-		self.waitForColdStartPermission(self.onColdStartAllowed)
+		self.waitForColdStartPermission()
 		RtBiInterfaces.subscribeToEventGraph(self, self.__onInitGraph)
 		RtBiInterfaces.subscribeToPredicates(self, self.__onPredicates)
 		return
@@ -69,7 +71,7 @@ class BaNode(ColdStartableNode):
 
 	def onColdStartAllowed(self, payload: ColdStartPayload) -> None:
 		if self.shouldRender: self.__ba.initFlask(self)
-		self.coldStartCompleted({
+		self.publishColdStartDone({
 			"spatialPredicates": self.__ba.spatialPredicates,
 			"temporalPredicates": self.__ba.temporalPredicates,
 		})

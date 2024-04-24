@@ -16,7 +16,7 @@ class ColdStartManager(RtBiNode):
 			# The order in this list is significant
 			"/rt_bi_behavior/ba1",
 			"/rt_bi_emulator/dynamic_map",
-			# "/rt_bi_eventifier/eventifier", # FIXME: Should be added here
+			"/rt_bi_eventifier/eventifier",
 		]
 		self.__spatialPredicates: set[str] = set()
 		self.__temporalPredicates: set[str] = set()
@@ -44,7 +44,7 @@ class ColdStartManager(RtBiNode):
 			elif nodeName.startswith("/rt_bi_eventifier/eventifier"):
 				# FIXME: Tell it which affine regions to subscribe to
 				# This is the right thing to do, but RegionSubscriber and ColdStartableNode have conflicting publishers.
-				# payload = ColdStartPayload({})
+				payload = ColdStartPayload({})
 				pass
 			else:
 				raise NotImplementedError(f"ColdStart procedure is not implemented for {nodeName}.")
