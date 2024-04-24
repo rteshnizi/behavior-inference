@@ -156,6 +156,17 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 		self.__history[-1].render()
 		return
 
+	def __antiShadowsAreConnectedTemporally(self, pastGraph: ConnectivityGraph, nowGraph: ConnectivityGraph, pastPoly: SensingPolygon, nowPoly: SensingPolygon) -> bool:
+		try:
+			intersectionOfShadows = GeometryLib.intersection(pastPoly.interior, nowPoly.interior)
+			intersectionOfShadows = GeometryLib.filterPolygons(intersectionOfShadows)
+			if len(intersectionOfShadows) > 0: return True
+			return False
+		except Exception as e:
+			from traceback import format_exc
+			Ros.Log(f"Error in X-Connection Test -- {e}\n{format_exc()}")
+		return False
+
 	def __shadowsAreConnectedTemporally(self, pastGraph: ConnectivityGraph, nowGraph: ConnectivityGraph, pastPoly: MapPolygon, nowPoly: MapPolygon) -> bool:
 		"""
 			With the assumption that previousNode and currentNode intersect,
@@ -198,7 +209,6 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 		except Exception as e:
 			from traceback import format_exc
 			Ros.Log(f"Error in X-Connection Test -- {e}\n{format_exc()}")
-
 		return False
 
 	def __connectTopLayerTemporally(self) -> None:
@@ -209,9 +219,10 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 		# Add temporal edges between FOVs
 		for fromAntiShadow in fromGraph.antiShadows:
 			for toAntiShadow in toGraph.antiShadows:
-				if fromAntiShadow.id.copy(timeNanoSecs=-1, hIndex=-1, subPartId="") == toAntiShadow.id.copy(timeNanoSecs=-1, hIndex=-1, subPartId=""):
-					Ros.Log("AntiShadows are connected", (fromAntiShadow.id, toAntiShadow.id))
-					self.addEdge(fromAntiShadow.id, toAntiShadow.id, fromGraph, toGraph)
+				if GeometryLib.intersects(fromAntiShadow.interior, toAntiShadow.interior):
+					if self.__antiShadowsAreConnectedTemporally(fromGraph, toGraph, fromAntiShadow, toAntiShadow):
+						Ros.Log("AntiShadows are connected", (fromAntiShadow.id, toAntiShadow.id))
+						self.addEdge(fromAntiShadow.id, toAntiShadow.id, fromGraph, toGraph)
 		# Add temporal edges between shadows
 		Ros.Log(" ------------------------------- CONNECT-Z - END -------------------------------")
 		Ros.Log(" ------------------------------- CONNECT-X - START -----------------------------")
