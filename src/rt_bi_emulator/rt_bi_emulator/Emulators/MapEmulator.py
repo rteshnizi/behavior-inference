@@ -23,7 +23,7 @@ class MapEmulator(ColdStartable):
 		RtBiNode.__init__(self, **newKw)
 		ColdStartable.__init__(self)
 		self.__timeOriginNanoSecs: int = -1
-		self.__mapPublisher = RtBiInterfaces.createMapPublisher(self)
+		self.__mapPublisher = RtBiInterfaces.createProjectiveMapPublisher(self)
 		self.__coldStartPayload: ColdStartPayload | None = None
 		self.__predicatesPublisher = RtBiInterfaces.createPredicatesPublisher(self)
 		self.__rdfClient = RtBiInterfaces.createSpaceTimeClient(self)

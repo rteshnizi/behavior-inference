@@ -3,6 +3,7 @@ from math import nan
 from typing import Callable, NamedTuple
 
 from rclpy.node import Client, Publisher, Service, Timer
+from typing_extensions import deprecated
 
 from rt_bi_commons.Base.RtBiNode import RtBiNode
 from rt_bi_commons.Utils import Ros
@@ -42,6 +43,7 @@ class RtBiInterfaces:
 		RT_BI_RUNTIME_PREDICATES = "/__rt_bi_runtime/predicates"
 
 	class ServiceNames(Enum):
+		RT_BI_EVENTIFIER_EVALUATE = "/__rt_bi_eventifier/eval"
 		RT_BI_RUNTIME_DD_RDF = "/__rt_bi_runtime/dd_rdf"
 
 	@staticmethod
@@ -51,6 +53,7 @@ class RtBiInterfaces:
 	@staticmethod
 	def subscribeToSpace(node: RtBiNode, topic: TopicNames, callbackFunc: Callable[[Msgs.RtBi.RegularSetArray], None]) -> None:
 		Ros.CreateSubscriber(node, Msgs.RtBi.RegularSetArray, topic.value, callbackFunc)
+		return
 
 	@staticmethod
 	def createSensorPublisher(node: RtBiNode, callbackFunc: Callable = lambda: None, intervalSecs: float = nan) -> tuple[Publisher, Timer | None]:
@@ -59,6 +62,7 @@ class RtBiInterfaces:
 	@staticmethod
 	def subscribeToSensors(node: RtBiNode, callbackFunc: Callable[[Msgs.RtBi.RegularSetArray], None]) -> None:
 		RtBiInterfaces.subscribeToSpace(node, RtBiInterfaces.TopicNames.RT_BI_EMULATOR_SENSOR, callbackFunc)
+		return
 
 	@staticmethod
 	def createKnownRegionPublisher(node: RtBiNode, callbackFunc: Callable = lambda: None, intervalSecs: float = nan) -> tuple[Publisher, Timer | None]:
@@ -67,6 +71,7 @@ class RtBiInterfaces:
 	@staticmethod
 	def subscribeToAffineMap(node: RtBiNode, callbackFunc: Callable[[Msgs.RtBi.RegularSetArray], None]) -> None:
 		RtBiInterfaces.subscribeToSpace(node, RtBiInterfaces.TopicNames.RT_BI_EMULATOR_KNOWN, callbackFunc)
+		return
 
 	@staticmethod
 	def createTargetPublisher(node: RtBiNode, callbackFunc: Callable = lambda: None, intervalSecs: float = nan) -> tuple[Publisher, Timer | None]:
@@ -75,15 +80,16 @@ class RtBiInterfaces:
 	@staticmethod
 	def subscribeToTargets(node: RtBiNode, callbackFunc: Callable[[Msgs.RtBi.RegularSetArray], None]) -> None:
 		RtBiInterfaces.subscribeToSpace(node, RtBiInterfaces.TopicNames.RT_BI_EMULATOR_TARGET, callbackFunc)
+		return
 
 	@staticmethod
-	def createMapPublisher(node: RtBiNode) -> Publisher:
-		(publisher, _) = Ros.CreatePublisher(node, Msgs.RtBi.RegularSetArray, RtBiInterfaces.TopicNames.RT_BI_EMULATOR_MAP.value)
+	def createProjectiveMapPublisher(node: RtBiNode) -> Publisher:
+		(publisher, _) = RtBiInterfaces.createSpacePublisher(node, RtBiInterfaces.TopicNames.RT_BI_EMULATOR_MAP)
 		return publisher
 
 	@staticmethod
 	def subscribeToProjectiveMap(node: RtBiNode, callbackFunc: Callable[[Msgs.RtBi.RegularSetArray], None]) -> None:
-		Ros.CreateSubscriber(node, Msgs.RtBi.RegularSetArray, RtBiInterfaces.TopicNames.RT_BI_EMULATOR_MAP.value, callbackFunc)
+		RtBiInterfaces.subscribeToSpace(node, RtBiInterfaces.TopicNames.RT_BI_EMULATOR_MAP, callbackFunc)
 		return
 
 	@staticmethod
@@ -96,11 +102,13 @@ class RtBiInterfaces:
 		Ros.CreateSubscriber(node, Msgs.Std.String, RtBiInterfaces.TopicNames.RT_BI_RUNTIME_PREDICATES.value, lambda m: callbackFunc(m.data))
 		return
 
+	@deprecated("Data ref nodes are replaced by RDF")
 	@staticmethod
 	def createDataReferenceService(node: RtBiNode, paramName: str, callbackFunc: Callable[[Msgs.RtBiSrv.DataReference.Request, Msgs.RtBiSrv.DataReference.Response], Msgs.RtBiSrv.DataReference.Response]) -> Service:
 		ddServiceName = RtBiNode.toServiceName(node.get_name(), paramName)
 		return Ros.CreateService(node, Msgs.RtBiSrv.DataReference, ddServiceName, callbackFunc)
 
+	@deprecated("Data ref nodes are replaced by RDF")
 	@staticmethod
 	def createDataReferenceClient(node: RtBiNode, ref: ReferenceDescriptor) -> Client:
 		return Ros.CreateClient(node, Msgs.RtBiSrv.DataReference, ref.serviceName)
