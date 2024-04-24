@@ -116,14 +116,16 @@ class MapEmulator(ColdStartableNode):
 			intervals = temporalSets[setId]
 			Ros.Log(f"Evaluating temporal events for {setId}", intervals)
 			for (interval, predicates) in intervals:
+				Ros.Log(f"Evaluated {predicates} @ {interval.minNanoSecs} for {setId} to True.")
 				update = self.__createTemporalPredicateUpdate(setId, interval.minNanoSecs, True, predicates)
 				Ros.AppendMessage(msgArr.sets, update)
+				Ros.Log(f"Evaluated {predicates} @ {interval.maxNanoSecs} for {setId} to False.")
 				update = self.__createTemporalPredicateUpdate(setId, interval.maxNanoSecs, False, predicates)
 				Ros.AppendMessage(msgArr.sets, update)
 		return msgArr
 
 	def __onTemporalResponse(self, req: Msgs.RtBiSrv.SpaceTime.Request, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
-		self.log("Received TEMPORAL PREDICATES response.")
+		self.log(f"Received TEMPORAL PREDICATES response: {res.sets}")
 		self.__publishPredicateSymbols(res.json_predicate_symbols, "temporal")
 		res.sets = Ros.AsList(res.sets, Msgs.RtBi.RegularSet)
 		self.__extractOriginOfTime(res.sets)
@@ -132,6 +134,7 @@ class MapEmulator(ColdStartableNode):
 		for match in res.sets:
 			match.predicates = Ros.AsList(match.predicates, Msgs.RtBi.Predicate)
 			predicates = [p.name for p in match.predicates]
+			self.log(f"Temporal predicates include: {predicates}")
 			match.intervals = Ros.AsList(match.intervals, Msgs.RtBi.TimeInterval)
 			for intervalMsg in match.intervals:
 				interval = TimeInterval.fromMsg(intervalMsg)
