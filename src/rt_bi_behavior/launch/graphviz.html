@@ -59,8 +59,8 @@
         data.tokens[stateName].forEach(function(tokenObj) {
           var row = tbody.insertRow()
           row.insertCell(0).innerHTML = stateName
-          row.insertCell(1).innerHTML = tokenObj["name"]
-          row.insertCell(2).innerHTML = tokenObj["shadowIdJson"]
+          row.insertCell(1).innerHTML = tokenObj["id"]
+          row.insertCell(2).innerHTML = tokenObj["iGraphNode"]
         });
       });
     });

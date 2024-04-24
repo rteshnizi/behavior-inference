@@ -1,15 +1,16 @@
 from json import dumps, loads
 from tempfile import TemporaryFile
-from typing import Literal, TypeAlias, cast
+from typing import cast
 
 import networkx as nx
 from networkx.drawing import nx_agraph
 
+from rt_bi_behavior.Model.StateToken import StateToken
 from rt_bi_behavior.Model.Transition import Transition
+from rt_bi_commons.Shared.NodeId import NodeId
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Msgs import Msgs
 
-StateToken: TypeAlias = dict[Literal["name", "shadowIdJson"], str]
 
 class BehaviorAutomaton(nx.DiGraph):
 	def __init__(self,
@@ -31,8 +32,9 @@ class BehaviorAutomaton(nx.DiGraph):
 		self.__start: str = start
 		self.__accepting: set[str] = set(accepting)
 		self.__temporalPredicates: dict[str, str] = {}
+		"""Temporal predicate to symbol name map."""
 		self.__spatialPredicates: dict[str, str] = {}
-		"""Predicate to Symbol name map."""
+		"""Spatial predicate to symbol name map."""
 		self.__tokenCounter = 0
 		self.__baseDir: str = baseDir
 		self.__transitionGrammarDir: str = transitionGrammarDir
@@ -80,11 +82,9 @@ class BehaviorAutomaton(nx.DiGraph):
 				self.__addEdge(src, filterStr, dst)
 		return
 
-	def __createToken(self, shadowIdJson: str) -> StateToken:
-		token: StateToken = {
-			"name": f"{self.__tokenCounter}",
-			"shadowIdJson": shadowIdJson,
-		}
+	def __createToken(self, iGraphIdJson: str) -> StateToken:
+		nodeId = NodeId.fromJson(iGraphIdJson)
+		token = StateToken(id=f"{self.__tokenCounter}", iGraphNode=nodeId)
 		self.__tokenCounter += 1
 		return token
 
@@ -144,7 +144,7 @@ class BehaviorAutomaton(nx.DiGraph):
 	def __nodeLabel(self, nodeName: str, tokens: list[StateToken]) -> str:
 		cols: list[str] = []
 		for token in tokens:
-			cols.append(f"<TD bgcolor='red'>{token['name']}</TD>")
+			cols.append(f"<TD bgcolor='red'>{token['id']}</TD>")
 		colsStr = "".join(cols)
 		if len(colsStr) > 0:
 			colsStr = f"<TR>{colsStr}</TR>"
@@ -155,10 +155,8 @@ class BehaviorAutomaton(nx.DiGraph):
 	def __prepareDot(self) -> str:
 		with TemporaryFile() as f:
 			aGraph = nx_agraph.to_agraph(self)
-			# aGraph.graph_attr["fontname"] = "Courier"
 			aGraph.draw(path=f, prog="dot", format="svg")
 			f.seek(0)
-			# Ros.Logger().error(str(aGraph))
 			svg = f.read().decode()
 			return dumps({"name": self.name, "svg": svg, "tokens": self.__tokensPerState()})
 

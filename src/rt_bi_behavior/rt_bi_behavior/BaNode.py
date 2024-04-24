@@ -52,6 +52,7 @@ class BaNode(ColdStartable):
 
 	def __onEvent(self, msg: Msgs.RtBi.IGraph) -> None:
 		iGraph = RhsIGraph.fromMsg(msg)
+		# for
 		# for (token, transition) in pairs:
 		# 	pass
 		# Ros.SendClientRequest(self, self.__iGraphClient, req, self.__onIGraphResponse)
