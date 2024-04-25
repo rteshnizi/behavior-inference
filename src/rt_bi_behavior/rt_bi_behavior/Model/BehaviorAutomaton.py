@@ -26,12 +26,11 @@ class BehaviorAutomaton(nx.DiGraph):
 		):
 		super().__init__()
 		self.__dotPublisher: Ros.Publisher | None = None
-		self.__specName: str = specName
-		self.name = self.__specName
-		self.__states: list[str] = states
-		self.__transitions: dict[str, dict[str, str]] = transitions
+		self.name = specName
+		assert start in states, f"Start state {start} is not in the set of states {states} in BA {self.name}."
+		for state in accepting: assert state in states, f"Accepting state {start} is not in the set of states {states} in BA {self.name}."
 		self.__start: str = start
-		self.__accepting: set[str] = set(accepting)
+		self.__accepting: list[str] = accepting
 		self.__predicatesAreSymbolizingRoundsLeft = 2
 		"""Two rounds of symbols should arrive, one for spatial and one temporal predicates"""
 		self.__tokenCounter = 0
@@ -39,7 +38,7 @@ class BehaviorAutomaton(nx.DiGraph):
 		self.__transitionGrammarDir: str = transitionGrammarDir
 		self.__grammarFileName: str = grammarFileName
 		self.__initializedTokens = False
-		self.__buildGraph()
+		self.__buildGraph(states, transitions)
 		return
 
 	def __repr__(self):
@@ -67,14 +66,14 @@ class BehaviorAutomaton(nx.DiGraph):
 		self.add_edge(source, destination, label=repr(transition), transition=transition)
 		return
 
-	def __buildGraph(self) -> None:
-		for n in self.__states:
+	def __buildGraph(self, states: list[str], transitions: dict[str, dict[str, str]]) -> None:
+		for n in states:
 			self.__addNode(n)
-		for i in range(len(self.__states)):
-			src = self.__states[i]
-			if src not in self.__transitions: continue
-			for dst in self.__transitions[src]:
-				filterStr = self.__transitions[src][dst]
+		for i in range(len(states)):
+			src = states[i]
+			if src not in transitions: continue
+			for dst in transitions[src]:
+				filterStr = transitions[src][dst]
 				self.__addEdge(src, filterStr, dst)
 		return
 
@@ -105,6 +104,9 @@ class BehaviorAutomaton(nx.DiGraph):
 			d |= transition.spatialPredicates
 		return list(d.keys())
 
+	def tokens(self, state: str) -> list[StateToken]:
+		return self.nodes[state]["tokens"]
+
 	def propagate(self, state: str, iGraph: RhsIGraph) -> None:
 		tokens: list[StateToken] = self.nodes[state]["tokens"].copy()
 		for token in tokens:
@@ -114,18 +116,29 @@ class BehaviorAutomaton(nx.DiGraph):
 				self.nodes[state]["tokens"].append(tokenPrime)
 		return
 
+	def reduceUncertainty(self, state: str, iGraph: RhsIGraph) -> None:
+		tokens = cast(list[StateToken], self.nodes[state]["tokens"])
+		i = 0
+		while i < (len(tokens)):
+			if tokens[i]["iGraphNode"] not in iGraph.nodes: # Token has expired as the node is not in history anymore
+				tokens.pop(i)
+				i -= 1
+			i += 1
+		return
+
 	def evaluate(self, iGraph: RhsIGraph) -> None:
 		Ros.Log(f"Evaluating tokens of {self.name}.")
 		for state in self.nodes:
 			state = cast(str, state)
-			tokens: list[StateToken] = self.nodes[state]["tokens"]
-			if len(tokens) == 0: continue
+			self.reduceUncertainty(state, iGraph)
+			if len(self.nodes[state]["tokens"]) == 0: continue
 			for (_, toState, transition) in self.out_edges(state, data="transition"): # pyright: ignore[reportArgumentType]
 				toState = cast(str, toState)
 				transition = cast(Transition, transition)
 				nodeFilter = lambda n: iGraph.destinationFilter(transition, n)
 				destinations: list[NodeId] = list(nx.subgraph_view(iGraph, filter_node=nodeFilter, filter_edge=iGraph.removeAllFilter).nodes)
 				if len(destinations) > 0:
+					tokens: list[StateToken] = self.nodes[state]["tokens"].copy()
 					i = 0
 					while i < (len(tokens)):
 						token = tokens[i]
@@ -183,12 +196,6 @@ class BehaviorAutomaton(nx.DiGraph):
 		)
 		return
 
-	def __tokensPerState(self) -> dict[str, list[StateToken]]:
-		d: dict[str, list[StateToken]] = {}
-		for node in self.nodes:
-			d[node] = self.nodes[node]["tokens"]
-		return d
-
 	def __nodeLabel(self, nodeName: str, tokens: list[StateToken]) -> str:
 		cols: list[str] = []
 		for token in tokens:
@@ -206,7 +213,11 @@ class BehaviorAutomaton(nx.DiGraph):
 			aGraph.draw(path=f, prog="dot", format="svg")
 			f.seek(0)
 			svg = f.read().decode()
-			return dumps({"name": self.name, "svg": svg, "tokens": self.__tokensPerState()})
+			return dumps({
+				"name": self.name,
+				"svg": svg,
+				"tokens": { state: self.tokens(state) for state in self.nodes }
+			})
 
 	def render(self) -> None:
 		if self.__dotPublisher is None: return
