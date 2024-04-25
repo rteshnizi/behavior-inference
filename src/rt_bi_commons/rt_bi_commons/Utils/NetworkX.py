@@ -30,7 +30,7 @@ _Polygon = TypeVar("_Polygon", bound=_PolygonLike)
 @dataclass(frozen=True)
 class NodeData(Generic[_Polygon]):
 	"""The variables of this Class will be stored node attribute key-values."""
-	polygon: _Polygon
+	polygon: Optional[_Polygon] = None
 	predicates: Optional[Predicates] = None
 
 
@@ -54,7 +54,7 @@ class NxUtils:
 		__RENDER_DELTA_Y = 90
 		__RENDER_DELTA_Z = 75
 		def __init__(self, rVizPublisher: Ros.Publisher | None):
-			super().__init__()
+			nx.DiGraph.__init__(self)
 			self.rVizPublisher = rVizPublisher
 
 		def __contains__(self, id_: NodeId | Sequence[NodeId]) -> bool:
@@ -93,16 +93,16 @@ class NxUtils:
 		@overload
 		def getContent(self, node: NodeId, contentKey: Literal["polygon"]) -> _Polygon: ...
 		@overload
-		def getContent(self, node: NodeId, contentKey: Literal["predicates"]) -> list[tuple[str, bool]]: ...
+		def getContent(self, node: NodeId, contentKey: Literal["predicates"]) -> Predicates: ...
 
-		def getContent(self, node: NodeId, contentKey: LiteralString | None = None) -> NodeData[_Polygon] | _Polygon | list[tuple[str, bool]]:
+		def getContent(self, node: NodeId, contentKey: LiteralString | None = None) -> NodeData[_Polygon] | _Polygon | Predicates:
 			assert isinstance(node, NodeId), f"Unexpected Id type: {type(node)}, repr = {repr(node)}"
 			if contentKey is None: return NodeData(**self.nodes[node])
 			elif contentKey == "predicates":
 				d = self.getContent(node)
 				if d.predicates is not None: predicates = d.predicates
 				else: predicates = self.getContent(node, "polygon").predicates
-				return [(p, predicates[p]) for p in predicates]
+				return predicates
 			else: return self.nodes[node][contentKey]
 
 		def _3dLayout(self) -> "NxUtils.GraphLayout3D":

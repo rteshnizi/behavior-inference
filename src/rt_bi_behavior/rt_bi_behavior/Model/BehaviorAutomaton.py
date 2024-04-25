@@ -5,6 +5,7 @@ from typing import cast
 import networkx as nx
 from networkx.drawing import nx_agraph
 
+from rt_bi_behavior.Model.RhsIGraph import RhsIGraph
 from rt_bi_behavior.Model.StateToken import StateToken
 from rt_bi_behavior.Model.Transition import Transition
 from rt_bi_commons.Shared.NodeId import NodeId
@@ -31,14 +32,13 @@ class BehaviorAutomaton(nx.DiGraph):
 		self.__transitions: dict[str, dict[str, str]] = transitions
 		self.__start: str = start
 		self.__accepting: set[str] = set(accepting)
-		self.__temporalPredicates: dict[str, str] = {}
-		"""Temporal predicate to symbol name map."""
-		self.__spatialPredicates: dict[str, str] = {}
-		"""Spatial predicate to symbol name map."""
+		self.__predicatesAreSymbolizingRoundsLeft = 2
+		"""Two rounds of symbols should arrive, one for spatial and one temporal predicates"""
 		self.__tokenCounter = 0
 		self.__baseDir: str = baseDir
 		self.__transitionGrammarDir: str = transitionGrammarDir
 		self.__grammarFileName: str = grammarFileName
+		self.__initializedTokens = False
 		self.__buildGraph()
 		return
 
@@ -64,10 +64,6 @@ class BehaviorAutomaton(nx.DiGraph):
 
 	def __addEdge(self, source: str, transitionStr: str, destination: str) -> None:
 		transition = Transition(transitionStr, self.__baseDir, self.__transitionGrammarDir, self.__grammarFileName)
-		for p in transition.spatialPredicates:
-			self.__spatialPredicates[p] = ""
-		for p in transition.temporalPredicates:
-			self.__temporalPredicates[p] = ""
 		self.add_edge(source, destination, label=repr(transition), transition=transition)
 		return
 
@@ -82,47 +78,99 @@ class BehaviorAutomaton(nx.DiGraph):
 				self.__addEdge(src, filterStr, dst)
 		return
 
-	def __createToken(self, iGraphIdJson: str) -> StateToken:
-		nodeId = NodeId.fromJson(iGraphIdJson)
+	def __createToken(self, iGraphNodeId: str | NodeId) -> StateToken:
+		nodeId = NodeId.fromJson(iGraphNodeId) if isinstance(iGraphNodeId, str) else iGraphNodeId
 		token = StateToken(id=f"{self.__tokenCounter}", iGraphNode=nodeId)
 		self.__tokenCounter += 1
+		# Ros.Log(f"New Token {token}")
 		return token
 
 	@property
+	def initializedTokens(self) -> bool:
+		return self.__initializedTokens
+
+	@property
 	def temporalPredicates(self) -> list[str]:
-		return list(self.__temporalPredicates.keys())
+		d = {}
+		for (frm, to, transition) in self.edges(data="transition"): # pyright: ignore[reportArgumentType]
+			transition = cast(Transition, transition)
+			d |= transition.temporalPredicates
+		return list(d.keys())
 
 	@property
 	def spatialPredicates(self) -> list[str]:
-		return list(self.__spatialPredicates.keys())
+		d = {}
+		for (frm, to, transition) in self.edges(data="transition"): # pyright: ignore[reportArgumentType]
+			transition = cast(Transition, transition)
+			d |= transition.spatialPredicates
+		return list(d.keys())
 
-	def setSymbolicNameOfPredicate(self, symMap: dict[str, str]) -> None:
+	def propagate(self, state: str, iGraph: RhsIGraph) -> None:
+		tokens: list[StateToken] = self.nodes[state]["tokens"].copy()
+		for token in tokens:
+			destinations = iGraph.propagate(token["iGraphNode"])
+			for destination in destinations:
+				tokenPrime = self.__createToken(destination)
+				self.nodes[state]["tokens"].append(tokenPrime)
+		return
+
+	def evaluate(self, iGraph: RhsIGraph) -> None:
+		Ros.Log(f"Evaluating tokens of {self.name}.")
+		for state in self.nodes:
+			state = cast(str, state)
+			tokens: list[StateToken] = self.nodes[state]["tokens"]
+			if len(tokens) == 0: continue
+			for (_, toState, transition) in self.out_edges(state, data="transition"): # pyright: ignore[reportArgumentType]
+				toState = cast(str, toState)
+				transition = cast(Transition, transition)
+				nodeFilter = lambda n: iGraph.destinationFilter(transition, n)
+				destinations: list[NodeId] = list(nx.subgraph_view(iGraph, filter_node=nodeFilter, filter_edge=iGraph.removeAllFilter).nodes)
+				if len(destinations) > 0:
+					i = 0
+					while i < (len(tokens)):
+						token = tokens[i]
+						source = token["iGraphNode"]
+						if source not in iGraph.nodes: # Token has expired as the node is not in history anymore
+							tokens.pop(i)
+							i -= 1
+						found = iGraph.path(source, destinations)
+						for destination in found:
+							self.nodes[toState]["tokens"].append(self.__createToken(destination))
+						i += 1
+				self.propagate(state, iGraph)
+		return
+
+	def setSymbolicNameOfPredicate(self, symbols: dict[str, str]) -> None:
 		"""
 		:param symMap: Dictionary from symbolic name to predicate string
 		:type symMap: `dict[str, str]`
 		"""
-		for p in symMap:
-			if p in self.__spatialPredicates:
-				self.__spatialPredicates[p] = symMap[p]
-			if p in self.__temporalPredicates:
-				self.__temporalPredicates[p] = symMap[p]
 		# Update edge labels in rendering
-		for (frm, to) in self.edges:
-			transition = cast(Transition, self[frm][to]["transition"])
-			for predicate in symMap:
-				symbol = symMap[predicate]
-				transition.setPredicatesSymbol(predicate, symbol)
+		Ros.Log("Symbols updated in BA", symbols.items())
+		for transitionSyntax in symbols:
+			for (frm, to, transition) in self.edges(data="transition"): # pyright: ignore[reportArgumentType]
+				transition = cast(Transition, transition)
+				if transitionSyntax not in transition: continue
+				transition.setPredicatesSymbol(transitionSyntax, symbols[transitionSyntax])
 			self[frm][to]["label"] = repr(transition)
+			Ros.Log("Transition updated to", [transition])
+		if self.__predicatesAreSymbolizingRoundsLeft > 0: self.__predicatesAreSymbolizingRoundsLeft -= 1
 		return
 
-	def resetTokens(self, shadowNodesStr: str) -> None:
-		shadowNodes: list[str] = loads(shadowNodesStr)
-		self.nodes[self.__start]["tokens"] = []
+	def __removeAllTokens(self) -> None:
+		for n in self.nodes: self.nodes[n]["tokens"] = []
+		return
+
+	def resetTokens(self, iGraph: RhsIGraph) -> None:
+		if self.__predicatesAreSymbolizingRoundsLeft > 0: return # Still awaiting symbols
+		Ros.Log(f"Resetting tokens of {self.name}.")
+		self.__removeAllTokens()
 		self.__tokenCounter = 0
-		for shadowJson in shadowNodes:
-			token = self.__createToken(shadowJson)
+		for nodeId in iGraph.nodes:
+			token = self.__createToken(nodeId)
 			self.nodes[self.__start]["tokens"].append(token)
 		self.nodes[self.__start]["label"] = self.__nodeLabel(self.__start, self.nodes[self.__start]["tokens"])
+		self.__initializedTokens = True
 		return
 
 	def initFlask(self, rosNode: Ros.Node) -> None:

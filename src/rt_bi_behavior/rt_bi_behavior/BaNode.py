@@ -52,15 +52,8 @@ class BaNode(ColdStartable):
 
 	def __onEvent(self, msg: Msgs.RtBi.IGraph) -> None:
 		iGraph = RhsIGraph.fromMsg(msg)
-		# for
-		# for (token, transition) in pairs:
-		# 	pass
-		# Ros.SendClientRequest(self, self.__iGraphClient, req, self.__onIGraphResponse)
-		# Ros.Log(f"Before applying: V={len(self.__topologicalGraph.nodes)}, E={len(self.__topologicalGraph.edges)}.")
-		# for event in msg.component_events: self.__topologicalGraph.apply(event)
-		# Ros.Log(f"After applying: V={len(self.__topologicalGraph.nodes)}, E={len(self.__topologicalGraph.edges)}.")
-		# Ros.Log("Tokens", self.__ba.tokens)
-		# self.__timer = Ros.CreateTimer(self, self.__evaluateTokens, 500)
+		if not self.__ba.initializedTokens: self.__ba.resetTokens(iGraph)
+		else: self.__ba.evaluate(iGraph)
 		return
 
 	def __onPredicates(self, predicateJsonStr: str) -> None:
@@ -77,7 +70,7 @@ class BaNode(ColdStartable):
 		return
 
 	def declareParameters(self) -> None:
-		self.log("%s is setting node parameters." % self.get_fully_qualified_name())
+		self.log(f"{self.get_fully_qualified_name()} is setting node parameters.")
 		self.declare_parameter("grammar_dir", Parameter.Type.STRING)
 		self.declare_parameter("grammar_file", Parameter.Type.STRING)
 		self.declare_parameter("states", Parameter.Type.STRING_ARRAY)
@@ -89,7 +82,7 @@ class BaNode(ColdStartable):
 		return
 
 	def parseParameters(self) -> None:
-		self.log("%s is parsing parameters." % self.get_fully_qualified_name())
+		self.log(f"{self.get_fully_qualified_name()} is parsing parameters.")
 		self.__name = self.get_fully_qualified_name()
 		self.__grammarDir = self.get_parameter("grammar_dir").get_parameter_value().string_value
 		self.__grammarFile = self.get_parameter("grammar_file").get_parameter_value().string_value
@@ -111,14 +104,6 @@ class BaNode(ColdStartable):
 	def render(self) -> None:
 		if not self.shouldRender: return
 		self.__ba.render()
-		# FIXME: Set the params for dot file here
-		# if self.__dotRenderer is None:
-		# 	return
-		# Ros.Wait(self, 2)
-		# dotStr = \
-		# self.get_logger().error("RENDER")
-		# self.__dotRenderer.updateSVGStr(dotStr)
-		# return
 
 def main(args=None):
 	rclpy.init(args=args)
