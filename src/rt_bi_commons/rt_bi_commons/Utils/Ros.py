@@ -55,7 +55,8 @@ def Log(msg: str, l: Iterable | None = None, indentStr = "\t\t") -> bool:
 	global __rtBiLog
 	if l is not None:
 		sep = f"\n{indentStr}"
-		l = [m if isinstance(m, str) else repr(m) for m in l]
+		if isinstance(l, str): l = [l]
+		else: l = [m if isinstance(m, str) else repr(m) for m in l]
 		indentedStr = sep.join(l)
 		msg = f"{msg}:{sep}{indentedStr}"
 	return __rtBiLog(msg)
