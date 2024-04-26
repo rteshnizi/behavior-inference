@@ -1,19 +1,22 @@
+from collections import deque
 from json import dumps, loads
 from tempfile import TemporaryFile
-from typing import cast
+from typing import Final, cast
 
 import networkx as nx
 from networkx.drawing import nx_agraph
 
 from rt_bi_behavior.Model.RhsIGraph import RhsIGraph
-from rt_bi_behavior.Model.StateToken import StateToken
-from rt_bi_behavior.Model.Transition import Transition
+from rt_bi_behavior.Model.State import State, StateToken
+from rt_bi_behavior.Model.Transition import Transition, TransitionStatement
 from rt_bi_commons.Shared.NodeId import NodeId
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Msgs import Msgs
 
 
 class BehaviorAutomaton(nx.DiGraph):
+	DOT_RENDER_MAX_TOKENS: Final[int] = 20
+	MAX_TOKENS_WARNING: Final[int] = 2000
 	def __init__(self,
 			specName: str,
 			states: list[str],
@@ -41,10 +44,40 @@ class BehaviorAutomaton(nx.DiGraph):
 		self.__buildGraph(states, transitions)
 		return
 
+	@property
+	def states(self) -> dict[str, State]:
+		# This is the effective structure of the NodeView class here.
+		return cast(dict[str, State], self.nodes)
+
+	def __getitem__(self, state: str) -> dict[str, Transition]:
+		# This is the effective structure of the AtlasView class here.
+		return cast(dict[str, Transition], super().__getitem__(state))
+
 	def __repr__(self):
 		return self.name
 
-	def __addNode(self, name: str) -> None:
+	def __updateStateLabel(self, state: str) -> str:
+		Ros.Log(f"Updating label of {state}.")
+		cols: list[str] = []
+		if len(self.states[state]["tokens"]) > self.DOT_RENDER_MAX_TOKENS:
+			cols.append(f"<TD bgcolor='red'>{len(self.states[state]['tokens'])}</TD>")
+		else:
+			for token in self.states[state]["tokens"]:
+				cols.append(f"<TD bgcolor='orange'>{token['id']}</TD>")
+		colsStr = "".join(cols)
+		if len(colsStr) > 0:
+			colsStr = f"<TR>{colsStr}</TR>"
+		colSpan = 1 if len(cols) == 0 else len(cols)
+		label = f"<<TABLE border='0' cellborder='0' cellpadding='2'><TR><TD colspan='{colSpan}'>{state}</TD></TR>{colsStr}</TABLE>>" #CSpell: ignore -- cellborder
+		self.states[state]["label"] = label
+		if state in self.__accepting and len(self.states[state]["tokens"]) > 0:
+			styles = self.states[state]["style"].split(",")
+			if "filled" not in styles: styles.append("filled")
+			self.states[state]["style"] = ",".join(styles)
+			self.states[state]["fillcolor"] = "DarkGreen"
+		return label
+
+	def __addState(self, name: str) -> None:
 		starting = name == self.__start
 		accepting = name in self.__accepting
 		styles = ["rounded"]
@@ -53,28 +86,29 @@ class BehaviorAutomaton(nx.DiGraph):
 		tokens = []
 		self.add_node(
 			name,
-			label=self.__nodeLabel(name, tokens),
+			label=name,
 			tokens=tokens,
 			shape="box",
-			style=", ".join(styles),
+			style=",".join(styles),
 			peripheries=peripheries,
 		)
+		self.__updateStateLabel(name)
 		return
 
-	def __addEdge(self, source: str, transitionStr: str, destination: str) -> None:
-		transition = Transition(transitionStr, self.__baseDir, self.__transitionGrammarDir, self.__grammarFileName)
-		self.add_edge(source, destination, label=repr(transition), transition=transition)
+	def __addTransition(self, source: str, syntax: str, destination: str) -> None:
+		statement = TransitionStatement(syntax, self.__baseDir, self.__transitionGrammarDir, self.__grammarFileName)
+		self.add_edge(source, destination, label=syntax, statement=statement)
 		return
 
 	def __buildGraph(self, states: list[str], transitions: dict[str, dict[str, str]]) -> None:
 		for n in states:
-			self.__addNode(n)
+			self.__addState(n)
 		for i in range(len(states)):
 			src = states[i]
 			if src not in transitions: continue
 			for dst in transitions[src]:
-				filterStr = transitions[src][dst]
-				self.__addEdge(src, filterStr, dst)
+				statementSyntax = transitions[src][dst]
+				self.__addTransition(src, statementSyntax, dst)
 		return
 
 	def __createToken(self, iGraphNodeId: str | NodeId) -> StateToken:
@@ -84,6 +118,14 @@ class BehaviorAutomaton(nx.DiGraph):
 		# Ros.Log(f"New Token {token}")
 		return token
 
+	def __addToken(self, state: str, iGraphNodeId: NodeId) -> None:
+		for token in self.states[state]["tokens"]:
+			if token["iGraphNode"].copy(hIndex=-1) == iGraphNodeId.copy(hIndex=-1):
+				if token["iGraphNode"].hIndex < iGraphNodeId.hIndex: token["iGraphNode"] = iGraphNodeId
+				return
+		self.states[state]["tokens"].append(self.__createToken(iGraphNodeId))
+		return
+
 	@property
 	def initializedTokens(self) -> bool:
 		return self.__initializedTokens
@@ -91,33 +133,21 @@ class BehaviorAutomaton(nx.DiGraph):
 	@property
 	def temporalPredicates(self) -> list[str]:
 		d = {}
-		for (frm, to, transition) in self.edges(data="transition"): # pyright: ignore[reportArgumentType]
-			transition = cast(Transition, transition)
-			d |= transition.temporalPredicates
+		for (frm, to, statement) in self.edges(data="statement"): # pyright: ignore[reportArgumentType]
+			statement = cast(TransitionStatement, statement)
+			d |= statement.temporalPredicates
 		return list(d.keys())
 
 	@property
 	def spatialPredicates(self) -> list[str]:
 		d = {}
-		for (frm, to, transition) in self.edges(data="transition"): # pyright: ignore[reportArgumentType]
-			transition = cast(Transition, transition)
-			d |= transition.spatialPredicates
+		for (frm, to, statement) in self.edges(data="statement"): # pyright: ignore[reportArgumentType]
+			statement = cast(TransitionStatement, statement)
+			d |= statement.spatialPredicates
 		return list(d.keys())
 
-	def tokens(self, state: str) -> list[StateToken]:
-		return self.nodes[state]["tokens"]
-
-	def propagate(self, state: str, iGraph: RhsIGraph) -> None:
-		tokens: list[StateToken] = self.nodes[state]["tokens"].copy()
-		for token in tokens:
-			destinations = iGraph.propagate(token["iGraphNode"])
-			for destination in destinations:
-				tokenPrime = self.__createToken(destination)
-				self.nodes[state]["tokens"].append(tokenPrime)
-		return
-
 	def reduceUncertainty(self, state: str, iGraph: RhsIGraph) -> None:
-		tokens = cast(list[StateToken], self.nodes[state]["tokens"])
+		tokens = self.states[state]["tokens"]
 		i = 0
 		while i < (len(tokens)):
 			if tokens[i]["iGraphNode"] not in iGraph.nodes: # Token has expired as the node is not in history anymore
@@ -127,30 +157,38 @@ class BehaviorAutomaton(nx.DiGraph):
 		return
 
 	def evaluate(self, iGraph: RhsIGraph) -> None:
+		"""
+		Traverses the BA states in BFS fashion and updates their tokens.
+		BFS traversal ensures tokens are pushed all the way.
+		"""
+		Ros.Log(128 * f"┬")
+		totalTokens = 0
+		for s in self.states: totalTokens += len(self.states[s]["tokens"])
+		if totalTokens > self.MAX_TOKENS_WARNING: Ros.Logger().error(f"Large number of tokens: {totalTokens}")
 		Ros.Log(f"Evaluating tokens of {self.name}.")
-		for state in self.nodes:
-			state = cast(str, state)
-			self.reduceUncertainty(state, iGraph)
-			if len(self.nodes[state]["tokens"]) == 0: continue
-			for (_, toState, transition) in self.out_edges(state, data="transition"): # pyright: ignore[reportArgumentType]
-				toState = cast(str, toState)
-				transition = cast(Transition, transition)
-				nodeFilter = lambda n: iGraph.destinationFilter(transition, n)
-				destinations: list[NodeId] = list(nx.subgraph_view(iGraph, filter_node=nodeFilter, filter_edge=iGraph.removeAllFilter).nodes)
-				if len(destinations) > 0:
-					tokens: list[StateToken] = self.nodes[state]["tokens"].copy()
-					i = 0
-					while i < (len(tokens)):
-						token = tokens[i]
-						source = token["iGraphNode"]
-						if source not in iGraph.nodes: # Token has expired as the node is not in history anymore
-							tokens.pop(i)
-							i -= 1
-						found = iGraph.path(source, destinations)
-						for destination in found:
-							self.nodes[toState]["tokens"].append(self.__createToken(destination))
-						i += 1
-				self.propagate(state, iGraph)
+		statesToUpdate = deque([self.__start], maxlen=len(self.states))
+		while len(statesToUpdate) > 0:
+			fromState = statesToUpdate.popleft() # CSpell: ignore -- popleft
+			self.reduceUncertainty(fromState, iGraph)
+			Ros.Log(f"From State {fromState}.")
+			Ros.Log(f"AFTER REDUCTION has {len(self.states[fromState]['tokens'])} tokens.")
+			for toState in self[fromState]:
+				statesToUpdate.append(toState)
+				if len(self.states[fromState]["tokens"]) == 0: continue
+				Ros.Log(f"To State {toState}")
+				statement = self[fromState][toState]["statement"]
+				newPositions: list[NodeId] = []
+				for token in self.states[fromState]["tokens"]:
+					destinations = iGraph.propagate(token["iGraphNode"])
+					for destination in destinations:
+						if iGraph.satisfies(destination, statement):
+							self.__addToken(toState, destination)
+						else:
+							newPositions.append(destination)
+				for token in newPositions:
+					self.__addToken(fromState, token) # Increase Uncertainty
+			self.__updateStateLabel(fromState)
+		Ros.Log(128 * f"┴")
 		return
 
 	def setSymbolicNameOfPredicate(self, symbols: dict[str, str]) -> None:
@@ -161,17 +199,16 @@ class BehaviorAutomaton(nx.DiGraph):
 		# Update edge labels in rendering
 		Ros.Log("Symbols updated in BA", symbols.items())
 		for transitionSyntax in symbols:
-			for (frm, to, transition) in self.edges(data="transition"): # pyright: ignore[reportArgumentType]
-				transition = cast(Transition, transition)
+			for (frm, to, transition) in self.edges(data="statement"): # pyright: ignore[reportArgumentType]
+				transition = cast(TransitionStatement, transition)
 				if transitionSyntax not in transition: continue
 				transition.setPredicatesSymbol(transitionSyntax, symbols[transitionSyntax])
-			self[frm][to]["label"] = repr(transition)
-			Ros.Log("Transition updated to", [transition])
+				self[frm][to]["label"] = repr(transition)
 		if self.__predicatesAreSymbolizingRoundsLeft > 0: self.__predicatesAreSymbolizingRoundsLeft -= 1
 		return
 
 	def __removeAllTokens(self) -> None:
-		for n in self.nodes: self.nodes[n]["tokens"] = []
+		for n in self.states: self.states[n]["tokens"] = []
 		return
 
 	def resetTokens(self, iGraph: RhsIGraph) -> None:
@@ -181,8 +218,8 @@ class BehaviorAutomaton(nx.DiGraph):
 		self.__tokenCounter = 0
 		for nodeId in iGraph.nodes:
 			token = self.__createToken(nodeId)
-			self.nodes[self.__start]["tokens"].append(token)
-		self.nodes[self.__start]["label"] = self.__nodeLabel(self.__start, self.nodes[self.__start]["tokens"])
+			self.states[self.__start]["tokens"].append(token)
+		self.__updateStateLabel(self.__start)
 		self.__initializedTokens = True
 		return
 
@@ -192,20 +229,26 @@ class BehaviorAutomaton(nx.DiGraph):
 			Msgs.Std.String,
 			"/rt_bi_behavior/dot_renderer",
 			callbackFunc=self.render,
-			intervalSecs=1,
+			intervalSecs=2,
 		)
 		return
 
-	def __nodeLabel(self, nodeName: str, tokens: list[StateToken]) -> str:
-		cols: list[str] = []
-		for token in tokens:
-			cols.append(f"<TD bgcolor='red'>{token['id']}</TD>")
-		colsStr = "".join(cols)
-		if len(colsStr) > 0:
-			colsStr = f"<TR>{colsStr}</TR>"
-		colSpan = 1 if len(cols) == 0 else len(cols)
-		label = f"<<TABLE border='0' cellborder='0' cellpadding='2'><TR><TD colspan='{colSpan}'>{nodeName}</TD></TR>{colsStr}</TABLE>>" #CSpell: ignore -- cellborder
-		return label
+	def __tokensReportForDot(self) -> dict[str, list[dict[str, str]]]:
+		d: dict[str, list[dict]] = {}
+		for state in self.states:
+			if len(self.states[state]["tokens"]) > self.DOT_RENDER_MAX_TOKENS:
+				d[state] = [{
+					"id": "===>",
+					"iGraphNode": f"Has {len(self.states[state]['tokens'])} tokens..."
+				}]
+			else:
+				d[state] = []
+				for t in self.states[state]["tokens"]:
+					d[state].append({
+						"id": t["id"],
+						"iGraphNode": repr(t["iGraphNode"])
+					})
+		return d
 
 	def __prepareDot(self) -> str:
 		with TemporaryFile() as f:
@@ -213,14 +256,11 @@ class BehaviorAutomaton(nx.DiGraph):
 			aGraph.draw(path=f, prog="dot", format="svg")
 			f.seek(0)
 			svg = f.read().decode()
-			return dumps({
-				"name": self.name,
-				"svg": svg,
-				"tokens": { state: self.tokens(state) for state in self.nodes }
-			})
+			return dumps({ "name": self.name, "svg": svg, "tokens": self.__tokensReportForDot() })
 
 	def render(self) -> None:
 		if self.__dotPublisher is None: return
 		dataStr = self.__prepareDot()
 		self.__dotPublisher.publish(Msgs.Std.String(data=dataStr))
+		Ros.Log(f"Dot data sent for {self.name}.")
 		return

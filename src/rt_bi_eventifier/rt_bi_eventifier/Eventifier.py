@@ -1,5 +1,3 @@
-from json import dumps
-
 import rclpy
 from rclpy.logging import LoggingSeverity
 from rclpy.node import Publisher

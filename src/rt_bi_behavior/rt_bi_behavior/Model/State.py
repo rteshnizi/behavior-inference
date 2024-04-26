@@ -10,3 +10,5 @@ class StateToken(TypedDict):
 class State(TypedDict):
 	label: str
 	tokens: list[StateToken]
+	style: str
+	fillcolor: str

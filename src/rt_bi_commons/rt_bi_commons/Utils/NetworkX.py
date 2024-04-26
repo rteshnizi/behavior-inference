@@ -146,7 +146,7 @@ class NxUtils:
 		@abstractmethod
 		def createEdgeMarkers(self) -> list[RViz.Msgs.Marker]: ...
 
-		def asStr(self) -> str:
+		def asStr(self, nodeFilter = None) -> str:
 			jsonDict = nx.adjacency_data(self)
 			for node in jsonDict["nodes"]:
 				node = cast(dict[str, Any], node)

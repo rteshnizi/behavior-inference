@@ -3,9 +3,10 @@ from typing import Any, Literal, cast
 
 import networkx as nx
 
-from rt_bi_behavior.Model.Transition import Transition
+from rt_bi_behavior.Model.Transition import TransitionStatement
 from rt_bi_commons.Shared.NodeId import NodeId
 from rt_bi_commons.Shared.Predicates import Predicates
+from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Msgs import Msgs
 from rt_bi_commons.Utils.NetworkX import NxUtils
 
@@ -21,30 +22,14 @@ class RhsIGraph(NxUtils.Graph):
 	def createEdgeMarkers(self) -> list:
 		return []
 
-	def removeAllFilter(self, *args) -> Literal[False]:
-		return False
-
-	def destinationFilter(self, transition: Transition, node: NodeId) -> bool:
+	def satisfies(self, node: NodeId, criterion: TransitionStatement) -> bool:
 		predicates = self.getContent(node, "predicates")
-		return transition.evaluate(predicates)
+		return criterion.evaluate(predicates)
 
-	def path(self, source: NodeId, destinations: list[NodeId]) -> list[NodeId]:
-		found = []
-		for destination in destinations:
-			try:
-				path = nx.shortest_path(self, source, destination)
-				found.append(path[-1])
-			except nx.NetworkXNoPath as e:
-				continue
-			except Exception as e:
-				raise e
-		return found
-
-	def propagate(self, source: NodeId) -> list[NodeId]:
-		if source not in self.nodes: return []
+	def propagate(self, source: NodeId) -> dict[NodeId, list[NodeId]]:
+		if source not in self.nodes: return {}
 		destinations = cast(dict[NodeId, list[NodeId]], nx.shortest_path(self, source))
-		destinations.pop(source, [])
-		return list(destinations.keys())
+		return cast(dict[NodeId, list[NodeId]], destinations)
 
 	@classmethod
 	def fromMsg(cls, msg: Msgs.RtBi.IGraph) -> "RhsIGraph":

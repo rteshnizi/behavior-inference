@@ -67,6 +67,7 @@
 
     // Then we add a callback to be called every time a message is published on this topic.
     listener.subscribe(function (msg) {
+      console.log('DOT DATA ARRIVED.');
       data = JSON.parse(msg.data);
       document.getElementById("ba-name").innerHTML = data.name;
       document.getElementById("dot-graph").innerHTML = data.svg;

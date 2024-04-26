@@ -1,8 +1,7 @@
-from typing import Callable, Literal, cast
+from typing import Callable, Literal, TypedDict, cast
 
 from rt_bi_commons.Base.TransitionParser import ParseTree, TransitionInterpreter, TransitionParser, TransitionTransformer, UnexpectedToken, v_args
 from rt_bi_commons.Shared.Predicates import Predicates
-from rt_bi_commons.Utils import Ros
 
 
 class PredicateCollector(TransitionInterpreter):
@@ -81,11 +80,9 @@ class TransitionEvaluator(TransitionTransformer):
 		transitionSyntax = self.__simpleExpRebuildFn(namespace, property_seq, test, value)
 		if transitionSyntax not in self.__symbolMap: raise KeyError(f"{transitionSyntax} does not have a symbol.")
 		sym = self.__symbolMap[transitionSyntax]
-		if sym not in self.__predicates:
-			Ros.Log(f"Value for {transitionSyntax} is not given. Replacing it with False")
-			strVal = "False"
-		else:
-			strVal = str(self.__predicates[sym])
+		# Not having a predicate is logically interpreted as False
+		if sym not in self.__predicates: strVal = "False"
+		else: strVal = str(self.__predicates[sym])
 		return strVal
 
 	def property_seq(self, children: list[str]) -> str:
@@ -98,11 +95,11 @@ class TransitionEvaluator(TransitionTransformer):
 	def value(self, children: list[str]) -> str:
 		return children[0]
 
-class Transition:
-	def __init__(self, transitionStr: str, baseDir: str, transitionGrammarDir: str, grammarFileName: str) -> None:
-		self.__str: str = transitionStr
-		self.__symStr: str = transitionStr
-		self.__parseTree = TransitionParser(baseDir, transitionGrammarDir, grammarFileName).parse(transitionStr)
+class TransitionStatement:
+	def __init__(self, syntax: str, baseDir: str, grammarDir: str, grammarFileName: str) -> None:
+		self.__str: str = syntax
+		self.__symStr: str = syntax
+		self.__parseTree = TransitionParser(baseDir, grammarDir, grammarFileName).parse(syntax)
 		predCollector = PredicateCollector(self.__simpleExpRebuildFn)
 		predCollector.visit(self.__parseTree)
 		self.spatialPredicates: dict[str, str] = { p: "" for p in predCollector.spatialPredicates }
@@ -123,19 +120,19 @@ class Transition:
 	def __hash__(self) -> int:
 		return hash(self.__str)
 
-	def __eq__(self, other: "Transition") -> bool:
+	def __eq__(self, other: "TransitionStatement") -> bool:
 		return self.__str == other.__str
 
-	def __contains__(self, transitionSyntax: str) -> bool:
-		if transitionSyntax in self.spatialPredicates: return True
-		if transitionSyntax in self.temporalPredicates: return True
+	def __contains__(self, syntax: str) -> bool:
+		if syntax in self.spatialPredicates: return True
+		if syntax in self.temporalPredicates: return True
 		return False
 
-	def setPredicatesSymbol(self, transitionSyntax: str, symbol: str) -> None:
-		if transitionSyntax == "" or symbol == "": return
-		if transitionSyntax in self.spatialPredicates: self.spatialPredicates[transitionSyntax] = symbol
-		if transitionSyntax in self.temporalPredicates: self.temporalPredicates[transitionSyntax] = symbol
-		self.__symStr = self.__symStr.replace(transitionSyntax, symbol)
+	def setPredicatesSymbol(self, syntax: str, symbol: str) -> None:
+		if syntax == "" or symbol == "": return
+		if syntax in self.spatialPredicates: self.spatialPredicates[syntax] = symbol
+		if syntax in self.temporalPredicates: self.temporalPredicates[syntax] = symbol
+		self.__symStr = self.__symStr.replace(syntax, symbol)
 		return
 
 	def evaluate(self, predicates: Predicates) -> bool:
@@ -146,3 +143,7 @@ class Transition:
 		)
 		val = evaluator.transform(self.__parseTree) # pyright: ignore[reportArgumentType]
 		return val
+
+class Transition(TypedDict):
+	label: str
+	statement: TransitionStatement
