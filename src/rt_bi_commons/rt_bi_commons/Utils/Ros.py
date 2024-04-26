@@ -51,15 +51,21 @@ def Logger() -> RcutilsLogger | logging.Logger:
 		__LOGGER = rosNodes[0].get_logger()
 	return __LOGGER
 
-def Log(msg: str, l: Iterable | None = None, indentStr = "\t\t") -> bool:
-	global __rtBiLog
+def Log(msg: str, l: Iterable | None = None, indentStr = "\t\t", severity: LoggingSeverity | None = None) -> bool:
 	if l is not None:
 		sep = f"\n{indentStr}"
 		if isinstance(l, str): l = [l]
 		else: l = [m if isinstance(m, str) else repr(m) for m in l]
 		indentedStr = sep.join(l)
 		msg = f"{msg}:{sep}{indentedStr}"
-	return __rtBiLog(msg)
+	if severity is None:
+		global __rtBiLog
+		return __rtBiLog(msg)
+	else:
+		__logger = Logger()
+		if isinstance(__logger, RcutilsLogger): return __logger.log(msg, severity)
+		__logger.log(severity, msg)
+	return False
 
 def Now(node: Node | None) -> Time:
 	if node is not None:
