@@ -2,6 +2,7 @@ from typing import Callable, Literal, TypedDict, cast
 
 from rt_bi_commons.Base.TransitionParser import ParseTree, TransitionInterpreter, TransitionParser, TransitionTransformer, UnexpectedToken, v_args
 from rt_bi_commons.Shared.Predicates import Predicates
+from rt_bi_commons.Utils import Ros
 
 
 class PredicateCollector(TransitionInterpreter):
@@ -59,14 +60,9 @@ class TransitionEvaluator(TransitionTransformer):
 	def OR(self, _: str = "") -> Literal["or"]: return "or"
 	def NOT(self, _: str = "") -> Literal["not"]: return "not"
 
-	def expression(self, children: list[str]) -> bool:
+	def expression(self, children: list[str]) -> str:
 		fullStr = " ".join(children)
-		try:
-			val = eval(fullStr)
-			if isinstance(val, bool): return val
-			else: raise ValueError(f"The evaluation result for {fullStr} is not a boolean: {val}")
-		except Exception as e:
-			raise e
+		return fullStr
 
 	def connector(self, children: list[str]) -> str:
 		return children[0]
@@ -141,8 +137,13 @@ class TransitionStatement:
 			predicates,
 			self.__simpleExpRebuildFn,
 		)
-		val = evaluator.transform(self.__parseTree) # pyright: ignore[reportArgumentType]
-		return val
+		try:
+			valStr = evaluator.transform(self.__parseTree) # pyright: ignore[reportArgumentType]
+			val = eval(valStr)
+			if isinstance(val, bool): return val
+			else: raise ValueError(f"The evaluation result for {valStr} is not a boolean: {val}")
+		except Exception as e:
+			raise e
 
 class Transition(TypedDict):
 	label: str

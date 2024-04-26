@@ -10,6 +10,7 @@ from rt_bi_behavior.Model.RhsIGraph import RhsIGraph
 from rt_bi_behavior.Model.State import State, StateToken
 from rt_bi_behavior.Model.Transition import Transition, TransitionStatement
 from rt_bi_commons.Shared.NodeId import NodeId
+from rt_bi_commons.Shared.Predicates import Predicates
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Msgs import Msgs
 
@@ -175,18 +176,20 @@ class BehaviorAutomaton(nx.DiGraph):
 			for toState in self[fromState]:
 				statesToUpdate.append(toState)
 				if len(self.states[fromState]["tokens"]) == 0: continue
+				if fromState in self.__accepting:
+					pass # FIXME: ACCEPTED, handle it
 				Ros.Log(f"To State {toState}")
 				statement = self[fromState][toState]["statement"]
 				newPositions: list[NodeId] = []
-				for token in self.states[fromState]["tokens"]:
-					destinations = iGraph.propagate(token["iGraphNode"])
+				for tokens in self.states[fromState]["tokens"]:
+					destinations = iGraph.propagate(tokens["iGraphNode"])
 					for destination in destinations:
 						if iGraph.satisfies(destination, statement):
 							self.__addToken(toState, destination)
 						else:
 							newPositions.append(destination)
-				for token in newPositions:
-					self.__addToken(fromState, token) # Increase Uncertainty
+				for nId in newPositions:
+					self.__addToken(fromState, nId) # Increase Uncertainty
 			self.__updateStateLabel(fromState)
 		Ros.Log(128 * f"┴")
 		return
@@ -239,14 +242,14 @@ class BehaviorAutomaton(nx.DiGraph):
 			if len(self.states[state]["tokens"]) > self.DOT_RENDER_MAX_TOKENS:
 				d[state] = [{
 					"id": "===>",
-					"iGraphNode": f"Has {len(self.states[state]['tokens'])} tokens..."
+					"iGraphNode": f"Has {len(self.states[state]['tokens'])} tokens...",
 				}]
 			else:
 				d[state] = []
 				for t in self.states[state]["tokens"]:
 					d[state].append({
 						"id": t["id"],
-						"iGraphNode": repr(t["iGraphNode"])
+						"iGraphNode": repr(t["iGraphNode"]),
 					})
 		return d
 
@@ -262,5 +265,5 @@ class BehaviorAutomaton(nx.DiGraph):
 		if self.__dotPublisher is None: return
 		dataStr = self.__prepareDot()
 		self.__dotPublisher.publish(Msgs.Std.String(data=dataStr))
-		Ros.Log(f"Dot data sent for {self.name}.")
+		# Ros.Log(f"Dot data sent for {self.name}.")
 		return
