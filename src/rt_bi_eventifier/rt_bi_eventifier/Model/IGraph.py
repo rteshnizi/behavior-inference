@@ -42,16 +42,17 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 				subset=subset
 			)
 
-	def __init__(self, rvizPublishers: dict[SUBMODULE, Ros.Publisher | None]):
+	def __init__(self, rvizPublishers: dict[SUBMODULE, Ros.Publisher | None] | None = None):
 		"""Initialize the I-graph."""
-		super().__init__(rVizPublisher=rvizPublishers.pop("i_graph", None))
+		rvizPublisher = None if rvizPublishers is None else rvizPublishers.pop("i_graph", None)
+		super().__init__(rVizPublisher=rvizPublisher)
 		# super().__init__(rVizPublisher=None)
 		self.__history: list[ConnectivityGraph] = []
 		self.hIndex = 0
 
 		self.componentEvents: list[list[Shapely.Polygon]] = []
 		""" The reason this is a list of lists is that the time of event is relative to the time between. """
-		self.__rvizPublishers = rvizPublishers
+		self.__rvizPublishers = rvizPublishers if rvizPublishers is not None else {}
 		self.__ctrs: dict[AffinePolygon.Id, ContinuousTimePolygon[GraphPolygon]] = {}
 
 	@property
@@ -76,6 +77,11 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 		if self.depth > 1:
 			timeRangeStr = "%d , %d" % (self.history[0].timeNanoSecs, self.history[-1].timeNanoSecs)
 		return f"IGr-[{timeRangeStr})(D={self.depth}, N={len(self.nodes)}, E={len(self.edges)})"
+
+	def asStr(self, depth = 2) -> str:
+		# self.hIndex - 1 is because the value of hIndex is one more than the last assigned hIndex.
+		filterFn = lambda n: cast(NxUtils.Id, n).hIndex > (self.hIndex - 1) - depth
+		return super().asStr(filterFn)
 
 	def addNode(self, id: NxUtils.Id, cGraph: ConnectivityGraph) -> NxUtils.Id:
 		assert cGraph.hIndex is not None and cGraph.hIndex > -1, f"Unset hIndex is not allowed in ShadowTree: cGraph = {repr(cGraph)}, hIndex = {cGraph.hIndex}"
@@ -148,7 +154,7 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 				sensors.append(ctr[timeNanoSecs])
 			else:
 				map_.append(ctr[timeNanoSecs])
-		cGraph = ConnectivityGraph(timeNanoSecs, map_, sensors, self.__rvizPublishers["c_graph"])
+		cGraph = ConnectivityGraph(timeNanoSecs, map_, sensors, self.__rvizPublishers.get("c_graph", None))
 		return cGraph
 
 	def renderLatestCGraph(self) -> None:
@@ -346,7 +352,7 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 			return
 
 		ctrs = list(self.__ctrs.values())
-		intervals = CtCd.estimateCollisionIntervals(ctrs, minLatestNs, self.__rvizPublishers["ctcd"])
+		intervals = CtCd.estimateCollisionIntervals(ctrs, minLatestNs, self.__rvizPublishers.get("ctcd", None))
 		intervals = CtCd.refineCollisionIntervals(intervals)
 		Ros.Log(f"After refinement {len(intervals)} intervals remained.")
 		intervals.sort(key=lambda e: (e[-1], e[-2])) # Sort events by their end time, then start-time
