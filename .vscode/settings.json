@@ -165,4 +165,5 @@
 	"autoDocstring.docstringFormat": "one-line-sphinx",
 	"python.analysis.autoFormatStrings": true,
 	"python.testing.autoTestDiscoverOnSaveEnabled": false,
+	"ros.distro": "humble",
 }
