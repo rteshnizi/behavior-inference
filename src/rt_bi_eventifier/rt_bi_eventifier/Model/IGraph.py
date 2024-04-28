@@ -228,7 +228,9 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 		assert toGraph.hIndex is not None, f"Cannot connect graph with unset hIndex in I-graph. {repr(toGraph)}"
 		# Add temporal edges between FOVs
 		for fromAntiShadow in fromGraph.antiShadows:
+			if not fromAntiShadow.hasTrack: continue
 			for toAntiShadow in toGraph.antiShadows:
+				if not toAntiShadow.hasTrack: continue
 				if GeometryLib.intersects(fromAntiShadow.interior, toAntiShadow.interior):
 					if self.__antiShadowsAreConnectedTemporally(fromGraph, toGraph, fromAntiShadow, toAntiShadow):
 						Ros.Log("AntiShadows are connected", (fromAntiShadow.id, toAntiShadow.id))
