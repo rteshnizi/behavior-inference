@@ -17,7 +17,7 @@ rt_bi_behavior:
         - "Q0"
         - "Q1"
       transitions_predicate:
-        - '[material.name == "street"] OR [material.name == "grass"]'
+        - '[material.name == "street"] OR [material.name == "bridge"]'
         - '[name == "bridge-is-moving"] AND [name == "storage"]'
       transitions_to:
         - "Q1"
