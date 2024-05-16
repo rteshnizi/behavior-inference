@@ -123,7 +123,7 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 
 		sparql = self.__fillTemplate(
 			self["sparql_template_sets"][0],
-			"rt_bi:RegularSpace", # FIXME: use PredicateToNamespace
+			"class:RegularSpace", # FIXME: use PredicateToNamespace
 			[""],
 			whereClauses,
 			variables,
@@ -167,7 +167,7 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 
 		sparql = self.__fillTemplate(
 			self["sparql_template_sets"][0],
-			"rt_bi:RegularTime", # FIXME: use PredicateToNamespace
+			"class:RegularTime", # FIXME: use PredicateToNamespace
 			[""],
 			whereClauses,
 			variables,
@@ -199,7 +199,7 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 		orders.append(extractedOrders)
 		sparql = self.__fillTemplate(
 			self["sparql_template_ids"][0],
-			"rt_bi:RegularSpace",
+			"class:RegularSpace",
 			[f"<{iri}>" for iri in payload.dynamic],
 			whereClauses,
 			variables,

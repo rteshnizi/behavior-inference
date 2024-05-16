@@ -179,6 +179,6 @@ class FusekiInterface:
 			msg.set_type = self.__parseSetType(resultHelper, i)
 			msg.stamp = stamp
 			Ros.AppendMessage(res.sets, msg)
-			(accessible_times, i) = self.__parseIntervals(resultHelper, i, msg.id)
-			Ros.ConcatMessageArray(msg.intervals, accessible_times)
+			(accessible, i) = self.__parseIntervals(resultHelper, i, msg.id)
+			Ros.ConcatMessageArray(msg.intervals, accessible)
 		return res

@@ -21,7 +21,7 @@ rt_bi_interfaces/TimeInterval[] intervals
 
 ######################### Properties #########################
 # The fully qualified name of the associated ROS node.
-string ros_node
+string channel
 
 string STATIC = "S"
 string DYNAMIC = "D"

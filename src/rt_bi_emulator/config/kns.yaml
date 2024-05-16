@@ -2,7 +2,7 @@ rt_bi_emulator:
   kn1:
     ros__parameters:
       render: True
-      id: "https://rezateshnizi.com/rt-bi/tower_bridge/defintion/kn1"
+      id: "https://rezateshnizi.com/tower_bridge/defintion/kn1"
       updateInterval: 0.25
       timesSecs:
         - 0.0
@@ -18,7 +18,7 @@ rt_bi_emulator:
   kn2:
     ros__parameters:
       render: True
-      id: "https://rezateshnizi.com/rt-bi/tower_bridge/defintion/king"
+      id: "https://rezateshnizi.com/tower_bridge/defintion/king"
       updateInterval: 0.25
       timesSecs:
         - 0.00

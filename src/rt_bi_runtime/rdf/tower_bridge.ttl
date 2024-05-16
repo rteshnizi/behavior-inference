@@ -3,422 +3,337 @@
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 ############## REFERENCES ###############
-@prefix rt_bi: <https://rezateshnizi.com/rt-bi/> .
-@prefix spatial_props: <https://rezateshnizi.com/rt-bi/spatial/props#> .
-@prefix temporal_props: <https://rezateshnizi.com/rt-bi/temporal/props#> .
-@prefix world_props: <https://rezateshnizi.com/rt-bi/world/props#> .
+@prefix class: <https://rezateshnizi.com/rt-bi/class#> .
+@prefix spatial: <https://rezateshnizi.com/rt-bi/spatial#> .
+@prefix temporal: <https://rezateshnizi.com/rt-bi/temporal#> .
+@prefix subject: <https://rezateshnizi.com/rt-bi/subject#> .
 
 ############## THE DATASET ##############
-@prefix tower_bridge: <https://rezateshnizi.com/rt-bi/tower_bridge/> .
+@prefix tower_bridge: <https://rezateshnizi.com/tower_bridge/> .
 # region [SPATIAL DEFS]
-@prefix x: <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/xs#> .
-@prefix y: <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/ys#> .
-@prefix pt: <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/pts#> .
-@prefix polygon: <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/polygons#> .
+@prefix x: <https://rezateshnizi.com/tower_bridge/spatial/xs#> .
+@prefix y: <https://rezateshnizi.com/tower_bridge/spatial/ys#> .
+@prefix pt: <https://rezateshnizi.com/tower_bridge/spatial/pts#> .
+@prefix polygon: <https://rezateshnizi.com/tower_bridge/spatial/polygons#> .
 # region [XS]
-x:0 a rt_bi:X ;
-	spatial_props:x_val 0.0 .
-x:1 a rt_bi:X ;
-	spatial_props:x_val 120.0 .
-x:2 a rt_bi:X ;
-	spatial_props:x_val 140.0 .
-x:3 a rt_bi:X ;
-	spatial_props:x_val 200.0 .
-x:4 a rt_bi:X ;
-	spatial_props:x_val 400.0 .
-x:5 a rt_bi:X ;
-	spatial_props:x_val 600.0 .
-x:6 a rt_bi:X ;
-	spatial_props:x_val 10.0 .
-x:7 a rt_bi:X ;
-	spatial_props:x_val 110.0 .
-x:8 a rt_bi:X ;
-	spatial_props:x_val 410.0 .
-x:9 a rt_bi:X ;
-	spatial_props:x_val 590.0 .
+x:0 a class:X ; spatial:x_val 0.0 .
+x:1 a class:X ; spatial:x_val 250.0 .
+x:2 a class:X ; spatial:x_val 425.0 .
+x:3 a class:X ; spatial:x_val 1770.0 .
+x:4 a class:X ; spatial:x_val 2035.0 .
+x:5 a class:X ; spatial:x_val 2765.0 .
+x:6 a class:X ; spatial:x_val 2945.0 .
+x:7 a class:X ; spatial:x_val 3770.0 .
+x:8 a class:X ; spatial:x_val 3950.0 .
+x:9 a class:X ; spatial:x_val 5120.0 .
 # endregion [XS]
-# region [YS]
-y:0 a rt_bi:Y ;
-	spatial_props:y_val 0.0 .
-y:1 a rt_bi:Y ;
-	spatial_props:y_val 30.0 .
-y:2 a rt_bi:Y ;
-	spatial_props:y_val 90.0 .
-y:3 a rt_bi:Y ;
-	spatial_props:y_val 120.0 .
-y:4 a rt_bi:Y ;
-	spatial_props:y_val 20.0 .
-y:5 a rt_bi:Y ;
-	spatial_props:y_val 40.0 .
-y:6 a rt_bi:Y ;
-	spatial_props:y_val 80.0 .
-y:7 a rt_bi:Y ;
-	spatial_props:y_val 100.0 .
-# endregion [YS]
-# region [PTS]
-pt:0 a rt_bi:Pt ;
-	spatial_props:x x:0 ;
-	spatial_props:y y:0 .
-pt:1 a rt_bi:Pt ;
-	spatial_props:x x:0 ;
-	spatial_props:y y:1 .
-pt:2 a rt_bi:Pt ;
-	spatial_props:x x:0 ;
-	spatial_props:y y:2 .
-pt:3 a rt_bi:Pt ;
-	spatial_props:x x:0 ;
-	spatial_props:y y:3 .
-pt:4 a rt_bi:Pt ;
-	spatial_props:x x:1 ;
-	spatial_props:y y:2 .
-pt:5 a rt_bi:Pt ;
-	spatial_props:x x:1 ;
-	spatial_props:y y:3 .
-pt:6 a rt_bi:Pt ;
-	spatial_props:x x:2 ;
-	spatial_props:y y:2 .
-pt:7 a rt_bi:Pt ;
-	spatial_props:x x:2 ;
-	spatial_props:y y:3 .
-pt:8 a rt_bi:Pt ;
-	spatial_props:x x:3 ;
-	spatial_props:y y:0 .
-pt:9 a rt_bi:Pt ;
-	spatial_props:x x:3 ;
-	spatial_props:y y:1 .
-pt:10 a rt_bi:Pt ;
-	spatial_props:x x:3 ;
-	spatial_props:y y:2 .
-pt:11 a rt_bi:Pt ;
-	spatial_props:x x:3 ;
-	spatial_props:y y:3 .
-pt:12 a rt_bi:Pt ;
-	spatial_props:x x:4 ;
-	spatial_props:y y:0 .
-pt:13 a rt_bi:Pt ;
-	spatial_props:x x:4 ;
-	spatial_props:y y:1 .
-pt:14 a rt_bi:Pt ;
-	spatial_props:x x:4 ;
-	spatial_props:y y:2 .
-pt:15 a rt_bi:Pt ;
-	spatial_props:x x:4 ;
-	spatial_props:y y:3 .
-pt:16 a rt_bi:Pt ;
-	spatial_props:x x:5 ;
-	spatial_props:y y:0 .
-pt:17 a rt_bi:Pt ;
-	spatial_props:x x:5 ;
-	spatial_props:y y:1 .
-pt:18 a rt_bi:Pt ;
-	spatial_props:x x:5 ;
-	spatial_props:y y:2 .
-pt:19 a rt_bi:Pt ;
-	spatial_props:x x:5 ;
-	spatial_props:y y:3 .
-# endregion [PTS]
-# region [SOUTH-BANK]
-pt:20 a rt_bi:Pt ;
-	spatial_props:x x:6 ;
-	spatial_props:y y:4 .
-pt:21 a rt_bi:Pt ;
-	spatial_props:x x:6 ;
-	spatial_props:y y:1 .
-pt:22 a rt_bi:Pt ;
-	spatial_props:x x:6 ;
-	spatial_props:y y:5 .
-pt:23 a rt_bi:Pt ;
-	spatial_props:x x:7 ;
-	spatial_props:y y:5 .
-pt:24 a rt_bi:Pt ;
-	spatial_props:x x:7 ;
-	spatial_props:y y:1 .
-pt:25 a rt_bi:Pt ;
-	spatial_props:x x:7 ;
-	spatial_props:y y:4 .
-# endregion [SOUTH-BANK]
-# region [NORTH-SHORE]
-pt:26 a rt_bi:Pt ;
-	spatial_props:x x:8 ;
-	spatial_props:y y:6 .
-pt:27 a rt_bi:Pt ;
-	spatial_props:x x:8 ;
-	spatial_props:y y:2 .
-pt:28 a rt_bi:Pt ;
-	spatial_props:x x:8 ;
-	spatial_props:y y:7 .
-pt:29 a rt_bi:Pt ;
-	spatial_props:x x:9 ;
-	spatial_props:y y:7 .
-pt:30 a rt_bi:Pt ;
-	spatial_props:x x:9 ;
-	spatial_props:y y:2 .
-pt:31 a rt_bi:Pt ;
-	spatial_props:x x:9 ;
-	spatial_props:y y:6 .
-# endregion [NORTH-SHORE]
-# region [POLYGONS]
-polygon:0 a rt_bi:Polygon ;
-	spatial_props:vertices [ a rt_bi:PtSeq ;
-		rt_bi:v_101 pt:0 ;
-		rt_bi:v_102 pt:8 ;
-		rt_bi:v_103 pt:12;
-		rt_bi:v_104 pt:16;
-		rt_bi:v_105 pt:17;
-		rt_bi:v_106 pt:13;
-		rt_bi:v_107 pt:9;
-		rt_bi:v_108 pt:24;
-		rt_bi:v_109 pt:25;
-		rt_bi:v_110 pt:20;
-		rt_bi:v_111 pt:21;
-		rt_bi:v_112 pt:1;
-	] .
-polygon:1 a rt_bi:Polygon ;
-	spatial_props:vertices [ a rt_bi:PtSeq ;
-		rt_bi:v_101 pt:1;
-		rt_bi:v_102 pt:21;
-		rt_bi:v_103 pt:22;
-		rt_bi:v_104 pt:23;
-		rt_bi:v_105 pt:24;
-		rt_bi:v_106 pt:9;
-		rt_bi:v_107 pt:10;
-		rt_bi:v_108 pt:6;
-		rt_bi:v_109 pt:4;
-		rt_bi:v_110 pt:2;
-	] .
-polygon:2 a rt_bi:Polygon ;
-	spatial_props:vertices [ a rt_bi:PtSeq ;
-		rt_bi:v_101 pt:2;
-		rt_bi:v_102 pt:4;
-		rt_bi:v_103 pt:5;
-		rt_bi:v_104 pt:3;
-	] .
-polygon:3 a rt_bi:Polygon ;
-	spatial_props:vertices [ a rt_bi:PtSeq ;
-		rt_bi:v_101 pt:4;
-		rt_bi:v_102 pt:6;
-		rt_bi:v_103 pt:7;
-		rt_bi:v_104 pt:5;
-	] .
-polygon:4 a rt_bi:Polygon ;
-	spatial_props:vertices [ a rt_bi:PtSeq ;
-		rt_bi:v_101 pt:6;
-		rt_bi:v_102 pt:10;
-		rt_bi:v_103 pt:14;
-		rt_bi:v_104 pt:27;
-		rt_bi:v_105 pt:28;
-		rt_bi:v_106 pt:29;
-		rt_bi:v_107 pt:30;
-		rt_bi:v_108 pt:18;
-		rt_bi:v_109 pt:19;
-		rt_bi:v_110 pt:15;
-		rt_bi:v_111 pt:11;
-		rt_bi:v_112 pt:7;
-	] .
-polygon:5 a rt_bi:Polygon ;
-	spatial_props:vertices [ a rt_bi:PtSeq ;
-		rt_bi:v_101 pt:9;
-		rt_bi:v_102 pt:13;
-		rt_bi:v_103 pt:14;
-		rt_bi:v_104 pt:10;
-	] .
-polygon:6 a rt_bi:Polygon ;
-	spatial_props:vertices [ a rt_bi:PtSeq ;
-		rt_bi:v_101 pt:13;
-		rt_bi:v_102 pt:17;
-		rt_bi:v_103 pt:18;
-		rt_bi:v_104 pt:30;
-		rt_bi:v_105 pt:31;
-		rt_bi:v_106 pt:26;
-		rt_bi:v_107 pt:27;
-		rt_bi:v_108 pt:14;
-	] .
-polygon:south_bank a rt_bi:Polygon ;
-	spatial_props:vertices [ a rt_bi:PtSeq ;
-		rt_bi:v_101 pt:20;
-		rt_bi:v_102 pt:22;
-		rt_bi:v_103 pt:23;
-		rt_bi:v_104 pt:25;
-	] .
-polygon:south_bank_street a rt_bi:Polygon ;
-	spatial_props:vertices [ a rt_bi:PtSeq ;
-		rt_bi:v_101 pt:20;
-		rt_bi:v_102 pt:21;
-		rt_bi:v_103 pt:24;
-		rt_bi:v_104 pt:25;
-	] .
-polygon:south_bank_river a rt_bi:Polygon ;
-	spatial_props:vertices [ a rt_bi:PtSeq ;
-		rt_bi:v_101 pt:21;
-		rt_bi:v_102 pt:22;
-		rt_bi:v_103 pt:23;
-		rt_bi:v_104 pt:24;
-	] .
-polygon:north_shore a rt_bi:Polygon ;
-	spatial_props:vertices [ a rt_bi:PtSeq ;
-		rt_bi:v_101 pt:26;
-		rt_bi:v_102 pt:28;
-		rt_bi:v_103 pt:29;
-		rt_bi:v_104 pt:31;
-	] .
-polygon:north_shore_river a rt_bi:Polygon ;
-	spatial_props:vertices [ a rt_bi:PtSeq ;
-		rt_bi:v_101 pt:26;
-		rt_bi:v_102 pt:27;
-		rt_bi:v_103 pt:30;
-		rt_bi:v_104 pt:31;
-	] .
-polygon:north_shore_street a rt_bi:Polygon ;
-	spatial_props:vertices [ a rt_bi:PtSeq ;
-		rt_bi:v_101 pt:27;
-		rt_bi:v_102 pt:28;
-		rt_bi:v_103 pt:29;
-		rt_bi:v_104 pt:30;
-	] .
 
+# region [YS]
+y:0 a class:Y ; spatial:y_val 0.0 .
+y:1 a class:Y ; spatial:y_val 135.0 .
+y:2 a class:Y ; spatial:y_val 565.0 .
+y:3 a class:Y ; spatial:y_val 745.0 .
+y:4 a class:Y ; spatial:y_val 1000.0 .
+y:5 a class:Y ; spatial:y_val 1870.0 .
+y:6 a class:Y ; spatial:y_val 2125.0 .
+y:7 a class:Y ; spatial:y_val 2300.0 .
+y:8 a class:Y ; spatial:y_val 2735.0 .
+y:9 a class:Y ; spatial:y_val 2880.0 .
+# endregion [YS]
+
+# region [PTS]
+pt:0 a class:Pt ; spatial:x x:0 ; spatial:y y:0 .
+pt:1 a class:Pt ; spatial:x x:9 ; spatial:y y:0 .
+pt:2 a class:Pt ; spatial:x x:0 ; spatial:y y:1 .
+pt:3 a class:Pt ; spatial:x x:9 ; spatial:y y:1 .
+pt:4 a class:Pt ; spatial:x x:0 ; spatial:y y:2 .
+pt:5 a class:Pt ; spatial:x x:3 ; spatial:y y:2 .
+pt:6 a class:Pt ; spatial:x x:4 ; spatial:y y:2 .
+pt:7 a class:Pt ; spatial:x x:5 ; spatial:y y:2 .
+pt:8 a class:Pt ; spatial:x x:6 ; spatial:y y:2 .
+pt:9 a class:Pt ; spatial:x x:9 ; spatial:y y:2 .
+pt:10 a class:Pt ; spatial:x x:5 ; spatial:y y:3 .
+pt:11 a class:Pt ; spatial:x x:6 ; spatial:y y:3 .
+pt:12 a class:Pt ; spatial:x x:0 ; spatial:y y:4 .
+pt:13 a class:Pt ; spatial:x x:3 ; spatial:y y:4 .
+pt:14 a class:Pt ; spatial:x x:4 ; spatial:y y:4 .
+pt:15 a class:Pt ; spatial:x x:9 ; spatial:y y:4 .
+pt:16 a class:Pt ; spatial:x x:0 ; spatial:y y:5 .
+pt:17 a class:Pt ; spatial:x x:3 ; spatial:y y:5 .
+pt:18 a class:Pt ; spatial:x x:4 ; spatial:y y:5 .
+pt:19 a class:Pt ; spatial:x x:9 ; spatial:y y:5 .
+pt:20 a class:Pt ; spatial:x x:1 ; spatial:y y:6 .
+pt:21 a class:Pt ; spatial:x x:2 ; spatial:y y:6 .
+pt:22 a class:Pt ; spatial:x x:7 ; spatial:y y:6 .
+pt:23 a class:Pt ; spatial:x x:8 ; spatial:y y:6 .
+pt:24 a class:Pt ; spatial:x x:0 ; spatial:y y:7 .
+pt:25 a class:Pt ; spatial:x x:1 ; spatial:y y:7 .
+pt:26 a class:Pt ; spatial:x x:2 ; spatial:y y:7 .
+pt:27 a class:Pt ; spatial:x x:3 ; spatial:y y:7 .
+pt:28 a class:Pt ; spatial:x x:4 ; spatial:y y:7 .
+pt:29 a class:Pt ; spatial:x x:7 ; spatial:y y:7 .
+pt:30 a class:Pt ; spatial:x x:8 ; spatial:y y:7 .
+pt:31 a class:Pt ; spatial:x x:9 ; spatial:y y:7 .
+pt:32 a class:Pt ; spatial:x x:0 ; spatial:y y:8 .
+pt:33 a class:Pt ; spatial:x x:9 ; spatial:y y:8 .
+pt:34 a class:Pt ; spatial:x x:0 ; spatial:y y:9 .
+pt:35 a class:Pt ; spatial:x x:9 ; spatial:y y:9 .
+# endregion [PTS]
+
+# region [POLYGONS]
+polygon:0 a class:Polygon ;
+	spatial:vertices [ a class:PtSeq ;
+		class:v_101 pt:0 ;
+		class:v_102 pt:1 ;
+		class:v_103 pt:3 ;
+		class:v_104 pt:2 ;
+	] .
+polygon:1 a class:Polygon ;
+	spatial:vertices [ a class:PtSeq ;
+		class:v_101 pt:2 ;
+		class:v_102 pt:3 ;
+		class:v_103 pt:9 ;
+		class:v_104 pt:6 ;
+		class:v_105 pt:14 ;
+		class:v_106 pt:13 ;
+		class:v_107 pt:5 ;
+		class:v_108 pt:4 ;
+	] .
+polygon:2 a class:Polygon ;
+	spatial:vertices [ a class:PtSeq ;
+		class:v_101 pt:4 ;
+		class:v_102 pt:5 ;
+		class:v_103 pt:13;
+		class:v_104 pt:12;
+	] .
+polygon:3 a class:Polygon ;
+	spatial:vertices [ a class:PtSeq ;
+		class:v_101 pt:6 ;
+		class:v_102 pt:7 ;
+		class:v_103 pt:10 ;
+		class:v_104 pt:11 ;
+		class:v_105 pt:8 ;
+		class:v_106 pt:9 ;
+		class:v_107 pt:15 ;
+		class:v_108 pt:14 ;
+	] .
+polygon:4 a class:Polygon ;
+	spatial:vertices [ a class:PtSeq ;
+		class:v_101 pt:7 ;
+		class:v_102 pt:8 ;
+		class:v_103 pt:11 ;
+		class:v_104 pt:10 ;
+	] .
+polygon:5 a class:Polygon ;
+	spatial:vertices [ a class:PtSeq ;
+		class:v_101 pt:12 ;
+		class:v_102 pt:13 ;
+		class:v_103 pt:17 ;
+		class:v_104 pt:16 ;
+	] .
+polygon:6 a class:Polygon ;
+	spatial:vertices [ a class:PtSeq ;
+		class:v_101 pt:13 ;
+		class:v_102 pt:14 ;
+		class:v_103 pt:18 ;
+		class:v_104 pt:17 ;
+	] .
+polygon:7 a class:Polygon ;
+	spatial:vertices [ a class:PtSeq ;
+		class:v_101 pt:14 ;
+		class:v_102 pt:15 ;
+		class:v_103 pt:19 ;
+		class:v_104 pt:18 ;
+	] .
+polygon:8 a class:Polygon ;
+	spatial:vertices [ a class:PtSeq ;
+		class:v_101 pt:16 ;
+		class:v_102 pt:17 ;
+		class:v_103 pt:27 ;
+		class:v_104 pt:26 ;
+		class:v_105 pt:21 ;
+		class:v_106 pt:20 ;
+		class:v_107 pt:25 ;
+		class:v_108 pt:24 ;
+	] .
+polygon:9 a class:Polygon ;
+	spatial:vertices [ a class:PtSeq ;
+		class:v_101 pt:20 ;
+		class:v_102 pt:21 ;
+		class:v_103 pt:26 ;
+		class:v_104 pt:25 ;
+	] .
+polygon:10 a class:Polygon ;
+	spatial:vertices [ a class:PtSeq ;
+		class:v_101 pt:18 ;
+		class:v_102 pt:19 ;
+		class:v_103 pt:31 ;
+		class:v_104 pt:30 ;
+		class:v_105 pt:23 ;
+		class:v_106 pt:22 ;
+		class:v_107 pt:29 ;
+		class:v_108 pt:28 ;
+	] .
+polygon:11 a class:Polygon ;
+	spatial:vertices [ a class:PtSeq ;
+		class:v_101 pt:22 ;
+		class:v_102 pt:23 ;
+		class:v_103 pt:30 ;
+		class:v_104 pt:29 ;
+	] .
+polygon:12 a class:Polygon ;
+	spatial:vertices [ a class:PtSeq ;
+		class:v_101 pt:24 ;
+		class:v_102 pt:27 ;
+		class:v_103 pt:17 ;
+		class:v_104 pt:18 ;
+		class:v_105 pt:28 ;
+		class:v_106 pt:31 ;
+		class:v_107 pt:33 ;
+		class:v_108 pt:32 ;
+	] .
+polygon:13 a class:Polygon ;
+	spatial:vertices [ a class:PtSeq ;
+		class:v_101 pt:32 ;
+		class:v_102 pt:33 ;
+		class:v_103 pt:35 ;
+		class:v_104 pt:34 ;
+	] .
 # endregion [POLYGONS]
 # endregion [SPATIAL DEFS]
+
 # region [TEMPORAL DEFS]
-@prefix t: <https://rezateshnizi.com/rt-bi/tower_bridge/temporal/ts#> .
-@prefix interval: <https://rezateshnizi.com/rt-bi/tower_bridge/temporal/intervals#> .
+@prefix t: <https://rezateshnizi.com/tower_bridge/temporal/ts#> .
+@prefix interval: <https://rezateshnizi.com/tower_bridge/temporal/intervals#> .
 # region [TS]
-t:0 a rt_bi:Time ;
-	temporal_props:secs 0.0 .
-t:1 a rt_bi:Time ;
-	temporal_props:secs 20.0 .
-t:2 a rt_bi:Time ;
-	temporal_props:secs 29.0 .
-t:3 a rt_bi:Time ;
-	temporal_props:secs 31.0 .
-t:4 a rt_bi:Time ;
-	temporal_props:secs 40.0 .
-t:5 a rt_bi:Time ;
-	temporal_props:secs 50.0 .
+t:0 a class:Time ; temporal:secs 0.0 .
+t:1 a class:Time ; temporal:secs 10.0 .
+t:2 a class:Time ; temporal:secs 25.0 .
+t:3 a class:Time ; temporal:secs 35.0 .
+t:4 a class:Time ; temporal:secs 55.0 .
+t:5 a class:Time ; temporal:secs 65.0 .
+t:6 a class:Time ; temporal:secs 80.0 .
+t:7 a class:Time ; temporal:secs 90.0 .
+t:8 a class:Time ; temporal:secs 120.0 .
 # endregion [TS]
 # region [INTERVALS]
-interval:early_morning a rt_bi:Interval ;
-	temporal_props:min t:0 ;
-	temporal_props:max t:1 ;
-	temporal_props:include_min true ;
-	temporal_props:include_max false .
-interval:morning a rt_bi:Interval ;
-	temporal_props:min t:1 ;
-	temporal_props:max t:2 ;
-	temporal_props:include_min true ;
-	temporal_props:include_max false .
-interval:mid_day a rt_bi:Interval ;
-	temporal_props:min t:2 ;
-	temporal_props:max t:3 ;
-	temporal_props:include_min true ;
-	temporal_props:include_max false .
-interval:afternoon a rt_bi:Interval ;
-	temporal_props:min t:3 ;
-	temporal_props:max t:4 ;
-	temporal_props:include_min true ;
-	temporal_props:include_max false .
-interval:evening a rt_bi:Interval ;
-	temporal_props:min t:4 ;
-	temporal_props:max t:5 ;
-	temporal_props:include_min true ;
-	temporal_props:include_max false .
+interval:0 a class:Interval ;
+	temporal:min t:1 ;          temporal:max t:2 ;
+	temporal:include_min true ; temporal:include_max false .
+interval:1 a class:Interval ;
+	temporal:min t:3 ;          temporal:max t:4 ;
+	temporal:include_min true ; temporal:include_max false .
+interval:2 a class:Interval ;
+	temporal:min t:5 ;          temporal:max t:6 ;
+	temporal:include_min true ; temporal:include_max false .
+interval:3 a class:Interval ;
+	temporal:min t:7 ;          temporal:max t:8 ;
+	temporal:include_min true ; temporal:include_max false .
+interval:4 a class:Interval ;
+	temporal:min t:0 ;          temporal:max t:1 ;
+	temporal:include_min true ; temporal:include_max false .
+interval:5 a class:Interval ;
+	temporal:min t:2 ;          temporal:max t:3 ;
+	temporal:include_min true ; temporal:include_max false .
+interval:6 a class:Interval ;
+	temporal:min t:4 ;          temporal:max t:5 ;
+	temporal:include_min true ; temporal:include_max false .
+interval:7 a class:Interval ;
+	temporal:min t:6 ;          temporal:max t:7 ;
+	temporal:include_min true ; temporal:include_max false .
 
 # endregion [INTERVALS]
 # endregion [TEMPORAL DEFS]
-# region [TRAVERSABILITY DEFS]
-@prefix traversability: <https://rezateshnizi.com/rt-bi/tower_bridge/traversability#> .
-traversability:bridge a rt_bi:Traversability ;
-	world_props:legs true ;
-	world_props:wheels false ;
-	world_props:swims false .
-traversability:street a rt_bi:Traversability ;
-	world_props:legs true ;
-	world_props:wheels true ;
-	world_props:swims false .
-traversability:river a rt_bi:Traversability ;
-	world_props:legs false ;
-	world_props:wheels false ;
-	world_props:swims true .
 
-# endregion [TRAVERSABILITY DEFS]
+# region [MATERIAL DEFS]
+@prefix material: <https://rezateshnizi.com/tower_bridge/materials#> .
+material:bridge a class:Material ;
+	subject:name "bridge" ;
+	subject:color "ORANGE" .
+material:street a class:Material ;
+	subject:name "street" ;
+	subject:color "GREY" .
+material:water a class:Material ;
+	subject:name "water" ;
+	subject:color "BLUE_LIGHT" .
+material:grass a class:Material ;
+	subject:name "grass" ;
+	subject:color "GREEN_LIGHT" .
+material:roof a class:Material ;
+	subject:name "roof" ;
+	subject:color "WHITE" .
+# endregion [MATERIAL DEFS]
+
 # region [REGULAR SET DEFS]
-@prefix tower_bridge_definition: <https://rezateshnizi.com/rt-bi/tower_bridge/defintion/> .
-tower_bridge_definition:101 a rt_bi:StaticSpace ;
-	world_props:traversability traversability:street ;
-	world_props:color "GREY" ;
-	world_props:polygons
-		polygon:0 ,
-		polygon:2 ,
-		polygon:4 ;
+@prefix regular_set: <https://rezateshnizi.com/tower_bridge/regular_sets#> .
+regular_set:101 a class:StaticSpace ;
+	spatial:material material:grass ;
+	spatial:polygons polygon:0 ;
 .
-tower_bridge_definition:102 a rt_bi:StaticSpace ;
-	world_props:traversability traversability:bridge ;
-	world_props:color "WHITE" ;
-	world_props:polygons
-		polygon:3 ;
+regular_set:102 a class:StaticSpace ;
+	spatial:material material:street ;
+	spatial:polygons polygon:1 ;
 .
-tower_bridge_definition:103 a rt_bi:DynamicSpace ;
-	world_props:name "tower-bridge" ;
-	world_props:traversability traversability:bridge ;
-	world_props:color "WHITE" ;
-	world_props:polygons
-		polygon:5 ;
-	world_props:accessible_times
-		interval:morning ,
-		interval:afternoon ;
+regular_set:103 a class:StaticSpace ;
+	spatial:material material:grass ;
+	spatial:polygons polygon:2 ;
 .
-tower_bridge_definition:104 a rt_bi:StaticSpace ;
-	world_props:traversability traversability:river ;
-	world_props:color "BLUE_LIGHT" ;
-	world_props:polygons
-		polygon:1 ,
-		polygon:6 ;
+regular_set:104 a class:StaticSpace ;
+	spatial:material material:grass ;
+	spatial:polygons polygon:3 ;
 .
-tower_bridge_definition:105 a rt_bi:DynamicSpace ;
-	world_props:traversability traversability:river ;
-	world_props:color "BLUE_LIGHT" ;
-	world_props:polygons
-		polygon:5 ;
-	world_props:accessible_times
-		interval:early_morning ,
-		interval:mid_day ,
-		interval:evening ;
+regular_set:105 a class:StaticSpace ;
+	spatial:material material:roof ;
+	spatial:polygons polygon:4 ;
 .
-tower_bridge_definition:108 a rt_bi:StaticSpace ;
-	world_props:name "south-bank" ;
-	world_props:traversability traversability:street ;
-	world_props:color "PURPLE" ;
-	world_props:polygons
-		polygon:south_bank_street ;
+regular_set:106 a class:DynamicSpace ;
+	spatial:material material:water ;
+	spatial:polygons polygon:5 ;
+	spatial:accessible interval:0 ,interval:2 ;
 .
-tower_bridge_definition:109 a rt_bi:StaticSpace ;
-	world_props:name "south-bank" ;
-	world_props:traversability traversability:river ;
-	world_props:color "PURPLE" ;
-	world_props:polygons
-		polygon:south_bank_river ;
+regular_set:107 a class:DynamicSpace ;
+	spatial:material material:bridge ;
+	spatial:polygons polygon:6 ;
+	spatial:accessible interval:1 ,interval:3 ;
 .
-tower_bridge_definition:110 a rt_bi:StaticSpace ;
-	world_props:name "north-shore" ;
-	world_props:traversability traversability:street ;
-	world_props:color "PURPLE" ;
-	world_props:polygons
-		polygon:north_shore_street ;
+regular_set:108 a class:StaticSpace ;
+	spatial:material material:water ;
+	spatial:polygons polygon:6 ;
 .
-tower_bridge_definition:111 a rt_bi:StaticSpace ;
-	world_props:name "north-shore" ;
-	world_props:traversability traversability:river ;
-	world_props:color "PURPLE" ;
-	world_props:polygons
-		polygon:north_shore_river ;
+regular_set:109 a class:StaticSpace ;
+	spatial:material material:water ;
+	spatial:polygons polygon:7 ;
 .
-tower_bridge_definition:king a rt_bi:AffineSpace ;
-	world_props:name "king" ;
-	world_props:ros_node "/rt_bi_emulator/kn2" ;
+regular_set:110 a class:StaticSpace ;
+	spatial:material material:grass ;
+	spatial:polygons polygon:8 ;
 .
-tower_bridge_definition:201 a rt_bi:RegularTime ;
-	world_props:name "mid-day" ;
-	world_props:color "YELLOW" ;
-	world_props:intervals
-		interval:mid_day ;
+regular_set:111 a class:StaticSpace ;
+	spatial:material material:roof ;
+	spatial:polygons polygon:9 ;
+.
+regular_set:112 a class:StaticSpace ;
+	spatial:material material:grass ;
+	spatial:polygons polygon:10 ;
+.
+regular_set:113 a class:StaticSpace ;
+	spatial:material material:roof ;
+	spatial:polygons polygon:11 ;
+.
+regular_set:114 a class:StaticSpace ;
+	spatial:material material:street ;
+	spatial:polygons polygon:12 ;
+.
+regular_set:115 a class:StaticSpace ;
+	spatial:material material:grass ;
+	spatial:polygons polygon:13 ;
+.
+regular_set:king a class:AffineSpace ;
+	subject:name "king" ;
+	spatial:channel "/rt_bi_emulator/kn2" ;
+.
+regular_set:201 a class:RegularTime ;
+	subject:name "bridge-is-moving" ;
+	temporal:intervals interval:4 ,interval:5 ,interval:6 ,interval:7 ;
 .
 # endregion [REGULAR SET DEFS]

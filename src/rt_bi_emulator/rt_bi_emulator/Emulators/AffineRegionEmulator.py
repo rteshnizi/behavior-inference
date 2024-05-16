@@ -96,7 +96,7 @@ class AffineRegionEmulator(Generic[_T_Poly], RtBiNode, ABC):
 		msg.id = self.id
 		msg.stamp = Msgs.toTimeMsg(timeNanoSecs)
 		msg.polygons = [polyMsg]
-		msg.ros_node = self.get_fully_qualified_name()
+		msg.channel = self.get_fully_qualified_name()
 		msg.predicates = [] # Inherit all other predicates
 		msg.set_type= self.__ctPoly.type.value
 		return msg

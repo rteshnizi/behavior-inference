@@ -17,13 +17,15 @@ PREFIX xsd:            <http://www.w3.org/2001/XMLSchema#>
 PREFIX y:              <https://rezateshnizi.com/tower_bridge/spatial/ys#>
 
 SELECT
-	?regularSetId ?setType
+	?regularSetId
+	# SELECTED VARIABLES ########################
+	?materialName ?materialColor
 	# SELECTED VARIABLES ########################
 WHERE {
-	VALUES ?regularSetId {
-		# ID VALUES #############################
+	# SELECTOR ##################################
+	OPTIONAL { ?regularSetId
+		spatial:material/subject:name ?materialName ;
+		spatial:material/subject:color ?materialColor ;
 	}
-	?regularSetId a ?setType.
 	# SELECTOR ##################################
 }
-ORDER BY ?regularSetId # ORDER VARIABLES ###########################

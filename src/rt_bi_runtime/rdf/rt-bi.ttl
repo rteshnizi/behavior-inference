@@ -6,156 +6,149 @@
 
 <https://rezateshnizi.com/rt-bi/> a owl:Ontology ;
 	dc:title "The vocabulary used in RT Behavior Inference." ;
-	dc:date "2024-02-08" ;
+	dc:date "2024-05-15" ;
 	dc:description "This is the RDF Schema for the terms in RT Behavior Automata, defined in the dissertation of Reza Teshnizi." .
 
-@prefix rt_bi: <https://rezateshnizi.com/rt-bi/> .
+@prefix class: <https://rezateshnizi.com/rt-bi/class#> .
 # region [CLASSES]
-rt_bi:X a rdfs:Class .
-rt_bi:Y a rdfs:Class .
-rt_bi:Pt a rdfs:Class ;
+class:X a rdfs:Class .
+class:Y a rdfs:Class .
+class:Pt a rdfs:Class ;
 	rdfs:comment "Has an X and a Y" .
-rt_bi:PtSeq a rdfs:Class ;
+class:PtSeq a rdfs:Class ;
 	rdfs:subClassOf rdf:Seq ;
 	rdfs:comment "To indicate to a human reader that the members are ordered points." .
-rt_bi:Polygon a rdfs:Class .
-rt_bi:Time a rdfs:Class .
-rt_bi:Interval a rdfs:Class .
-
-rt_bi:Subject a rdfs:Class .
-rt_bi:RegularSpace a rdfs:Class ;
-	rdfs:subClassOf rt_bi:Subject ;
-	rdfs:comment "The class of RegularSpace specifications." .
-rt_bi:RegularTime a rdfs:Class ;
-	rdfs:subClassOf rt_bi:Subject ;
-	rdfs:comment "The class of RegularTime specifications." .
-rt_bi:Traversability a rdfs:Class ;
-	rdfs:comment "The class of traversability specifications." .
-
-# region PtSeq members
-rt_bi:vertex a rdfs:Class ;
+class:Vertex a rdfs:Class ;
 	rdfs:subClassOf rdfs:ContainerMembershipProperty ;
 	rdfs:subPropertyOf rdfs:member ;
-	rdfs:domain rt_bi:PtSeq ;
-	rdfs:range rt_bi:Pt ;
-	rdfs:comment "A rt_bi:Pt whose order of placement in the container owning the point matters." .
-
-rt_bi:v_101 a rt_bi:vertex .
-rt_bi:v_102 a rt_bi:vertex .
-rt_bi:v_103 a rt_bi:vertex .
-rt_bi:v_104 a rt_bi:vertex .
-rt_bi:v_105 a rt_bi:vertex .
-rt_bi:v_106 a rt_bi:vertex .
-rt_bi:v_107 a rt_bi:vertex .
-rt_bi:v_108 a rt_bi:vertex .
-rt_bi:v_109 a rt_bi:vertex .
-rt_bi:v_110 a rt_bi:vertex .
-rt_bi:v_111 a rt_bi:vertex .
-rt_bi:v_112 a rt_bi:vertex .
-rt_bi:v_113 a rt_bi:vertex .
-rt_bi:v_114 a rt_bi:vertex .
-rt_bi:v_115 a rt_bi:vertex .
-rt_bi:v_116 a rt_bi:vertex .
-rt_bi:v_117 a rt_bi:vertex .
-rt_bi:v_118 a rt_bi:vertex .
-rt_bi:v_119 a rt_bi:vertex .
-rt_bi:v_120 a rt_bi:vertex .
-# endregion PtSeq members
+	rdfs:domain class:PtSeq ;
+	rdfs:range class:Pt ;
+	rdfs:comment "A class:Pt whose order of placement in the container owning the point matters." .
+class:Polygon a rdfs:Class .
+class:Time a rdfs:Class .
+class:Interval a rdfs:Class .
+class:Subject a rdfs:Class .
 # endregion [CLASSES]
-# region [INSTANCES]
-rt_bi:StaticSpace a rdfs:Class ;
-	rdfs:subClassOf rt_bi:RegularSpace ;
-	rdfs:comment "A value indicating a static regions." .
-rt_bi:DynamicSpace a rdfs:Class ;
-	rdfs:subClassOf rt_bi:RegularSpace ;
-	rdfs:comment "A value indicating a dynamic regions. Dynamic regions have different accessibility values depending on time." .
-rt_bi:AffineSpace a rdfs:Class ;
-	rdfs:subClassOf rt_bi:RegularSpace ;
-	rdfs:comment "A value indicating a affine regions. Affine regions can move about the map." .
-# endregion [INSTANCES]
-@prefix temporal_props: <https://rezateshnizi.com/rt-bi/temporal/props#> .
-# region [TEMPORAL PROPS]
-temporal_props:secs a rdf:value ;
-	rdfs:domain rt_bi:Time ;
-	rdfs:range xsd:double ;
-	rdfs:comment "A time value in Seconds." .
-temporal_props:min a rdf:Property ;
-	rdfs:domain rt_bi:Interval ;
-	rdfs:range rt_bi:Time ;
-	rdfs:comment "The min bound of a time interval." .
-temporal_props:max a rdf:Property ;
-	rdfs:domain rt_bi:Interval ;
-	rdfs:range rt_bi:Time ;
-	rdfs:comment "The max bound of a time interval." .
-temporal_props:include_min a rdf:Property ;
-	rdfs:domain rt_bi:Interval ;
-	rdfs:range xsd:boolean ;
-	rdfs:comment "Whether the min bound is included in the interval" .
-temporal_props:include_max a rdf:Property ;
-	rdfs:domain rt_bi:Interval ;
-	rdfs:range xsd:boolean ;
-	rdfs:comment "Whether the max bound is included in the interval" .
-# endregion [TEMPORAL PROPS]
-@prefix spatial_props: <https://rezateshnizi.com/rt-bi/spatial/props#> .
-# region [SPATIAL PROPS]
-spatial_props:vertices a rdf:Property ;
-	rdfs:domain rt_bi:Polygon ;
-	rdfs:range rt_bi:PtSeq ;
-	rdfs:comment "The vertices of a polygon." .
-spatial_props:x a rdf:Property ;
-	rdfs:domain rt_bi:Pt ;
-	rdfs:range rt_bi:X ;
-	rdfs:comment "The x Coordinate." .
-spatial_props:y a rdf:Property ;
-	rdfs:domain rt_bi:Pt ;
-	rdfs:range rt_bi:Y ;
-	rdfs:comment "The y Coordinate." .
-spatial_props:x_val a rdf:value ;
-	rdfs:domain rt_bi:X ;
-	rdfs:range xsd:double ;
-	rdfs:comment "Some x value." .
-spatial_props:y_val a rdf:value ;
-	rdfs:domain rt_bi:Y ;
-	rdfs:range xsd:double ;
-	rdfs:comment "Some y value." .
-# endregion [SPATIAL PROPS]
-@prefix world_props: <https://rezateshnizi.com/rt-bi/world/props#> .
-# region [WORLD PROPS]
-world_props:name a rdfs:label ;
-	rdfs:domain rt_bi:Subject ;
+
+@prefix subject: <https://rezateshnizi.com/rt-bi/subject#> .
+# region [SUBJECTS]
+class:RegularSpace a rdfs:Class ;
+	rdfs:subClassOf class:Subject ;
+	rdfs:comment "The class of RegularSpace specifications." .
+class:RegularTime a rdfs:Class ;
+	rdfs:subClassOf class:Subject ;
+	rdfs:comment "The class of RegularTime specifications." .
+class:Material a rdfs:Class ;
+	rdfs:subClassOf class:Subject ;
+	rdfs:comment "The class of material specifications." .
+# endregion [SUBJECTS]
+
+# region [SUBJECT PROPS]
+subject:name a rdfs:label ;
+	rdfs:domain class:Subject ;
 	rdfs:range xsd:string ;
-	rdfs:comment "The name of this subject." .
-world_props:color a rdf:Property ;
-	rdfs:domain rt_bi:Subject ;
+	rdfs:comment "A name for this object." .
+subject:color a rdf:Property ;
+	rdfs:domain class:Subject ;
 	rdfs:range xsd:string ;
 	rdfs:comment "Color to describe this area (and use in render)." .
-world_props:polygons a rdf:Property ;
-	rdfs:domain rt_bi:RegularSpace ;
-	rdfs:range rt_bi:Polygon .
-world_props:intervals a rdf:Property ;
-	rdfs:domain rt_bi:RegularTime ;
-	rdfs:range rt_bi:Interval .
-world_props:traversability a rdf:Property ;
-	rdfs:domain rt_bi:RegularSpace ;
-	rdfs:range rt_bi:Traversability ;
-	rdfs:comment "The range of this property is a traversability specification." .
-world_props:accessible_times a rdf:Property ;
-	rdfs:domain rt_bi:DynamicSpace ;
-	rdfs:range rt_bi:Interval .
-world_props:legs a rdf:Property ;
-	rdfs:domain rt_bi:Traversability ;
-	rdfs:range xsd:boolean ;
-	rdfs:comment "Whether the agent moves on legs." .
-world_props:wheels a rdf:Property ;
-	rdfs:domain rt_bi:Traversability ;
-	rdfs:range xsd:boolean ;
-	rdfs:comment "Whether the agent moves on wheels." .
-world_props:swims a rdf:Property ;
-	rdfs:domain rt_bi:Traversability ;
-	rdfs:range xsd:boolean ;
-	rdfs:comment "Whether the agent moves through water." .
-world_props:ros_node a rdf:Property ;
-	rdfs:domain rt_bi:AffineSpace ;
+# endregion [SUBJECT PROPS]
+
+# region PtSeq members
+class:v_101 a class:Vertex .
+class:v_102 a class:Vertex .
+class:v_103 a class:Vertex .
+class:v_104 a class:Vertex .
+class:v_105 a class:Vertex .
+class:v_106 a class:Vertex .
+class:v_107 a class:Vertex .
+class:v_108 a class:Vertex .
+class:v_109 a class:Vertex .
+class:v_110 a class:Vertex .
+class:v_111 a class:Vertex .
+class:v_112 a class:Vertex .
+class:v_113 a class:Vertex .
+class:v_114 a class:Vertex .
+class:v_115 a class:Vertex .
+class:v_116 a class:Vertex .
+class:v_117 a class:Vertex .
+class:v_118 a class:Vertex .
+class:v_119 a class:Vertex .
+class:v_120 a class:Vertex .
+# endregion PtSeq members
+# region [SPATIAL]
+class:StaticSpace a rdfs:Class ;
+	rdfs:subClassOf class:RegularSpace ;
+	rdfs:comment "A value indicating a static regions." .
+class:DynamicSpace a rdfs:Class ;
+	rdfs:subClassOf class:RegularSpace ;
+	rdfs:comment "A value indicating a dynamic regions. Dynamic regions have different accessibility values depending on time." .
+class:AffineSpace a rdfs:Class ;
+	rdfs:subClassOf class:RegularSpace ;
+	rdfs:comment "A value indicating a affine regions. Affine regions can move about the map." .
+# endregion [SPATIAL]
+
+@prefix spatial: <https://rezateshnizi.com/rt-bi/spatial#> .
+# region [SPATIAL PROPS]
+spatial:vertices a rdf:Property ;
+	rdfs:domain class:Polygon ;
+	rdfs:range class:PtSeq ;
+	rdfs:comment "The vertices of a polygon." .
+spatial:x a rdf:Property ;
+	rdfs:domain class:Pt ;
+	rdfs:range class:X ;
+	rdfs:comment "The x Coordinate." .
+spatial:y a rdf:Property ;
+	rdfs:domain class:Pt ;
+	rdfs:range class:Y ;
+	rdfs:comment "The y Coordinate." .
+spatial:x_val a rdf:value ;
+	rdfs:domain class:X ;
+	rdfs:range xsd:double ;
+	rdfs:comment "Some x value." .
+spatial:y_val a rdf:value ;
+	rdfs:domain class:Y ;
+	rdfs:range xsd:double ;
+	rdfs:comment "Some y value." .
+spatial:polygons a rdf:Property ;
+	rdfs:domain class:RegularSpace ;
+	rdfs:range class:Polygon .
+spatial:material a rdf:Property ;
+	rdfs:domain class:RegularSpace ;
+	rdfs:range class:Material ;
+	rdfs:comment "The range of this property is a Material specification." .
+spatial:accessible a rdf:Property ;
+	rdfs:domain class:DynamicSpace ;
+	rdfs:range class:Interval .
+spatial:channel a rdf:Property ;
+	rdfs:domain class:AffineSpace ;
 	rdfs:range xsd:string ;
-	rdfs:comment "The name of the ROS node publishing updates for this subject." .
-# endregion [WORLD PROPS]
+	rdfs:comment "The ID of the ROS communication channel publishing updates for this AffineSpace." .
+# endregion [SPATIAL PROPS]
+
+@prefix temporal: <https://rezateshnizi.com/rt-bi/temporal#> .
+# region [TEMPORAL PROPS]
+temporal:secs a rdf:value ;
+	rdfs:domain class:Time ;
+	rdfs:range xsd:double ;
+	rdfs:comment "A time value in Seconds." .
+temporal:min a rdf:Property ;
+	rdfs:domain class:Interval ;
+	rdfs:range class:Time ;
+	rdfs:comment "The min bound of a time interval." .
+temporal:max a rdf:Property ;
+	rdfs:domain class:Interval ;
+	rdfs:range class:Time ;
+	rdfs:comment "The max bound of a time interval." .
+temporal:include_min a rdf:Property ;
+	rdfs:domain class:Interval ;
+	rdfs:range xsd:boolean ;
+	rdfs:comment "Whether the min bound is included in the interval" .
+temporal:include_max a rdf:Property ;
+	rdfs:domain class:Interval ;
+	rdfs:range xsd:boolean ;
+	rdfs:comment "Whether the max bound is included in the interval" .
+temporal:intervals a rdf:Property ;
+	rdfs:domain class:RegularTime ;
+	rdfs:range class:Interval .
+# endregion [TEMPORAL PROPS]

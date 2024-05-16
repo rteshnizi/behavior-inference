@@ -1,20 +1,20 @@
 PREFIX dc:             <http://purl.org/dc/elements/1.1/>
-PREFIX interval:       <https://rezateshnizi.com/rt-bi/tower_bridge/temporal/intervals#>
+PREFIX interval:       <https://rezateshnizi.com/tower_bridge/temporal/intervals#>
 PREFIX owl:            <http://www.w3.org/2002/07/owl#>
-PREFIX polygon:        <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/polygons#>
-PREFIX pt:             <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/pts#>
+PREFIX polygon:        <https://rezateshnizi.com/tower_bridge/spatial/polygons#>
+PREFIX pt:             <https://rezateshnizi.com/tower_bridge/spatial/pts#>
 PREFIX rdf:            <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs:           <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX rt_bi:          <https://rezateshnizi.com/rt-bi/>
-PREFIX spatial_props:  <https://rezateshnizi.com/rt-bi/spatial/props#>
-PREFIX t:              <https://rezateshnizi.com/rt-bi/tower_bridge/temporal/ts#>
-PREFIX temporal_props: <https://rezateshnizi.com/rt-bi/temporal/props#>
-PREFIX tower_bridge:   <https://rezateshnizi.com/rt-bi/tower_bridge/>
-PREFIX traversability: <https://rezateshnizi.com/rt-bi/tower_bridge/traversability#>
-PREFIX world_props:    <https://rezateshnizi.com/rt-bi/world/props#>
-PREFIX x:              <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/xs#>
+PREFIX class:          <https://rezateshnizi.com/rt-bi/class#>
+PREFIX spatial:  <https://rezateshnizi.com/rt-bi/spatial#>
+PREFIX t:              <https://rezateshnizi.com/tower_bridge/temporal/ts#>
+PREFIX temporal: <https://rezateshnizi.com/rt-bi/temporal#>
+PREFIX tower_bridge:   <https://rezateshnizi.com/tower_bridge/>
+PREFIX material: <https://rezateshnizi.com/tower_bridge/materials#>
+PREFIX subject:    <https://rezateshnizi.com/rt-bi/subject#>
+PREFIX x:              <https://rezateshnizi.com/tower_bridge/spatial/xs#>
 PREFIX xsd:            <http://www.w3.org/2001/XMLSchema#>
-PREFIX y:              <https://rezateshnizi.com/rt-bi/tower_bridge/spatial/ys#>
+PREFIX y:              <https://rezateshnizi.com/tower_bridge/spatial/ys#>
 
 SELECT
 	# SELECTED VARIABLES ########################
@@ -22,12 +22,12 @@ SELECT
 	# SELECTED VARIABLES ########################
 WHERE {
 	# SELECTOR ##################################
-	OPTIONAL { ?regularSetId world_props:intervals ?intervalId .
+	OPTIONAL { ?regularSetId temporal:intervals ?intervalId .
 		?intervalId
-			temporal_props:min/temporal_props:secs ?min ;
-			temporal_props:max/temporal_props:secs ?max ;
-			temporal_props:include_min ?include_min ;
-			temporal_props:include_max ?include_max .
+			temporal:min/temporal:secs ?min ;
+			temporal:max/temporal:secs ?max ;
+			temporal:include_min ?include_min ;
+			temporal:include_max ?include_max .
 	}
 	# SELECTOR ##################################
 }

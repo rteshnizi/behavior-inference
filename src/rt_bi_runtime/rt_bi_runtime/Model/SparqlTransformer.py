@@ -21,8 +21,8 @@ class PredicateToQueryName(TransitionTransformer):
 class PredicateToNamespace(TransitionTransformer):
 	# TODO: Use this in RdfStoreNode __temporalQuery and __spatialQuery
 	def NAMESPACE(self, token: Token) -> str:
-		if token == "S": return "rt_bi:RegularSpace"
-		if token == "T": return "rt_bi:RegularTime"
+		if token == "S": return "class:RegularSpace"
+		if token == "T": return "class:RegularTime"
 		raise UnexpectedToken(token, {"S", "T"})
 	def connector(self, _: Any) -> Any: return Discard
 	def property_seq(self, _: Any) -> Any: return Discard
