@@ -123,6 +123,7 @@ class FusekiInterface:
 		return predicates
 
 	def __parseSetType(self, helper: SparqlResultHelper, i: int) -> str:
+		raise NotImplementedError()
 		t = helper.strVarValue(i, "setType")
 		if t.endswith("StaticSpace"): return Msgs.RtBi.RegularSet.STATIC
 		if t.endswith("DynamicSpace"): return Msgs.RtBi.RegularSet.DYNAMIC
@@ -139,7 +140,7 @@ class FusekiInterface:
 			Ros.Logger().error(f"SPARQL request failed with the following message: {repr(e)}")
 			raise e
 
-	def fetchSpatialSets(self, query: str, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
+	def fetchSets(self, query: str, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
 		resultHelper = self.__sendQuery(query)
 		stamp = Ros.Now(self.__node).to_msg()
 		i = 0
@@ -155,21 +156,7 @@ class FusekiInterface:
 			Ros.AppendMessage(res.sets, msg)
 		return res
 
-	def fetchTemporalSets(self, query: str, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
-		resultHelper = self.__sendQuery(query)
-		stamp = Ros.Now(self.__node).to_msg()
-		i = 0
-		while i < len(resultHelper):
-			msg = Msgs.RtBi.RegularSet()
-			msg.id = resultHelper.strVarValue(i, "regularSetId")
-			msg.stamp = stamp
-			msg.set_type = self.__parseSetType(resultHelper, i)
-			msg.predicates = self.__parsePredicates(resultHelper, i)
-			(msg.intervals, i) = self.__parseIntervals(resultHelper, i, msg.id)
-			Ros.AppendMessage(res.sets, msg)
-		return res
-
-	def dynamicReachability(self, query: str, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
+	def queryById(self, query: str, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
 		resultHelper = self.__sendQuery(query)
 		stamp = Ros.Now(self.__node).to_msg()
 		i = 0

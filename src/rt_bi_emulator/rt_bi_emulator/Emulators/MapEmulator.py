@@ -34,7 +34,7 @@ class MapEmulator(ColdStartable):
 	def onColdStartAllowed(self, payload: ColdStartPayload) -> None:
 		self.__coldStartPayload = payload
 		reqSpatial = Msgs.RtBiSrv.SpaceTime.Request()
-		reqSpatial.query_name = "spatial"
+		reqSpatial.query_name = "sets"
 		reqSpatial.json_payload = ColdStartPayload({"predicates": list(self.__coldStartPayload.predicates)}).stringify()
 		Ros.SendClientRequest(self, self.__rdfClient, reqSpatial, self.__onSpatialPredicatesResponse)
 		return

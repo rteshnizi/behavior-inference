@@ -73,16 +73,13 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 		).read_text()
 		sparql = sparql.replace(self["placeholder_variables"][0], self.__joinList(variables, "\n\t"))
 		sparql = sparql.replace(self["placeholder_ids"][0], self.__joinList(ids, "\n\t\t"))
-		sparql = sparql.replace(self["placeholder_selector"][0], self.__joinList(whereClauses, ""))
+		sparql = sparql.replace(self["placeholder_selector"][0], self.__joinList(whereClauses, "\n\t"))
 		sparql = sparql.replace(self["placeholder_bind"][0], self.__joinList(binds, "\n\t"))
 		sparql = sparql.replace(self["placeholder_order"][0], self.__joinList(orders, " "))
 		return sparql
 
 	def __onSpaceTimeRequest(self, req: SpaceTime.Request, res: SpaceTime.Response) -> SpaceTime.Response:
 		payload = ColdStartPayload(req.json_payload)
-		# if req.query_name == "spatial": res = self.__spatialQuery(payload, res)
-		# elif req.query_name == "temporal": res = self.__temporalQuery(payload, res)
-		# elif req.query_name == "dynamic": res = self.__dynamicReachQuery(payload, res)
 		if req.query_name == "sets": res = self.__setQuery(payload, res)
 		else: raise RuntimeError(f"Unexpected query name: {req.query_name}")
 		return res
@@ -94,28 +91,19 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 		binds: list[str] = []
 		orders: list[str] = []
 		sparqlXfmr = PredicateToQueryStr(
-			"spatial",
 			get_package_share_directory(package_name),
 			self["transition_grammar_dir"][0],
 			self["transition_grammar_file"][0],
 			self["sparql_dir"][0],
-			self["placeholder_order"][0],
-			self["placeholder_selector"][0],
-			self["placeholder_variables"][0],
 		)
-		(extractedSelector, extractedVars, extractedOrders) = sparqlXfmr.selector("geometry")
-		whereClauses.append(extractedSelector)
-		variables.append(extractedVars)
-		orders.append(extractedOrders)
 		for predicate in payload.predicates:
 			if predicate not in self.__predicateToIndex: self.__predicateToIndex[predicate] = len(self.__predicateToIndex)
-			(extractedSelector, extractedVars, extractedBindings, extractedOrders) = sparqlXfmr.transformPredicate(predicate, self.__predicateToIndex[predicate])
+			(extractedSelector, extractedVars, extractedBindings) = sparqlXfmr.transformPredicate(predicate, self.__predicateToIndex[predicate])
 			if extractedVars == "" and extractedSelector == "": continue
 			predicateMapping[predicate] = extractedVars
 			variables.append(extractedVars)
 			whereClauses.append(extractedSelector)
 			binds.append(extractedBindings)
-			orders.append(extractedOrders)
 		binds.append(self.__createFilterStatement(variables))
 
 		sparql = self.__fillTemplate(
@@ -127,111 +115,23 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 			orders
 		)
 		res.json_predicate_symbols = dumps(predicateMapping)
-		return self.__httpInterface.fetchSpatialSets(sparql, res)
+		return self.__httpInterface.fetchSets(sparql, res)
 
-	def __spatialQuery(self, payload: ColdStartPayload, res: SpaceTime.Response) -> SpaceTime.Response:
-		predicateMapping: dict[str, str] = {}
+	def __queryById(self, payload: ColdStartPayload, res: SpaceTime.Response) -> SpaceTime.Response:
 		whereClauses: list[str] = []
 		variables: list[str] = []
 		binds: list[str] = []
 		orders: list[str] = []
 		sparqlXfmr = PredicateToQueryStr(
-			"spatial",
 			get_package_share_directory(package_name),
 			self["transition_grammar_dir"][0],
 			self["transition_grammar_file"][0],
 			self["sparql_dir"][0],
-			self["placeholder_order"][0],
-			self["placeholder_selector"][0],
-			self["placeholder_variables"][0],
 		)
-		(extractedSelector, extractedVars, extractedOrders) = sparqlXfmr.selector("geometry")
-		whereClauses.append(extractedSelector)
-		variables.append(extractedVars)
-		orders.append(extractedOrders)
-		for predicate in payload.predicates:
-			if predicate not in self.__predicateToIndex: self.__predicateToIndex[predicate] = len(self.__predicateToIndex)
-			(extractedSelector, extractedVars, extractedBindings, extractedOrders) = sparqlXfmr.transformPredicate(predicate, self.__predicateToIndex[predicate])
-			if extractedVars == "" and extractedSelector == "": continue
-			predicateMapping[predicate] = extractedVars
-			variables.append(extractedVars)
-			whereClauses.append(extractedSelector)
-			binds.append(extractedBindings)
-			orders.append(extractedOrders)
-		binds.append(self.__createFilterStatement(variables))
-
-		sparql = self.__fillTemplate(
-			self["sparql_template_sets"][0],
-			[""],
-			whereClauses,
-			variables,
-			binds,
-			orders
-		)
-		res.json_predicate_symbols = dumps(predicateMapping)
-		return self.__httpInterface.fetchSpatialSets(sparql, res)
-
-	def __temporalQuery(self, payload: ColdStartPayload, res: SpaceTime.Response) -> SpaceTime.Response:
-		predicateMapping: dict[str, str] = {}
-		whereClauses: list[str] = []
-		variables: list[str] = []
-		binds: list[str] = []
-		orders: list[str] = []
-		sparqlXfmr = PredicateToQueryStr(
-			"temporal",
-			get_package_share_directory(package_name),
-			self["transition_grammar_dir"][0],
-			self["transition_grammar_file"][0],
-			self["sparql_dir"][0],
-			self["placeholder_order"][0],
-			self["placeholder_selector"][0],
-			self["placeholder_variables"][0],
-		)
-		(extractedSelector, extractedVars, extractedOrders) = sparqlXfmr.selector("intervals")
-		whereClauses.append(extractedSelector)
-		variables.append(extractedVars)
-		orders.append(extractedOrders)
-		for predicate in payload.predicates:
-			if predicate not in self.__predicateToIndex: self.__predicateToIndex[predicate] = len(self.__predicateToIndex)
-			(extractedSelector, extractedVars, extractedBindings, extractedOrders) = sparqlXfmr.transformPredicate(predicate, self.__predicateToIndex[predicate])
-			if extractedVars == "" and extractedSelector == "": continue
-			predicateMapping[predicate] = extractedVars
-			variables.append(extractedVars)
-			whereClauses.append(extractedSelector)
-			binds.append(extractedBindings)
-			orders.append(extractedOrders)
-		binds.append(self.__createFilterStatement(variables))
-
-		sparql = self.__fillTemplate(
-			self["sparql_template_sets"][0],
-			[""],
-			whereClauses,
-			variables,
-			binds,
-			orders
-		)
-		res.json_predicate_symbols = dumps(predicateMapping)
-		return self.__httpInterface.fetchTemporalSets(sparql, res)
-
-	def __dynamicReachQuery(self, payload: ColdStartPayload, res: SpaceTime.Response) -> SpaceTime.Response:
-		whereClauses: list[str] = []
-		variables: list[str] = []
-		binds: list[str] = []
-		orders: list[str] = []
-		sparqlXfmr = PredicateToQueryStr(
-			"spatial",
-			get_package_share_directory(package_name),
-			self["transition_grammar_dir"][0],
-			self["transition_grammar_file"][0],
-			self["sparql_dir"][0],
-			self["placeholder_order"][0],
-			self["placeholder_selector"][0],
-			self["placeholder_variables"][0],
-		)
-		(extractedSelector, extractedVars, extractedOrders) = sparqlXfmr.selector("intervals")
-		whereClauses.append(extractedSelector)
-		variables.append(extractedVars)
-		orders.append(extractedOrders)
+		# (extractedSelector, extractedVars, extractedOrders) = sparqlXfmr.selector("intervals")
+		# whereClauses.append(extractedSelector)
+		# variables.append(extractedVars)
+		# orders.append(extractedOrders)
 		sparql = self.__fillTemplate(
 			self["sparql_template_ids"][0],
 			[f"<{iri}>" for iri in payload.dynamic],
@@ -240,7 +140,7 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 			binds,
 			orders
 		)
-		return self.__httpInterface.dynamicReachability(sparql, res)
+		return self.__httpInterface.queryById(sparql, res)
 
 	def render(self) -> None:
 		return super().render()
