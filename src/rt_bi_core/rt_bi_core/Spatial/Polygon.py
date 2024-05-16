@@ -65,7 +65,7 @@ class Polygon(ABC):
 			hIndex: int,
 			interiorColor: RGBA = ColorNames.GREY_DARK,
 			interior: Shapely.Polygon | None = None,
-			renderLineWidth = 1,
+			renderLineWidth = 2.5,
 			**kwArgs
 		) -> None:
 		"""

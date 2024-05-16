@@ -57,7 +57,7 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 			"transition_grammar_dir": StrParser[_Parameters](self, "transition_grammar_dir"),
 			"transition_grammar_file": StrParser[_Parameters](self, "transition_grammar_file"),
 		}
-		newKw = { "node_name": "dd_rdf", "loggingSeverity": LoggingSeverity.WARN, **kwArgs}
+		newKw = { "node_name": "dd_rdf", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
 		super().__init__(parsers, **newKw)
 		self.__baseDir = get_package_share_directory(package_name)
 		self.__httpInterface = FusekiInterface(self, self["fuseki_server"][0], self["rdf_store"][0])
@@ -123,10 +123,9 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 		res.json_predicate_symbols = dumps(predicateMapping)
 		msgsByTypeById = self.__httpInterface.fetchSets(sparql)
 		setMsgs = self.__queryById("sparql_geometry", msgsByTypeById["static"] | msgsByTypeById["dynamic"])
-		Ros.ConcatMessageArray(res.sets, setMsgs)
-		setMsgs = self.__queryById("sparql_intervals", msgsByTypeById["dynamic"] | msgsByTypeById["temporal"])
-		Ros.ConcatMessageArray(res.sets, setMsgs)
+		setMsgs |= self.__queryById("sparql_intervals", msgsByTypeById["dynamic"] | msgsByTypeById["temporal"])
 		# setMsgs += self.__queryById(msgsByTypeAndId["affine"])
+		Ros.ConcatMessageArray(res.sets, list(setMsgs.values()))
 		return res
 
 	def __regexMatchPlaceholders(self, templateParam: QueryTemplates, markup: str = "") -> str:
@@ -143,7 +142,7 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 		if result: return result.group(1)
 		raise RuntimeError(f"The query file for variable \"{templateParam}\" does not contain the required placeholder comments.")
 
-	def __queryById(self, templateParam: QueryTemplates, msgsById: dict[str, Msgs.RtBi.RegularSet]) -> list[Msgs.RtBi.RegularSet]:
+	def __queryById(self, templateParam: QueryTemplates, msgsById: dict[str, Msgs.RtBi.RegularSet]) -> dict[str, Msgs.RtBi.RegularSet]:
 		if templateParam == "sparql_sets":
 			raise RuntimeError(f"The template {templateParam} query doesn't have a placeholder for IDs")
 		ids: list[str] = list(msgsById.keys())

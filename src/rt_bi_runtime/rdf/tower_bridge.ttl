@@ -13,29 +13,29 @@
 @prefix pt: <https://rezateshnizi.com/tower_bridge/pts#> .
 @prefix polygon: <https://rezateshnizi.com/tower_bridge/polys#> .
 # region [XS]
-x:0 a class:X ; property:x_val 0.0 .
-x:1 a class:X ; property:x_val 250.0 .
-x:2 a class:X ; property:x_val 425.0 .
-x:3 a class:X ; property:x_val 1770.0 .
-x:4 a class:X ; property:x_val 2035.0 .
-x:5 a class:X ; property:x_val 2765.0 .
-x:6 a class:X ; property:x_val 2945.0 .
-x:7 a class:X ; property:x_val 3770.0 .
-x:8 a class:X ; property:x_val 3950.0 .
-x:9 a class:X ; property:x_val 5120.0 .
+x:0 a class:X ; property:x_val 0.00 .
+x:1 a class:X ; property:x_val 25.00 .
+x:2 a class:X ; property:x_val 42.50 .
+x:3 a class:X ; property:x_val 177.00 .
+x:4 a class:X ; property:x_val 203.50 .
+x:5 a class:X ; property:x_val 276.50 .
+x:6 a class:X ; property:x_val 294.50 .
+x:7 a class:X ; property:x_val 377.00 .
+x:8 a class:X ; property:x_val 395.00 .
+x:9 a class:X ; property:x_val 512.00 .
 # endregion [XS]
 
 # region [YS]
-y:0 a class:Y ; property:y_val 0.0 .
-y:1 a class:Y ; property:y_val 135.0 .
-y:2 a class:Y ; property:y_val 565.0 .
-y:3 a class:Y ; property:y_val 745.0 .
-y:4 a class:Y ; property:y_val 1000.0 .
-y:5 a class:Y ; property:y_val 1870.0 .
-y:6 a class:Y ; property:y_val 2125.0 .
-y:7 a class:Y ; property:y_val 2300.0 .
-y:8 a class:Y ; property:y_val 2735.0 .
-y:9 a class:Y ; property:y_val 2880.0 .
+y:0 a class:Y ; property:y_val 0.00 .
+y:1 a class:Y ; property:y_val 13.50 .
+y:2 a class:Y ; property:y_val 56.50 .
+y:3 a class:Y ; property:y_val 74.50 .
+y:4 a class:Y ; property:y_val 100.00 .
+y:5 a class:Y ; property:y_val 187.00 .
+y:6 a class:Y ; property:y_val 212.50 .
+y:7 a class:Y ; property:y_val 230.00 .
+y:8 a class:Y ; property:y_val 273.50 .
+y:9 a class:Y ; property:y_val 288.00 .
 # endregion [YS]
 
 # region [PTS]

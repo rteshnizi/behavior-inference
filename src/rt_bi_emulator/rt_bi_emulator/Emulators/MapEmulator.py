@@ -148,7 +148,7 @@ class MapEmulator(ColdStartable):
 		for match in setsWithIntervals:
 			match.predicates = Ros.AsList(match.predicates, Msgs.RtBi.Predicate)
 			predicates = [p.name for p in match.predicates]
-			self.log(f"Temporal predicates include: {predicates}")
+			self.log(f"Temporal predicates of {match.id} include: {predicates}")
 			match.intervals = Ros.AsList(match.intervals, Msgs.RtBi.TimeInterval)
 			for intervalMsg in match.intervals:
 				interval = TimeInterval.fromMsg(intervalMsg)

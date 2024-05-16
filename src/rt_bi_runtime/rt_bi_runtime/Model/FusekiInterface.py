@@ -118,10 +118,9 @@ class FusekiInterface:
 				val = helper.strVarValue(i, var)
 				if val != Msgs.RtBi.Predicate.TRUE and val != Msgs.RtBi.Predicate.FALSE:
 					raise ValueError(f"Unexpected predicate value: {val}")
-				predicate.value = val
-			else:
-				predicate.value = Msgs.RtBi.Predicate.FALSE
-			predicates.append(predicate)
+				if val == Msgs.RtBi.Predicate.TRUE:
+					predicate.value = val
+					predicates.append(predicate)
 		return predicates
 
 	def __inferSetType(self, helper: SparqlResultHelper, i: int, msg: Msgs.RtBi.RegularSet) -> tuple["FusekiInterface.SetTypes", Msgs.RtBi.RegularSet]:
@@ -150,7 +149,7 @@ class FusekiInterface:
 			Ros.Logger().error(f"SPARQL request failed with the following message: {repr(e)}")
 			raise e
 
-	def fetchGeometryById(self, query: str, msgsToUpdate: dict[str, Msgs.RtBi.RegularSet]) -> list[Msgs.RtBi.RegularSet]:
+	def fetchGeometryById(self, query: str, msgsToUpdate: dict[str, Msgs.RtBi.RegularSet]) -> dict[str, Msgs.RtBi.RegularSet]:
 		resultHelper = self.__sendQuery(query)
 		i = 0
 		while i < len(resultHelper):
@@ -158,9 +157,9 @@ class FusekiInterface:
 			msg = msgsToUpdate[setId]
 			(polyMsgs, i) = self.__parseGeometry(resultHelper, i, setId)
 			Ros.ConcatMessageArray(msg.polygons, polyMsgs)
-		return list(msgsToUpdate.values())
+		return msgsToUpdate
 
-	def fetchIntervalsById(self, query: str, msgsToUpdate: dict[str, Msgs.RtBi.RegularSet]) -> list[Msgs.RtBi.RegularSet]:
+	def fetchIntervalsById(self, query: str, msgsToUpdate: dict[str, Msgs.RtBi.RegularSet]) -> dict[str, Msgs.RtBi.RegularSet]:
 		resultHelper = self.__sendQuery(query)
 		i = 0
 		while i < len(resultHelper):
@@ -168,7 +167,7 @@ class FusekiInterface:
 			msg = msgsToUpdate[setId]
 			(intervals, i) = self.__parseIntervals(resultHelper, i, msg.id)
 			Ros.ConcatMessageArray(msg.intervals, intervals)
-		return list(msgsToUpdate.values())
+		return msgsToUpdate
 
 	def fetchSets(self, query: str) -> dict["FusekiInterface.SetTypes", dict[str, Msgs.RtBi.RegularSet]]:
 		resultHelper = self.__sendQuery(query)
@@ -185,8 +184,9 @@ class FusekiInterface:
 			msg.id = resultHelper.strVarValue(i, "regularSetId")
 			msg.stamp = stamp
 			(setType, msg) = self.__inferSetType(resultHelper, i, msg)
-			setsByType[setType][msg.id] = msg
 			msg.predicates = self.__parsePredicates(resultHelper, i)
-			# Static Map is always reachable
-			msg.predicates.append(Msgs.RtBi.Predicate(name="accessible", value=Msgs.RtBi.Predicate.TRUE))
+			if setType == "static" or setType == "dynamic":
+				# Static Map is always reachable
+				msg.predicates.append(Msgs.RtBi.Predicate(name="accessible", value=Msgs.RtBi.Predicate.TRUE))
+			setsByType[setType][msg.id] = msg
 		return setsByType
