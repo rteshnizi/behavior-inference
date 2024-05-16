@@ -14,16 +14,18 @@ PREFIX x:        <https://rezateshnizi.com/tower_bridge/xs#>
 PREFIX xsd:      <http://www.w3.org/2001/XMLSchema#>
 PREFIX y:        <https://rezateshnizi.com/tower_bridge/ys#>
 
-SELECT
-	?regularSetId
-	# SELECT ####################################
-	?name ?color
-	# SELECT ####################################
+SELECT ?regularSetId ?polygonId ?vertInd ?x ?y
 WHERE {
-	# WHERE #####################################
-	OPTIONAL { ?regularSetId
-		property:material/property:name ?name ;
-		property:material/property:color ?color ;
+	?regularSetId a/rdfs:subClassOf* class:SpaceTime .
+	VALUES ?regularSetId {
+		# ID VALUES #############################
 	}
-	# WHERE #####################################
+	OPTIONAL { ?regularSetId property:geometry ?polygonId .
+		?polygonId property:vertices ?vertexSeq .
+		?vertexSeq ?vertInd ?vertex .
+		?vertex
+			property:coord/property:x_val ?x ;
+			property:coord/property:y_val ?y .
+	}
 }
+ORDER BY ?regularSetId ?polygonId ?vertInd ?x ?y

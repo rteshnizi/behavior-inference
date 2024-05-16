@@ -5,12 +5,14 @@ rt_bi_runtime:
       rdf_store: "rt-bi-3"
       rdf_dir: "rdf" # Don't forget to add the resource directories to setup.py
       sparql_dir: "sparql" # Don't forget to add the resource directories to setup.py
-      sparql_template_ids: "template.ids.rq"
-      sparql_template_sets: "template.sets.rq"
+      sparql_channel: "channel.rq"
+      sparql_geometry: "geometry.rq"
+      sparql_intervals: "intervals.rq"
+      sparql_sets: "sets.rq"
       placeholder_bind: "# BIND ######################################"
       placeholder_ids: "# ID VALUES #############################"
-      placeholder_order: "# ORDER VARIABLES ###########################"
-      placeholder_selector: "# SELECTOR ##################################"
-      placeholder_variables: "# SELECTED VARIABLES ########################"
+      placeholder_order: "# ORDER #####################################"
+      placeholder_select: "# SELECT ####################################"
+      placeholder_where: "# WHERE #####################################"
       transition_grammar_dir: "rdf" # Don't forget to add the resource directories to setup.py
       transition_grammar_file: "transition.lark"

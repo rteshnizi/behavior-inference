@@ -14,12 +14,12 @@ PREFIX x:        <https://rezateshnizi.com/tower_bridge/xs#>
 PREFIX xsd:      <http://www.w3.org/2001/XMLSchema#>
 PREFIX y:        <https://rezateshnizi.com/tower_bridge/ys#>
 
-SELECT ?regularSetId
-	# SELECTED VARIABLES ########################
+SELECT ?regularSetId ?channelId
 WHERE {
+	?regularSetId a/rdfs:subClassOf* class:SpaceTime .
 	VALUES ?regularSetId {
 		# ID VALUES #############################
 	}
-	# SELECTOR ##################################
+	OPTIONAL { ?regularSetId property:channel ?channelId . }
 }
-ORDER BY ?regularSetId # ORDER VARIABLES ###########################
+ORDER BY ?regularSetId

@@ -14,16 +14,17 @@ PREFIX x:        <https://rezateshnizi.com/tower_bridge/xs#>
 PREFIX xsd:      <http://www.w3.org/2001/XMLSchema#>
 PREFIX y:        <https://rezateshnizi.com/tower_bridge/ys#>
 
-SELECT
-	?regularSetId
-	# SELECT ####################################
-	?name ?color
-	# SELECT ####################################
+SELECT ?regularSetId ?intervalId ?min ?max ?include_min ?include_max
 WHERE {
-	# WHERE #####################################
-	OPTIONAL { ?regularSetId
-		property:material/property:name ?name ;
-		property:material/property:color ?color ;
+	VALUES ?regularSetId {
+		# ID VALUES #############################
 	}
-	# WHERE #####################################
+	OPTIONAL { ?regularSetId property:intervals ?intervalId .
+		?intervalId
+			property:min/property:secs ?min ;
+			property:max/property:secs ?max ;
+			property:include_min ?include_min ;
+			property:include_max ?include_max .
+	}
 }
+ORDER BY ?regularSetId ?intervalId ?min ?max

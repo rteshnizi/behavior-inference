@@ -1,6 +1,5 @@
-import json
 from math import nan
-from typing import TypedDict, overload
+from typing import Literal, TypeAlias, TypedDict, overload
 
 import requests
 
@@ -45,10 +44,12 @@ class SparqlResultHelper:
 			return all(n in self[i] for n in var)
 		return var in self[i]
 
-	def boolVarValue(self, i: int, varName: str) -> str:
+	def boolVarValue(self, i: int, varName: str) -> bool:
 		strVal = self.strVarValue(i, varName)
-		if strVal == Msgs.RtBi.Predicate.TRUE or strVal == Msgs.RtBi.Predicate.FALSE: return strVal
-		return ""
+		if strVal == Msgs.RtBi.Predicate.TRUE: return True
+		if strVal == Msgs.RtBi.Predicate.FALSE: return False
+		if strVal == "": return False
+		raise ValueError(f"Expected \"true\", \"false\", or \"\". Value is \"{strVal}\"")
 
 	def floatVarValue(self, i: int, varName: str) -> float:
 		strVal = self.strVarValue(i, varName)
@@ -63,6 +64,7 @@ class SparqlResultHelper:
 		return ""
 
 class FusekiInterface:
+	SetTypes: TypeAlias = Literal["static", "dynamic", "affine", "temporal"]
 	def __init__(self, node: Ros.Node, fusekiServerAdr: str, rdfStoreName: str) -> None:
 		self.__fusekiServerAdr = fusekiServerAdr
 		self.__rdfStoreName = rdfStoreName
@@ -82,13 +84,13 @@ class FusekiInterface:
 			intervals.append(Msgs.RtBi.TimeInterval(
 				min=Msgs.toTimeMsg(helper.floatVarValue(i, "min")),
 				max=Msgs.toTimeMsg(helper.floatVarValue(i, "max")),
-				include_min=json.loads(helper.boolVarValue(i, "include_min")),
-				include_max=json.loads(helper.boolVarValue(i, "include_max")),
+				include_min=helper.boolVarValue(i, "include_min"),
+				include_max=helper.boolVarValue(i, "include_max"),
 			))
 			i += 1
 		return (intervals, i)
 
-	def __parsePolygons(self, helper: SparqlResultHelper, i: int, regularSetId: str) -> tuple[list[Msgs.RtBi.Polygon], int]:
+	def __parseGeometry(self, helper: SparqlResultHelper, i: int, regularSetId: str) -> tuple[list[Msgs.RtBi.Polygon], int]:
 		polys = []
 		polyMsg = Msgs.RtBi.Polygon()
 		polyMsg.id = helper.strVarValue(i, "polygonId")
@@ -122,14 +124,22 @@ class FusekiInterface:
 			predicates.append(predicate)
 		return predicates
 
-	def __parseSetType(self, helper: SparqlResultHelper, i: int) -> str:
-		raise NotImplementedError()
-		t = helper.strVarValue(i, "setType")
-		if t.endswith("StaticSpace"): return Msgs.RtBi.RegularSet.STATIC
-		if t.endswith("DynamicSpace"): return Msgs.RtBi.RegularSet.DYNAMIC
-		if t.endswith("AffineSpace"): return Msgs.RtBi.RegularSet.AFFINE
-		if t.endswith("RegularTime"): return Msgs.RtBi.RegularSet.TEMPORAL
-		raise ValueError(f"Unexpected spatial set type: {t}")
+	def __inferSetType(self, helper: SparqlResultHelper, i: int, msg: Msgs.RtBi.RegularSet) -> tuple["FusekiInterface.SetTypes", Msgs.RtBi.RegularSet]:
+		addTo: list[FusekiInterface.SetTypes] = []
+		if helper.boolVarValue(i, "static"):
+			addTo.append("static")
+			msg.set_type = Msgs.RtBi.RegularSet.STATIC
+		if helper.boolVarValue(i, "dynamic"):
+			addTo.append("dynamic")
+			msg.set_type = Msgs.RtBi.RegularSet.DYNAMIC
+		if helper.boolVarValue(i, "affine"):
+			addTo.append("affine")
+			msg.set_type = Msgs.RtBi.RegularSet.AFFINE
+		if helper.boolVarValue(i, "temporal"):
+			addTo.append("temporal")
+			msg.set_type = Msgs.RtBi.RegularSet.TEMPORAL
+		if len(addTo) != 1: raise RuntimeError(f"Regular set index {i} is {addTo}. A set must belong to exactly one group.")
+		return (addTo[0], msg)
 
 	def __sendQuery(self, query: str) -> SparqlResultHelper:
 		Ros.Log(f"Sending Query to Fuseki:\n{query}")
@@ -140,32 +150,43 @@ class FusekiInterface:
 			Ros.Logger().error(f"SPARQL request failed with the following message: {repr(e)}")
 			raise e
 
-	def fetchSets(self, query: str, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
+	def fetchGeometryById(self, query: str, msgsToUpdate: dict[str, Msgs.RtBi.RegularSet]) -> list[Msgs.RtBi.RegularSet]:
+		resultHelper = self.__sendQuery(query)
+		i = 0
+		while i < len(resultHelper):
+			setId = resultHelper.strVarValue(i, "regularSetId")
+			msg = msgsToUpdate[setId]
+			(polyMsgs, i) = self.__parseGeometry(resultHelper, i, setId)
+			Ros.ConcatMessageArray(msg.polygons, polyMsgs)
+		return list(msgsToUpdate.values())
+
+	def fetchIntervalsById(self, query: str, msgsToUpdate: dict[str, Msgs.RtBi.RegularSet]) -> list[Msgs.RtBi.RegularSet]:
+		resultHelper = self.__sendQuery(query)
+		i = 0
+		while i < len(resultHelper):
+			setId = resultHelper.strVarValue(i, "regularSetId")
+			msg = msgsToUpdate[setId]
+			(intervals, i) = self.__parseIntervals(resultHelper, i, msg.id)
+			Ros.ConcatMessageArray(msg.intervals, intervals)
+		return list(msgsToUpdate.values())
+
+	def fetchSets(self, query: str) -> dict["FusekiInterface.SetTypes", dict[str, Msgs.RtBi.RegularSet]]:
 		resultHelper = self.__sendQuery(query)
 		stamp = Ros.Now(self.__node).to_msg()
 		i = 0
-		while i < len(resultHelper):
+		setsByType: dict[FusekiInterface.SetTypes, dict[str, Msgs.RtBi.RegularSet]] = {
+			"static": {},
+			"dynamic": {},
+			"affine": {},
+			"temporal": {},
+		}
+		for i in range(len(resultHelper)):
 			msg = Msgs.RtBi.RegularSet()
 			msg.id = resultHelper.strVarValue(i, "regularSetId")
 			msg.stamp = stamp
-			msg.set_type = self.__parseSetType(resultHelper, i)
+			(setType, msg) = self.__inferSetType(resultHelper, i, msg)
+			setsByType[setType][msg.id] = msg
 			msg.predicates = self.__parsePredicates(resultHelper, i)
 			# Static Map is always reachable
 			msg.predicates.append(Msgs.RtBi.Predicate(name="accessible", value=Msgs.RtBi.Predicate.TRUE))
-			(msg.polygons, i) = self.__parsePolygons(resultHelper, i, msg.id)
-			Ros.AppendMessage(res.sets, msg)
-		return res
-
-	def queryById(self, query: str, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
-		resultHelper = self.__sendQuery(query)
-		stamp = Ros.Now(self.__node).to_msg()
-		i = 0
-		while i < len(resultHelper):
-			msg = Msgs.RtBi.RegularSet()
-			msg.id = resultHelper.strVarValue(i, "regularSetId")
-			msg.set_type = self.__parseSetType(resultHelper, i)
-			msg.stamp = stamp
-			Ros.AppendMessage(res.sets, msg)
-			(accessible, i) = self.__parseIntervals(resultHelper, i, msg.id)
-			Ros.ConcatMessageArray(msg.intervals, accessible)
-		return res
+		return setsByType

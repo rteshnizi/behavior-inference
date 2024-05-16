@@ -18,7 +18,7 @@ SELECT ?regularSetId
 	?polygonId ?vertInd ?x ?y
 	?intervalId ?min ?max ?include_min ?include_max
 	?channelId
-	# SELECTED VARIABLES ########################
+	# SELECT ####################################
 WHERE {
 	?regularSetId a/rdfs:subClassOf* class:SpaceTime .
 	OPTIONAL { ?regularSetId property:geometry ?polygonId .
@@ -36,10 +36,10 @@ WHERE {
 			property:include_max ?include_max .
 	}
 	OPTIONAL { ?regularSetId property:channel ?channelId . }
-	# SELECTOR ##################################
+	# WHERE #####################################
 	# BIND ######################################
 }
 ORDER BY ?regularSetId
 	?polygonId ?vertInd ?x ?y
 	?intervalId ?min ?max
-	# ORDER VARIABLES ###########################
+	# ORDER #####################################
