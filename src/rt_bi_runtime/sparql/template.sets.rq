@@ -15,11 +15,31 @@ PREFIX xsd:      <http://www.w3.org/2001/XMLSchema#>
 PREFIX y:        <https://rezateshnizi.com/tower_bridge/ys#>
 
 SELECT ?regularSetId
+	?polygonId ?vertInd ?x ?y
+	?intervalId ?min ?max ?include_min ?include_max
+	?channelId
 	# SELECTED VARIABLES ########################
 WHERE {
-	VALUES ?regularSetId {
-		# ID VALUES #############################
+	?regularSetId a/rdfs:subClassOf* class:SpaceTime .
+	OPTIONAL { ?regularSetId property:geometry ?polygonId .
+		?polygonId property:vertices ?vertexSeq .
+		?vertexSeq ?vertInd ?vertex .
+		?vertex
+			property:coord/property:x_val ?x ;
+			property:coord/property:y_val ?y .
 	}
+	OPTIONAL { ?regularSetId property:intervals ?intervalId .
+		?intervalId
+			property:min/property:secs ?min ;
+			property:max/property:secs ?max ;
+			property:include_min ?include_min ;
+			property:include_max ?include_max .
+	}
+	OPTIONAL { ?regularSetId property:channel ?channelId . }
 	# SELECTOR ##################################
+	# BIND ######################################
 }
-ORDER BY ?regularSetId # ORDER VARIABLES ###########################
+ORDER BY ?regularSetId
+	?polygonId ?vertInd ?x ?y
+	?intervalId ?min ?max
+	# ORDER VARIABLES ###########################

@@ -28,33 +28,15 @@ class:Polygon a rdfs:Class .
 class:Time a rdfs:Class .
 class:Interval a rdfs:Class .
 class:Subject a rdfs:Class .
-# endregion [CLASSES]
-
-@prefix subject: <https://rezateshnizi.com/rt-bi/subject#> .
-# region [SUBJECTS]
-class:RegularSpace a rdfs:Class ;
+class:SpaceTime a rdfs:Class ;
 	rdfs:subClassOf class:Subject ;
-	rdfs:comment "The class of RegularSpace specifications." .
-class:RegularTime a rdfs:Class ;
-	rdfs:subClassOf class:Subject ;
-	rdfs:comment "The class of RegularTime specifications." .
+	rdfs:comment "The class of Regular Space-Time Set specifications." .
 class:Material a rdfs:Class ;
 	rdfs:subClassOf class:Subject ;
 	rdfs:comment "The class of material specifications." .
-# endregion [SUBJECTS]
+# endregion [CLASSES]
 
-# region [SUBJECT PROPS]
-subject:name a rdfs:label ;
-	rdfs:domain class:Subject ;
-	rdfs:range xsd:string ;
-	rdfs:comment "A name for this object." .
-subject:color a rdf:Property ;
-	rdfs:domain class:Subject ;
-	rdfs:range xsd:string ;
-	rdfs:comment "Color to describe this area (and use in render)." .
-# endregion [SUBJECT PROPS]
-
-# region PtSeq members
+# region [PtSeq Members]
 class:v_101 a class:Vertex .
 class:v_102 a class:Vertex .
 class:v_103 a class:Vertex .
@@ -75,80 +57,73 @@ class:v_117 a class:Vertex .
 class:v_118 a class:Vertex .
 class:v_119 a class:Vertex .
 class:v_120 a class:Vertex .
-# endregion PtSeq members
-# region [SPATIAL]
-class:StaticSpace a rdfs:Class ;
-	rdfs:subClassOf class:RegularSpace ;
-	rdfs:comment "A value indicating a static regions." .
-class:DynamicSpace a rdfs:Class ;
-	rdfs:subClassOf class:RegularSpace ;
-	rdfs:comment "A value indicating a dynamic regions. Dynamic regions have different accessibility values depending on time." .
-class:AffineSpace a rdfs:Class ;
-	rdfs:subClassOf class:RegularSpace ;
-	rdfs:comment "A value indicating a affine regions. Affine regions can move about the map." .
-# endregion [SPATIAL]
+# endregion [PtSeq Members]
 
-@prefix spatial: <https://rezateshnizi.com/rt-bi/spatial#> .
+@prefix property: <https://rezateshnizi.com/rt-bi/property#> .
+# region [SUBJECT PROPS]
+property:name a rdfs:label ;
+	rdfs:domain class:Subject ;
+	rdfs:range xsd:string ;
+	rdfs:comment "A name for this object." .
+property:color a rdf:Property ;
+	rdfs:domain class:Subject ;
+	rdfs:range xsd:string ;
+	rdfs:comment "Color to describe this area (and use in render)." .
+property:channel a rdf:Property ;
+	rdfs:domain class:SpaceTime ;
+	rdfs:range xsd:string ;
+	rdfs:comment "The ID of the ROS communication channel publishing updates for this SpaceTime." .
+# endregion [SUBJECT PROPS]
+
 # region [SPATIAL PROPS]
-spatial:vertices a rdf:Property ;
+property:vertices a rdf:Property ;
 	rdfs:domain class:Polygon ;
 	rdfs:range class:PtSeq ;
 	rdfs:comment "The vertices of a polygon." .
-spatial:x a rdf:Property ;
+property:coord a rdf:Property ;
 	rdfs:domain class:Pt ;
 	rdfs:range class:X ;
-	rdfs:comment "The x Coordinate." .
-spatial:y a rdf:Property ;
-	rdfs:domain class:Pt ;
 	rdfs:range class:Y ;
-	rdfs:comment "The y Coordinate." .
-spatial:x_val a rdf:value ;
+	rdfs:comment "A real axis coordinate (x, y, etc.)." .
+property:x_val a rdf:value ;
 	rdfs:domain class:X ;
 	rdfs:range xsd:double ;
 	rdfs:comment "Some x value." .
-spatial:y_val a rdf:value ;
+property:y_val a rdf:value ;
 	rdfs:domain class:Y ;
 	rdfs:range xsd:double ;
 	rdfs:comment "Some y value." .
-spatial:polygons a rdf:Property ;
-	rdfs:domain class:RegularSpace ;
+property:geometry a rdf:Property ;
+	rdfs:domain class:SpaceTime ;
 	rdfs:range class:Polygon .
-spatial:material a rdf:Property ;
-	rdfs:domain class:RegularSpace ;
+property:material a rdf:Property ;
+	rdfs:domain class:SpaceTime ;
 	rdfs:range class:Material ;
 	rdfs:comment "The range of this property is a Material specification." .
-spatial:accessible a rdf:Property ;
-	rdfs:domain class:DynamicSpace ;
-	rdfs:range class:Interval .
-spatial:channel a rdf:Property ;
-	rdfs:domain class:AffineSpace ;
-	rdfs:range xsd:string ;
-	rdfs:comment "The ID of the ROS communication channel publishing updates for this AffineSpace." .
 # endregion [SPATIAL PROPS]
 
-@prefix temporal: <https://rezateshnizi.com/rt-bi/temporal#> .
 # region [TEMPORAL PROPS]
-temporal:secs a rdf:value ;
+property:secs a rdf:value ;
 	rdfs:domain class:Time ;
 	rdfs:range xsd:double ;
 	rdfs:comment "A time value in Seconds." .
-temporal:min a rdf:Property ;
+property:min a rdf:Property ;
 	rdfs:domain class:Interval ;
 	rdfs:range class:Time ;
 	rdfs:comment "The min bound of a time interval." .
-temporal:max a rdf:Property ;
+property:max a rdf:Property ;
 	rdfs:domain class:Interval ;
 	rdfs:range class:Time ;
 	rdfs:comment "The max bound of a time interval." .
-temporal:include_min a rdf:Property ;
+property:include_min a rdf:Property ;
 	rdfs:domain class:Interval ;
 	rdfs:range xsd:boolean ;
 	rdfs:comment "Whether the min bound is included in the interval" .
-temporal:include_max a rdf:Property ;
+property:include_max a rdf:Property ;
 	rdfs:domain class:Interval ;
 	rdfs:range xsd:boolean ;
 	rdfs:comment "Whether the max bound is included in the interval" .
-temporal:intervals a rdf:Property ;
-	rdfs:domain class:RegularTime ;
+property:intervals a rdf:Property ;
+	rdfs:domain class:SpaceTime ;
 	rdfs:range class:Interval .
 # endregion [TEMPORAL PROPS]

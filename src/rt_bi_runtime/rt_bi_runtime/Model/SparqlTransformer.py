@@ -12,26 +12,11 @@ class PredicateToQueryName(TransitionTransformer):
 	def test(self, _: Any) -> Any: return Discard
 
 	def simple_expression(self, subExpressions: list[str]) -> str:
-		if len(subExpressions) != 2: raise UnexpectedToken(subExpressions, {"2 strings: namespace, variable."})
-		return subExpressions[1]
+		if len(subExpressions) != 1: raise UnexpectedToken(subExpressions, {"1 strings: variable."})
+		return subExpressions[0]
 
 	def property_seq(self, variables: list[str]) -> str:
 		return variables[0]
-
-class PredicateToNamespace(TransitionTransformer):
-	# TODO: Use this in RdfStoreNode __temporalQuery and __spatialQuery
-	def NAMESPACE(self, token: Token) -> str:
-		if token == "S": return "class:RegularSpace"
-		if token == "T": return "class:RegularTime"
-		raise UnexpectedToken(token, {"S", "T"})
-	def connector(self, _: Any) -> Any: return Discard
-	def property_seq(self, _: Any) -> Any: return Discard
-	def test(self, _: Any) -> Any: return Discard
-	def value(self, _: Any) -> Any: return Discard
-
-	def simple_expression(self, subExpressions: list[str]) -> str:
-		if len(subExpressions) != 1: raise UnexpectedToken(subExpressions, {"A single namespace."})
-		return subExpressions[0]
 
 PREDICATE_VARNAME_PLACEHOLDER: Final = "?predicate_varname"
 class TemporalPredicateToVariable(TransitionTransformer):
@@ -41,9 +26,8 @@ class TemporalPredicateToVariable(TransitionTransformer):
 	def test(self, t: list[str]) -> str: return t[0]
 
 	def simple_expression(self, subExpressions: list[str]) -> str:
-		if len(subExpressions) != 4: raise UnexpectedToken(subExpressions, {"4 strings: namespace, variable, test, value"})
-		if subExpressions[0] == "S": return ""
-		return f"BIND ({subExpressions[1]} {subExpressions[2]} {subExpressions[3]} AS {PREDICATE_VARNAME_PLACEHOLDER})"
+		if len(subExpressions) != 3: raise UnexpectedToken(subExpressions, {"3 strings: variable, test, value"})
+		return f"BIND ({subExpressions[0]} {subExpressions[1]} {subExpressions[2]} AS {PREDICATE_VARNAME_PLACEHOLDER})"
 
 	def property_seq(self, variables: list[str]) -> str:
 		return f"?{variables[-1]}"
@@ -55,9 +39,8 @@ class SpatialPredicateToVariable(TransitionTransformer):
 	def test(self, t: list[str]) -> str: return t[0]
 
 	def simple_expression(self, subExpressions: list[str]) -> str:
-		if len(subExpressions) != 4: raise UnexpectedToken(subExpressions, {"4 strings: namespace, variable, test, value"})
-		if subExpressions[0] == "T": return ""
-		return f"BIND ({subExpressions[1]} {subExpressions[2]} {subExpressions[3]} AS {PREDICATE_VARNAME_PLACEHOLDER})"
+		if len(subExpressions) != 3: raise UnexpectedToken(subExpressions, {"3 strings: variable, test, value"})
+		return f"BIND ({subExpressions[0]} {subExpressions[1]} {subExpressions[2]} AS {PREDICATE_VARNAME_PLACEHOLDER})"
 
 	def property_seq(self, variables: list[str]) -> str:
 		return f"?{variables[-1]}"
@@ -73,13 +56,11 @@ class PredicateToQueryStr:
 		orderPlaceholder: str,
 		selectorPlaceholder: str,
 		variablesPlaceholder: str,
-		queryFiles: list[tuple[str, str]],
 	) -> None:
 		super().__init__()
 		self.__namespace: Literal["spatial", "temporal"] = namespace
 		self.__baseDir = baseDir
 		self.__sparqlDir = sparqlDir
-		self.__queryFiles: dict[str, str] = { pair[0]: pair[1] for pair in queryFiles }
 		self.__transitionParser = TransitionParser(baseDir, transitionGrammarDir, transitionGrammarFileName)
 		self.__orderPlaceholder = orderPlaceholder
 		self.__selectorPlaceholder = selectorPlaceholder
@@ -87,6 +68,7 @@ class PredicateToQueryStr:
 		return
 
 	def __regexMatchPlaceholders(self, queryName: str, placeholder: str) -> str:
+		raise NotImplementedError(f"REGEX MATCH: q = {queryName}, placeholder = {placeholder}")
 		queryContent = Path(self.__baseDir, self.__sparqlDir, self.__queryFiles[queryName]).read_text()
 		import re
 		pattern = f"{placeholder}(.*){placeholder}"
@@ -110,15 +92,15 @@ class PredicateToQueryStr:
 		(varBindings, variables) = self.__toBind(parsedPred, index)
 		return (whereClause, variables, varBindings, orders)
 
-	def selector(self, queryName: str) -> tuple[str, str, str]:
-		if queryName == "": return ("", "", "")
-		whereClause = self.__regexMatchPlaceholders(queryName, self.__selectorPlaceholder)
+	def selector(self, propertySeq: str) -> tuple[str, str, str]:
+		if propertySeq == "": return ("", "", "")
+		whereClause = self.__regexMatchPlaceholders(propertySeq, self.__selectorPlaceholder)
 		try: # Not all queries have variables
-			variables = self.__regexMatchPlaceholders(queryName, self.__variablesPlaceholder)
+			variables = self.__regexMatchPlaceholders(propertySeq, self.__variablesPlaceholder)
 		except:
 			variables = ""
 		try: # Not all queries have order by
-			orders = self.__regexMatchPlaceholders(queryName, self.__orderPlaceholder)
+			orders = self.__regexMatchPlaceholders(propertySeq, self.__orderPlaceholder)
 		except:
 			orders = ""
 		return (whereClause, variables, orders)

@@ -132,19 +132,11 @@ class BehaviorAutomaton(nx.DiGraph):
 		return self.__initializedTokens
 
 	@property
-	def temporalPredicates(self) -> list[str]:
+	def predicates(self) -> list[str]:
 		d = {}
 		for (frm, to, statement) in self.edges(data="statement"): # pyright: ignore[reportArgumentType]
 			statement = cast(TransitionStatement, statement)
-			d |= statement.temporalPredicates
-		return list(d.keys())
-
-	@property
-	def spatialPredicates(self) -> list[str]:
-		d = {}
-		for (frm, to, statement) in self.edges(data="statement"): # pyright: ignore[reportArgumentType]
-			statement = cast(TransitionStatement, statement)
-			d |= statement.spatialPredicates
+			d |= statement.predicates
 		return list(d.keys())
 
 	def reduceUncertainty(self, state: str, iGraph: RhsIGraph) -> None:

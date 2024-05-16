@@ -4,92 +4,89 @@
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 ############## REFERENCES ###############
 @prefix class: <https://rezateshnizi.com/rt-bi/class#> .
-@prefix spatial: <https://rezateshnizi.com/rt-bi/spatial#> .
-@prefix temporal: <https://rezateshnizi.com/rt-bi/temporal#> .
-@prefix subject: <https://rezateshnizi.com/rt-bi/subject#> .
+@prefix property: <https://rezateshnizi.com/rt-bi/property#> .
 
 ############## THE DATASET ##############
-@prefix tower_bridge: <https://rezateshnizi.com/tower_bridge/> .
 # region [SPATIAL DEFS]
-@prefix x: <https://rezateshnizi.com/tower_bridge/spatial/xs#> .
-@prefix y: <https://rezateshnizi.com/tower_bridge/spatial/ys#> .
-@prefix pt: <https://rezateshnizi.com/tower_bridge/spatial/pts#> .
-@prefix polygon: <https://rezateshnizi.com/tower_bridge/spatial/polygons#> .
+@prefix x: <https://rezateshnizi.com/tower_bridge/xs#> .
+@prefix y: <https://rezateshnizi.com/tower_bridge/ys#> .
+@prefix pt: <https://rezateshnizi.com/tower_bridge/pts#> .
+@prefix polygon: <https://rezateshnizi.com/tower_bridge/polys#> .
 # region [XS]
-x:0 a class:X ; spatial:x_val 0.0 .
-x:1 a class:X ; spatial:x_val 250.0 .
-x:2 a class:X ; spatial:x_val 425.0 .
-x:3 a class:X ; spatial:x_val 1770.0 .
-x:4 a class:X ; spatial:x_val 2035.0 .
-x:5 a class:X ; spatial:x_val 2765.0 .
-x:6 a class:X ; spatial:x_val 2945.0 .
-x:7 a class:X ; spatial:x_val 3770.0 .
-x:8 a class:X ; spatial:x_val 3950.0 .
-x:9 a class:X ; spatial:x_val 5120.0 .
+x:0 a class:X ; property:x_val 0.0 .
+x:1 a class:X ; property:x_val 250.0 .
+x:2 a class:X ; property:x_val 425.0 .
+x:3 a class:X ; property:x_val 1770.0 .
+x:4 a class:X ; property:x_val 2035.0 .
+x:5 a class:X ; property:x_val 2765.0 .
+x:6 a class:X ; property:x_val 2945.0 .
+x:7 a class:X ; property:x_val 3770.0 .
+x:8 a class:X ; property:x_val 3950.0 .
+x:9 a class:X ; property:x_val 5120.0 .
 # endregion [XS]
 
 # region [YS]
-y:0 a class:Y ; spatial:y_val 0.0 .
-y:1 a class:Y ; spatial:y_val 135.0 .
-y:2 a class:Y ; spatial:y_val 565.0 .
-y:3 a class:Y ; spatial:y_val 745.0 .
-y:4 a class:Y ; spatial:y_val 1000.0 .
-y:5 a class:Y ; spatial:y_val 1870.0 .
-y:6 a class:Y ; spatial:y_val 2125.0 .
-y:7 a class:Y ; spatial:y_val 2300.0 .
-y:8 a class:Y ; spatial:y_val 2735.0 .
-y:9 a class:Y ; spatial:y_val 2880.0 .
+y:0 a class:Y ; property:y_val 0.0 .
+y:1 a class:Y ; property:y_val 135.0 .
+y:2 a class:Y ; property:y_val 565.0 .
+y:3 a class:Y ; property:y_val 745.0 .
+y:4 a class:Y ; property:y_val 1000.0 .
+y:5 a class:Y ; property:y_val 1870.0 .
+y:6 a class:Y ; property:y_val 2125.0 .
+y:7 a class:Y ; property:y_val 2300.0 .
+y:8 a class:Y ; property:y_val 2735.0 .
+y:9 a class:Y ; property:y_val 2880.0 .
 # endregion [YS]
 
 # region [PTS]
-pt:0 a class:Pt ; spatial:x x:0 ; spatial:y y:0 .
-pt:1 a class:Pt ; spatial:x x:9 ; spatial:y y:0 .
-pt:2 a class:Pt ; spatial:x x:0 ; spatial:y y:1 .
-pt:3 a class:Pt ; spatial:x x:9 ; spatial:y y:1 .
-pt:4 a class:Pt ; spatial:x x:0 ; spatial:y y:2 .
-pt:5 a class:Pt ; spatial:x x:3 ; spatial:y y:2 .
-pt:6 a class:Pt ; spatial:x x:4 ; spatial:y y:2 .
-pt:7 a class:Pt ; spatial:x x:5 ; spatial:y y:2 .
-pt:8 a class:Pt ; spatial:x x:6 ; spatial:y y:2 .
-pt:9 a class:Pt ; spatial:x x:9 ; spatial:y y:2 .
-pt:10 a class:Pt ; spatial:x x:5 ; spatial:y y:3 .
-pt:11 a class:Pt ; spatial:x x:6 ; spatial:y y:3 .
-pt:12 a class:Pt ; spatial:x x:0 ; spatial:y y:4 .
-pt:13 a class:Pt ; spatial:x x:3 ; spatial:y y:4 .
-pt:14 a class:Pt ; spatial:x x:4 ; spatial:y y:4 .
-pt:15 a class:Pt ; spatial:x x:9 ; spatial:y y:4 .
-pt:16 a class:Pt ; spatial:x x:0 ; spatial:y y:5 .
-pt:17 a class:Pt ; spatial:x x:3 ; spatial:y y:5 .
-pt:18 a class:Pt ; spatial:x x:4 ; spatial:y y:5 .
-pt:19 a class:Pt ; spatial:x x:9 ; spatial:y y:5 .
-pt:20 a class:Pt ; spatial:x x:1 ; spatial:y y:6 .
-pt:21 a class:Pt ; spatial:x x:2 ; spatial:y y:6 .
-pt:22 a class:Pt ; spatial:x x:7 ; spatial:y y:6 .
-pt:23 a class:Pt ; spatial:x x:8 ; spatial:y y:6 .
-pt:24 a class:Pt ; spatial:x x:0 ; spatial:y y:7 .
-pt:25 a class:Pt ; spatial:x x:1 ; spatial:y y:7 .
-pt:26 a class:Pt ; spatial:x x:2 ; spatial:y y:7 .
-pt:27 a class:Pt ; spatial:x x:3 ; spatial:y y:7 .
-pt:28 a class:Pt ; spatial:x x:4 ; spatial:y y:7 .
-pt:29 a class:Pt ; spatial:x x:7 ; spatial:y y:7 .
-pt:30 a class:Pt ; spatial:x x:8 ; spatial:y y:7 .
-pt:31 a class:Pt ; spatial:x x:9 ; spatial:y y:7 .
-pt:32 a class:Pt ; spatial:x x:0 ; spatial:y y:8 .
-pt:33 a class:Pt ; spatial:x x:9 ; spatial:y y:8 .
-pt:34 a class:Pt ; spatial:x x:0 ; spatial:y y:9 .
-pt:35 a class:Pt ; spatial:x x:9 ; spatial:y y:9 .
+pt:0 a class:Pt ; property:coord x:0 ; property:coord y:0 .
+pt:1 a class:Pt ; property:coord x:9 ; property:coord y:0 .
+pt:2 a class:Pt ; property:coord x:0 ; property:coord y:1 .
+pt:3 a class:Pt ; property:coord x:9 ; property:coord y:1 .
+pt:4 a class:Pt ; property:coord x:0 ; property:coord y:2 .
+pt:5 a class:Pt ; property:coord x:3 ; property:coord y:2 .
+pt:6 a class:Pt ; property:coord x:4 ; property:coord y:2 .
+pt:7 a class:Pt ; property:coord x:5 ; property:coord y:2 .
+pt:8 a class:Pt ; property:coord x:6 ; property:coord y:2 .
+pt:9 a class:Pt ; property:coord x:9 ; property:coord y:2 .
+pt:10 a class:Pt ; property:coord x:5 ; property:coord y:3 .
+pt:11 a class:Pt ; property:coord x:6 ; property:coord y:3 .
+pt:12 a class:Pt ; property:coord x:0 ; property:coord y:4 .
+pt:13 a class:Pt ; property:coord x:3 ; property:coord y:4 .
+pt:14 a class:Pt ; property:coord x:4 ; property:coord y:4 .
+pt:15 a class:Pt ; property:coord x:9 ; property:coord y:4 .
+pt:16 a class:Pt ; property:coord x:0 ; property:coord y:5 .
+pt:17 a class:Pt ; property:coord x:3 ; property:coord y:5 .
+pt:18 a class:Pt ; property:coord x:4 ; property:coord y:5 .
+pt:19 a class:Pt ; property:coord x:9 ; property:coord y:5 .
+pt:20 a class:Pt ; property:coord x:1 ; property:coord y:6 .
+pt:21 a class:Pt ; property:coord x:2 ; property:coord y:6 .
+pt:22 a class:Pt ; property:coord x:7 ; property:coord y:6 .
+pt:23 a class:Pt ; property:coord x:8 ; property:coord y:6 .
+pt:24 a class:Pt ; property:coord x:0 ; property:coord y:7 .
+pt:25 a class:Pt ; property:coord x:1 ; property:coord y:7 .
+pt:26 a class:Pt ; property:coord x:2 ; property:coord y:7 .
+pt:27 a class:Pt ; property:coord x:3 ; property:coord y:7 .
+pt:28 a class:Pt ; property:coord x:4 ; property:coord y:7 .
+pt:29 a class:Pt ; property:coord x:7 ; property:coord y:7 .
+pt:30 a class:Pt ; property:coord x:8 ; property:coord y:7 .
+pt:31 a class:Pt ; property:coord x:9 ; property:coord y:7 .
+pt:32 a class:Pt ; property:coord x:0 ; property:coord y:8 .
+pt:33 a class:Pt ; property:coord x:9 ; property:coord y:8 .
+pt:34 a class:Pt ; property:coord x:0 ; property:coord y:9 .
+pt:35 a class:Pt ; property:coord x:9 ; property:coord y:9 .
 # endregion [PTS]
 
 # region [POLYGONS]
 polygon:0 a class:Polygon ;
-	spatial:vertices [ a class:PtSeq ;
+	property:vertices [ a class:PtSeq ;
 		class:v_101 pt:0 ;
 		class:v_102 pt:1 ;
 		class:v_103 pt:3 ;
 		class:v_104 pt:2 ;
 	] .
 polygon:1 a class:Polygon ;
-	spatial:vertices [ a class:PtSeq ;
+	property:vertices [ a class:PtSeq ;
 		class:v_101 pt:2 ;
 		class:v_102 pt:3 ;
 		class:v_103 pt:9 ;
@@ -100,14 +97,14 @@ polygon:1 a class:Polygon ;
 		class:v_108 pt:4 ;
 	] .
 polygon:2 a class:Polygon ;
-	spatial:vertices [ a class:PtSeq ;
+	property:vertices [ a class:PtSeq ;
 		class:v_101 pt:4 ;
 		class:v_102 pt:5 ;
 		class:v_103 pt:13;
 		class:v_104 pt:12;
 	] .
 polygon:3 a class:Polygon ;
-	spatial:vertices [ a class:PtSeq ;
+	property:vertices [ a class:PtSeq ;
 		class:v_101 pt:6 ;
 		class:v_102 pt:7 ;
 		class:v_103 pt:10 ;
@@ -118,35 +115,35 @@ polygon:3 a class:Polygon ;
 		class:v_108 pt:14 ;
 	] .
 polygon:4 a class:Polygon ;
-	spatial:vertices [ a class:PtSeq ;
+	property:vertices [ a class:PtSeq ;
 		class:v_101 pt:7 ;
 		class:v_102 pt:8 ;
 		class:v_103 pt:11 ;
 		class:v_104 pt:10 ;
 	] .
 polygon:5 a class:Polygon ;
-	spatial:vertices [ a class:PtSeq ;
+	property:vertices [ a class:PtSeq ;
 		class:v_101 pt:12 ;
 		class:v_102 pt:13 ;
 		class:v_103 pt:17 ;
 		class:v_104 pt:16 ;
 	] .
 polygon:6 a class:Polygon ;
-	spatial:vertices [ a class:PtSeq ;
+	property:vertices [ a class:PtSeq ;
 		class:v_101 pt:13 ;
 		class:v_102 pt:14 ;
 		class:v_103 pt:18 ;
 		class:v_104 pt:17 ;
 	] .
 polygon:7 a class:Polygon ;
-	spatial:vertices [ a class:PtSeq ;
+	property:vertices [ a class:PtSeq ;
 		class:v_101 pt:14 ;
 		class:v_102 pt:15 ;
 		class:v_103 pt:19 ;
 		class:v_104 pt:18 ;
 	] .
 polygon:8 a class:Polygon ;
-	spatial:vertices [ a class:PtSeq ;
+	property:vertices [ a class:PtSeq ;
 		class:v_101 pt:16 ;
 		class:v_102 pt:17 ;
 		class:v_103 pt:27 ;
@@ -157,14 +154,14 @@ polygon:8 a class:Polygon ;
 		class:v_108 pt:24 ;
 	] .
 polygon:9 a class:Polygon ;
-	spatial:vertices [ a class:PtSeq ;
+	property:vertices [ a class:PtSeq ;
 		class:v_101 pt:20 ;
 		class:v_102 pt:21 ;
 		class:v_103 pt:26 ;
 		class:v_104 pt:25 ;
 	] .
 polygon:10 a class:Polygon ;
-	spatial:vertices [ a class:PtSeq ;
+	property:vertices [ a class:PtSeq ;
 		class:v_101 pt:18 ;
 		class:v_102 pt:19 ;
 		class:v_103 pt:31 ;
@@ -175,14 +172,14 @@ polygon:10 a class:Polygon ;
 		class:v_108 pt:28 ;
 	] .
 polygon:11 a class:Polygon ;
-	spatial:vertices [ a class:PtSeq ;
+	property:vertices [ a class:PtSeq ;
 		class:v_101 pt:22 ;
 		class:v_102 pt:23 ;
 		class:v_103 pt:30 ;
 		class:v_104 pt:29 ;
 	] .
 polygon:12 a class:Polygon ;
-	spatial:vertices [ a class:PtSeq ;
+	property:vertices [ a class:PtSeq ;
 		class:v_101 pt:24 ;
 		class:v_102 pt:27 ;
 		class:v_103 pt:17 ;
@@ -193,7 +190,7 @@ polygon:12 a class:Polygon ;
 		class:v_108 pt:32 ;
 	] .
 polygon:13 a class:Polygon ;
-	spatial:vertices [ a class:PtSeq ;
+	property:vertices [ a class:PtSeq ;
 		class:v_101 pt:32 ;
 		class:v_102 pt:33 ;
 		class:v_103 pt:35 ;
@@ -203,44 +200,44 @@ polygon:13 a class:Polygon ;
 # endregion [SPATIAL DEFS]
 
 # region [TEMPORAL DEFS]
-@prefix t: <https://rezateshnizi.com/tower_bridge/temporal/ts#> .
-@prefix interval: <https://rezateshnizi.com/tower_bridge/temporal/intervals#> .
+@prefix t: <https://rezateshnizi.com/tower_bridge/ts#> .
+@prefix interval: <https://rezateshnizi.com/tower_bridge/intervals#> .
 # region [TS]
-t:0 a class:Time ; temporal:secs 0.0 .
-t:1 a class:Time ; temporal:secs 10.0 .
-t:2 a class:Time ; temporal:secs 25.0 .
-t:3 a class:Time ; temporal:secs 35.0 .
-t:4 a class:Time ; temporal:secs 55.0 .
-t:5 a class:Time ; temporal:secs 65.0 .
-t:6 a class:Time ; temporal:secs 80.0 .
-t:7 a class:Time ; temporal:secs 90.0 .
-t:8 a class:Time ; temporal:secs 120.0 .
+t:0 a class:Time ; property:secs 0.0 .
+t:1 a class:Time ; property:secs 10.0 .
+t:2 a class:Time ; property:secs 25.0 .
+t:3 a class:Time ; property:secs 35.0 .
+t:4 a class:Time ; property:secs 55.0 .
+t:5 a class:Time ; property:secs 65.0 .
+t:6 a class:Time ; property:secs 80.0 .
+t:7 a class:Time ; property:secs 90.0 .
+t:8 a class:Time ; property:secs 120.0 .
 # endregion [TS]
 # region [INTERVALS]
 interval:0 a class:Interval ;
-	temporal:min t:1 ;          temporal:max t:2 ;
-	temporal:include_min true ; temporal:include_max false .
+	property:min t:1 ;          property:max t:2 ;
+	property:include_min true ; property:include_max false .
 interval:1 a class:Interval ;
-	temporal:min t:3 ;          temporal:max t:4 ;
-	temporal:include_min true ; temporal:include_max false .
+	property:min t:3 ;          property:max t:4 ;
+	property:include_min true ; property:include_max false .
 interval:2 a class:Interval ;
-	temporal:min t:5 ;          temporal:max t:6 ;
-	temporal:include_min true ; temporal:include_max false .
+	property:min t:5 ;          property:max t:6 ;
+	property:include_min true ; property:include_max false .
 interval:3 a class:Interval ;
-	temporal:min t:7 ;          temporal:max t:8 ;
-	temporal:include_min true ; temporal:include_max false .
+	property:min t:7 ;          property:max t:8 ;
+	property:include_min true ; property:include_max false .
 interval:4 a class:Interval ;
-	temporal:min t:0 ;          temporal:max t:1 ;
-	temporal:include_min true ; temporal:include_max false .
+	property:min t:0 ;          property:max t:1 ;
+	property:include_min true ; property:include_max false .
 interval:5 a class:Interval ;
-	temporal:min t:2 ;          temporal:max t:3 ;
-	temporal:include_min true ; temporal:include_max false .
+	property:min t:2 ;          property:max t:3 ;
+	property:include_min true ; property:include_max false .
 interval:6 a class:Interval ;
-	temporal:min t:4 ;          temporal:max t:5 ;
-	temporal:include_min true ; temporal:include_max false .
+	property:min t:4 ;          property:max t:5 ;
+	property:include_min true ; property:include_max false .
 interval:7 a class:Interval ;
-	temporal:min t:6 ;          temporal:max t:7 ;
-	temporal:include_min true ; temporal:include_max false .
+	property:min t:6 ;          property:max t:7 ;
+	property:include_min true ; property:include_max false .
 
 # endregion [INTERVALS]
 # endregion [TEMPORAL DEFS]
@@ -248,92 +245,95 @@ interval:7 a class:Interval ;
 # region [MATERIAL DEFS]
 @prefix material: <https://rezateshnizi.com/tower_bridge/materials#> .
 material:bridge a class:Material ;
-	subject:name "bridge" ;
-	subject:color "ORANGE" .
+	property:name "bridge" ;
+	property:color "ORANGE" .
 material:street a class:Material ;
-	subject:name "street" ;
-	subject:color "GREY" .
+	property:name "street" ;
+	property:color "GREY" .
 material:water a class:Material ;
-	subject:name "water" ;
-	subject:color "BLUE_LIGHT" .
+	property:name "water" ;
+	property:color "BLUE_LIGHT" .
 material:grass a class:Material ;
-	subject:name "grass" ;
-	subject:color "GREEN_LIGHT" .
-material:roof a class:Material ;
-	subject:name "roof" ;
-	subject:color "WHITE" .
+	property:name "grass" ;
+	property:color "GREEN_LIGHT" .
+material:building a class:Material ;
+	property:name "building" ;
+	property:color "WHITE" .
 # endregion [MATERIAL DEFS]
 
 # region [REGULAR SET DEFS]
-@prefix regular_set: <https://rezateshnizi.com/tower_bridge/regular_sets#> .
-regular_set:101 a class:StaticSpace ;
-	spatial:material material:grass ;
-	spatial:polygons polygon:0 ;
+@prefix set: <https://rezateshnizi.com/tower_bridge/sets#> .
+set:101 a class:SpaceTime ;
+	property:material material:grass ;
+	property:geometry polygon:0 ;
 .
-regular_set:102 a class:StaticSpace ;
-	spatial:material material:street ;
-	spatial:polygons polygon:1 ;
+set:102 a class:SpaceTime ;
+	property:material material:street ;
+	property:geometry polygon:1 ;
 .
-regular_set:103 a class:StaticSpace ;
-	spatial:material material:grass ;
-	spatial:polygons polygon:2 ;
+set:103 a class:SpaceTime ;
+	property:material material:grass ;
+	property:geometry polygon:2 ;
 .
-regular_set:104 a class:StaticSpace ;
-	spatial:material material:grass ;
-	spatial:polygons polygon:3 ;
+set:104 a class:SpaceTime ;
+	property:material material:grass ;
+	property:geometry polygon:3 ;
 .
-regular_set:105 a class:StaticSpace ;
-	spatial:material material:roof ;
-	spatial:polygons polygon:4 ;
+set:105 a class:SpaceTime ;
+	property:name "storage" ;
+	property:material material:building ;
+	property:geometry polygon:4 ;
 .
-regular_set:106 a class:DynamicSpace ;
-	spatial:material material:water ;
-	spatial:polygons polygon:5 ;
-	spatial:accessible interval:0 ,interval:2 ;
+set:106 a class:SpaceTime ;
+	property:material material:water ;
+	property:geometry polygon:5 ;
+	property:intervals interval:0 ,interval:2 ;
 .
-regular_set:107 a class:DynamicSpace ;
-	spatial:material material:bridge ;
-	spatial:polygons polygon:6 ;
-	spatial:accessible interval:1 ,interval:3 ;
+set:107 a class:SpaceTime ;
+	property:material material:bridge ;
+	property:geometry polygon:6 ;
+	property:intervals interval:1 ,interval:3 ;
 .
-regular_set:108 a class:StaticSpace ;
-	spatial:material material:water ;
-	spatial:polygons polygon:6 ;
+set:108 a class:SpaceTime ;
+	property:material material:water ;
+	property:geometry polygon:6 ;
 .
-regular_set:109 a class:StaticSpace ;
-	spatial:material material:water ;
-	spatial:polygons polygon:7 ;
+set:109 a class:SpaceTime ;
+	property:material material:water ;
+	property:geometry polygon:7 ;
 .
-regular_set:110 a class:StaticSpace ;
-	spatial:material material:grass ;
-	spatial:polygons polygon:8 ;
+set:110 a class:SpaceTime ;
+	property:material material:grass ;
+	property:geometry polygon:8 ;
 .
-regular_set:111 a class:StaticSpace ;
-	spatial:material material:roof ;
-	spatial:polygons polygon:9 ;
+set:111 a class:SpaceTime ;
+	property:name "office" ;
+	property:material material:building ;
+	property:geometry polygon:9 ;
 .
-regular_set:112 a class:StaticSpace ;
-	spatial:material material:grass ;
-	spatial:polygons polygon:10 ;
+set:112 a class:SpaceTime ;
+	property:material material:grass ;
+	property:geometry polygon:10 ;
 .
-regular_set:113 a class:StaticSpace ;
-	spatial:material material:roof ;
-	spatial:polygons polygon:11 ;
+set:113 a class:SpaceTime ;
+	property:name "lab" ;
+	property:material material:building ;
+	property:geometry polygon:11 ;
 .
-regular_set:114 a class:StaticSpace ;
-	spatial:material material:street ;
-	spatial:polygons polygon:12 ;
+set:114 a class:SpaceTime ;
+	property:material material:street ;
+	property:geometry polygon:12 ;
 .
-regular_set:115 a class:StaticSpace ;
-	spatial:material material:grass ;
-	spatial:polygons polygon:13 ;
+set:115 a class:SpaceTime ;
+	property:material material:grass ;
+	property:geometry polygon:13 ;
 .
-regular_set:king a class:AffineSpace ;
-	subject:name "king" ;
-	spatial:channel "/rt_bi_emulator/kn2" ;
+set:king a class:SpaceTime ;
+	property:name "king" ;
+	property:channel "/rt_bi_emulator/kn2" ;
 .
-regular_set:201 a class:RegularTime ;
-	subject:name "bridge-is-moving" ;
-	temporal:intervals interval:4 ,interval:5 ,interval:6 ,interval:7 ;
+set:201 a class:SpaceTime ;
+	property:name "bridge-is-moving" ;
+	property:intervals interval:4 ,interval:5 ,interval:6 ,interval:7 ;
 .
 # endregion [REGULAR SET DEFS]

@@ -35,7 +35,7 @@ class MapEmulator(ColdStartable):
 		self.__coldStartPayload = payload
 		reqSpatial = Msgs.RtBiSrv.SpaceTime.Request()
 		reqSpatial.query_name = "spatial"
-		reqSpatial.json_payload = ColdStartPayload({"spatialPredicates": list(self.__coldStartPayload.spatialPredicates)}).stringify()
+		reqSpatial.json_payload = ColdStartPayload({"predicates": list(self.__coldStartPayload.predicates)}).stringify()
 		Ros.SendClientRequest(self, self.__rdfClient, reqSpatial, self.__onSpatialPredicatesResponse)
 		return
 
@@ -44,8 +44,8 @@ class MapEmulator(ColdStartable):
 			self.__timeOriginNanoSecs = Msgs.toNanoSecs(matches[0].stamp)
 		return
 
-	def __publishPredicateSymbols(self, predicateSymMapJson: str, namespace: Literal["spatial", "temporal"]) -> None:
-		self.log(f"Publishing {namespace} predicate symbols.")
+	def __publishPredicateSymbols(self, predicateSymMapJson: str) -> None:
+		self.log(f"Publishing predicate symbols.")
 		predicateSymMapJson = predicateSymMapJson.replace("?p_", "p_")
 		msg = Msgs.Std.String(data=predicateSymMapJson)
 		self.__predicatesPublisher.publish(msg)
@@ -125,7 +125,7 @@ class MapEmulator(ColdStartable):
 
 	def __onTemporalResponse(self, req: Msgs.RtBiSrv.SpaceTime.Request, res: Msgs.RtBiSrv.SpaceTime.Response) -> Msgs.RtBiSrv.SpaceTime.Response:
 		self.log("Received TEMPORAL PREDICATES response.")
-		self.__publishPredicateSymbols(res.json_predicate_symbols, "temporal")
+		self.__publishPredicateSymbols(res.json_predicate_symbols)
 		res.sets = Ros.AsList(res.sets, Msgs.RtBi.RegularSet)
 		self.__extractOriginOfTime(res.sets)
 		nowNanoSecs = Msgs.toNanoSecs(self.get_clock().now())
@@ -171,7 +171,7 @@ class MapEmulator(ColdStartable):
 		res.sets = Ros.AsList(res.sets, Msgs.RtBi.RegularSet)
 		self.__extractOriginOfTime(res.sets)
 		self.__publishProjectiveMap(res.sets)
-		self.__publishPredicateSymbols(res.json_predicate_symbols, "spatial")
+		self.__publishPredicateSymbols(res.json_predicate_symbols)
 		# Request information about dynamic sets from the ontology.
 		req = Msgs.RtBiSrv.SpaceTime.Request()
 		req.query_name = "dynamic"
@@ -200,7 +200,7 @@ class MapEmulator(ColdStartable):
 		assert self.__coldStartPayload is not None, "self.__coldStartPayload is None"
 		reqTemporal = Msgs.RtBiSrv.SpaceTime.Request()
 		reqTemporal.query_name = "temporal"
-		reqTemporal.json_payload = ColdStartPayload({"temporalPredicates": list(self.__coldStartPayload.temporalPredicates)}).stringify()
+		reqTemporal.json_payload = ColdStartPayload({"predicates": list(self.__coldStartPayload.predicates)}).stringify()
 		Ros.SendClientRequest(self, self.__rdfClient, reqTemporal, self.__onTemporalResponse)
 		return res
 

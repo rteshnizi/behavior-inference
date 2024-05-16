@@ -6,15 +6,15 @@ from rt_bi_commons.Utils import Ros
 
 
 class PredicateCollector(TransitionInterpreter):
-	def __init__(self, simpleExpRebuildFn: Callable[[str, str, str, str], str]) -> None:
+	def __init__(self, simpleExpRebuildFn: Callable[[str, str, str], str]) -> None:
 		super().__init__()
-		self.__spatialPredicates: set[str] = set()
+		self.__predicates: set[str] = set()
 		self.__temporalPredicates: set[str] = set()
-		self.__simpleExpRebuildFn: Callable[[str, str, str, str], str] = simpleExpRebuildFn
+		self.__simpleExpRebuildFn: Callable[[str, str, str], str] = simpleExpRebuildFn
 
 	@property
-	def spatialPredicates(self) -> set[str]:
-		return self.__spatialPredicates
+	def predicates(self) -> set[str]:
+		return self.__predicates
 
 	@property
 	def temporalPredicates(self) -> set[str]:
@@ -22,14 +22,11 @@ class PredicateCollector(TransitionInterpreter):
 
 	def simple_expression(self, tree: ParseTree) -> str:
 		children: list[str] = self.visit_children(tree)
-		namespace: str = cast(str, children[0])
-		property_seq: str = cast(str, children[1])
-		test: str = cast(str, children[2])
-		value: str = cast(str, children[3])
-		interpretationStr = self.__simpleExpRebuildFn(namespace, property_seq, test, value)
-		if namespace == "S": self.__spatialPredicates.add(interpretationStr)
-		elif namespace == "T": self.__temporalPredicates.add(interpretationStr)
-		else: raise UnexpectedToken(tree.children[0], {"T", "S"})
+		property_seq: str = cast(str, children[0])
+		test: str = cast(str, children[1])
+		value: str = cast(str, children[2])
+		interpretationStr = self.__simpleExpRebuildFn(property_seq, test, value)
+		self.__predicates.add(interpretationStr)
 		return interpretationStr
 
 	def property_seq(self, tree: ParseTree) -> str:
@@ -47,7 +44,7 @@ class PredicateCollector(TransitionInterpreter):
 		return children[0]
 
 class TransitionEvaluator(TransitionTransformer):
-	def __init__(self, predicateSymbolMap: dict[str, str], predicates: Predicates, simpleExpRebuildFn: Callable[[str, str, str, str], str]) -> None:
+	def __init__(self, predicateSymbolMap: dict[str, str], predicates: Predicates, simpleExpRebuildFn: Callable[[str, str, str], str]) -> None:
 		super().__init__()
 		self.__simpleExpRebuildFn = simpleExpRebuildFn
 		self.__symbolMap = predicateSymbolMap
@@ -69,11 +66,10 @@ class TransitionEvaluator(TransitionTransformer):
 
 	@v_args(tree=True)
 	def simple_expression(self, tree: ParseTree) -> str:
-		namespace: str = cast(str, tree.children[0])
-		property_seq: str = cast(str, tree.children[1])
-		test: str = cast(str, tree.children[2])
-		value: str = cast(str, tree.children[3])
-		transitionSyntax = self.__simpleExpRebuildFn(namespace, property_seq, test, value)
+		property_seq: str = cast(str, tree.children[0])
+		test: str = cast(str, tree.children[1])
+		value: str = cast(str, tree.children[2])
+		transitionSyntax = self.__simpleExpRebuildFn(property_seq, test, value)
 		if transitionSyntax not in self.__symbolMap: raise KeyError(f"{transitionSyntax} does not have a symbol.")
 		sym = self.__symbolMap[transitionSyntax]
 		# Not having a predicate is logically interpreted as False
@@ -98,14 +94,12 @@ class TransitionStatement:
 		self.__parseTree = TransitionParser(baseDir, grammarDir, grammarFileName).parse(syntax)
 		predCollector = PredicateCollector(self.__simpleExpRebuildFn)
 		predCollector.visit(self.__parseTree)
-		self.spatialPredicates: dict[str, str] = { p: "" for p in predCollector.spatialPredicates }
-		"""Map from Transition Syntax to symbolic name."""
-		self.temporalPredicates: dict[str, str] = { p: "" for p in predCollector.temporalPredicates }
+		self.predicates: dict[str, str] = { p: "" for p in predCollector.predicates }
 		"""Map from Transition Syntax to symbolic name."""
 		return
 
-	def __simpleExpRebuildFn(self, namespace: str, property_seq: str, test: str, value: str) -> str:
-		return f"{namespace}[{property_seq} {test} {value}]"
+	def __simpleExpRebuildFn(self, property_seq: str, test: str, value: str) -> str:
+		return f"[{property_seq} {test} {value}]"
 
 	def __str__(self) -> str:
 		return self.__str
@@ -120,20 +114,18 @@ class TransitionStatement:
 		return self.__str == other.__str
 
 	def __contains__(self, syntax: str) -> bool:
-		if syntax in self.spatialPredicates: return True
-		if syntax in self.temporalPredicates: return True
+		if syntax in self.predicates: return True
 		return False
 
 	def setPredicatesSymbol(self, syntax: str, symbol: str) -> None:
 		if syntax == "" or symbol == "": return
-		if syntax in self.spatialPredicates: self.spatialPredicates[syntax] = symbol
-		if syntax in self.temporalPredicates: self.temporalPredicates[syntax] = symbol
+		if syntax in self.predicates: self.predicates[syntax] = symbol
 		self.__symStr = self.__symStr.replace(syntax, symbol)
 		return
 
 	def evaluate(self, predicates: Predicates) -> bool:
 		evaluator = TransitionEvaluator(
-			self.spatialPredicates | self.temporalPredicates,
+			self.predicates,
 			predicates,
 			self.__simpleExpRebuildFn,
 		)

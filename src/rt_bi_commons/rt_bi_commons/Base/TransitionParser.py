@@ -21,7 +21,6 @@ class __TransitionVisitorBase(ABC):
 		"test",
 		"value",
 	]
-	def TRAVERSABILITY(self, _: str = "") -> Literal["traversability"]: return "traversability"
 	def TRUE(self, _: str = "") -> Literal["true"]: return "true"
 	def FALSE(self, _: str = "") -> Literal["false"]: return "false"
 	def EQ(self, _: str = "") -> Literal["=="]: return "=="
@@ -31,15 +30,12 @@ class __TransitionVisitorBase(ABC):
 	def NOT(self, _: str = "") -> Literal["NOT"]: return "NOT"
 	NUMBER = str
 	VARIABLE = str
-	NAMESPACE = str
 	ESCAPED_STRING = str
 	def property_seq(self, variables: __Props) -> __Props:
 		"""Performs sanity check on variables."""
 		children = variables.children if isinstance(variables, Tree) else variables
 		if len(children) > 2:
 			raise UnexpectedToken(variables, {"at most 2 strings"})
-		if len(children) > 1:
-			if children[0] != self.TRAVERSABILITY(): raise UnexpectedToken(children[0], self.TRAVERSABILITY())
 		return variables
 
 class TransitionInterpreter(__TransitionVisitorBase, Interpreter[Token, Any], ABC):

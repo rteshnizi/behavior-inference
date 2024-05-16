@@ -64,8 +64,7 @@ class BaNode(ColdStartable):
 	def onColdStartAllowed(self, payload: ColdStartPayload) -> None:
 		if self.shouldRender: self.__ba.initFlask(self)
 		self.publishColdStartDone({
-			"spatialPredicates": self.__ba.spatialPredicates,
-			"temporalPredicates": self.__ba.temporalPredicates,
+			"predicates": self.__ba.predicates,
 		})
 		return
 

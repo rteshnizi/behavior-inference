@@ -13,19 +13,15 @@ rt_bi_behavior:
         - "Q0"
         - "Q1"
         - "Q2"
-        - "Q3"
       transitions_from:
         - "Q0"
         - "Q1"
-        - "Q2"
       transitions_predicate:
-        - 'S[name == "south-bank"] AND S[traversability.legs == true]'
-        - 'T[name == "mid-day"]'
-        - 'S[name == "north-shore"] AND S[traversability.legs == true]'
+        - '[material.name == "street"] OR [material.name == "grass"]'
+        - '[name == "bridge-is-moving"] AND [name == "storage"]'
       transitions_to:
         - "Q1"
         - "Q2"
-        - "Q3"
       start: "Q0"
       accepting:
-        - "Q3"
+        - "Q2"

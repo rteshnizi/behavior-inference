@@ -10,7 +10,7 @@ from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 
 class ColdStartManager(RtBiNode):
 	def __init__(self, **kwArgs) -> None:
-		newKw = { "node_name": "cs_mgr", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
+		newKw = { "node_name": "cs_mgr", "loggingSeverity": LoggingSeverity.WARN, **kwArgs}
 		super().__init__(**newKw)
 		self.__awaitingColdStart: list[str] = [
 			# The order in this list is significant
@@ -18,8 +18,7 @@ class ColdStartManager(RtBiNode):
 			"/rt_bi_emulator/dynamic_map",
 			"/rt_bi_eventifier/eventifier",
 		]
-		self.__spatialPredicates: set[str] = set()
-		self.__temporalPredicates: set[str] = set()
+		self.__predicates: set[str] = set()
 		self.__coldStartPublisher = RtBiInterfaces.createColdStartPublisher(self)
 		RtBiInterfaces.subscribeToColdStart(self, self.__onColdStartDone)
 		self.__triggerNextColdStart()
@@ -38,8 +37,7 @@ class ColdStartManager(RtBiNode):
 				payload = ColdStartPayload({})
 			elif nodeName.startswith("/rt_bi_emulator/dynamic_map"):
 				payload = ColdStartPayload({
-					"spatialPredicates": list(self.__spatialPredicates),
-					"temporalPredicates": list(self.__temporalPredicates),
+					"predicates": list(self.__predicates),
 				})
 			elif nodeName.startswith("/rt_bi_eventifier/eventifier"):
 				# FIXME: Tell it which affine regions to subscribe to
@@ -59,8 +57,7 @@ class ColdStartManager(RtBiNode):
 			if not payload.done: return
 			self.log(f"Cold start done for node {msg.node_name}.")
 			if msg.node_name.startswith(RtBiInterfaces.BA_NODE_PREFIX):
-				self.__spatialPredicates |= payload.spatialPredicates
-				self.__temporalPredicates |= payload.temporalPredicates
+				self.__predicates |= payload.predicates
 			elif msg.node_name.startswith(RtBiInterfaces.KNOWN_REGION_NODE_PREFIX):
 				pass # TODO: assign predicates
 			elif msg.node_name.startswith("/rt_bi_emulator/dynamic_map"):
