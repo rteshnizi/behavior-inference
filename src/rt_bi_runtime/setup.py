@@ -7,7 +7,7 @@ packageName = "rt_bi_runtime"
 
 setup(
 	name=packageName,
-	version="0.8.1",
+	version="0.8.2",
 	packages = find_packages(exclude=["test", "launch"]),
 	data_files=[
 		("share/ament_index/resource_index/packages", ["resource/" + packageName]),
