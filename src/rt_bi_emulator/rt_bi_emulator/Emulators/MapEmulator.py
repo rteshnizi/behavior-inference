@@ -17,7 +17,7 @@ class MapEmulator(ColdStartable):
 	* Information about dynamic regions are provided by :class:`KnownRegionEmulator` instances.
 	"""
 	def __init__(self) -> None:
-		newKw = { "node_name": "dynamic_map", "loggingSeverity": LoggingSeverity.WARN }
+		newKw = { "node_name": "dynamic_map", "loggingSeverity": LoggingSeverity.INFO }
 		RtBiNode.__init__(self, **newKw)
 		ColdStartable.__init__(self)
 		self.__timeOriginNanoSecs: int = -1
