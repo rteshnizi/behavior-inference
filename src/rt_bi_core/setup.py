@@ -7,7 +7,7 @@ packageName = "rt_bi_core"
 
 setup(
 	name=packageName,
-	version="0.8.0",
+	version="0.8.1",
 	packages = find_packages(exclude=["test", "launch"]),
 	data_files=[
 		("share/ament_index/resource_index/packages", ["resource/" + packageName]),
