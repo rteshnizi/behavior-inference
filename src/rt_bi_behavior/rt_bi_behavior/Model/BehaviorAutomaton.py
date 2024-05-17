@@ -35,8 +35,6 @@ class BehaviorAutomaton(nx.DiGraph):
 		for state in accepting: assert state in states, f"Accepting state {start} is not in the set of states {states} in BA {self.name}."
 		self.__start: str = start
 		self.__accepting: list[str] = accepting
-		self.__predicatesAreSymbolizingRoundsLeft = 2
-		"""Two rounds of symbols should arrive, one for spatial and one temporal predicates"""
 		self.__tokenCounter = 0
 		self.__baseDir: str = baseDir
 		self.__transitionGrammarDir: str = transitionGrammarDir
@@ -199,7 +197,6 @@ class BehaviorAutomaton(nx.DiGraph):
 				if transitionSyntax not in transition: continue
 				transition.setPredicatesSymbol(transitionSyntax, symbols[transitionSyntax])
 				self[frm][to]["label"] = repr(transition)
-		if self.__predicatesAreSymbolizingRoundsLeft > 0: self.__predicatesAreSymbolizingRoundsLeft -= 1
 		return
 
 	def __removeAllTokens(self) -> None:
@@ -207,7 +204,6 @@ class BehaviorAutomaton(nx.DiGraph):
 		return
 
 	def resetTokens(self, iGraph: RhsIGraph) -> None:
-		if self.__predicatesAreSymbolizingRoundsLeft > 0: return # Still awaiting symbols
 		Ros.Log(f"Resetting tokens of {self.name}.")
 		self.__removeAllTokens()
 		self.__tokenCounter = 0

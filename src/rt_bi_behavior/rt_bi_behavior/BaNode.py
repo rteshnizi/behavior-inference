@@ -22,7 +22,7 @@ class BaNode(ColdStartable):
 	"""
 	def __init__(self, **kwArgs) -> None:
 		""" Create a Behavior Automaton node. """
-		newKw = { "node_name": "ba", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
+		newKw = { "node_name": "ba", "loggingSeverity": LoggingSeverity.WARN, **kwArgs}
 		RtBiNode.__init__(self, **newKw)
 		ColdStartable.__init__(self)
 		self.declareParameters()
