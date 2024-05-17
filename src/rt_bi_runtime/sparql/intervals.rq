@@ -19,10 +19,10 @@ WHERE {
 	VALUES ?regularSetId {
 		# ID VALUES #############################
 	}
-	OPTIONAL { ?regularSetId property:intervals ?intervalId .
+	OPTIONAL { ?regularSetId property:interval ?intervalId .
 		?intervalId
-			property:min/property:secs ?min ;
-			property:max/property:secs ?max ;
+			property:min/property:t_val ?min ;
+			property:max/property:t_val ?max ;
 			property:include_min ?include_min ;
 			property:include_max ?include_max .
 	}

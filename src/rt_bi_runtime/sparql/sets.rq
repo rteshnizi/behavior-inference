@@ -21,7 +21,7 @@ WHERE {
 	# WHERE #####################################
 	BIND (EXISTS { ?regularSetId property:channel ?o } AS ?affine)
 	BIND (EXISTS { ?regularSetId property:geometry ?o } AS ?hasGeom)
-	BIND (EXISTS { ?regularSetId property:intervals ?o } AS ?hasInterval)
+	BIND (EXISTS { ?regularSetId property:interval ?o } AS ?hasInterval)
 	BIND (?hasGeom && ?hasInterval AS ?dynamic)
 	BIND (?hasGeom && !?hasInterval AS ?static)
 	BIND (!?hasGeom && ?hasInterval AS ?temporal)

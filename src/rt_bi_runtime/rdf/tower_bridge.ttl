@@ -203,15 +203,15 @@ polygon:13 a class:Polygon ;
 @prefix t: <https://rezateshnizi.com/tower_bridge/ts#> .
 @prefix interval: <https://rezateshnizi.com/tower_bridge/intervals#> .
 # region [TS]
-t:0 a class:Time ; property:secs 0.0 .
-t:1 a class:Time ; property:secs 10.0 .
-t:2 a class:Time ; property:secs 25.0 .
-t:3 a class:Time ; property:secs 35.0 .
-t:4 a class:Time ; property:secs 55.0 .
-t:5 a class:Time ; property:secs 65.0 .
-t:6 a class:Time ; property:secs 80.0 .
-t:7 a class:Time ; property:secs 90.0 .
-t:8 a class:Time ; property:secs 120.0 .
+t:0 a class:Time ; property:t_val 0.0 .
+t:1 a class:Time ; property:t_val 10.0 .
+t:2 a class:Time ; property:t_val 25.0 .
+t:3 a class:Time ; property:t_val 35.0 .
+t:4 a class:Time ; property:t_val 55.0 .
+t:5 a class:Time ; property:t_val 65.0 .
+t:6 a class:Time ; property:t_val 80.0 .
+t:7 a class:Time ; property:t_val 90.0 .
+t:8 a class:Time ; property:t_val 120.0 .
 # endregion [TS]
 # region [INTERVALS]
 interval:0 a class:Interval ;
@@ -287,12 +287,12 @@ set:105 a class:SpaceTime ;
 set:106 a class:SpaceTime ;
 	property:material material:water ;
 	property:geometry polygon:5 ;
-	property:intervals interval:0 ,interval:2 ;
+	property:interval interval:0 ,interval:2 ;
 .
 set:107 a class:SpaceTime ;
 	property:material material:bridge ;
 	property:geometry polygon:6 ;
-	property:intervals interval:1 ,interval:3 ;
+	property:interval interval:1 ,interval:3 ;
 .
 set:108 a class:SpaceTime ;
 	property:material material:water ;
@@ -328,12 +328,12 @@ set:115 a class:SpaceTime ;
 	property:material material:grass ;
 	property:geometry polygon:13 ;
 .
-set:king a class:SpaceTime ;
+set:116 a class:SpaceTime ;
 	property:name "king" ;
 	property:channel "/rt_bi_emulator/kn2" ;
 .
 set:201 a class:SpaceTime ;
 	property:name "bridge-is-moving" ;
-	property:intervals interval:4 ,interval:5 ,interval:6 ,interval:7 ;
+	property:interval interval:4 ,interval:5 ,interval:6 ,interval:7 ;
 .
 # endregion [REGULAR SET DEFS]

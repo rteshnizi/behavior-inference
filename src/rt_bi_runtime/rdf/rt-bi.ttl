@@ -103,7 +103,7 @@ property:material a rdf:Property ;
 # endregion [SPATIAL PROPS]
 
 # region [TEMPORAL PROPS]
-property:secs a rdf:value ;
+property:t_val a rdf:value ;
 	rdfs:domain class:Time ;
 	rdfs:range xsd:double ;
 	rdfs:comment "A time value in Seconds." .
@@ -123,7 +123,7 @@ property:include_max a rdf:Property ;
 	rdfs:domain class:Interval ;
 	rdfs:range xsd:boolean ;
 	rdfs:comment "Whether the max bound is included in the interval" .
-property:intervals a rdf:Property ;
+property:interval a rdf:Property ;
 	rdfs:domain class:SpaceTime ;
 	rdfs:range class:Interval .
 # endregion [TEMPORAL PROPS]
