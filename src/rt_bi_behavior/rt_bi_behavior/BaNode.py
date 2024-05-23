@@ -7,7 +7,7 @@ from rclpy.parameter import Parameter
 
 from rt_bi_behavior import package_name
 from rt_bi_behavior.Model.BehaviorAutomaton import BehaviorAutomaton
-from rt_bi_behavior.Model.RhsIGraph import RhsIGraph
+from rt_bi_behavior.Model.BehaviorIGraph import BehaviorIGraph
 from rt_bi_commons.Base.ColdStartableNode import ColdStartable, ColdStartPayload
 from rt_bi_commons.Base.RtBiNode import RtBiNode
 from rt_bi_commons.Utils import Ros
@@ -22,7 +22,7 @@ class BaNode(ColdStartable):
 	"""
 	def __init__(self, **kwArgs) -> None:
 		""" Create a Behavior Automaton node. """
-		newKw = { "node_name": "ba", "loggingSeverity": LoggingSeverity.WARN, **kwArgs}
+		newKw = { "node_name": "ba", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
 		RtBiNode.__init__(self, **newKw)
 		ColdStartable.__init__(self)
 		self.declareParameters()
@@ -51,7 +51,7 @@ class BaNode(ColdStartable):
 		return
 
 	def __onEvent(self, msg: Msgs.RtBi.IGraph) -> None:
-		iGraph = RhsIGraph.fromMsg(msg)
+		iGraph = BehaviorIGraph.fromMsg(msg)
 		if not self.__ba.initializedTokens: self.__ba.resetTokens(iGraph)
 		else: self.__ba.evaluate(iGraph)
 		return

@@ -6,7 +6,7 @@ from typing import Final, cast
 import networkx as nx
 from networkx.drawing import nx_agraph
 
-from rt_bi_behavior.Model.RhsIGraph import RhsIGraph
+from rt_bi_behavior.Model.BehaviorIGraph import BehaviorIGraph
 from rt_bi_behavior.Model.State import State, StateToken
 from rt_bi_behavior.Model.Transition import Transition, TransitionStatement
 from rt_bi_commons.Shared.NodeId import NodeId
@@ -137,7 +137,7 @@ class BehaviorAutomaton(nx.DiGraph):
 			d |= statement.predicates
 		return list(d.keys())
 
-	def reduceUncertainty(self, state: str, iGraph: RhsIGraph) -> None:
+	def reduceUncertainty(self, state: str, iGraph: BehaviorIGraph) -> None:
 		tokens = self.states[state]["tokens"]
 		i = 0
 		while i < (len(tokens)):
@@ -147,7 +147,7 @@ class BehaviorAutomaton(nx.DiGraph):
 			i += 1
 		return
 
-	def evaluate(self, iGraph: RhsIGraph) -> None:
+	def evaluate(self, iGraph: BehaviorIGraph) -> None:
 		"""
 		Traverses the BA states in BFS fashion and updates their tokens.
 		BFS traversal ensures tokens are pushed all the way.
@@ -166,13 +166,13 @@ class BehaviorAutomaton(nx.DiGraph):
 			for toState in self[fromState]:
 				statesToUpdate.append(toState)
 				if len(self.states[fromState]["tokens"]) == 0: continue
-				if fromState in self.__accepting:
-					pass # FIXME: ACCEPTED, handle it
+				if toState in self.__accepting:
+					Ros.Logger().error(f"ACCEPTED {toState}")
 				Ros.Log(f"To State {toState}")
 				statement = self[fromState][toState]["statement"]
 				newPositions: list[NodeId] = []
 				for tokens in self.states[fromState]["tokens"]:
-					destinations = iGraph.propagate(tokens["iGraphNode"])
+					destinations = iGraph.neighbors(tokens["iGraphNode"])
 					for destination in destinations:
 						if iGraph.satisfies(destination, statement):
 							self.__addToken(toState, destination)
@@ -203,7 +203,7 @@ class BehaviorAutomaton(nx.DiGraph):
 		for n in self.states: self.states[n]["tokens"] = []
 		return
 
-	def resetTokens(self, iGraph: RhsIGraph) -> None:
+	def resetTokens(self, iGraph: BehaviorIGraph) -> None:
 		Ros.Log(f"Resetting tokens of {self.name}.")
 		self.__removeAllTokens()
 		self.__tokenCounter = 0

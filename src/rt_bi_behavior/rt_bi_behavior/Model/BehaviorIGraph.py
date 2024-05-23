@@ -6,11 +6,12 @@ import networkx as nx
 from rt_bi_behavior.Model.Transition import TransitionStatement
 from rt_bi_commons.Shared.NodeId import NodeId
 from rt_bi_commons.Shared.Predicates import Predicates
+from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Msgs import Msgs
 from rt_bi_commons.Utils.NetworkX import NxUtils
 
 
-class RhsIGraph(NxUtils.Graph):
+class BehaviorIGraph(NxUtils.Graph):
 	def __init__(self, g: nx.DiGraph | None = None):
 		NxUtils.Graph.__init__(self, None)
 		nx.DiGraph.__init__(self, g)
@@ -25,13 +26,12 @@ class RhsIGraph(NxUtils.Graph):
 		predicates = self.getContent(node, "predicates")
 		return criterion.evaluate(predicates)
 
-	def propagate(self, source: NodeId) -> dict[NodeId, list[NodeId]]:
-		if source not in self.nodes: return {}
-		destinations = cast(dict[NodeId, list[NodeId]], nx.shortest_path(self, source))
-		return cast(dict[NodeId, list[NodeId]], destinations)
+	def neighbors(self, source: NodeId) -> list[NodeId]:
+		if source not in self.nodes: return []
+		return cast(list[NodeId], list(self[source].keys()))
 
 	@classmethod
-	def fromMsg(cls, msg: Msgs.RtBi.IGraph) -> "RhsIGraph":
+	def fromMsg(cls, msg: Msgs.RtBi.IGraph) -> "BehaviorIGraph":
 		d: dict[str, Any] = loads(msg.adjacency_json)
 		for node in d["nodes"]:
 			node["id"] = NodeId.fromDict(node["id"])
@@ -40,4 +40,4 @@ class RhsIGraph(NxUtils.Graph):
 			for edge in adj:
 				edge["id"] = NodeId.fromDict(edge["id"])
 		g = nx.adjacency_graph(d)
-		return RhsIGraph(g)
+		return BehaviorIGraph(g)
