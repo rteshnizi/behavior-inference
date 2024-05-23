@@ -99,7 +99,7 @@ class TransitionStatement:
 		return
 
 	def __simpleExpRebuildFn(self, property_seq: str, test: str, value: str) -> str:
-		return f"[{property_seq} {test} {value}]"
+		return f"{property_seq} {test} {value}"
 
 	def __str__(self) -> str:
 		return self.__str

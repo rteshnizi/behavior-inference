@@ -9,7 +9,7 @@ negated_expression: NOT simple_expression
 
 connector: AND | OR
 
-simple_expression: "[" property_seq test value "]"
+simple_expression: property_seq test value
 
 property_seq: VARIABLE ("." VARIABLE)*
 
