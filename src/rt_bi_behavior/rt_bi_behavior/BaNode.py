@@ -6,8 +6,9 @@ from rclpy.logging import LoggingSeverity
 from rclpy.parameter import Parameter
 
 from rt_bi_behavior import package_name
-from rt_bi_behavior.Model.BehaviorAutomaton import BehaviorAutomaton
 from rt_bi_behavior.Model.BehaviorIGraph import BehaviorIGraph
+# from rt_bi_behavior.Model.BehaviorAutomaton import BehaviorAutomaton
+from rt_bi_behavior.Model.PropositionalBA import PropositionalBA
 from rt_bi_commons.Base.ColdStartableNode import ColdStartable, ColdStartPayload
 from rt_bi_commons.Base.RtBiNode import RtBiNode
 from rt_bi_commons.Utils import Ros
@@ -35,7 +36,7 @@ class BaNode(ColdStartable):
 		self.__start: str = ""
 		self.__accepting: list[str] = []
 		self.parseParameters()
-		self.__ba = BehaviorAutomaton(
+		self.__ba = PropositionalBA(
 			self.__name,
 			self.__states,
 			self.__transitions,
