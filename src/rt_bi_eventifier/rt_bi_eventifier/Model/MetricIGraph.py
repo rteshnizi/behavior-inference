@@ -17,7 +17,7 @@ from rt_bi_eventifier.Model.ContinuousTimeCollisionDetection import ContinuousTi
 from rt_bi_eventifier.Model.EventAggregator import EventAggregator
 
 
-class IGraph(NxUtils.Graph[GraphPolygon]):
+class MetricIGraph(NxUtils.Graph[GraphPolygon]):
 	"""
 		The implementation of a Region IGraph in python as described in the dissertation.
 	"""
@@ -36,8 +36,8 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 		"""
 
 		@staticmethod
-		def extend(data: NxUtils.NodeData[GraphPolygon], subset: int) -> "IGraph.NodeData":
-			return IGraph.NodeData(
+		def extend(data: NxUtils.NodeData[GraphPolygon], subset: int) -> "MetricIGraph.NodeData":
+			return MetricIGraph.NodeData(
 				polygon=data.polygon,
 				subset=subset
 			)
@@ -87,7 +87,7 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 		assert cGraph.hIndex is not None and cGraph.hIndex > -1, f"Unset hIndex is not allowed in ShadowTree: cGraph = {repr(cGraph)}, hIndex = {cGraph.hIndex}"
 		content = cGraph.getContent(id)
 		id = id.copy(hIndex=cGraph.hIndex)
-		content = IGraph.NodeData.extend(data=content, subset=cGraph.hIndex)
+		content = MetricIGraph.NodeData.extend(data=content, subset=cGraph.hIndex)
 		return super().addNode(id=id, content=content)
 
 	def addEdge(self, fromId: NxUtils.Id, toId: NxUtils.Id, fromCGraph: ConnectivityGraph, toCGraph: ConnectivityGraph) -> None:
@@ -269,7 +269,7 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 		self.history[index] = graph
 		return
 
-	def __appendToHistory(self, graph: ConnectivityGraph, eventHandler: Callable[["IGraph", bool], None]) -> None:
+	def __appendToHistory(self, graph: ConnectivityGraph, eventHandler: Callable[["MetricIGraph", bool], None]) -> None:
 		shouldBroadcastEvent = False
 		isomorphicUpdate = False
 		if self.depth > 0 and graph.timeNanoSecs < self.history[-1].timeNanoSecs:
@@ -326,7 +326,7 @@ class IGraph(NxUtils.Graph[GraphPolygon]):
 				maxNs = ctr.latestNanoSecs
 		return (minNs, maxNs)
 
-	def updatePolygon(self, polygon: GraphPolygon, eventHandler: Callable[["IGraph", bool], None]) -> None:
+	def updatePolygon(self, polygon: GraphPolygon, eventHandler: Callable[["MetricIGraph", bool], None]) -> None:
 		Ros.Log(128 * "↓") # A separator in the logs
 		Ros.Log(f"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX {repr(self)} XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
 		Ros.Log("Updated Poly ->", [ f"{polygon}", f"T={polygon.timeNanoSecs}", f"{polygon.predicates}"])

@@ -11,7 +11,7 @@ from rt_bi_commons.Utils.RViz import RViz
 from rt_bi_core.RegionsSubscriber import RegionsSubscriber
 from rt_bi_core.Spatial import MapPolygon
 from rt_bi_core.Spatial.SensingPolygon import SensingPolygon
-from rt_bi_eventifier.Model.IGraph import IGraph
+from rt_bi_eventifier.Model.MetricIGraph import MetricIGraph
 
 
 class Eventifier(ColdStartable, RegionsSubscriber):
@@ -20,16 +20,16 @@ class Eventifier(ColdStartable, RegionsSubscriber):
 		RegionsSubscriber.__init__(self, **newKw)
 		ColdStartable.__init__(self)
 		self.declareParameters()
-		self.__renderModules: list[IGraph.SUBMODULE] = []
+		self.__renderModules: list[MetricIGraph.SUBMODULE] = []
 		self.parseParameters()
-		modulePublishers: dict[IGraph.SUBMODULE, Publisher | None] = {}
-		for module in IGraph.SUBMODULES:
+		modulePublishers: dict[MetricIGraph.SUBMODULE, Publisher | None] = {}
+		for module in MetricIGraph.SUBMODULES:
 			if module in self.__renderModules: (publisher, _) = RViz.createRVizPublisher(self, Ros.CreateTopicName(module))
 			else: publisher = None
 			modulePublishers[module] = publisher
 
 		self.__iGraphPublisher = RtBiInterfaces.createIGraphPublisher(self)
-		self.__iGraph: IGraph = IGraph(modulePublishers)
+		self.__iGraph: MetricIGraph = MetricIGraph(modulePublishers)
 		RtBiInterfaces.subscribeToProjectiveMap(self, self.enqueueUpdate)
 		self.waitForColdStartPermission()
 		return
@@ -40,7 +40,7 @@ class Eventifier(ColdStartable, RegionsSubscriber):
 		self.publishColdStartDone()
 		return
 
-	def __publishBaEvent(self, iGraph: IGraph, isomorphic: bool = False) -> None:
+	def __publishBaEvent(self, iGraph: MetricIGraph, isomorphic: bool = False) -> None:
 		if isomorphic: pass # Tell BA to update their token names
 		msg = Msgs.RtBi.IGraph()
 		msg.adjacency_json = iGraph.asStr()
@@ -74,7 +74,7 @@ class Eventifier(ColdStartable, RegionsSubscriber):
 		self.log(f"{self.get_fully_qualified_name()} is parsing parameters.")
 		yamlModules = self.get_parameter("renderModules").get_parameter_value().string_array_value
 		for module in yamlModules:
-			if module in IGraph.SUBMODULES:
+			if module in MetricIGraph.SUBMODULES:
 				self.__renderModules.append(module)
 			else:
 				self.log(f"Unknown module name in config file {module} for node {self.get_fully_qualified_name()}")
