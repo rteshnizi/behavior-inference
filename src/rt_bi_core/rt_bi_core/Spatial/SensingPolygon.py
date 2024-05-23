@@ -41,6 +41,11 @@ class SensingPolygon(AffinePolygonBase):
 		self.__tracklets: dict[str, Tracklet] = { **tracklets }
 
 	@property
+	def tracklet(self) -> Tracklet:
+		"""Shortcut for the single agent case."""
+		return list(self.__tracklets.values())[0]
+
+	@property
 	def tracklets(self) -> dict[str, Tracklet]:
 		"""The information about every tracklet, if any, within this sensing region."""
 		return self.__tracklets

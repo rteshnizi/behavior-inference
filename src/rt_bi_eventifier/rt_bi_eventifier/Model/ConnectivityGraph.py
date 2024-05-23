@@ -93,6 +93,14 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 						if not poly2.trackEntered: continue
 				if poly1.type == SensingPolygon.type and poly2.type == SensingPolygon.type: continue
 				if poly1.intersects(poly2) or poly1.hasCommonEdge(poly2):
+					if (
+						poly1.type == SensingPolygon.type and poly1.hasTrack and
+						GeometryLib.distance(GeometryLib.toPoint(poly1.tracklet), poly2.interior) > self.TRACKLET_EXIT_MAX_DISTANCE
+					): continue
+					if (
+						poly2.type == SensingPolygon.type and poly2.hasTrack and
+						GeometryLib.distance(GeometryLib.toPoint(poly2.tracklet), poly1.interior) > self.TRACKLET_EXIT_MAX_DISTANCE
+					): continue
 					self.addEdge(nodeId1, nodeId2)
 		return
 
