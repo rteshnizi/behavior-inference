@@ -11,6 +11,7 @@ from rt_bi_core.Spatial import GraphPolygon, MapPolygon
 from rt_bi_core.Spatial.AffinePolygon import AffinePolygon
 from rt_bi_core.Spatial.SensingPolygon import SensingPolygon
 from rt_bi_core.Spatial.StaticPolygon import StaticPolygon
+from rt_bi_core.Spatial.Tracklet import Tracklet
 
 
 class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
@@ -18,7 +19,7 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 	@dataclass(frozen=True)
 	class NodeData(NxUtils.NodeData[GraphPolygon]): ...
 
-	TRACKLET_EXIT_MAX_DISTANCE: Final[int] = 5
+	TRACKLET_EXIT_MAX_DISTANCE: Final[int] = 10
 	def __init__(
 			self,
 			timeNanoSecs: int,
@@ -35,12 +36,26 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 		self.__sensorIdToIndex: dict[NxUtils.Id, int] = {}
 		self.__shadows: list[MapPolygon] = []
 		self.__antiShadows: list[SensingPolygon] = []
+		self.__tracklet: Tracklet | None = None
 		Ros.Log(f"Constructing Connectivity Graph @ {self.timeNanoSecs}")
 		for poly in mapPolys + sensorPolys: poly.id.copy(hIndex=self.__hIndex)
 		self.__constructMap(polys=mapPolys)
 		self.__constructSensors(polys=sensorPolys)
 		self.__constructNodes()
 		self.__constructEdges()
+
+	@property
+	def hasTrack(self) -> bool:
+		return self.__tracklet is not None
+
+	@property
+	def fovEvent(self) -> bool:
+		return self.hasTrack and self.track.entered or self.track.exited
+
+	@property
+	def track(self) -> Tracklet:
+		assert self.__tracklet is not None, "First test with hasTrack"
+		return self.__tracklet
 
 	def __repr__(self):
 		return f"CGr-{self.timeNanoSecs}(N={len(self.nodes)}, E={len(self.edges)})"
@@ -75,6 +90,7 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 		return
 
 	def __constructEdges(self) -> None:
+		if self.hasTrack and not self.fovEvent: return
 		# Add edges to neighboring nodes
 		for nodeId1 in self.nodes:
 			poly1 = self.getContent(nodeId1, "polygon")
@@ -82,6 +98,7 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 			for nodeId2 in self.nodes:
 				if nodeId1 == nodeId2: continue
 				poly2 = self.getContent(nodeId2, "polygon")
+				if self.hasTrack and (poly1.type != SensingPolygon.type and poly2.type != SensingPolygon.type): continue
 				if not poly2.isAccessible: continue
 				# Sensors only have outgoing edges to shadows when track has exited
 				if poly1.type == SensingPolygon.type:
@@ -93,14 +110,17 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 						if not poly2.trackEntered: continue
 				if poly1.type == SensingPolygon.type and poly2.type == SensingPolygon.type: continue
 				if poly1.intersects(poly2) or poly1.hasCommonEdge(poly2):
-					if (
-						poly1.type == SensingPolygon.type and poly1.hasTrack and
-						GeometryLib.distance(GeometryLib.toPoint(poly1.tracklet), poly2.interior) > self.TRACKLET_EXIT_MAX_DISTANCE
-					): continue
-					if (
-						poly2.type == SensingPolygon.type and poly2.hasTrack and
-						GeometryLib.distance(GeometryLib.toPoint(poly2.tracklet), poly1.interior) > self.TRACKLET_EXIT_MAX_DISTANCE
-					): continue
+					other = None
+					if poly1.type == SensingPolygon.type and poly1.hasTrack:
+						other = poly2
+					elif poly2.type == SensingPolygon.type and poly2.hasTrack:
+						other = poly1
+					# The line below would work if there was no delay.
+					# if other is not None and self.__tracklet is not None and GeometryLib.distance(GeometryLib.toPoint(self.__tracklet), other.interior) > self.TRACKLET_EXIT_MAX_DISTANCE:
+					if other is not None and self.hasTrack:
+						p = GeometryLib.toPoint(self.track)
+						if self.track.exited and not GeometryLib.intersects(p, other.interior): continue
+						if self.track.entered and GeometryLib.distance(p, other.interior) > self.TRACKLET_EXIT_MAX_DISTANCE: continue
 					self.addEdge(nodeId1, nodeId2)
 		return
 
@@ -115,9 +135,11 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 			if not tracklet.exited:
 				if GeometryLib.intersects(subPoly, p):
 					tracklets[tId] = tracklet
+					self.__tracklet = tracklet
 			else:
 				if GeometryLib.distance(subPoly, p) <= self.TRACKLET_EXIT_MAX_DISTANCE:
 					tracklets[tId] = tracklet
+					self.__tracklet = tracklet
 		return tracklets
 
 	def __constructNodes(self) -> None:
