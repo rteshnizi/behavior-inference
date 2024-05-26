@@ -11,6 +11,7 @@ from rt_bi_core.Spatial.Polygon import Polygon
 from rt_bi_core.Spatial.SensingPolygon import SensingPolygon
 from rt_bi_core.Spatial.StaticPolygon import StaticPolygon
 from rt_bi_core.Spatial.TargetPolygon import TargetPolygon
+from rt_bi_core.Spatial.Tracklet import Tracklet
 
 _T_Poly = TypeVar("_T_Poly", bound=Polygon)
 class ContinuousTimePolygon(Generic[_T_Poly]):
@@ -62,7 +63,16 @@ class ContinuousTimePolygon(Generic[_T_Poly]):
 			"predicates": self.predicates(timeNanoSecs),
 		}
 		if self.type == SensingPolygon.type:
-			kwArgs["tracklets"] = cast(SensingPolygon, self.configs[index]).tracklets
+			kwArgs["tracklets"] = {}
+			assert index < self.length - 1, "This index must be in the range at this point in the code based on the above checks"
+			nextPoly = cast(SensingPolygon, self.configs[index + 1])
+			prevPoly = cast(SensingPolygon, self.configs[index])
+			for trackletId in nextPoly.tracklets:
+				nextTracklet = nextPoly.tracklets[trackletId]
+				if nextTracklet.entered: continue # because timeNanoSecs is before the enter event
+				assert trackletId in prevPoly.tracklets, "Track Id must be present in previous config based on the above checks"
+				prevTracklet = prevPoly.tracklets[trackletId]
+				kwArgs["tracklets"][trackletId] = self.__interpolateTrack(prevTracklet, nextTracklet, timeNanoSecs)
 			Cls = SensingPolygon
 		elif self.type == StaticPolygon.type:
 			kwArgs["timeNanoSecs"] = self.configs[index].timeNanoSecs
@@ -147,6 +157,17 @@ class ContinuousTimePolygon(Generic[_T_Poly]):
 		for i in range(self.length):
 			if timeNanoSecs < self.configs[i].timeNanoSecs: break
 		return i - 1
+
+	@classmethod
+	def __interpolateTrack(cls, prevTracklet: Tracklet, nextTracklet: Tracklet, eventTimeNs: int) -> Tracklet:
+		if prevTracklet.id != nextTracklet.id: raise ValueError("Tracklets don't have the same id.. prevId = %d, currentId = %d" % (prevTracklet.id, nextTracklet.id))
+		if eventTimeNs == prevTracklet.timeNanoSecs: return prevTracklet
+		if eventTimeNs == nextTracklet.timeNanoSecs: return nextTracklet
+		eventFraction = int((eventTimeNs - prevTracklet.timeNanoSecs) / (nextTracklet.timeNanoSecs - prevTracklet.timeNanoSecs))
+		x = ((eventFraction * (nextTracklet.x - prevTracklet.x)) + prevTracklet.x)
+		y = ((eventFraction * (nextTracklet.y - prevTracklet.y)) + prevTracklet.y)
+		psi = ((eventFraction * (nextTracklet.psi - prevTracklet.psi)) + prevTracklet.psi)
+		return Tracklet(nextTracklet.id, eventTimeNs, nextTracklet.hIndex, x, y, psi)
 
 	def __getParameterizedTime(self, index: int, timeNanoSecs: int) -> float:
 		"""### Get Parameterized Time

@@ -213,41 +213,40 @@ class MetricIGraph(NxUtils.Graph[GraphPolygon]):
 		toGraph = self.history[self.depth - 1]
 		assert toGraph.hIndex is not None, f"Cannot connect graph with unset hIndex in I-graph. {repr(toGraph)}"
 		# Add temporal edges between FOVs
-		if (
-			(toGraph.hasTrack and not toGraph.fovEvent) or
-			(toGraph.hasTrack and toGraph.track.exited)
-		):
-			Ros.Log(" ------------------------------- CONNECT-Z -------------------------------")
-			for fromNodeId in fromGraph.nodes:
-				fromPoly = fromGraph.getContent(fromNodeId, "polygon")
-				if fromPoly.type != SensingPolygon.type: continue
-				if not fromPoly.hasTrack: continue
-				for toNodeId in toGraph.nodes:
-					if fromNodeId == toNodeId: continue
-					toPoly = toGraph.getContent(toNodeId, "polygon")
-					if toPoly.type != SensingPolygon.type: continue
-					if not toPoly.hasTrack: continue
-					if GeometryLib.intersects(fromPoly.interior, toPoly.interior):
-						Ros.Log("AntiShadows are connected", (fromPoly.id, toPoly.id))
+		# if toGraph.hasTrack: # Exit events are not reliable somehow!
+		# (toGraph.hasTrack and not toGraph.fovEvent) or
+		# (toGraph.hasTrack and toGraph.track.exited)
+		Ros.Log(" ------------------------------- CONNECT-Z -------------------------------")
+		for fromNodeId in fromGraph.nodes:
+			fromPoly = fromGraph.getContent(fromNodeId, "polygon")
+			if fromPoly.type != SensingPolygon.type: continue
+			if not fromPoly.hasTrack: continue
+			for toNodeId in toGraph.nodes:
+				if fromNodeId == toNodeId: continue
+				toPoly = toGraph.getContent(toNodeId, "polygon")
+				if toPoly.type != SensingPolygon.type: continue
+				if not toPoly.hasTrack: continue
+				if GeometryLib.intersects(fromPoly.interior, toPoly.interior):
+					Ros.Log("AntiShadows are connected", (fromPoly.id, toPoly.id))
+					self.addEdge(fromPoly.id, toPoly.id, fromGraph, toGraph)
+		# elif (
+		# 	(not toGraph.hasTrack) or
+		# 	(toGraph.fovEvent and toGraph.track.entered)
+		# ):
+		Ros.Log(" ------------------------------- CONNECT-X -----------------------------")
+		for fromNodeId in fromGraph.nodes:
+			fromPoly = fromGraph.getContent(fromNodeId, "polygon")
+			if not fromPoly.isAccessible: continue
+			if fromPoly.type == SensingPolygon.type: continue
+			for toNodeId in toGraph.nodes:
+				if fromNodeId == toNodeId: continue
+				toPoly = toGraph.getContent(toNodeId, "polygon")
+				if not toPoly.isAccessible: continue
+				if toPoly.type == SensingPolygon.type: continue
+				if GeometryLib.intersects(fromPoly.interior, toPoly.interior):
+					if self.__shadowsAreConnectedTemporally(fromGraph, toGraph, fromPoly, toPoly):
+						Ros.Log("Shadows are connected", (fromPoly.id, toPoly.id))
 						self.addEdge(fromPoly.id, toPoly.id, fromGraph, toGraph)
-		elif (
-			(not toGraph.hasTrack) or
-			(toGraph.fovEvent and toGraph.track.entered)
-		):
-			Ros.Log(" ------------------------------- CONNECT-X -----------------------------")
-			for fromNodeId in fromGraph.nodes:
-				fromPoly = fromGraph.getContent(fromNodeId, "polygon")
-				if not fromPoly.isAccessible: continue
-				if fromPoly.type == SensingPolygon.type: continue
-				for toNodeId in toGraph.nodes:
-					if fromNodeId == toNodeId: continue
-					toPoly = toGraph.getContent(toNodeId, "polygon")
-					if not toPoly.isAccessible: continue
-					if toPoly.type == SensingPolygon.type: continue
-					if GeometryLib.intersects(fromPoly.interior, toPoly.interior):
-						if self.__shadowsAreConnectedTemporally(fromGraph, toGraph, fromPoly, toPoly):
-							Ros.Log("Shadows are connected", (fromPoly.id, toPoly.id))
-							self.addEdge(fromPoly.id, toPoly.id, fromGraph, toGraph)
 		Ros.Log(" ------------------------------- CONNECT-TEMPORALLY - END -------------------------------")
 		return
 
@@ -349,7 +348,7 @@ class MetricIGraph(NxUtils.Graph[GraphPolygon]):
 		if self.processedTime > 0 and minLatestNs <= self.processedTime:
 			Ros.Log(f"Not ready to process yet: Min LatestNs <= processedTime")
 			return
-		minLatestNs = polygon.timeNanoSecs if updatedCTR.isProjective else minLatestNs
+		minLatestNs = polygon.timeNanoSecs if updatedCTR.type == StaticPolygon.type else minLatestNs
 		Ros.Log(f"Processing {minLatestNs:20}.")
 
 		if self.depth == 0:

@@ -16,7 +16,7 @@ from rt_bi_eventifier.Model.MetricIGraph import MetricIGraph
 
 class Eventifier(ColdStartable, RegionsSubscriber):
 	def __init__(self, **kwArgs) -> None:
-		newKw = { "node_name": "eventifier", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
+		newKw = { "node_name": "eventifier", "loggingSeverity": LoggingSeverity.WARN, **kwArgs}
 		RegionsSubscriber.__init__(self, **newKw)
 		ColdStartable.__init__(self)
 		self.declareParameters()

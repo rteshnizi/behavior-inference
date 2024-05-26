@@ -108,7 +108,7 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 				if poly2.type == SensingPolygon.type:
 					if poly1.type != SensingPolygon.type:
 						if not poly2.trackEntered: continue
-				if poly1.type == SensingPolygon.type and poly2.type == SensingPolygon.type: continue
+				# if poly1.type == SensingPolygon.type and poly2.type == SensingPolygon.type: continue
 				if poly1.intersects(poly2) or poly1.hasCommonEdge(poly2):
 					other = None
 					if poly1.type == SensingPolygon.type and poly1.hasTrack:

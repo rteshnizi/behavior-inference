@@ -48,21 +48,6 @@ class EventAggregator:
 			return False
 
 	@classmethod
-	def __interpolateTrack(cls, pastTracklet: Tracklet, nowTracklet: Tracklet, eventTimeNs: int, startTimeNs: int, endTimeNs: int) -> Tracklet:
-		"""
-			This function assumes members in previousTracks and currentTracks all have the same timestamp.
-		"""
-		if pastTracklet.id != nowTracklet.id: raise ValueError("Tracklets don't have the same id.. prevId = %d, currentId = %d" % (pastTracklet.id, nowTracklet.id))
-		if eventTimeNs == startTimeNs: return pastTracklet
-		if eventTimeNs == endTimeNs: return nowTracklet
-		eventFraction = int((eventTimeNs - startTimeNs) / (endTimeNs - startTimeNs))
-		x = ((eventFraction * (nowTracklet.x - pastTracklet.x)) + pastTracklet.x)
-		y = ((eventFraction * (nowTracklet.y - pastTracklet.y)) + pastTracklet.y)
-		psi = ((eventFraction * (nowTracklet.psi - pastTracklet.psi)) + pastTracklet.psi)
-		Tracklet(nowTracklet.id, eventTimeNs, nowTracklet.hIndex, x, y, psi)
-		return Tracklet(nowTracklet.id, eventTimeNs, nowTracklet.hIndex, x, y, psi)
-
-	@classmethod
 	def __interpolateRegion(cls, oldPolys: list[_T_Poly], newPolys: list[_T_Poly], eventTimeNs: int, excludeRegions: list[AffinePolygon.Id], tracklets: list[Tracklet] = []) -> list[_T_Poly]:
 		regions: list[_T_Poly] = []
 		for oldPoly in oldPolys:
