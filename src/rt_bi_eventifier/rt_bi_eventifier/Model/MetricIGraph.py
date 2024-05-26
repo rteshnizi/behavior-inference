@@ -163,20 +163,6 @@ class MetricIGraph(NxUtils.Graph[GraphPolygon]):
 		self.history[-1].render()
 		return
 
-	def __antiShadowsAreConnectedTemporally(self, pastGraph: ConnectivityGraph, nowGraph: ConnectivityGraph, pastPoly: SensingPolygon, nowPoly: SensingPolygon) -> bool:
-		"""Method assumes polygons have at least a common edge."""
-		try:
-			intersectionOfShadows = GeometryLib.intersection(pastPoly.interior, nowPoly.interior)
-			intersectionOfShadows = GeometryLib.filterPolygons(intersectionOfShadows)
-			if len(intersectionOfShadows) > 0: return True
-			if pastPoly.trackExited and nowPoly.trackEntered: return True
-			if nowPoly.trackExited and pastPoly.trackEntered: return True
-			return False
-		except Exception as e:
-			from traceback import format_exc
-			Ros.Log(f"Error in X-Connection Test -- {e}\n{format_exc()}")
-		return False
-
 	def __shadowsAreConnectedTemporally(self, pastGraph: ConnectivityGraph, nowGraph: ConnectivityGraph, pastPoly: MapPolygon, nowPoly: MapPolygon) -> bool:
 		"""
 			With the assumption that previousNode and currentNode intersect,
@@ -222,29 +208,47 @@ class MetricIGraph(NxUtils.Graph[GraphPolygon]):
 		return False
 
 	def __connectTopLayerTemporally(self) -> None:
-		Ros.Log(" ------------------------------- CONNECT-Z - START -----------------------------")
+		Ros.Log(" ------------------------------- CONNECT-TEMPORALLY - START -----------------------------")
 		fromGraph = self.history[self.depth - 2]
 		toGraph = self.history[self.depth - 1]
 		assert toGraph.hIndex is not None, f"Cannot connect graph with unset hIndex in I-graph. {repr(toGraph)}"
 		# Add temporal edges between FOVs
-		for fromAntiShadow in fromGraph.antiShadows:
-			if not fromAntiShadow.hasTrack: continue
-			for toAntiShadow in toGraph.antiShadows:
-				if not toAntiShadow.hasTrack: continue
-				if GeometryLib.intersects(fromAntiShadow.interior, toAntiShadow.interior):
-					if self.__antiShadowsAreConnectedTemporally(fromGraph, toGraph, fromAntiShadow, toAntiShadow):
-						Ros.Log("AntiShadows are connected", (fromAntiShadow.id, toAntiShadow.id))
-						self.addEdge(fromAntiShadow.id, toAntiShadow.id, fromGraph, toGraph)
-		# Add temporal edges between shadows
-		Ros.Log(" ------------------------------- CONNECT-Z - END -------------------------------")
-		Ros.Log(" ------------------------------- CONNECT-X - START -----------------------------")
-		for fromShadow in fromGraph.shadows:
-			for toShadow in toGraph.shadows:
-				if GeometryLib.intersects(fromShadow.interior, toShadow.interior):
-					if self.__shadowsAreConnectedTemporally(fromGraph, toGraph, fromShadow, toShadow):
-						Ros.Log("Shadows are connected", (fromShadow.id, toShadow.id))
-						self.addEdge(fromShadow.id, toShadow.id, fromGraph, toGraph)
-		Ros.Log(" ------------------------------- CONNECT-X - END -------------------------------")
+		if (
+			(toGraph.hasTrack and not toGraph.fovEvent) or
+			(toGraph.hasTrack and toGraph.track.exited)
+		):
+			Ros.Log(" ------------------------------- CONNECT-Z -------------------------------")
+			for fromNodeId in fromGraph.nodes:
+				fromPoly = fromGraph.getContent(fromNodeId, "polygon")
+				if fromPoly.type != SensingPolygon.type: continue
+				if not fromPoly.hasTrack: continue
+				for toNodeId in toGraph.nodes:
+					if fromNodeId == toNodeId: continue
+					toPoly = toGraph.getContent(toNodeId, "polygon")
+					if toPoly.type != SensingPolygon.type: continue
+					if not toPoly.hasTrack: continue
+					if GeometryLib.intersects(fromPoly.interior, toPoly.interior):
+						Ros.Log("AntiShadows are connected", (fromPoly.id, toPoly.id))
+						self.addEdge(fromPoly.id, toPoly.id, fromGraph, toGraph)
+		elif (
+			(not toGraph.hasTrack) or
+			(toGraph.fovEvent and toGraph.track.entered)
+		):
+			Ros.Log(" ------------------------------- CONNECT-X -----------------------------")
+			for fromNodeId in fromGraph.nodes:
+				fromPoly = fromGraph.getContent(fromNodeId, "polygon")
+				if not fromPoly.isAccessible: continue
+				if fromPoly.type == SensingPolygon.type: continue
+				for toNodeId in toGraph.nodes:
+					if fromNodeId == toNodeId: continue
+					toPoly = toGraph.getContent(toNodeId, "polygon")
+					if not toPoly.isAccessible: continue
+					if toPoly.type == SensingPolygon.type: continue
+					if GeometryLib.intersects(fromPoly.interior, toPoly.interior):
+						if self.__shadowsAreConnectedTemporally(fromGraph, toGraph, fromPoly, toPoly):
+							Ros.Log("Shadows are connected", (fromPoly.id, toPoly.id))
+							self.addEdge(fromPoly.id, toPoly.id, fromGraph, toGraph)
+		Ros.Log(" ------------------------------- CONNECT-TEMPORALLY - END -------------------------------")
 		return
 
 	def __removeFromHistory(self, index: int, delete: bool) -> None:
