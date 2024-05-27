@@ -35,9 +35,6 @@ class BehaviorIGraph(NxUtils.Graph):
 	def propagateOneStep(self, source: NodeId, visited: set[NodeId]) -> dict[NodeId, list[NodeId]]:
 		if source not in self.nodes: return {}
 		paths: dict[NodeId, list[NodeId]] = {}
-		if "https://rezateshnizi.com/tower_bridge/defintion/av1" in repr(source):
-			Ros.Log(f"Neighbors of {source}", self[source])
-			Ros.Log("Visited", visited)
 		for destination in cast(list[NodeId], self[source]):
 			if destination in visited: continue
 			paths[destination] = [source, destination]
@@ -46,17 +43,13 @@ class BehaviorIGraph(NxUtils.Graph):
 	@classmethod
 	def fromMsg(cls, msg: Msgs.RtBi.IGraph) -> "BehaviorIGraph":
 		d: dict[str, Any] = loads(msg.adjacency_json)
-		# found = False
 		for node in d["nodes"]:
-			node["id"] = NodeId.fromDict(node["id"])
-			# if "[9]@0/https://rezateshnizi.com/tower_bridge/defintion/av1/0/9-sets#114-12-0" == repr(node["id"]):
-			# if node["id"].hIndex == 15 or node["id"].hIndex == 14:
-			# 	found = True
+			node["id"] = NodeId.fromDict(node["id"]).copy(timeNanoSecs=0)
 			node["predicates"] = Predicates(node["predicates"])
 		for adj in d["adjacency"]:
 			for edge in adj:
-				edge["id"] = NodeId.fromDict(edge["id"])
-		# Ros.Log("Graph Nodes", d["nodes"])
-		# Ros.Log("Graph Adjacency", d["adjacency"])
+				edge["id"] = NodeId.fromDict(edge["id"]).copy(timeNanoSecs=0)
+		Ros.Log("Graph Nodes", d["nodes"])
+		Ros.Log("Graph Adjacency", d["adjacency"])
 		g = nx.adjacency_graph(d)
 		return BehaviorIGraph(g)

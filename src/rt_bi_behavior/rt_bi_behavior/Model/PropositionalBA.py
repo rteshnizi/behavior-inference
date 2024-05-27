@@ -119,7 +119,6 @@ class PropositionalBehaviorAutomaton(nx.DiGraph):
 
 	def __createToken(self, path: list[NodeId]) -> StateTokenWithHistory:
 		token = StateTokenWithHistory(id=f"{self.__tokenCounter}", path=path)
-		# Ros.Log(f"Token {token['id']}", token["path"])
 		self.__tokenCounter += 1
 		return token
 
@@ -146,7 +145,7 @@ class PropositionalBehaviorAutomaton(nx.DiGraph):
 			visited: set[NodeId] = set()
 			for nId in token["path"]: visited.add(nId)
 			# BFS
-			# if fromState == "Q2": Ros.Log(f"Path {token['id']}", token['path'])
+			Ros.Log(f"===== Path {token['id']}", token['path'])
 			extensions = iGraph.propagateOneStep(token["path"][-1], visited)
 			if len(extensions) == 0: self.__addToken(fromState, token)
 			for destination in extensions:
@@ -155,7 +154,7 @@ class PropositionalBehaviorAutomaton(nx.DiGraph):
 				path = self.__extendPath(token["path"], extensions[destination])
 				newToken = self.__createToken(path)
 				ps = iGraph.getContent(destination, "predicates")
-				# if fromState == "Q2": Ros.Log(f"Destination {destination}", [(p, ps[p]) for p in ps])
+				Ros.Log(f"Destination {destination}", [(p, ps[p]) for p in ps])
 				if iGraph.satisfies(destination, statement):
 					self.__addToken(toState, newToken)
 					if toState in self.__accepting:

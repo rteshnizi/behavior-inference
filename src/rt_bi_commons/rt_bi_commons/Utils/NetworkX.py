@@ -147,7 +147,7 @@ class NxUtils:
 		@abstractmethod
 		def createEdgeMarkers(self) -> list[RViz.Msgs.Marker]: ...
 
-		def asStr(self, nodeFilter: Callable[[NodeId], bool] | None = None) -> str:
+		def asStr(self, nodeFilter: Callable[[NodeId], bool] | None = None, nodeMapping: dict = {}) -> str:
 			if nodeFilter is None: g = self
 			else: g = nx.subgraph_view(self, filter_node=nodeFilter)
 			jsonDict = nx.adjacency_data(g)

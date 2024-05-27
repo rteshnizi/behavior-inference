@@ -29,7 +29,7 @@ class MetricIGraph(NxUtils.Graph[GraphPolygon]):
 	SUBMODULE = Literal["c_graph", "ctcd", "i_graph"]
 	"""The name of a ShadowTree sub-module publisher."""
 	__RENDER_RADIUS = 10
-	__MAX_HISTORY = 4
+	__MAX_HISTORY = 15
 
 	@dataclass(frozen=True, order=True)
 	class NodeData(NxUtils.NodeData[GraphPolygon]):
@@ -52,6 +52,7 @@ class MetricIGraph(NxUtils.Graph[GraphPolygon]):
 		# super().__init__(rVizPublisher=None)
 		self.__history: list[ConnectivityGraph] = []
 		self.hIndex = 0
+		self.__nodeMapping = {}
 
 		self.componentEvents: list[list[Shapely.Polygon]] = []
 		""" The reason this is a list of lists is that the time of event is relative to the time between. """
@@ -112,14 +113,15 @@ class MetricIGraph(NxUtils.Graph[GraphPolygon]):
 			poly = self.getContent(id_, "polygon")
 			color = poly.envelopeColor
 			zOffset = self.__getNodeRenderZOffset(poly.type)
-			coords = (nodePositions[id_][0], nodePositions[id_][1], nodePositions[id_][2] + zOffset)
+			z = nodePositions[id_][2] + zOffset
+			coords = (nodePositions[id_][0], nodePositions[id_][1], z)
 			marker = RViz.createSphere(id_, center=coords, radius=self.__RENDER_RADIUS, color=color)
 			Ros.AppendMessage(markers, marker)
 			coords = (coords[0], coords[1], coords[2] + self.__RENDER_RADIUS)
-			marker = RViz.createText(id_, coords=coords, text=poly.shortName, outline=ColorNames.WHITE, fontSize=8.0, idSuffix="txt")
+			# marker = RViz.createText(id_, coords=coords, text=poly.shortName, outline=ColorNames.WHITE, fontSize=8.0, idSuffix="txt")
 			Ros.AppendMessage(markers, marker)
 		id_ = RViz.Id(hIndex=-1, timeNanoSecs=-1, regionId="IGraph", polygonId="Name", subPartId="")
-		marker = RViz.createText(id_, coords=(250, -50), text=f"{repr(self)}", outline=ColorNames.WHITE, idSuffix="txt")
+		# marker = RViz.createText(id_, coords=(250, -50, z), text=f"{repr(self)}", outline=ColorNames.WHITE, idSuffix="txt")
 		Ros.AppendMessage(markers, marker)
 		return markers
 
@@ -216,9 +218,6 @@ class MetricIGraph(NxUtils.Graph[GraphPolygon]):
 		toGraph = self.history[self.depth - 1]
 		assert toGraph.hIndex is not None, f"Cannot connect graph with unset hIndex in I-graph. {repr(toGraph)}"
 		# Add temporal edges between FOVs
-		# if toGraph.hasTrack: # Exit events are not reliable somehow!
-		# (toGraph.hasTrack and not toGraph.fovEvent) or
-		# (toGraph.hasTrack and toGraph.track.exited)
 		Ros.Log(" ------------------------------- CONNECT-Z -------------------------------")
 		for fromNodeId in fromGraph.nodes:
 			fromPoly = fromGraph.getContent(fromNodeId, "polygon")
@@ -229,13 +228,8 @@ class MetricIGraph(NxUtils.Graph[GraphPolygon]):
 				toPoly = toGraph.getContent(toNodeId, "polygon")
 				if toPoly.type != SensingPolygon.type: continue
 				if not toPoly.hasTrack: continue
-				if fromPoly.id.regionId == toPoly.id.regionId:
-					Ros.Log("AntiShadows are connected", (fromPoly.id, toPoly.id))
-					self.addEdge(fromPoly.id, toPoly.id, fromGraph, toGraph)
-		# elif (
-		# 	(not toGraph.hasTrack) or
-		# 	(toGraph.fovEvent and toGraph.track.entered)
-		# ):
+				Ros.Log("AntiShadows are connected", (fromPoly.id, toPoly.id))
+				self.addEdge(fromPoly.id, toPoly.id, fromGraph, toGraph)
 		Ros.Log(" ------------------------------- CONNECT-X -----------------------------")
 		for fromNodeId in fromGraph.nodes:
 			fromPoly = fromGraph.getContent(fromNodeId, "polygon")
