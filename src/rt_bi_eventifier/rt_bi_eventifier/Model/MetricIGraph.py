@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Callable, Literal, cast
 
+from networkx.algorithms.isomorphism.vf2pp import vf2pp_is_isomorphic, vf2pp_isomorphism
+
 from rt_bi_commons.Shared.Color import RGBA, ColorUtils
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Geometry import GeometryLib, Shapely
@@ -14,7 +16,8 @@ from rt_bi_core.Spatial.SensingPolygon import SensingPolygon
 from rt_bi_core.Spatial.StaticPolygon import StaticPolygon
 from rt_bi_eventifier.Model.ConnectivityGraph import ConnectivityGraph
 from rt_bi_eventifier.Model.ContinuousTimeCollisionDetection import ContinuousTimeCollisionDetection as CtCd
-from rt_bi_eventifier.Model.EventAggregator import EventAggregator
+
+# from rt_bi_eventifier.Model.EventAggregator import EventAggregator
 
 
 class MetricIGraph(NxUtils.Graph[GraphPolygon]):
@@ -105,18 +108,18 @@ class MetricIGraph(NxUtils.Graph[GraphPolygon]):
 		markers = []
 		if len(self.nodes) == 0: return markers
 		nodePositions = self._3dLayout()
-		for id in nodePositions:
-			poly = self.getContent(id, "polygon")
+		for id_ in nodePositions:
+			poly = self.getContent(id_, "polygon")
 			color = poly.envelopeColor
 			zOffset = self.__getNodeRenderZOffset(poly.type)
-			coords = (nodePositions[id][0], nodePositions[id][1], nodePositions[id][2] + zOffset)
-			marker = RViz.createSphere(id, center=coords, radius=self.__RENDER_RADIUS, color=color)
+			coords = (nodePositions[id_][0], nodePositions[id_][1], nodePositions[id_][2] + zOffset)
+			marker = RViz.createSphere(id_, center=coords, radius=self.__RENDER_RADIUS, color=color)
 			Ros.AppendMessage(markers, marker)
 			coords = (coords[0], coords[1], coords[2] + self.__RENDER_RADIUS)
-			marker = RViz.createText(id, coords=coords, text=poly.shortName, outline=ColorNames.WHITE, fontSize=8.0, idSuffix="txt")
+			marker = RViz.createText(id_, coords=coords, text=poly.shortName, outline=ColorNames.WHITE, fontSize=8.0, idSuffix="txt")
 			Ros.AppendMessage(markers, marker)
-		id = RViz.Id(hIndex=-1, timeNanoSecs=-1, regionId="IGraph", polygonId="Name", subPartId="")
-		marker = RViz.createText(id, coords=(250, -50), text=f"{repr(self)}", outline=ColorNames.WHITE, idSuffix="txt")
+		id_ = RViz.Id(hIndex=-1, timeNanoSecs=-1, regionId="IGraph", polygonId="Name", subPartId="")
+		marker = RViz.createText(id_, coords=(250, -50), text=f"{repr(self)}", outline=ColorNames.WHITE, idSuffix="txt")
 		Ros.AppendMessage(markers, marker)
 		return markers
 
@@ -226,7 +229,7 @@ class MetricIGraph(NxUtils.Graph[GraphPolygon]):
 				toPoly = toGraph.getContent(toNodeId, "polygon")
 				if toPoly.type != SensingPolygon.type: continue
 				if not toPoly.hasTrack: continue
-				if GeometryLib.intersects(fromPoly.interior, toPoly.interior):
+				if fromPoly.id.regionId == toPoly.id.regionId:
 					Ros.Log("AntiShadows are connected", (fromPoly.id, toPoly.id))
 					self.addEdge(fromPoly.id, toPoly.id, fromGraph, toGraph)
 		# elif (
@@ -279,8 +282,7 @@ class MetricIGraph(NxUtils.Graph[GraphPolygon]):
 				Ros.Logger().error(f"Older graph than latest in history --> {graph.timeNanoSecs} vs {self.history[-1].timeNanoSecs}")
 				return
 
-		shouldBroadcastEvent = True
-		if self.depth > 0 and EventAggregator.isIsomorphic(self.history[-1], graph):
+		if self.depth > 0 and vf2pp_is_isomorphic(self.history[-1], graph):
 			Ros.Log("Isomorphic graph detected.")
 			self.__replaceInHistory(self.depth - 1, graph)
 			isomorphicUpdate = True
@@ -292,7 +294,9 @@ class MetricIGraph(NxUtils.Graph[GraphPolygon]):
 
 		for id_ in graph.nodes:
 			id_ = cast(NxUtils.Id, id_)
-			self.addNode(id_, graph)
+			id_ = self.addNode(id_, graph)
+			poly = self.getContent(id_, "polygon")
+			if poly.type == SensingPolygon.type: shouldBroadcastEvent = True
 		for edge in graph.edges:
 			self.addEdge(edge[0], edge[1], graph, graph)
 
@@ -308,7 +312,7 @@ class MetricIGraph(NxUtils.Graph[GraphPolygon]):
 		if poly.timeNanoSecs < self.processedTime:
 			Ros.Log(f"Out of sync update: {poly.timeNanoSecs} < {self.processedTime} processed already.")
 			return None
-		idSansTime = poly.id.sansTime()
+		idSansTime = poly.id.copy(timeNanoSecs=-1, hIndex=-1)
 		if idSansTime not in self.__ctrs:
 			Ros.Log("Creating CTR...")
 			self.__ctrs[idSansTime] = ContinuousTimePolygon(polyConfigs=[poly])

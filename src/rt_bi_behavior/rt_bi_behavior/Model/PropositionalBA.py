@@ -44,6 +44,18 @@ class PropositionalBehaviorAutomaton(nx.DiGraph):
 		return
 
 	@property
+	def initializedTokens(self) -> bool:
+		return self.__initializedTokens
+
+	@property
+	def predicates(self) -> list[str]:
+		d = {}
+		for (frm, to, statement) in self.edges(data="statement"): # pyright: ignore[reportArgumentType]
+			statement = cast(TransitionStatement, statement)
+			d |= statement.predicates
+		return list(d.keys())
+
+	@property
 	def states(self) -> dict[str, State2]:
 		# This is the effective structure of the NodeView class here.
 		return cast(dict[str, State2], self.nodes)
@@ -70,18 +82,12 @@ class PropositionalBehaviorAutomaton(nx.DiGraph):
 		label = f"<<TABLE border='0' cellborder='0' cellpadding='2'><TR><TD colspan='{colSpan}'>{state}</TD></TR>{colsStr}</TABLE>>" #CSpell: ignore -- cellborder
 		self.states[state]["label"] = label
 		if state in self.__accepting and len(self.states[state]["tokens"]) > 0:
-			styles = self.states[state]["style"].split(",")
-			if "filled" not in styles: styles.append("filled")
-			self.states[state]["style"] = ",".join(styles)
 			self.states[state]["fillcolor"] = "DarkGreen"
 		return label
 
 	def __addState(self, name: str) -> None:
-		starting = name == self.__start
-		accepting = name in self.__accepting
-		styles = ["rounded"]
-		if starting: styles.append("filled")
-		peripheries = 2 if accepting else 1
+		styles = ["rounded", "filled"]
+		peripheries = 2 if name in self.__accepting else 1
 		tokens = []
 		self.add_node(
 			name,
@@ -90,6 +96,7 @@ class PropositionalBehaviorAutomaton(nx.DiGraph):
 			shape="box",
 			style=",".join(styles),
 			peripheries=peripheries,
+			fillcolor="WebGrey",
 		)
 		self.__updateStateLabel(name)
 		return
@@ -110,32 +117,52 @@ class PropositionalBehaviorAutomaton(nx.DiGraph):
 				self.__addTransition(src, statementSyntax, dst)
 		return
 
-	def __createToken(self, iGraphNodeId: str | NodeId) -> StateTokenWithHistory:
-		nodeId = NodeId.fromJson(iGraphNodeId) if isinstance(iGraphNodeId, str) else iGraphNodeId
-		token = StateTokenWithHistory(id=f"{self.__tokenCounter}", path=[nodeId])
+	def __createToken(self, path: list[NodeId]) -> StateTokenWithHistory:
+		token = StateTokenWithHistory(id=f"{self.__tokenCounter}", path=path)
+		# Ros.Log(f"Token {token['id']}", token["path"])
 		self.__tokenCounter += 1
 		return token
 
-	def __addToken(self, state: str, iGraphNodeId: NodeId) -> StateTokenWithHistory:
+	def __extendPath(self, path: list[NodeId], extension: list[NodeId]) -> list[NodeId]:
+		"""The `extension` must have as its first node, the last node in `path`."""
+		assert len(extension) >= 1
+		assert extension[0] == path[-1]
+		return path + extension[1:]
+
+	def __addToken(self, state: str, newToken: StateTokenWithHistory) -> None:
 		for token in self.states[state]["tokens"]:
-			if token["path"][-1].copy(hIndex=-1) == iGraphNodeId.copy(hIndex=-1):
-				# Tokens must move forward in time. Because time is strictly increasing.
-				if token["path"][-1].hIndex < iGraphNodeId.hIndex: token["path"].append(iGraphNodeId)
-				return token
-		self.states[state]["tokens"].append(self.__createToken(iGraphNodeId))
-		return self.states[state]["tokens"][-1]
+			if token["path"][-1] == newToken["path"][-1]:
+				return
+		self.states[state]["tokens"].append(newToken)
+		return
 
-	@property
-	def initializedTokens(self) -> bool:
-		return self.__initializedTokens
+	def __propagateTokens(self, fromState: str, toState: str, iGraph: BehaviorIGraph) -> None:
+		statement = self[fromState][toState]["statement"]
+		tokens = self.states[fromState]["tokens"].copy()
+		self.states[fromState]["tokens"] = []
 
-	@property
-	def predicates(self) -> list[str]:
-		d = {}
-		for (frm, to, statement) in self.edges(data="statement"): # pyright: ignore[reportArgumentType]
-			statement = cast(TransitionStatement, statement)
-			d |= statement.predicates
-		return list(d.keys())
+		while len(tokens) > 0:
+			token = tokens.pop()
+			visited: set[NodeId] = set()
+			for nId in token["path"]: visited.add(nId)
+			# BFS
+			# if fromState == "Q2": Ros.Log(f"Path {token['id']}", token['path'])
+			extensions = iGraph.propagateOneStep(token["path"][-1], visited)
+			if len(extensions) == 0: self.__addToken(fromState, token)
+			for destination in extensions:
+				if destination in visited: continue
+				visited.add(destination)
+				path = self.__extendPath(token["path"], extensions[destination])
+				newToken = self.__createToken(path)
+				ps = iGraph.getContent(destination, "predicates")
+				# if fromState == "Q2": Ros.Log(f"Destination {destination}", [(p, ps[p]) for p in ps])
+				if iGraph.satisfies(destination, statement):
+					self.__addToken(toState, newToken)
+					if toState in self.__accepting:
+						Ros.Log(f"ACCEPTING {newToken['id']}", newToken["path"])
+				else:
+					tokens.append(newToken)
+		return
 
 	def reduceUncertainty(self, state: str, iGraph: BehaviorIGraph) -> None:
 		tokens = self.states[state]["tokens"]
@@ -152,7 +179,7 @@ class PropositionalBehaviorAutomaton(nx.DiGraph):
 		Traverses the BA states in BFS fashion and updates their tokens.
 		BFS traversal ensures tokens are pushed all the way.
 		"""
-		Ros.Log(128 * f"┬")
+		Ros.Log(120 * f"┬")
 		totalTokens = 0
 		for s in self.states: totalTokens += len(self.states[s]["tokens"])
 		if totalTokens > self.MAX_TOKENS_WARNING: Ros.Logger().error(f"Large number of tokens: {totalTokens}")
@@ -160,28 +187,58 @@ class PropositionalBehaviorAutomaton(nx.DiGraph):
 		statesToUpdate = deque([self.__start], maxlen=len(self.states))
 		while len(statesToUpdate) > 0:
 			fromState = statesToUpdate.popleft() # CSpell: ignore -- popleft
-			self.reduceUncertainty(fromState, iGraph)
 			Ros.Log(f"From State {fromState}.")
+			Ros.Log(f"BEFORE REDUCTION has {len(self.states[fromState]['tokens'])} tokens.")
+			self.reduceUncertainty(fromState, iGraph)
 			Ros.Log(f"AFTER REDUCTION has {len(self.states[fromState]['tokens'])} tokens.")
 			for toState in self[fromState]:
-				statesToUpdate.append(toState)
+				if toState not in statesToUpdate: statesToUpdate.append(toState)
 				if len(self.states[fromState]["tokens"]) == 0: continue
 				Ros.Log(f"To State {toState}")
-				statement = self[fromState][toState]["statement"]
-				# newPositions: list[NodeId] = []
-				for tokens in self.states[fromState]["tokens"]:
-					for destination in iGraph.neighbors(tokens["path"][-1]):
-						if iGraph.satisfies(destination, statement):
-							token = self.__addToken(toState, destination)
-							if toState in self.__accepting:
-								Ros.Logger().error(f"{token['path']}")
-						else:
-							self.__addToken(fromState, destination)
-				# for nId in newPositions:
-				# 	self.__addToken(fromState, nId)
+				self.__propagateTokens(fromState, toState, iGraph)
 			self.__updateStateLabel(fromState)
-		Ros.Log(128 * f"┴")
+		Ros.Log(120 * f"┴")
 		return
+
+	# def evaluate(self, iGraph: BehaviorIGraph) -> None:
+	# 	"""
+	# 	Traverses the BA states in BFS fashion and updates their tokens.
+	# 	BFS traversal ensures tokens are pushed all the way.
+	# 	"""
+	# 	Ros.Log(128 * f"┬")
+	# 	totalTokens = 0
+	# 	for s in self.states: totalTokens += len(self.states[s]["tokens"])
+	# 	if totalTokens > self.MAX_TOKENS_WARNING: Ros.Logger().error(f"Large number of tokens: {totalTokens}")
+	# 	Ros.Log(f"Evaluating tokens of {self.name}.")
+	# 	statesToUpdate = deque([self.__start], maxlen=len(self.states))
+	# 	while len(statesToUpdate) > 0:
+	# 		fromState = statesToUpdate.popleft() # CSpell: ignore -- popleft
+	# 		self.reduceUncertainty(fromState, iGraph)
+	# 		Ros.Log(f"From State {fromState}.")
+	# 		Ros.Log(f"AFTER REDUCTION has {len(self.states[fromState]['tokens'])} tokens.")
+	# 		for toState in self[fromState]:
+	# 			statesToUpdate.append(toState)
+	# 			if len(self.states[fromState]["tokens"]) == 0: continue
+	# 			Ros.Log(f"To State {toState}")
+	# 			statement = self[fromState][toState]["statement"]
+	# 			tokens = self.states[fromState]["tokens"].copy()
+	# 			i = 0
+	# 			while i < len(tokens):
+	# 				extensions = iGraph.neighbors(tokens[i]["path"][-1])
+	# 				for destination in extensions:
+	# 					path = self.__extendPath(tokens[i]["path"], [tokens[i]["path"][-1], destination])
+	# 					newToken = self.__createToken(path)
+	# 					if iGraph.satisfies(destination, statement):
+	# 						tokens.pop(i)
+	# 						self.__addToken(toState, newToken)
+	# 						if toState in self.__accepting:
+	# 							Ros.Log(f"ACCEPTING {newToken['id']}", newToken["path"])
+	# 					else:
+	# 						tokens.append(newToken)
+	# 			for newToken in newTokens: self.__addToken(fromState, newToken)
+	# 		self.__updateStateLabel(fromState)
+	# 	Ros.Log(128 * f"┴")
+	# 	return
 
 	def setSymbolicNameOfPredicate(self, symbols: dict[str, str]) -> None:
 		"""
@@ -207,7 +264,8 @@ class PropositionalBehaviorAutomaton(nx.DiGraph):
 		self.__removeAllTokens()
 		self.__tokenCounter = 0
 		for nodeId in iGraph.nodes:
-			token = self.__createToken(nodeId)
+			if cast(NodeId, nodeId).regionId.startswith("https://rezateshnizi.com/tower_bridge/defintion/av"): continue
+			token = self.__createToken([nodeId])
 			self.states[self.__start]["tokens"].append(token)
 		self.__updateStateLabel(self.__start)
 		self.__initializedTokens = True

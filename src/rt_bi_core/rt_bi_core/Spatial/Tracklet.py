@@ -41,8 +41,8 @@ class Tracklet(Pose):
 		else: color: RGBA = ColorNames.CYAN
 		coords = (self.x, self.y)
 		durationNs = 3 * NANO_CONVERSION_CONSTANT if self.exited else durationNs
-		msgs.append(RViz.createCircle(self.__rVizId.sansTime(), coords, radius=5, outline=color, width=2.0, durationNs=durationNs))
-		msgs.append(RViz.createText(self.__rVizId.sansTime(), coords, repr(self), ColorNames.WHITE, durationNs=durationNs, idSuffix="txt"))
+		msgs.append(RViz.createCircle(self.__rVizId.copy(timeNanoSecs=-1, hIndex=-1), coords, radius=5, outline=color, width=2.0, durationNs=durationNs))
+		msgs.append(RViz.createText(self.__rVizId.copy(timeNanoSecs=-1, hIndex=-1), coords, repr(self), ColorNames.WHITE, durationNs=durationNs, idSuffix="txt"))
 		return msgs
 
 	def deleteMarkers(self) -> list[RViz.Msgs.Marker]:

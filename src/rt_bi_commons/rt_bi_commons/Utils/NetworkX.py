@@ -150,7 +150,6 @@ class NxUtils:
 		def asStr(self, nodeFilter: Callable[[NodeId], bool] | None = None) -> str:
 			if nodeFilter is None: g = self
 			else: g = nx.subgraph_view(self, filter_node=nodeFilter)
-			# Ros.Log(f"{g}", g.adj, severity=Ros.LoggingSeverity.ERROR)
 			jsonDict = nx.adjacency_data(g)
 			for node in jsonDict["nodes"]:
 				node = cast(dict[str, Any], node)

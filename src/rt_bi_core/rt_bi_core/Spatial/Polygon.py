@@ -156,8 +156,10 @@ class Polygon(ABC):
 	def shortName(self) -> str:
 		""" Easy to read name. **Do not use it in any meaningful way.**"""
 		(regionId, polyId) = self.__id.shortNames()
-		hIndex = f"[{self.id.hIndex}]" if self.id.hIndex >= 0 else ""
-		return f"{self.type.value}{hIndex}-{regionId}-{polyId}"
+		# hIndex = f"[{self.id.hIndex}]" if self.id.hIndex >= 0 else ""
+		hIndex = f"[{self.id.hIndex}]"
+		subpart = self.__id.subPartId
+		return f"{self.type.value}{hIndex}-{regionId}-{polyId}-{subpart}"
 
 	@property
 	def envelopeColor(self) -> RGBA:
@@ -240,7 +242,7 @@ class Polygon(ABC):
 			Ros.Logger().error(f"Empty polygon detected in createMarkers(): {self.shortName}")
 			return msgs
 		envelopColor = envelopeColor if envelopeColor is not None else self.envelopeColor
-		unstampedId = self.id if stamped else self.id.sansTime()
+		unstampedId = self.id if stamped else self.id.copy(timeNanoSecs=-1, hIndex=-1)
 		marker = RViz.createPolygon(
 			unstampedId,
 			coords,

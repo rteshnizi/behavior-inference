@@ -328,9 +328,13 @@ set:115 a class:SpaceTime ;
 	property:material material:grass ;
 	property:geometry polygon:13 ;
 .
-set:116 a class:SpaceTime ;
-	property:name "king" ;
-	property:channel "/rt_bi_emulator/kn2" ;
+# set:116 a class:SpaceTime ;
+# 	property:name "king" ;
+# 	property:channel "/rt_bi_emulator/kn2" ;
+# .
+set:201 a class:SpaceTime ;
+	property:name "morning" ;
+	property:interval interval:0 ,interval:1 ;
 .
 set:201 a class:SpaceTime ;
 	property:name "bridge-is-moving" ;

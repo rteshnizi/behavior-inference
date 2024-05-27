@@ -230,7 +230,7 @@ class ContinuousTimePolygon(Generic[_T_Poly]):
 		EXCEPT the last update before this stamp, defaults to -1 (keeps everything).
 		"""
 		if self.length > 0:
-			assert self.id.sansTime() == polygon.id.sansTime(), (
+			assert self.id.copy(timeNanoSecs=-1, hIndex=-1) == polygon.id.copy(timeNanoSecs=-1, hIndex=-1), (
 				f"Different ids in poly configs. {self.id} vs {polygon.id}. " +
 				"A ContinuousTimeRegion must describe the evolution of a single polygon."
 			)

@@ -143,7 +143,6 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 		return tracklets
 
 	def __constructNodes(self) -> None:
-		from uuid import uuid4
 		shadowPolys: list[MapPolygon] = []
 		antiShadowPolys: list[SensingPolygon] = []
 		if len(self.sensors) == 0:
@@ -165,12 +164,13 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 				for mapPoly in self.map:
 					sensedPolys = GeometryLib.intersection(mapPoly.interior, sensor.interior)
 					sensedPolys = GeometryLib.filterPolygons(sensedPolys)
+					(rName, polyName) = mapPoly.id.shortNames()
 					for i in range(len(sensedPolys)):
 						tracklets = self.__extractTracklets(sensor, sensedPolys[i])
 						antiShadowPolys.append(SensingPolygon(
 							polygonId=sensor.id.polygonId,
 							regionId=sensor.id.regionId,
-							subPartId=uuid4().hex,
+							subPartId=f"{rName}-{polyName}-{i}",
 							envelope=[],
 							interior=sensedPolys[i],
 							timeNanoSecs= self.timeNanoSecs,
@@ -189,7 +189,7 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 					shadowPolys.append(type(mapPoly)(
 						polygonId=mapPoly.id.polygonId,
 						regionId=mapPoly.id.regionId,
-						subPartId=uuid4().hex,
+						subPartId=f"{i}",
 						envelope=[],
 						interior=diff[i],
 						timeNanoSecs= self.timeNanoSecs,
@@ -227,6 +227,9 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 		assert value >= 0, f"hIndex must be non-negative. given value = {value}"
 		Ros.Log(f"Setting hIndex of {repr(self)} to {value}")
 		self.__hIndex = value
+		for id_ in self.nodes:
+			poly = self.getContent(id_, "polygon")
+			poly.id = poly.id.copy(hIndex=value)
 		for poly in self.map + self.sensors + self.shadows + self.antiShadows:
 			poly.id = poly.id.copy(hIndex=value)
 

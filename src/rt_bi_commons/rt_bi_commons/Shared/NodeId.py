@@ -27,9 +27,6 @@ class NodeId:
 		subPartId = subPartId if subPartId is not None else self.subPartId
 		return replace(self, timeNanoSecs=timeNanoSecs, hIndex=hIndex, subPartId=subPartId)
 
-	def sansTime(self) -> "NodeId":
-		return self.copy(timeNanoSecs=-1, hIndex=-1)
-
 	def shortNames(self) -> tuple[str, str]:
 		polyId = self.polygonId.split('#')[-1].strip("_")
 		regionId = self.regionId.split('/')[-1].strip("_")
