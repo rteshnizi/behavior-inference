@@ -3,6 +3,7 @@ from typing import Callable, Literal, cast
 
 from networkx.algorithms.isomorphism.vf2pp import vf2pp_is_isomorphic, vf2pp_isomorphism
 
+from rt_bi_behavior.Model.Transition import TransitionStatement
 from rt_bi_commons.Shared.Color import RGBA, ColorUtils
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Geometry import GeometryLib, Shapely
@@ -29,7 +30,7 @@ class MetricIGraph(NxUtils.Graph[GraphPolygon]):
 	SUBMODULE = Literal["c_graph", "ctcd", "i_graph"]
 	"""The name of a ShadowTree sub-module publisher."""
 	__RENDER_RADIUS = 10
-	__MAX_HISTORY = 4
+	__MAX_HISTORY = 2
 
 	@dataclass(frozen=True, order=True)
 	class NodeData(NxUtils.NodeData[GraphPolygon]):
@@ -374,3 +375,19 @@ class MetricIGraph(NxUtils.Graph[GraphPolygon]):
 		Ros.Log("Aggregated CGraphs", eventGraphs)
 		for graph in eventGraphs: self.__appendToHistory(graph, eventHandler)
 		return
+
+
+	def satisfies(self, node: NxUtils.Id, criterion: TransitionStatement) -> bool:
+		predicates = self.getContent(node, "predicates")
+		return criterion.evaluate(predicates)
+
+	def propagateOneStep(self, source: NxUtils.Id, visited: set[NxUtils.Id]) -> dict[NxUtils.Id, list[NxUtils.Id]]:
+		if source not in self.nodes: return {}
+		paths: dict[NxUtils.Id, list[NxUtils.Id]] = {}
+		# if "https://rezateshnizi.com/tower_bridge/defintion/av1" in repr(source):
+		# 	Ros.Log(f"Neighbors of {source}", self[source])
+		# 	Ros.Log("Visited", visited)
+		for destination in cast(list[NxUtils.Id], self[source]):
+			if destination in visited: continue
+			paths[destination] = [source, destination]
+		return paths

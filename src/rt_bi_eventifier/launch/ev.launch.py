@@ -1,19 +1,35 @@
 import os
-import pathlib
+from pathlib import Path
 
 from ament_index_python.packages import get_package_share_directory
 from launch_ros.actions import Node
 
 from launch import LaunchDescription
+from launch.actions import ExecuteProcess
 
-corePackageName = pathlib.Path(__file__).parent.parent.name
+package_name = Path(__file__).parent.parent.name
 
 def generate_launch_description():
-	eventifierYamlPath = os.path.join(get_package_share_directory(corePackageName), "config", "ev.yaml")
+	eventifierYamlPath = os.path.join(get_package_share_directory(package_name), "config", "ev.yaml")
 	return LaunchDescription([
+		ExecuteProcess(
+			cmd=["flask", "--app", "flaskApp", "run", "--host=0.0.0.0"],
+			cwd=str(Path(get_package_share_directory(package_name), "launch")),
+			name="FLASK",
+		),
 		Node(
-			package=corePackageName,
-			namespace=corePackageName,
+			package="rosbridge_server",
+			namespace="rosbridge_server",
+			executable="rosbridge_websocket",
+			arguments= [
+				"--ros-args",
+				"--log-level",
+				"warn",
+			],
+		),
+		Node(
+			package=package_name,
+			namespace=package_name,
 			executable="EV",
 			name="eventifier",
 			arguments= [

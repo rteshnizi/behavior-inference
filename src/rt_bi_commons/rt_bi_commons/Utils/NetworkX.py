@@ -98,7 +98,10 @@ class NxUtils:
 
 		def getContent(self, node: NodeId, contentKey: LiteralString | None = None) -> NodeData[_Polygon] | _Polygon | Predicates:
 			assert isinstance(node, NodeId), f"Unexpected Id type: {type(node)}, repr = {repr(node)}"
-			if contentKey is None: return NodeData(**self.nodes[node])
+			if contentKey is None:
+				c = self.nodes[node]
+				if "subset" in c: c.pop("subset")
+				return NodeData(**c)
 			elif contentKey == "predicates":
 				d = self.getContent(node)
 				if d.predicates is not None: predicates = d.predicates

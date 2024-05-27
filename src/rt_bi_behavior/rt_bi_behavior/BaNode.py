@@ -47,8 +47,8 @@ class BaNode(ColdStartable):
 			self.__grammarFile
 		)
 		self.waitForColdStartPermission()
-		RtBiInterfaces.subscribeToIGraph(self, self.__onEvent)
-		RtBiInterfaces.subscribeToPredicates(self, self.__onPredicates)
+		# RtBiInterfaces.subscribeToIGraph(self, self.__onEvent)
+		# RtBiInterfaces.subscribeToPredicates(self, self.__onPredicates)
 		return
 
 	def __onEvent(self, msg: Msgs.RtBi.IGraph) -> None:
@@ -63,7 +63,7 @@ class BaNode(ColdStartable):
 		return
 
 	def onColdStartAllowed(self, payload: ColdStartPayload) -> None:
-		if self.shouldRender: self.__ba.initFlask(self)
+		# if self.shouldRender: self.__ba.initFlask(self)
 		self.publishColdStartDone({
 			"predicates": self.__ba.predicates,
 		})

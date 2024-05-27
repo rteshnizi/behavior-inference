@@ -1,22 +1,22 @@
 from collections import deque
 from json import dumps, loads
 from tempfile import TemporaryFile
-from typing import Final, TypeAlias, cast
+from typing import Any, Final, TypeAlias, cast
 
 import networkx as nx
 from networkx.drawing import nx_agraph
 from rclpy.logging import LoggingSeverity
 
-from rt_bi_behavior.Model.BehaviorIGraph import BehaviorIGraph
 from rt_bi_behavior.Model.State import State2, StateTokenWithHistory
 from rt_bi_behavior.Model.Transition import Transition, TransitionStatement
 from rt_bi_commons.Shared.NodeId import NodeId
 from rt_bi_commons.Shared.Predicates import Predicates
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Msgs import Msgs
+from rt_bi_eventifier.Model.MetricIGraph import MetricIGraph
 
 
-class PropositionalBehaviorAutomaton(nx.DiGraph):
+class CrappyBehaviorAutomaton(nx.DiGraph):
 	DOT_RENDER_MAX_TOKENS: Final[int] = 20
 	MAX_TOKENS_WARNING: Final[int] = 2000
 	def __init__(self,
@@ -137,7 +137,7 @@ class PropositionalBehaviorAutomaton(nx.DiGraph):
 		self.states[state]["tokens"].append(newToken)
 		return
 
-	def __propagateTokens(self, fromState: str, toState: str, iGraph: BehaviorIGraph) -> None:
+	def __propagateTokens(self, fromState: str, toState: str, iGraph: MetricIGraph) -> None:
 		statement = self[fromState][toState]["statement"]
 		tokens = self.states[fromState]["tokens"].copy()
 		self.states[fromState]["tokens"] = []
@@ -165,7 +165,7 @@ class PropositionalBehaviorAutomaton(nx.DiGraph):
 					tokens.append(newToken)
 		return
 
-	def reduceUncertainty(self, state: str, iGraph: BehaviorIGraph) -> None:
+	def reduceUncertainty(self, state: str, iGraph: MetricIGraph) -> None:
 		tokens = self.states[state]["tokens"]
 		i = 0
 		while i < (len(tokens)):
@@ -175,7 +175,7 @@ class PropositionalBehaviorAutomaton(nx.DiGraph):
 			i += 1
 		return
 
-	def evaluate(self, iGraph: BehaviorIGraph) -> None:
+	def evaluate(self, iGraph: MetricIGraph) -> None:
 		"""
 		Traverses the BA states in BFS fashion and updates their tokens.
 		BFS traversal ensures tokens are pushed all the way.
@@ -260,11 +260,11 @@ class PropositionalBehaviorAutomaton(nx.DiGraph):
 		for n in self.states: self.states[n]["tokens"] = []
 		return
 
-	def resetTokens(self, iGraph: BehaviorIGraph) -> None:
+	def resetTokens(self, nodes: Any) -> None:
 		Ros.Log(f"Resetting tokens of {self.name}.")
 		self.__removeAllTokens()
 		self.__tokenCounter = 0
-		for nodeId in iGraph.nodes:
+		for nodeId in nodes:
 			if cast(NodeId, nodeId).regionId.startswith("https://rezateshnizi.com/tower_bridge/defintion/av"): continue
 			token = self.__createToken([nodeId])
 			self.states[self.__start]["tokens"].append(token)
@@ -314,4 +314,4 @@ class PropositionalBehaviorAutomaton(nx.DiGraph):
 		# Ros.Log(f"Dot data sent for {self.name}.")
 		return
 
-PropositionalBA: TypeAlias = PropositionalBehaviorAutomaton
+CrappyBA: TypeAlias = CrappyBehaviorAutomaton

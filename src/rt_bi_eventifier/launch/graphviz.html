@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <script src="https://unpkg.com/eventemitter3@latest/dist/eventemitter3.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/roslib@1/build/roslib.min.js"></script>
+  <style>tr { border-top: 1px solid #000; border-bottom: 1px solid #000; border-collapse: collapse; }</style>
+
+  <script>
+    // Connecting to ROS
+    // -----------------
+    var ros = new ROSLIB.Ros();
+
+    // If there is an error on the backend, an 'error' emit will be emitted.
+    ros.on('error', function (error) {
+      console.error("Socket Error\n" + error);
+      document.getElementById('connected').style.display = 'none';
+      document.getElementById('error').style.display = 'inline';
+    });
+
+    // Find out exactly when we made a connection.
+    ros.on('connection', function () {
+      console.log('Connected!');
+     document.getElementById('connecting').style.display = 'none';
+      document.getElementById('error').style.display = 'none';
+      document.getElementById('closed').style.display = 'none';
+      document.getElementById('connected').style.display = 'inline';
+    });
+
+    ros.on('close', function () {
+      console.log('Disconnected!');
+      document.getElementById('connecting').style.display = 'none';
+      document.getElementById('connected').style.display = 'none';
+      document.getElementById('closed').style.display = 'inline';
+    });
+
+    // Subscribing to a Topic
+    // ----------------------
+
+    // Like when publishing a topic, we first create a Topic object with details of the topic's name
+    // and message type. Note that we can call publish or subscribe on the same topic object.
+    var listener = new ROSLIB.Topic({
+      ros: ros,
+      name: "/rt_bi_behavior/dot_renderer",
+      messageType: "std_msgs/String",
+    });
+
+    // Then we add a callback to be called every time a message is published on this topic.
+    listener.subscribe(function (msg) {
+      console.log('DOT DATA ARRIVED.');
+      data = JSON.parse(msg.data);
+      document.getElementById("ba-name").innerHTML = data.name;
+      document.getElementById("dot-graph").innerHTML = data.svg;
+      var tbody = document.getElementById("state-tokens");
+      tbody.innerHTML = ""
+      Object.keys(data.tokens).forEach(function(stateName) {
+        data.tokens[stateName].forEach(function(tokenObj) {
+          var row = tbody.insertRow()
+          row.insertCell(0).innerHTML = stateName
+          row.insertCell(1).innerHTML = tokenObj["id"]
+          row.insertCell(2).innerHTML = tokenObj["iGraphNode"]
+        });
+      });
+    });
+
+    // Create a connection to the rosbridge WebSocket server.
+    ros.connect('ws://192.168.1.169:9090');
+  </script>
+</head>
+
+<body>
+  <div id="statusIndicator">
+    ROS Bridge Connection State:
+    <p id="connecting" style="color:#DD8800; display:inline">
+      Connecting...
+    </p>
+    <p id="connected" style="color:#00DD00; display:none">
+      Connected.
+    </p>
+    <p id="error" style="color:#FF0000; display:none">
+      Error!
+    </p>
+    <p id="closed" style="display:none">
+      Closed.
+    </p>
+  </div>
+  <h1>Behavior Automaton: <span id="ba-name"></span></h1>
+  <div id="dot-graph" style="text-align: center;">
+    <h2>SVG</h2>
+  </div>
+  <table>
+    <thead><tr><th>State</th><th>Token</th><th>NodeId</th></tr></thead>
+    <tbody id="state-tokens"></tbody>
+  </table>
+</body>
+
+</html>
