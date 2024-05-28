@@ -42,4 +42,4 @@ class DynamicPolygon(Polygon):
 	def envelopeColor(self) -> RGBA:
 		"""The color used to render the boundary of this polygon."""
 		if self.isAccessible: return super().envelopeColor
-		return ColorNames.RED
+		return ColorNames.GREY

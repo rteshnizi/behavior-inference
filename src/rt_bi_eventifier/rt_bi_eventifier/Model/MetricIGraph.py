@@ -112,7 +112,8 @@ class MetricIGraph(NxUtils.Graph[GraphPolygon]):
 		for id_ in nodePositions:
 			poly = self.getContent(id_, "polygon")
 			color = poly.envelopeColor
-			zOffset = self.__getNodeRenderZOffset(poly.type)
+			# zOffset = self.__getNodeRenderZOffset(poly.type)
+			zOffset = 0
 			z = nodePositions[id_][2] + zOffset
 			coords = (nodePositions[id_][0], nodePositions[id_][1], z)
 			marker = RViz.createSphere(id_, center=coords, radius=self.__RENDER_RADIUS, color=color)
@@ -139,10 +140,11 @@ class MetricIGraph(NxUtils.Graph[GraphPolygon]):
 			to = cast(NxUtils.Id, to)
 			if frm == to: continue
 			frmPoly = self.getContent(frm, "polygon")
-			zOffset = self.__getNodeRenderZOffset(frmPoly.type)
+			# zOffset = self.__getNodeRenderZOffset(frmPoly.type)
+			zOffset = 0
 			frmCoords = (nodePositions[frm][0], nodePositions[frm][1], nodePositions[frm][2] + zOffset)
 			toPoly = self.getContent(to, "polygon")
-			zOffset = self.__getNodeRenderZOffset(toPoly.type)
+			# zOffset = self.__getNodeRenderZOffset(toPoly.type)
 			toCoords = (nodePositions[to][0], nodePositions[to][1], nodePositions[to][2] + zOffset)
 			edgeData = outEdgeView[frm, to]
 			color = self.__getEdgeRenderColor(frmPoly, toPoly, "isTemporal" in edgeData and edgeData["isTemporal"])

@@ -42,7 +42,7 @@ def generate_launch_description():
 			name="rviz2_str", # cspell: disable-line
 			arguments=[
 				"-d",
-				[os.path.join(shareDir, "config", "rviz.igr.rviz")], # cspell: disable-line
+				[os.path.join(shareDir, "config", "rviz.igr.z.rviz")], # cspell: disable-line
 				"--ros-args",
 				"--log-level",
 				"warn",
