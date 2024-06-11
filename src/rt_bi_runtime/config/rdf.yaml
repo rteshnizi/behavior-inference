@@ -1,7 +1,7 @@
 rt_bi_runtime:
   dd_rdf_1:
     ros__parameters:
-      fuseki_server: "http://192.168.1.164:8090"
+      fuseki_server: "http://10.0.0.130:8090"
       rdf_store: "rt-bi-3"
       rdf_dir: "rdf" # Don't forget to add the resource directories to setup.py
       sparql_dir: "sparql" # Don't forget to add the resource directories to setup.py
