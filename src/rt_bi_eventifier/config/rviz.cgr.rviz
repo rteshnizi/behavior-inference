@@ -36,7 +36,7 @@ Visualization Manager:
       Enabled: true
       Name: MarkerArray
       Namespaces:
-        REZA_TESHNIZI_NS: true
+        {}
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -121,5 +121,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 1080
-  X: 7
-  Y: 541
+  X: 3
+  Y: 772
