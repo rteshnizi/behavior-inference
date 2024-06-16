@@ -1,3 +1,7 @@
+import cProfile
+import datetime
+from pathlib import Path
+
 import rclpy
 from rclpy.logging import LoggingSeverity
 from rclpy.node import Publisher
@@ -41,10 +45,10 @@ class Eventifier(ColdStartable, RegionsSubscriber):
 		return
 
 	def __publishBaEvent(self, iGraph: MetricIGraph, isomorphic: bool = False) -> None:
-		if isomorphic: pass # Tell BA to update their token names
+		if isomorphic: return # Tell BA to update their token names
 		msg = Msgs.RtBi.IGraph()
 		msg.adjacency_json = iGraph.asStr()
-		self.__iGraphPublisher.publish(msg)
+		Ros.Publish(self.__iGraphPublisher, msg)
 		return
 
 	def __onUpdate(self, polygon: MapPolygon | SensingPolygon) -> None:
@@ -87,9 +91,18 @@ class Eventifier(ColdStartable, RegionsSubscriber):
 def main(args=None) -> None:
 	rclpy.init(args=args)
 	node = Eventifier()
-	rclpy.spin(node)
+	try:
+		date = datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
+		outputFile = f"/home/reza/git/behavior-inference/profiler/{date}.prof"
+		Path(outputFile).parent.mkdir(parents=True, exist_ok=True)
+
+		cProfile.runctx("rclpy.spin(node)",globals(), locals(), outputFile)
+	except KeyboardInterrupt as e:
+		pass
+	except Exception as e:
+		raise e
 	node.destroy_node()
-	rclpy.shutdown()
+	# rclpy.shutdown()
 	return
 
 if __name__ == "__main__":
