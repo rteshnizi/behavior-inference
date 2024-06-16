@@ -156,10 +156,15 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 
 def main(args=None):
 	rclpy.init(args=args)
-	ddNode = RdfStoreNode()
-	rclpy.spin(ddNode)
-	ddNode.destroy_node()
-	rclpy.shutdown()
+	node = RdfStoreNode()
+	try:
+		rclpy.spin(node)
+	except KeyboardInterrupt as e:
+		pass
+	except Exception as e:
+		raise e
+	node.destroy_node()
+	# rclpy.shutdown()
 	return
 
 if __name__ == "__main__":

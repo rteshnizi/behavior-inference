@@ -80,10 +80,15 @@ class ColdStartManager(RtBiNode):
 
 def main(args=None):
 	rclpy.init(args=args)
-	mgr = ColdStartManager()
-	rclpy.spin(mgr)
-	mgr.destroy_node()
-	rclpy.shutdown()
+	node = ColdStartManager()
+	try:
+		rclpy.spin(node)
+	except KeyboardInterrupt as e:
+		pass
+	except Exception as e:
+		raise e
+	node.destroy_node()
+	# rclpy.shutdown()
 	return
 
 if __name__ == "__main__":

@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
+from typing import final
 
 from rclpy.logging import LoggingSeverity
 from rclpy.node import Node
 
-from rt_bi_commons.Utils.Ros import SetLogger
+from rt_bi_commons.Utils import Ros
 
 
 class RtBiNode(Node, ABC):
@@ -11,7 +12,7 @@ class RtBiNode(Node, ABC):
 		newKw = { "node_name": "node_base", **kwArgs}
 		super().__init__(**newKw)
 		self.__defaultLoggingSeverity: LoggingSeverity = loggingSeverity
-		SetLogger(self.get_logger(), self.__defaultLoggingSeverity)
+		Ros.SetLogger(self, self.get_logger(), self.__defaultLoggingSeverity)
 		self.declare_parameter("render", False)
 		self.shouldRender: bool = self.get_parameter("render").get_parameter_value().bool_value
 		self.log("%s is initializing." % self.get_fully_qualified_name())
@@ -38,6 +39,11 @@ class RtBiNode(Node, ABC):
 	def parseParameters(self) -> None:
 		self.log(f"{self.parseParameters.__name__}() has no implementation for {self.get_fully_qualified_name()}")
 		return
+
+	@final
+	def destroy_node(self) -> None:
+		Ros.LogMessageStats()
+		return super().destroy_node()
 
 	@abstractmethod
 	def render(self) -> None:

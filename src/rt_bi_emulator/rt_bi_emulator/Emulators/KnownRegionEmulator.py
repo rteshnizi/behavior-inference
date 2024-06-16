@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.logging import LoggingSeverity
 
+from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Msgs import Msgs
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_core.Spatial.AffinePolygon import AffinePolygon
@@ -18,16 +19,21 @@ class KnownRegionEmulator(AffineRegionEmulator):
 		timeNanoSecs = Msgs.toNanoSecs(self.get_clock().now())
 		arr = Msgs.RtBi.RegularSetArray()
 		arr.sets = [self.asRegularSpaceMsg(timeNanoSecs)]
-		self.__publisher.publish(arr)
+		Ros.Publish(self.__publisher, arr)
 		return
 
 
 def main(args=None):
 	rclpy.init(args=args)
 	node = KnownRegionEmulator()
-	rclpy.spin(node)
+	try:
+		rclpy.spin(node)
+	except KeyboardInterrupt as e:
+		pass
+	except Exception as e:
+		raise e
 	node.destroy_node()
-	rclpy.shutdown()
+	# rclpy.shutdown()
 	return
 
 if __name__ == "__main__":

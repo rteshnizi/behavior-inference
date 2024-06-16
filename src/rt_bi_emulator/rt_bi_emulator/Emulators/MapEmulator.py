@@ -173,9 +173,14 @@ class MapEmulator(ColdStartable):
 def main(args=None):
 	rclpy.init(args=args)
 	node = MapEmulator()
-	rclpy.spin(node)
+	try:
+		rclpy.spin(node)
+	except KeyboardInterrupt as e:
+		pass
+	except Exception as e:
+		raise e
 	node.destroy_node()
-	rclpy.shutdown()
+	# rclpy.shutdown()
 	return
 
 if __name__ == "__main__":

@@ -50,7 +50,7 @@ class SensorEmulator(AffineRegionEmulator[SensingPolygon], RegionsSubscriber):
 			if exited: self.__observedTargets.pop(targetId, None)
 		arr = Msgs.RtBi.RegularSetArray()
 		arr.sets = [updateMsg]
-		self.__locationPublisher.publish(arr)
+		Ros.Publish(self.__locationPublisher, arr)
 		return
 
 	def __publishUpdateNow(self) -> None:
@@ -81,10 +81,15 @@ class SensorEmulator(AffineRegionEmulator[SensingPolygon], RegionsSubscriber):
 
 def main(args=None):
 	rclpy.init(args=args)
-	avNode = SensorEmulator()
-	rclpy.spin(avNode)
-	avNode.destroy_node()
-	rclpy.shutdown()
+	node = SensorEmulator()
+	try:
+		rclpy.spin(node)
+	except KeyboardInterrupt as e:
+		pass
+	except Exception as e:
+		raise e
+	node.destroy_node()
+	# rclpy.shutdown()
 	return
 
 if __name__ == "__main__":
