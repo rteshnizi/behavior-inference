@@ -9,6 +9,7 @@ from rclpy.parameter import Parameter
 from rt_bi_commons.Base.RtBiNode import RtBiNode
 from rt_bi_commons.Shared.Pose import Coords
 from rt_bi_commons.Shared.Predicates import Predicates
+from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Msgs import Msgs
 from rt_bi_core.Spatial import PolygonFactory, PolygonFactoryKeys
 from rt_bi_core.Spatial.AffinePolygon import AffinePolygon
@@ -83,6 +84,7 @@ class AffineRegionEmulator(Generic[_T_Poly], RtBiNode, ABC):
 		if ((timeNanoSecs - self.__initTimeNs) / AffineRegionEmulator.NANO_CONVERSION_CONSTANT) > self.__cutOffTimeSecs:
 			timeNanoSecs = int(self.__cutOffTimeSecs * AffineRegionEmulator.NANO_CONVERSION_CONSTANT)
 		if timeNanoSecs in self.__ctPoly: return self.__ctPoly[timeNanoSecs]
+		Ros.Logger().warn(f"{self.get_fully_qualified_name()} stream ended.")
 		return self.__ctPoly.configs[-1]
 
 	def asRegularSpaceMsg(self, timeNanoSecs: int) -> Msgs.RtBi.RegularSet:
