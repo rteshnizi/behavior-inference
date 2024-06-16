@@ -237,6 +237,7 @@ class Polygon(ABC):
 	def createMarkers(self, durationNs: int = DEFAULT_RENDER_DURATION_NS, renderText: bool = False, envelopeColor: RGBA | None = None, stamped: bool = True) -> list[RViz.Msgs.Marker]:
 		"""Creates all relevant markers for a given polygon."""
 		msgs = []
+		if Ros.IsProfiling(): return msgs
 		coords = GeometryLib.getGeometryCoords(self.interior)
 		if len(coords) == 0:
 			Ros.Logger().error(f"Empty polygon detected in createMarkers(): {self.shortName}")

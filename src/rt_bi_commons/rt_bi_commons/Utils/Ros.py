@@ -1,7 +1,11 @@
+"""This module must not import any `rt_bi` modules."""
+import csv
+import datetime
 import logging
 from functools import partial
 from math import inf, isnan, nan
-from typing import AbstractSet, Callable, Iterable, Sequence, TypeAlias, TypeVar, cast
+from pathlib import Path
+from typing import AbstractSet, Any, Callable, Iterable, Sequence, TypeAlias, TypeVar, cast
 
 import rclpy
 from rclpy.clock import Time
@@ -13,15 +17,25 @@ __Topic = TypeVar("__Topic")
 
 NAMESPACE = "REZA_TESHNIZI_NS"
 __LOGGER: RcutilsLogger | None = None
+__DEFAULT_NODE: Node
+__IS_PROFILING: bool = False
 logging.basicConfig(format="[+][%(levelname)s]: %(message)s", force=True)
 __rtBiLog: Callable[[str], bool] = lambda m: False
 
 Array: TypeAlias = Sequence[__Topic] | AbstractSet[__Topic] | list[__Topic]
 
-def SetLogger(logger: RcutilsLogger, defaultSeverity: LoggingSeverity) -> None:
+def IsProfiling() -> bool:
+	global __IS_PROFILING
+	return __IS_PROFILING
+
+def SetLogger(node: Node, logger: RcutilsLogger, defaultSeverity: LoggingSeverity, isProfiling=False) -> None:
 	global __LOGGER
+	global __DEFAULT_NODE
+	global __IS_PROFILING
 	global __rtBiLog
 	__LOGGER = logger
+	__DEFAULT_NODE = node
+	__IS_PROFILING = isProfiling
 	__rtBiLog = partial(__LOGGER.log, severity=defaultSeverity)
 	return
 
@@ -52,6 +66,8 @@ def Logger() -> RcutilsLogger | logging.Logger:
 	return __LOGGER
 
 def Log(msg: str, l: Iterable | None = None, indentStr = "\t\t", severity: LoggingSeverity | None = None) -> bool:
+	global __IS_PROFILING
+	if __IS_PROFILING: return True
 	if l is not None:
 		sep = f"\n{indentStr}"
 		if isinstance(l, str): l = [l]
@@ -236,4 +252,35 @@ def WaitForSubscriber(node: Node, topic: str, subscriberFullName: str) -> None:
 def WaitForServiceToStart(node: Node, client: Client) -> None:
 	node.log(f"Client {node.get_name()} is waiting for service {client.srv_name}.") # pyright: ignore[reportAttributeAccessIssue]
 	while not client.wait_for_service(): pass
+	return
+
+MessageStats: dict[str, list[tuple[int, int]]] = {}
+"""`topic`: [(`timeNS`, `count`)]"""
+
+def Publish(publisher: Publisher, msg: Any) -> None:
+	if publisher.topic not in MessageStats:
+		MessageStats[publisher.topic] = []
+		counter = 1
+	else:
+		counter = MessageStats[publisher.topic][-1][1] + 1
+	global __DEFAULT_NODE
+	MessageStats[publisher.topic].append((Now(__DEFAULT_NODE).nanoseconds, counter))
+	publisher.publish(msg)
+	return
+
+def LogMessageStats() -> None:
+	if len(MessageStats) == 0: return
+	now = datetime.datetime.now()
+	date = now.strftime("%Y-%m-%d--%H-%M-%S")
+	dir = f"/home/reza/git/behavior-inference/stats/{date}"
+	for topic in MessageStats:
+		if len(MessageStats[topic]) == 0: continue
+		fileName = f"{topic}.csv"
+		filePath = Path(f"{dir}{fileName}").absolute()
+		filePath.parent.mkdir(parents=True, exist_ok=True)
+		# Write the dictionary to a CSV file
+		with open(filePath, mode='w', newline='') as file:
+			writer = csv.writer(file)
+			for stat in MessageStats[topic]:
+				writer.writerow(stat)
 	return

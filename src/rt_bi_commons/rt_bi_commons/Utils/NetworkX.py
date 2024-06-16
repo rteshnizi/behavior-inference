@@ -167,9 +167,10 @@ class NxUtils:
 
 		@final
 		def render(self) -> None:
+			if Ros.IsProfiling(): return
 			if self.rVizPublisher is None: return
 			markerArray = RViz.Msgs.MarkerArray()
 			Ros.AppendMessage(markerArray.markers, RViz.removeAllMarkers())
 			Ros.ConcatMessageArray(markerArray.markers, self.__createMarkers())
-			self.rVizPublisher.publish(markerArray)
+			Ros.Publish(self.rVizPublisher, markerArray)
 			return
