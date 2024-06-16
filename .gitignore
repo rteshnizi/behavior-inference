@@ -215,8 +215,10 @@ dmypy.json
 cython_debug/
 
 ##########################################
-# SA SPECIFIC CHANGES ####################
+# RT_BI SPECIFIC CHANGES ####################
 ##########################################
 install/
 log/
 .vscode/colcon*.env
+stats/
+profiler/
