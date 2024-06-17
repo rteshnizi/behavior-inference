@@ -3,22 +3,22 @@ from typing import TypedDict
 from rt_bi_commons.Shared.NodeId import NodeId
 
 
-class StateTokenWithHistory(TypedDict):
+class Token(TypedDict):
 	id: str
 	path: list[NodeId]
 
-class StateToken(TypedDict):
+class TokenWithoutHistory(TypedDict):
 	id: str
 	iGraphNode: NodeId
 
-class State(TypedDict):
+class StateWithoutHistory(TypedDict):
 	label: str
-	tokens: list[StateToken]
+	tokens: list[TokenWithoutHistory]
 	style: str
 	fillcolor: str
 
-class State2(TypedDict):
+class State(TypedDict):
 	label: str
-	tokens: list[StateTokenWithHistory]
+	tokens: list[Token]
 	style: str
 	fillcolor: str

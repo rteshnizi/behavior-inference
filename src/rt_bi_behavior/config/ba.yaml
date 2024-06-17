@@ -21,7 +21,7 @@ rt_bi_behavior:
       transitions_predicate:
         - 'name == "office" AND name == "morning"'
         - 'material.name == "street" OR material.name == "bridge"'
-        - 'name == "bridge-is-moving" AND name == "storage"'
+        - 'name == "storage"'
       transitions_to:
         - "Q1"
         - "Q2"

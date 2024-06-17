@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Final, Sequence
 
+from networkx import relabel_nodes
+
 from rt_bi_commons.Shared.Color import ColorNames
 from rt_bi_commons.Shared.NodeId import NodeId
 from rt_bi_commons.Utils import Ros
@@ -227,9 +229,12 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 		assert value >= 0, f"hIndex must be non-negative. given value = {value}"
 		Ros.Log(f"Setting hIndex of {repr(self)} to {value}")
 		self.__hIndex = value
+		relabeledNodes = {}
 		for id_ in self.nodes:
 			poly = self.getContent(id_, "polygon")
 			poly.id = poly.id.copy(hIndex=value)
+			relabeledNodes[id_] = poly.id
+		relabel_nodes(self, relabeledNodes, copy=False)
 		for poly in self.map + self.sensors + self.shadows + self.antiShadows:
 			poly.id = poly.id.copy(hIndex=value)
 

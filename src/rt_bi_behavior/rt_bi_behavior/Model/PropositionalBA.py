@@ -7,7 +7,7 @@ import networkx as nx
 from networkx.drawing import nx_agraph
 
 from rt_bi_behavior.Model.BehaviorIGraph import BehaviorIGraph
-from rt_bi_behavior.Model.State import State2, StateTokenWithHistory
+from rt_bi_behavior.Model.State import State, Token
 from rt_bi_behavior.Model.Transition import Transition, TransitionStatement
 from rt_bi_commons.Shared.NodeId import NodeId
 from rt_bi_commons.Shared.Predicates import Predicates
@@ -56,9 +56,9 @@ class PropositionalBehaviorAutomaton(nx.DiGraph):
 		return list(d.keys())
 
 	@property
-	def states(self) -> dict[str, State2]:
+	def states(self) -> dict[str, State]:
 		# This is the effective structure of the NodeView class here.
-		return cast(dict[str, State2], self.nodes)
+		return cast(dict[str, State], self.nodes)
 
 	def __getitem__(self, state: str) -> dict[str, Transition]:
 		# This is the effective structure of the AtlasView class here.
@@ -117,8 +117,8 @@ class PropositionalBehaviorAutomaton(nx.DiGraph):
 				self.__addTransition(src, statementSyntax, dst)
 		return
 
-	def __createToken(self, path: list[NodeId]) -> StateTokenWithHistory:
-		token = StateTokenWithHistory(id=f"{self.__tokenCounter}", path=path)
+	def __createToken(self, path: list[NodeId]) -> Token:
+		token = Token(id=f"{self.__tokenCounter}", path=path)
 		self.__tokenCounter += 1
 		return token
 
@@ -128,7 +128,7 @@ class PropositionalBehaviorAutomaton(nx.DiGraph):
 		assert extension[0] == path[-1]
 		return path + extension[1:]
 
-	def __addToken(self, state: str, newToken: StateTokenWithHistory) -> None:
+	def __addToken(self, state: str, newToken: Token) -> None:
 		for token in self.states[state]["tokens"]:
 			if token["path"][-1] == newToken["path"][-1]:
 				return
@@ -268,6 +268,16 @@ class PropositionalBehaviorAutomaton(nx.DiGraph):
 			self.states[self.__start]["tokens"].append(token)
 		self.__updateStateLabel(self.__start)
 		self.__initializedTokens = True
+		return
+
+	def updateTokensWithIsomorphism(self, isomorphism: dict[NodeId, NodeId]) -> None:
+		# Ros.Log("ISOMORPHISM", [(i, isomorphism[i]) for i in isomorphism], severity=Ros.LoggingSeverity.WARN)
+		for oldNode in isomorphism:
+			for state in self.states:
+				# Ros.Log(f"State {state} TOKENS", self.states[state]["tokens"], severity=Ros.LoggingSeverity.WARN)
+				for token in self.states[state]["tokens"]:
+					if token["path"][-1] == oldNode:
+						token["path"][-1] = isomorphism[oldNode]
 		return
 
 	def initFlask(self, rosNode: Ros.Node) -> None:

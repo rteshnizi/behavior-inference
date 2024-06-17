@@ -7,7 +7,7 @@ import networkx as nx
 from networkx.drawing import nx_agraph
 
 from rt_bi_behavior.Model.BehaviorIGraph import BehaviorIGraph
-from rt_bi_behavior.Model.State import State, StateToken
+from rt_bi_behavior.Model.State import StateWithoutHistory, TokenWithoutHistory
 from rt_bi_behavior.Model.Transition import Transition, TransitionStatement
 from rt_bi_commons.Shared.NodeId import NodeId
 from rt_bi_commons.Shared.Predicates import Predicates
@@ -44,9 +44,9 @@ class BehaviorAutomaton(nx.DiGraph):
 		return
 
 	@property
-	def states(self) -> dict[str, State]:
+	def states(self) -> dict[str, StateWithoutHistory]:
 		# This is the effective structure of the NodeView class here.
-		return cast(dict[str, State], self.nodes)
+		return cast(dict[str, StateWithoutHistory], self.nodes)
 
 	def __getitem__(self, state: str) -> dict[str, Transition]:
 		# This is the effective structure of the AtlasView class here.
@@ -110,14 +110,14 @@ class BehaviorAutomaton(nx.DiGraph):
 				self.__addTransition(src, statementSyntax, dst)
 		return
 
-	def __createToken(self, iGraphNodeId: str | NodeId) -> StateToken:
+	def __createToken(self, iGraphNodeId: str | NodeId) -> TokenWithoutHistory:
 		nodeId = NodeId.fromJson(iGraphNodeId) if isinstance(iGraphNodeId, str) else iGraphNodeId
-		token = StateToken(id=f"{self.__tokenCounter}", iGraphNode=nodeId)
+		token = TokenWithoutHistory(id=f"{self.__tokenCounter}", iGraphNode=nodeId)
 		self.__tokenCounter += 1
 		# Ros.Log(f"New Token {token}")
 		return token
 
-	def __addToken(self, state: str, iGraphNodeId: NodeId) -> StateToken:
+	def __addToken(self, state: str, iGraphNodeId: NodeId) -> TokenWithoutHistory:
 		for token in self.states[state]["tokens"]:
 			if token["iGraphNode"].copy(hIndex=-1) == iGraphNodeId.copy(hIndex=-1):
 				# Tokens must move forward in time. Because time is strictly increasing.

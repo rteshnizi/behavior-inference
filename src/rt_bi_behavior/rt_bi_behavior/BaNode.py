@@ -9,6 +9,7 @@ from rt_bi_behavior.Model.BehaviorIGraph import BehaviorIGraph
 from rt_bi_behavior.Model.PropositionalBA import PropositionalBA
 from rt_bi_commons.Base.ColdStartableNode import ColdStartable, ColdStartPayload
 from rt_bi_commons.Base.RtBiNode import RtBiNode
+from rt_bi_commons.Shared.NodeId import NodeId
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Msgs import Msgs
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
@@ -21,7 +22,7 @@ class BaNode(ColdStartable):
 	"""
 	def __init__(self, **kwArgs) -> None:
 		""" Create a Behavior Automaton node. """
-		newKw = { "node_name": "ba", "loggingSeverity": Ros.LoggingSeverity.INFO, **kwArgs}
+		newKw = { "node_name": "ba", "loggingSeverity": Ros.LoggingSeverity.WARN, **kwArgs}
 		RtBiNode.__init__(self, **newKw)
 		ColdStartable.__init__(self)
 		self.declareParameters()
@@ -46,7 +47,19 @@ class BaNode(ColdStartable):
 		)
 		self.waitForColdStartPermission()
 		RtBiInterfaces.subscribeToIGraph(self, self.__onEvent)
+		RtBiInterfaces.subscribeToIsomorphism(self, self.__onIsomorphism)
 		RtBiInterfaces.subscribeToPredicates(self, self.__onPredicates)
+		return
+
+	def __onIsomorphism(self, msg: Msgs.RtBi.Isomorphism) -> None:
+		# TODO: Report Isomorphism
+		rawIsomorphism = loads(msg.isomorphism_json)
+		isomorphism: dict[NodeId, NodeId] = {}
+		for fromIdDictStr in rawIsomorphism:
+			fromId = NodeId.fromJson(fromIdDictStr)
+			toId = NodeId.fromJson(rawIsomorphism[fromIdDictStr])
+			isomorphism[fromId] = toId
+		self.__ba.updateTokensWithIsomorphism(isomorphism)
 		return
 
 	def __onEvent(self, msg: Msgs.RtBi.IGraph) -> None:

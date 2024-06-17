@@ -18,6 +18,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/DataRefRequest.msg"
   "msg/DataRefResponse.msg"
   "msg/IGraph.msg"
+  "msg/Isomorphism.msg"
   "msg/Polygon.msg"
   "msg/Predicate.msg"
   "msg/RegularSet.msg"

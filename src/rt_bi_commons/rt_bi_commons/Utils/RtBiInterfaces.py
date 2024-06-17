@@ -36,7 +36,8 @@ class RtBiInterfaces:
 		RT_BI_EMULATOR_MAP = "/__rt_bi_runtime/map"
 		RT_BI_EMULATOR_SENSOR = "/__rt_bi_emulator/sensor"
 		RT_BI_EMULATOR_TARGET = "/__rt_bi_emulator/target"
-		RT_BI_EVENTIFIER_IGRAPH = "/__rt_bi_eventifier/igraph"
+		RT_BI_EVENTIFIER_IGRAPH = "/__rt_bi_eventifier/b_igraph"
+		RT_BI_EVENTIFIER_ISOMORPHISM = "/__rt_bi_eventifier/isomorphism"
 		RT_BI_RUNTIME_COLD_START = "/__rt_bi_runtime/cold_start"
 		RT_BI_RUNTIME_PREDICATES = "/__rt_bi_runtime/predicates"
 
@@ -140,4 +141,14 @@ class RtBiInterfaces:
 	@staticmethod
 	def subscribeToIGraph(node: RtBiNode, callbackFunc: Callable[[Msgs.RtBi.IGraph], None]) -> None:
 		Ros.CreateSubscriber(node, Msgs.RtBi.IGraph, RtBiInterfaces.TopicNames.RT_BI_EVENTIFIER_IGRAPH.value, callbackFunc)
+		return
+
+	@staticmethod
+	def createIsomorphismPublisher(node: RtBiNode) -> Publisher:
+		(publisher, _) = Ros.CreatePublisher(node, Msgs.RtBi.Isomorphism, RtBiInterfaces.TopicNames.RT_BI_EVENTIFIER_ISOMORPHISM.value)
+		return publisher
+
+	@staticmethod
+	def subscribeToIsomorphism(node: RtBiNode, callbackFunc: Callable[[Msgs.RtBi.Isomorphism], None]) -> None:
+		Ros.CreateSubscriber(node, Msgs.RtBi.Isomorphism, RtBiInterfaces.TopicNames.RT_BI_EVENTIFIER_ISOMORPHISM.value, callbackFunc)
 		return

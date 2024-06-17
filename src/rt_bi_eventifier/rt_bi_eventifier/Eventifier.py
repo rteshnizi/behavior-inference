@@ -1,3 +1,5 @@
+from json import dumps
+
 from rclpy.parameter import Parameter
 
 from rt_bi_commons.Base.ColdStartableNode import ColdStartable, ColdStartPayload
@@ -26,6 +28,7 @@ class Eventifier(ColdStartable, RegionsSubscriber):
 			modulePublishers[module] = publisher
 
 		self.__iGraphPublisher = RtBiInterfaces.createIGraphPublisher(self)
+		self.__isoPublisher = RtBiInterfaces.createIsomorphismPublisher(self)
 		self.__iGraph: MetricIGraph = MetricIGraph(modulePublishers)
 		RtBiInterfaces.subscribeToProjectiveMap(self, self.enqueueUpdate)
 		self.waitForColdStartPermission()
@@ -37,16 +40,20 @@ class Eventifier(ColdStartable, RegionsSubscriber):
 		self.publishColdStartDone()
 		return
 
-	def __publishBaEvent(self, iGraph: MetricIGraph, isomorphic: bool = False) -> None:
-		if isomorphic: return # Tell BA to update their token names
-		msg = Msgs.RtBi.IGraph()
-		msg.adjacency_json = iGraph.asStr()
-		Ros.Publish(self.__iGraphPublisher, msg)
+	def __publishBaMsg(self, iGraph: MetricIGraph, isomorphism: dict[str, str]) -> None:
+		if len(isomorphism) > 0:
+			msg = Msgs.RtBi.Isomorphism()
+			msg.isomorphism_json = dumps(isomorphism)
+			Ros.Publish(self.__isoPublisher, msg)
+		else:
+			msg = Msgs.RtBi.IGraph()
+			msg.adjacency_json = iGraph.asStr()
+			Ros.Publish(self.__iGraphPublisher, msg)
 		return
 
 	def __onUpdate(self, polygon: MapPolygon | SensingPolygon) -> None:
 		self.log(f"Update received for polygon of type {polygon.type.name}.")
-		self.__iGraph.updatePolygon(polygon, self.__publishBaEvent)
+		self.__iGraph.updatePolygon(polygon, self.__publishBaMsg)
 		if self.shouldRender:
 			self.__iGraph.renderLatestCGraph()
 			self.render()

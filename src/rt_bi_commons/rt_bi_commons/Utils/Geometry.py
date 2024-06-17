@@ -313,6 +313,20 @@ class GeometryLib:
 			return type(o1)()
 
 	@staticmethod
+	def hausdorff(o1: Shapely.AnyObj, o2: Shapely.AnyObj) -> float:
+		if (not o1.is_valid) or (not o2.is_valid):
+			return inf
+		if o1.is_empty or o2.is_empty:
+			return inf
+		try:
+			o1 = Shapely.set_precision(o1, GeometryLib.EPSILON)
+			o2 = Shapely.set_precision(o2, GeometryLib.EPSILON)
+			return o1.hausdorff_distance(o2)
+		except Exception as e:
+			GeometryLib.__reportShapelyException(GeometryLib.distance.__name__, e, [o1, o2])
+			return inf
+
+	@staticmethod
 	def distance(o1: Shapely.AnyObj, o2: Shapely.AnyObj) -> float:
 		if (not o1.is_valid) or (not o2.is_valid):
 			return inf

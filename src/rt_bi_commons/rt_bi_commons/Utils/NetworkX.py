@@ -1,15 +1,16 @@
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass
-from json import dumps
-from typing import Callable
 
 import networkx as nx
-from typing_extensions import Any, Generic, Literal, LiteralString, Optional, Protocol, Sequence, TypeAlias, TypeVar, cast, final, overload
+from networkx.algorithms.isomorphism import DiGraphMatcher
+from networkx.algorithms.isomorphism.vf2pp import vf2pp_is_isomorphic
+from typing_extensions import Generic, Literal, LiteralString, Optional, Protocol, Sequence, TypeAlias, TypeVar, cast, final, overload
 
 from rt_bi_commons.Shared.NodeId import NodeId
 from rt_bi_commons.Shared.Pose import Coords
 from rt_bi_commons.Shared.Predicates import Predicates
 from rt_bi_commons.Utils import Ros
+from rt_bi_commons.Utils.Geometry import GeometryLib
 from rt_bi_commons.Utils.RViz import RViz
 
 
@@ -34,12 +35,12 @@ class NodeData(Generic[_Polygon]):
 	polygon: Optional[_Polygon] = None
 	predicates: Optional[Predicates] = None
 
-
 @dataclass(frozen=True)
 class EdgeData:
 	isTemporal: bool
 
 class NxUtils:
+	from networkx import Graph as NxBaseGraph
 	from networkx.classes.reportviews import OutEdgeView  # CSpell: ignore reportviews
 
 	GraphLayout2D: TypeAlias = dict[NodeId, tuple[float, float]]
@@ -51,6 +52,10 @@ class NxUtils:
 	EdgeData = EdgeData
 
 	class Graph(Generic[_Polygon], nx.DiGraph, ABC):
+		@classmethod
+		def isIsomorphic(cls, g1, g2) -> bool:
+			return vf2pp_is_isomorphic(g1, g2)
+
 		__RENDER_DELTA_X = 75
 		__RENDER_DELTA_Y = 90
 		__RENDER_DELTA_Z = 75
@@ -147,17 +152,6 @@ class NxUtils:
 		@abstractmethod
 		def createEdgeMarkers(self) -> list[RViz.Msgs.Marker]: ...
 
-		def asStr(self, nodeFilter: Callable[[NodeId], bool] | None = None, nodeMapping: dict = {}) -> str:
-			if nodeFilter is None: g = self
-			else: g = nx.subgraph_view(self, filter_node=nodeFilter)
-			jsonDict = nx.adjacency_data(g)
-			for node in jsonDict["nodes"]:
-				node = cast(dict[str, Any], node)
-				node["predicates"] = cast(_Polygon, node["polygon"]).predicates
-				node.pop("polygon")
-				node.pop("subset")
-			return dumps(jsonDict, default=vars)
-
 		@final
 		def __createMarkers(self) -> list[RViz.Msgs.Marker]:
 			markers = []
@@ -174,3 +168,19 @@ class NxUtils:
 			Ros.ConcatMessageArray(markerArray.markers, self.__createMarkers())
 			Ros.Publish(self.rVizPublisher, markerArray)
 			return
+
+	class GraphMatcher(DiGraphMatcher):
+		def __init__(self, G1: "NxUtils.Graph", G2: "NxUtils.Graph", metricDistanceLimit: int):
+			self.G1 = G1
+			self.G2 = G2
+			self.metricDistanceLimit = metricDistanceLimit
+			super().__init__(G1, G2)
+
+		def semantic_feasibility(self, G1_node: NodeId, G2_node: NodeId):
+			# if G1_node.regionId != G2_node.regionId: return False
+			if G1_node.hIndex != G2_node.hIndex: return False
+			g1Poly = self.G1.getContent(G1_node, "polygon")
+			g2Poly = self.G2.getContent(G2_node, "polygon")
+			d = GeometryLib.hausdorff(g1Poly.interior, g2Poly.interior)
+			if d > self.metricDistanceLimit: return False
+			return super().semantic_feasibility(G1_node, G2_node)
