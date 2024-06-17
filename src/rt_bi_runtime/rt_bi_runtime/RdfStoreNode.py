@@ -2,9 +2,7 @@ from json import dumps
 from pathlib import Path
 from typing import Any, Literal
 
-import rclpy
 from ament_index_python.packages import get_package_share_directory
-from rclpy.logging import LoggingSeverity
 
 from rt_bi_commons.Base.ColdStartableNode import ColdStartPayload
 from rt_bi_commons.Base.DataDictionaryNode import DataDictionaryNode
@@ -57,7 +55,7 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 			"transition_grammar_dir": StrParser[_Parameters](self, "transition_grammar_dir"),
 			"transition_grammar_file": StrParser[_Parameters](self, "transition_grammar_file"),
 		}
-		newKw = { "node_name": "dd_rdf", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
+		newKw = { "node_name": "dd_rdf", "loggingSeverity": Ros.LoggingSeverity.INFO, **kwArgs}
 		super().__init__(parsers, **newKw)
 		self.__baseDir = get_package_share_directory(package_name)
 		self.__httpInterface = FusekiInterface(self, self["fuseki_server"][0], self["rdf_store"][0])
@@ -154,18 +152,8 @@ class RdfStoreNode(DataDictionaryNode[_Parameters]):
 	def render(self) -> None:
 		return super().render()
 
-def main(args=None):
-	rclpy.init(args=args)
-	node = RdfStoreNode()
-	try:
-		rclpy.spin(node)
-	except KeyboardInterrupt as e:
-		pass
-	except Exception as e:
-		raise e
-	node.destroy_node()
-	# rclpy.shutdown()
-	return
+def main(args=None) -> None:
+	return RdfStoreNode.Main(args)
 
 if __name__ == "__main__":
 	main()

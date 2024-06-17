@@ -1,8 +1,5 @@
 from typing import Literal
 
-import rclpy
-from rclpy.logging import LoggingSeverity
-
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Geometry import GeometryLib
 from rt_bi_commons.Utils.Msgs import Msgs
@@ -16,7 +13,7 @@ from rt_bi_emulator.Emulators.AffineRegionEmulator import AffineRegionEmulator
 
 class SensorEmulator(AffineRegionEmulator[SensingPolygon], RegionsSubscriber):
 	def __init__(self):
-		newKw = { "node_name": "emulator_sensor", "loggingSeverity": LoggingSeverity.INFO }
+		newKw = { "node_name": "emulator_sensor", "loggingSeverity": Ros.LoggingSeverity.INFO }
 		super().__init__(SensingPolygon, **newKw)
 		self.__observedTargets: dict[str, Literal["entered", "exited", "stayed"]] = {}
 		(self.__locationPublisher, _) = RtBiInterfaces.createSensorPublisher(self, self.__publishUpdateNow, self.updateInterval)
@@ -79,18 +76,8 @@ class SensorEmulator(AffineRegionEmulator[SensingPolygon], RegionsSubscriber):
 	def createMarkers(self) -> list[RViz.Msgs.Marker]:
 		raise AssertionError("Emulators do not render")
 
-def main(args=None):
-	rclpy.init(args=args)
-	node = SensorEmulator()
-	try:
-		rclpy.spin(node)
-	except KeyboardInterrupt as e:
-		pass
-	except Exception as e:
-		raise e
-	node.destroy_node()
-	# rclpy.shutdown()
-	return
+def main(args=None) -> None:
+	return SensorEmulator.Main(args)
 
 if __name__ == "__main__":
 	main()

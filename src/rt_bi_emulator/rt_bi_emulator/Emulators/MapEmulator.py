@@ -1,6 +1,3 @@
-import rclpy
-from rclpy.logging import LoggingSeverity
-
 from rt_bi_commons.Base.ColdStartableNode import ColdStartable, ColdStartPayload
 from rt_bi_commons.Base.RtBiNode import RtBiNode
 from rt_bi_commons.Utils import Ros
@@ -17,7 +14,7 @@ class MapEmulator(ColdStartable):
 	* Information about dynamic regions are provided by :class:`KnownRegionEmulator` instances.
 	"""
 	def __init__(self) -> None:
-		newKw = { "node_name": "dynamic_map", "loggingSeverity": LoggingSeverity.INFO }
+		newKw = { "node_name": "dynamic_map", "loggingSeverity": Ros.LoggingSeverity.INFO }
 		RtBiNode.__init__(self, **newKw)
 		ColdStartable.__init__(self)
 		self.__timeOriginNanoSecs: int = -1
@@ -170,18 +167,8 @@ class MapEmulator(ColdStartable):
 	def render(self) -> None:
 		return
 
-def main(args=None):
-	rclpy.init(args=args)
-	node = MapEmulator()
-	try:
-		rclpy.spin(node)
-	except KeyboardInterrupt as e:
-		pass
-	except Exception as e:
-		raise e
-	node.destroy_node()
-	# rclpy.shutdown()
-	return
+def main(args=None) -> None:
+	return MapEmulator.Main(args)
 
 if __name__ == "__main__":
 	main()

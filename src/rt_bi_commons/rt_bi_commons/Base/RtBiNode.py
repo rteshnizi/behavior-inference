@@ -1,6 +1,10 @@
+import cProfile
+import datetime
 from abc import ABC, abstractmethod
-from typing import final
+from pathlib import Path
+from typing import TypeVar, final
 
+import rclpy
 from rclpy.logging import LoggingSeverity
 from rclpy.node import Node
 
@@ -15,6 +19,8 @@ class RtBiNode(Node, ABC):
 		Ros.SetLogger(self, self.get_logger(), self.__defaultLoggingSeverity)
 		self.declare_parameter("render", False)
 		self.shouldRender: bool = self.get_parameter("render").get_parameter_value().bool_value
+		self.declare_parameter("profile", False)
+		self.isProfiling: bool = self.get_parameter("profile").get_parameter_value().bool_value
 		self.log("%s is initializing." % self.get_fully_qualified_name())
 
 	def log(self, msg: str) -> bool:
@@ -41,6 +47,25 @@ class RtBiNode(Node, ABC):
 		return
 
 	@final
+	def spinNode(self) -> None:
+		try:
+			if self.isProfiling:
+				self.get_logger().warn(f"{self.get_fully_qualified_name()} is collecting profiling statistics.")
+				date = datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
+				outputFile = f"/home/reza/git/behavior-inference/profiler/{date}.prof"
+				Path(outputFile).parent.mkdir(parents=True, exist_ok=True)
+
+				cProfile.runctx("rclpy.spin(self)",globals(), locals(), outputFile)
+			else:
+				rclpy.spin(self)
+		except KeyboardInterrupt as e:
+			pass
+		except Exception as e:
+			raise e
+		return
+
+
+	@final
 	def destroy_node(self) -> None:
 		Ros.LogMessageStats()
 		return super().destroy_node()
@@ -48,4 +73,13 @@ class RtBiNode(Node, ABC):
 	@abstractmethod
 	def render(self) -> None:
 		self.log(f"{self.render.__name__}() has no implementation for {self.get_fully_qualified_name()}")
+		return
+
+	@classmethod
+	def Main(cls, args=None) -> None:
+		rclpy.init(args=args)
+		node = cls()
+		node.spinNode()
+		node.destroy_node()
+		# rclpy.shutdown()
 		return

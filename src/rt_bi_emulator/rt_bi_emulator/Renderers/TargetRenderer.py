@@ -1,5 +1,3 @@
-import rclpy
-
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_commons.Utils.RViz import RViz
@@ -32,18 +30,8 @@ class TargetRenderer(RegionsSubscriber):
 	def onSensorUpdated(self, _) -> None:
 		return
 
-def main(args=None):
-	rclpy.init(args=args)
-	node = TargetRenderer()
-	try:
-		rclpy.spin(node)
-	except KeyboardInterrupt as e:
-		pass
-	except Exception as e:
-		raise e
-	node.destroy_node()
-	# rclpy.shutdown()
-	return
+def main(args=None) -> None:
+	return TargetRenderer.Main(args)
 
 if __name__ == "__main__":
 	main()

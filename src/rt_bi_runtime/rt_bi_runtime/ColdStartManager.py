@@ -1,6 +1,3 @@
-import rclpy
-from rclpy.logging import LoggingSeverity
-
 from rt_bi_commons.Base.ColdStartableNode import ColdStartPayload
 from rt_bi_commons.Base.RtBiNode import RtBiNode
 from rt_bi_commons.Utils import Ros
@@ -10,7 +7,7 @@ from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 
 class ColdStartManager(RtBiNode):
 	def __init__(self, **kwArgs) -> None:
-		newKw = { "node_name": "cs_mgr", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
+		newKw = { "node_name": "cs_mgr", "loggingSeverity": Ros.LoggingSeverity.INFO, **kwArgs}
 		super().__init__(**newKw)
 		self.__awaitingColdStart: list[str] = [
 			# The order in this list is significant
@@ -78,18 +75,8 @@ class ColdStartManager(RtBiNode):
 	def render(self) -> None:
 		return super().render()
 
-def main(args=None):
-	rclpy.init(args=args)
-	node = ColdStartManager()
-	try:
-		rclpy.spin(node)
-	except KeyboardInterrupt as e:
-		pass
-	except Exception as e:
-		raise e
-	node.destroy_node()
-	# rclpy.shutdown()
-	return
+def main(args=None) -> None:
+	return ColdStartManager.Main(args)
 
 if __name__ == "__main__":
 	main()

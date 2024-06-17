@@ -1,6 +1,3 @@
-import rclpy
-from rclpy.logging import LoggingSeverity
-
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_commons.Utils.RViz import RViz
@@ -10,7 +7,7 @@ from rt_bi_core.RegionsSubscriber import RegionsSubscriber
 class SensorRenderer(RegionsSubscriber):
 	""" This Node listens to all the messages published on the topics related to sensors and renders them. """
 	def __init__(self, **kwArgs):
-		newKw = { "node_name": "renderer_sensor", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
+		newKw = { "node_name": "renderer_sensor", "loggingSeverity": Ros.LoggingSeverity.INFO, **kwArgs}
 		super().__init__(**newKw)
 		RtBiInterfaces.subscribeToSensors(self, self.enqueueUpdate)
 
@@ -34,18 +31,8 @@ class SensorRenderer(RegionsSubscriber):
 	def onTargetUpdated(self, _) -> None:
 		return
 
-def main(args=None):
-	rclpy.init(args=args)
-	node = SensorRenderer()
-	try:
-		rclpy.spin(node)
-	except KeyboardInterrupt as e:
-		pass
-	except Exception as e:
-		raise e
-	node.destroy_node()
-	# rclpy.shutdown()
-	return
+def main(args=None) -> None:
+	return SensorRenderer.Main(args)
 
 if __name__ == "__main__":
 	main()

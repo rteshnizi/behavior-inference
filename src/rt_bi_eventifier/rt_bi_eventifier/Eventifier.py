@@ -1,10 +1,3 @@
-import cProfile
-import datetime
-from pathlib import Path
-
-import rclpy
-from rclpy.logging import LoggingSeverity
-from rclpy.node import Publisher
 from rclpy.parameter import Parameter
 
 from rt_bi_commons.Base.ColdStartableNode import ColdStartable, ColdStartPayload
@@ -20,14 +13,13 @@ from rt_bi_eventifier.Model.MetricIGraph import MetricIGraph
 
 class Eventifier(ColdStartable, RegionsSubscriber):
 	def __init__(self, **kwArgs) -> None:
-		newKw = { "node_name": "eventifier", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
+		newKw = { "node_name": "eventifier", "loggingSeverity": Ros.LoggingSeverity.INFO, **kwArgs}
 		RegionsSubscriber.__init__(self, **newKw)
 		ColdStartable.__init__(self)
 		self.declareParameters()
 		self.__renderModules: list[MetricIGraph.SUBMODULE] = []
 		self.parseParameters()
-		modulePublishers: dict[MetricIGraph.SUBMODULE, Publisher | None] = {}
-		self.isProfiling: bool = False
+		modulePublishers: dict[MetricIGraph.SUBMODULE, Ros.Publisher | None] = {}
 		for module in MetricIGraph.SUBMODULES:
 			if module in self.__renderModules: (publisher, _) = RViz.createRVizPublisher(self, Ros.CreateTopicName(module))
 			else: publisher = None
@@ -72,13 +64,11 @@ class Eventifier(ColdStartable, RegionsSubscriber):
 
 	def declareParameters(self) -> None:
 		self.log(f"{self.get_fully_qualified_name()} is setting node parameters.")
-		self.declare_parameter("profile", False)
 		self.declare_parameter("renderModules", Parameter.Type.STRING_ARRAY)
 		return
 
 	def parseParameters(self) -> None:
 		self.log(f"{self.get_fully_qualified_name()} is parsing parameters.")
-		self.isProfiling = self.get_parameter("profile").get_parameter_value().bool_value
 		yamlModules = self.get_parameter("renderModules").get_parameter_value().string_array_value
 		for module in yamlModules:
 			if module in MetricIGraph.SUBMODULES:
@@ -92,25 +82,7 @@ class Eventifier(ColdStartable, RegionsSubscriber):
 		return markers
 
 def main(args=None) -> None:
-	rclpy.init(args=args)
-	node = Eventifier()
-	try:
-		if node.isProfiling:
-			node.get_logger().warn(f"{node.get_fully_qualified_name()} is collecting profiling statistics.")
-			date = datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
-			outputFile = f"/home/reza/git/behavior-inference/profiler/{date}.prof"
-			Path(outputFile).parent.mkdir(parents=True, exist_ok=True)
-
-			cProfile.runctx("rclpy.spin(node)",globals(), locals(), outputFile)
-		else:
-			rclpy.spin(node)
-	except KeyboardInterrupt as e:
-		pass
-	except Exception as e:
-		raise e
-	node.destroy_node()
-	# rclpy.shutdown()
-	return
+	return Eventifier.Main(args)
 
 if __name__ == "__main__":
 	main()

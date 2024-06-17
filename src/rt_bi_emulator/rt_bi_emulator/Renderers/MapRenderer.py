@@ -1,6 +1,3 @@
-import rclpy
-from rclpy.logging import LoggingSeverity
-
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.RtBiInterfaces import RtBiInterfaces
 from rt_bi_commons.Utils.RViz import RViz
@@ -11,7 +8,7 @@ from rt_bi_core.Spatial import MapPolygon
 class MapRenderer(RegionsSubscriber):
 	""" This Node listens to all static and dynamic map region updates and renders them. """
 	def __init__(self, **kwArgs):
-		newKw = { "node_name": "renderer_map", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
+		newKw = { "node_name": "renderer_map", "loggingSeverity": Ros.LoggingSeverity.INFO, **kwArgs}
 		super().__init__(**newKw)
 		RtBiInterfaces.subscribeToProjectiveMap(self, self.enqueueUpdate)
 		RtBiInterfaces.subscribeToAffineMap(self, self.enqueueUpdate)
@@ -35,18 +32,8 @@ class MapRenderer(RegionsSubscriber):
 	def onTargetUpdated(self, _) -> None:
 		return
 
-def main(args=None):
-	rclpy.init(args=args)
-	node = MapRenderer()
-	try:
-		rclpy.spin(node)
-	except KeyboardInterrupt as e:
-		pass
-	except Exception as e:
-		raise e
-	node.destroy_node()
-	# rclpy.shutdown()
-	return
+def main(args=None) -> None:
+	return MapRenderer.Main(args)
 
 if __name__ == "__main__":
 	main()

@@ -1,8 +1,6 @@
 from json import loads
 
-import rclpy
 from ament_index_python.packages import get_package_share_directory
-from rclpy.logging import LoggingSeverity
 from rclpy.parameter import Parameter
 
 from rt_bi_behavior import package_name
@@ -23,7 +21,7 @@ class BaNode(ColdStartable):
 	"""
 	def __init__(self, **kwArgs) -> None:
 		""" Create a Behavior Automaton node. """
-		newKw = { "node_name": "ba", "loggingSeverity": LoggingSeverity.INFO, **kwArgs}
+		newKw = { "node_name": "ba", "loggingSeverity": Ros.LoggingSeverity.INFO, **kwArgs}
 		RtBiNode.__init__(self, **newKw)
 		ColdStartable.__init__(self)
 		self.declareParameters()
@@ -105,18 +103,8 @@ class BaNode(ColdStartable):
 		if not self.shouldRender: return
 		self.__ba.render()
 
-def main(args=None):
-	rclpy.init(args=args)
-	ba = BaNode()
-	try:
-		rclpy.spin(ba)
-	except KeyboardInterrupt as e:
-		pass
-	except Exception as e:
-		raise e
-	ba.destroy_node()
-	# rclpy.shutdown()
-	return
+def main(args=None) -> None:
+	return BaNode.Main(args)
 
 if __name__ == "__main__":
 	main()
