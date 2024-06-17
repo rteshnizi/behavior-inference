@@ -272,7 +272,7 @@ def LogMessageStats() -> None:
 	if len(MessageStats) == 0: return
 	now = datetime.datetime.now()
 	date = now.strftime("%Y-%m-%d--%H-%M-%S")
-	dir = f"/home/reza/git/behavior-inference/stats/{date}"
+	dir = f"/home/reza/git/behavior-inference/log-rtbi/msg-stats/{date}"
 	for topic in MessageStats:
 		if len(MessageStats[topic]) == 0: continue
 		fileName = f"{topic}.csv"

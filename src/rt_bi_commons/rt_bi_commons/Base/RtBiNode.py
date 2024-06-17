@@ -52,7 +52,8 @@ class RtBiNode(Node, ABC):
 			if self.isProfiling:
 				self.get_logger().warn(f"{self.get_fully_qualified_name()} is collecting profiling statistics.")
 				date = datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
-				outputFile = f"/home/reza/git/behavior-inference/profiler/{date}.prof"
+				nodeName = {self.get_fully_qualified_name().replace('/', '--')}
+				outputFile = f"/home/reza/git/behavior-inference/log-rtbi/profiler/{nodeName}--{date}.prof"
 				Path(outputFile).parent.mkdir(parents=True, exist_ok=True)
 
 				cProfile.runctx("rclpy.spin(self)",globals(), locals(), outputFile)
