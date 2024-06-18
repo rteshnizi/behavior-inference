@@ -30,8 +30,11 @@ class BehaviorIGraph(NxUtils.Graph):
 		"""Returns a dictionary from target Id to path"""
 		if source not in self.nodes: return {}
 		weightFn = lambda u, v, d: 1000000 if v in visited else 1
-		paths = nx.single_source_dijkstra(self, source, cutoff=1000001)
-		destinations = cast(dict[NodeId, list[NodeId]], paths)
+		# The return value is a tuple of two dictionaries keyed by target nodes. The first dictionary stores distance to each target node. The second stores the path to each target node.
+		paths: tuple[dict[NodeId, float], dict[NodeId, list[NodeId]]] = nx.single_source_dijkstra(self, source, cutoff=1000001, weight=weightFn) # pyright: ignore[reportArgumentType]
+		destinations = paths[1]
+		# Ros.Log("DIJKSTRA", paths, severity=Ros.LoggingSeverity.ERROR)
+		# Ros.Log("DIJKSTRA", [(d, destinations[d]) for d in destinations], severity=Ros.LoggingSeverity.ERROR)
 		return destinations
 
 	def propagateOneStep(self, source: NodeId, visited: set[NodeId]) -> dict[NodeId, list[NodeId]]:
@@ -51,7 +54,7 @@ class BehaviorIGraph(NxUtils.Graph):
 		for adj in d["adjacency"]:
 			for edge in adj:
 				edge["id"] = NodeId.fromDict(edge["id"])
-		# Ros.Log("Graph Nodes", d["nodes"])
-		# Ros.Log("Graph Adjacency", d["adjacency"])
+		# Ros.Log("Graph Nodes", d["nodes"], severity=Ros.LoggingSeverity.ERROR)
+		# Ros.Log("Graph Adjacency", d["adjacency"], severity=Ros.LoggingSeverity.ERROR)
 		g = nx.adjacency_graph(d)
 		return BehaviorIGraph(g)

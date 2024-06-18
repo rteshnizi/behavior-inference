@@ -31,7 +31,7 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 	) -> None:
 		super().__init__(rvizPublisher)
 		self.timeNanoSecs = timeNanoSecs
-		self.__hIndex: int | None = None
+		self.__hIndex: int = -1
 		self.__map: list[MapPolygon] = []
 		self.__mapIdToIndex: dict[NxUtils.Id, int] = {}
 		self.__sensors: list[SensingPolygon] = []
@@ -221,7 +221,7 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 		return super().addEdge(frmId, toId, addReverseEdge, content)
 
 	@property
-	def hIndex(self) -> int | None:
+	def hIndex(self) -> int:
 		return self.__hIndex
 
 	@hIndex.setter
@@ -234,9 +234,11 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 			poly = self.getContent(id_, "polygon")
 			poly.id = poly.id.copy(hIndex=value)
 			relabeledNodes[id_] = poly.id
+		# Ros.Log(f"Labels", [(k, relabeledNodes[k]) for k in relabeledNodes])
 		relabel_nodes(self, relabeledNodes, copy=False)
 		for poly in self.map + self.sensors + self.shadows + self.antiShadows:
 			poly.id = poly.id.copy(hIndex=value)
+		return
 
 	@property
 	def map(self) -> list[MapPolygon]:

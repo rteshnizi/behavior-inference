@@ -205,6 +205,10 @@ class Polygon(ABC):
 		return self.__INTERIOR_COLOR
 
 	@property
+	def hasTrack(self) -> bool:
+		return False
+
+	@property
 	def edges(self) -> list[Shapely.LineString]:
 		"""
 		A dictionary of edge identifier to `Shapely.LineString`.

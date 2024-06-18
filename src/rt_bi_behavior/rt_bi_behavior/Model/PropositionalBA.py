@@ -145,7 +145,7 @@ class PropositionalBehaviorAutomaton(nx.DiGraph):
 			visited: set[NodeId] = set()
 			for nId in token["path"]: visited.add(nId)
 			# BFS
-			Ros.Log(f"===== Path {token['id']}", token['path'])
+			# if fromState == "Q2": Ros.Log(f"===== Path {token['id']}", token['path'])
 			extensions = iGraph.propagateOneStep(token["path"][-1], visited)
 			if len(extensions) == 0: self.__addToken(fromState, token)
 			for destination in extensions:
@@ -154,16 +154,17 @@ class PropositionalBehaviorAutomaton(nx.DiGraph):
 				path = self.__extendPath(token["path"], extensions[destination])
 				newToken = self.__createToken(path)
 				ps = iGraph.getContent(destination, "predicates")
-				Ros.Log(f"Destination {destination}", [(p, ps[p]) for p in ps])
+				# Ros.Log(f"Destination {destination}", [(p, ps[p]) for p in ps])
 				if iGraph.satisfies(destination, statement):
 					self.__addToken(toState, newToken)
 					if toState in self.__accepting:
-						Ros.Log(f"ACCEPTING {newToken['id']}", newToken["path"])
+						Ros.Log(f"ACCEPTING {newToken['id']}", newToken["path"], severity=Ros.LoggingSeverity.ERROR)
 				else:
 					tokens.append(newToken)
 		return
 
 	def reduceUncertainty(self, state: str, iGraph: BehaviorIGraph) -> None:
+		if state in self.__accepting: return
 		tokens = self.states[state]["tokens"]
 		i = 0
 		while i < (len(tokens)):
@@ -198,46 +199,6 @@ class PropositionalBehaviorAutomaton(nx.DiGraph):
 			self.__updateStateLabel(fromState)
 		Ros.Log(120 * f"┴")
 		return
-
-	# def evaluate(self, iGraph: BehaviorIGraph) -> None:
-	# 	"""
-	# 	Traverses the BA states in BFS fashion and updates their tokens.
-	# 	BFS traversal ensures tokens are pushed all the way.
-	# 	"""
-	# 	Ros.Log(128 * f"┬")
-	# 	totalTokens = 0
-	# 	for s in self.states: totalTokens += len(self.states[s]["tokens"])
-	# 	if totalTokens > self.MAX_TOKENS_WARNING: Ros.Logger().error(f"Large number of tokens: {totalTokens}")
-	# 	Ros.Log(f"Evaluating tokens of {self.name}.")
-	# 	statesToUpdate = deque([self.__start], maxlen=len(self.states))
-	# 	while len(statesToUpdate) > 0:
-	# 		fromState = statesToUpdate.popleft() # CSpell: ignore -- popleft
-	# 		self.reduceUncertainty(fromState, iGraph)
-	# 		Ros.Log(f"From State {fromState}.")
-	# 		Ros.Log(f"AFTER REDUCTION has {len(self.states[fromState]['tokens'])} tokens.")
-	# 		for toState in self[fromState]:
-	# 			statesToUpdate.append(toState)
-	# 			if len(self.states[fromState]["tokens"]) == 0: continue
-	# 			Ros.Log(f"To State {toState}")
-	# 			statement = self[fromState][toState]["statement"]
-	# 			tokens = self.states[fromState]["tokens"].copy()
-	# 			i = 0
-	# 			while i < len(tokens):
-	# 				extensions = iGraph.neighbors(tokens[i]["path"][-1])
-	# 				for destination in extensions:
-	# 					path = self.__extendPath(tokens[i]["path"], [tokens[i]["path"][-1], destination])
-	# 					newToken = self.__createToken(path)
-	# 					if iGraph.satisfies(destination, statement):
-	# 						tokens.pop(i)
-	# 						self.__addToken(toState, newToken)
-	# 						if toState in self.__accepting:
-	# 							Ros.Log(f"ACCEPTING {newToken['id']}", newToken["path"])
-	# 					else:
-	# 						tokens.append(newToken)
-	# 			for newToken in newTokens: self.__addToken(fromState, newToken)
-	# 		self.__updateStateLabel(fromState)
-	# 	Ros.Log(128 * f"┴")
-	# 	return
 
 	def setSymbolicNameOfPredicate(self, symbols: dict[str, str]) -> None:
 		"""

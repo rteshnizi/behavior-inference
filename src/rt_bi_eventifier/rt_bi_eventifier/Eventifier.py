@@ -40,15 +40,15 @@ class Eventifier(ColdStartable, RegionsSubscriber):
 		self.publishColdStartDone()
 		return
 
-	def __publishBaMsg(self, iGraph: MetricIGraph, isomorphism: dict[str, str]) -> None:
-		if len(isomorphism) > 0:
-			msg = Msgs.RtBi.Isomorphism()
-			msg.isomorphism_json = dumps(isomorphism)
-			Ros.Publish(self.__isoPublisher, msg)
-		else:
+	def __publishBaMsg(self, iGraph: MetricIGraph, isomorphism: dict[str, str] | None) -> None:
+		if isomorphism is None or len(isomorphism) == 0:
 			msg = Msgs.RtBi.IGraph()
 			msg.adjacency_json = iGraph.asStr()
 			Ros.Publish(self.__iGraphPublisher, msg)
+		else:
+			msg = Msgs.RtBi.Isomorphism()
+			msg.isomorphism_json = dumps(isomorphism)
+			Ros.Publish(self.__isoPublisher, msg)
 		return
 
 	def __onUpdate(self, polygon: MapPolygon | SensingPolygon) -> None:

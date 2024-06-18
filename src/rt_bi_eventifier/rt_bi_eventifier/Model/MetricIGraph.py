@@ -4,6 +4,7 @@ from json import dumps
 from typing import Any, Callable, Literal, cast
 
 from networkx import adjacency_data, subgraph_view
+from regex import F
 
 from rt_bi_commons.Shared.Color import RGBA, ColorUtils
 from rt_bi_commons.Utils import Ros
@@ -54,7 +55,6 @@ class MetricIGraph(NxUtils.Graph[GraphPolygon]):
 		super().__init__(rVizPublisher=rvizPublisher)
 		# super().__init__(rVizPublisher=None)
 		self.__history: list[ConnectivityGraph] = []
-		self.hIndex = 0
 		self.__nodeMapping = {}
 
 		self.componentEvents: list[list[Shapely.Polygon]] = []
@@ -87,7 +87,8 @@ class MetricIGraph(NxUtils.Graph[GraphPolygon]):
 
 	def topLayers(self, depth = 2) -> "MetricIGraph":
 		# self.hIndex - 1 is because the value of hIndex is one more than the last assigned hIndex.
-		filterFn = lambda n: cast(NxUtils.Id, n).hIndex > (self.hIndex - 1) - depth
+		hIndex = 0 if self.depth == 0 else cast(int, self.history[-1].hIndex)
+		filterFn = lambda n: cast(NxUtils.Id, n).hIndex > (hIndex - depth)
 		g = cast(MetricIGraph, subgraph_view(self, filter_node=filterFn))
 		return g
 
@@ -275,42 +276,36 @@ class MetricIGraph(NxUtils.Graph[GraphPolygon]):
 			self.removeNode(id_)
 		if delete: self.history.pop(index)
 
-	def __replaceInHistory(self, index: int, graph: ConnectivityGraph) -> None:
-		""" **Does not add nodes.** This just manipulates `self.history` variable. """
-		self.__removeFromHistory(index, False)
-		Ros.Log(f"REPLACE graph with {len(graph.shadows)} shadows and {len(graph.antiShadows)} anti-shadows.")
-		# graph.logGraphNodes()
-		hIndex = cast(int, self.history[index].hIndex)
-		graph.hIndex = hIndex
-		self.history[index] = graph
-		return
-
-	def __isomorphism(self, oldG: ConnectivityGraph) -> dict[str, str]:
-		matcher = NxUtils.GraphMatcher(oldG, self.history[-1], self.__ISOMORPHIC_DISTANCE_LIMIT)
-		assert matcher.is_isomorphic(), "NOT ISOMORPHIC, Inaccuracy in isomorphism test detected. Replace isIsomorphic() with this implementation if this happens."
+	def __isIsomorphic(self, graph: ConnectivityGraph) -> dict[str, str] | None:
+		if self.depth == 0: return None
+		matcher = NxUtils.GraphMatcher(self.history[-1], graph, self.__ISOMORPHIC_DISTANCE_LIMIT)
+		if not matcher.is_isomorphic(): return None
 		__iso: dict[NxUtils.Id, NxUtils.Id] = matcher.mapping # pyright: ignore[reportAttributeAccessIssue]
 		m: dict[str, str] = {}
 		for id_ in __iso:
 			m[id_.stringify()] = __iso[id_].stringify()
 		return m
 
-	def __appendToHistory(self, graph: ConnectivityGraph, eventHandler: Callable[["MetricIGraph", dict], None]) -> None:
+	def __appendToHistory(self, graph: ConnectivityGraph, eventHandler: Callable[["MetricIGraph", dict | None], None]) -> None:
 		shouldBroadcastEvent = False
-		isomorphicUpdate = False
 		if self.depth > 0 and graph.timeNanoSecs < self.history[-1].timeNanoSecs:
 				Ros.Logger().error(f"Older graph than latest in history --> {graph.timeNanoSecs} vs {self.history[-1].timeNanoSecs}")
 				return
 
-		if self.depth > 0 and MetricIGraph.isIsomorphic(self.history[-1], graph):
-			Ros.Log("Isomorphic graph detected.")
-			isomorphicOldG = self.history[-1]
-			self.__replaceInHistory(self.depth - 1, graph)
-			isomorphicUpdate = True
+		isomorphism: dict[str, str] | None = None
+		if self.depth > 0:
+			isomorphism = self.__isIsomorphic(graph)
+		if isomorphism is not None:
+			graph.hIndex = self.history[-1].hIndex
+			isomorphism = self.__isIsomorphic(graph)
+			self.__removeFromHistory(self.depth - 1, False)
+			Ros.Log(f"REPLACE graph with {len(graph.shadows)} shadows and {len(graph.antiShadows)} anti-shadows.")
+			# graph.logGraphNodes()
+			self.history[-1] = graph
 		else:
 			Ros.Log(f"APPENDING graph with {len(graph.shadows)} shadows and {len(graph.antiShadows)} anti-shadows.")
-			graph.hIndex = self.hIndex
+			graph.hIndex = 0 if self.depth == 0 else cast(int, self.history[-1].hIndex) + 1
 			self.history.append(graph)
-			self.hIndex += 1
 
 		for id_ in graph.nodes:
 			id_ = cast(NxUtils.Id, id_)
@@ -324,11 +319,7 @@ class MetricIGraph(NxUtils.Graph[GraphPolygon]):
 		if self.depth > self.__MAX_HISTORY:
 			Ros.Log(f"History depth is more than MAX={self.__MAX_HISTORY} graphs.")
 			self.__removeFromHistory(0, True)
-		if shouldBroadcastEvent:
-			isomorphism: dict[str, str] = {}
-			if isomorphicUpdate:
-				isomorphism = self.__isomorphism(isomorphicOldG)
-			eventHandler(self, isomorphism)
+		if shouldBroadcastEvent: eventHandler(self, isomorphism)
 		self.render()
 		return
 
@@ -357,7 +348,7 @@ class MetricIGraph(NxUtils.Graph[GraphPolygon]):
 				maxNs = ctr.latestNanoSecs
 		return (minNs, maxNs)
 
-	def updatePolygon(self, polygon: GraphPolygon, eventHandler: Callable[["MetricIGraph", dict], None]) -> None:
+	def updatePolygon(self, polygon: GraphPolygon, eventHandler: Callable[["MetricIGraph", dict | None], None]) -> None:
 		Ros.Log(128 * "↓") # A separator in the logs
 		Ros.Log(f"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX {repr(self)} XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
 		Ros.Log("Updated Poly ->", [ f"{polygon}", f"T={polygon.timeNanoSecs}", f"{polygon.predicates}"])

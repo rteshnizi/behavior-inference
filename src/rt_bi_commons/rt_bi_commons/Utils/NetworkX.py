@@ -12,6 +12,7 @@ from rt_bi_commons.Shared.Predicates import Predicates
 from rt_bi_commons.Utils import Ros
 from rt_bi_commons.Utils.Geometry import GeometryLib
 from rt_bi_commons.Utils.RViz import RViz
+from rt_bi_core.Spatial.SensingPolygon import SensingPolygon
 
 
 class _PolygonLike(Protocol):
@@ -25,6 +26,9 @@ class _PolygonLike(Protocol):
 	def timeNanoSecs(self) -> int: ...
 	@property
 	def predicates(self) -> Predicates: ...
+	@property
+	def hasTrack(self) -> bool: ...
+
 
 
 _Polygon = TypeVar("_Polygon", bound=_PolygonLike)
@@ -177,10 +181,10 @@ class NxUtils:
 			super().__init__(G1, G2)
 
 		def semantic_feasibility(self, G1_node: NodeId, G2_node: NodeId):
-			# if G1_node.regionId != G2_node.regionId: return False
-			if G1_node.hIndex != G2_node.hIndex: return False
 			g1Poly = self.G1.getContent(G1_node, "polygon")
 			g2Poly = self.G2.getContent(G2_node, "polygon")
+			if g1Poly.hasTrack != g2Poly.hasTrack:
+				return False
 			d = GeometryLib.hausdorff(g1Poly.interior, g2Poly.interior)
 			if d > self.metricDistanceLimit: return False
 			return super().semantic_feasibility(G1_node, G2_node)
