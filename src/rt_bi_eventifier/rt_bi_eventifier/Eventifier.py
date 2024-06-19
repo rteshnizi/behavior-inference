@@ -48,6 +48,7 @@ class Eventifier(ColdStartable, RegionsSubscriber):
 		else:
 			msg = Msgs.RtBi.Isomorphism()
 			msg.isomorphism_json = dumps(isomorphism)
+			Ros.RecordReductionStats(iGraph.history[-1].timeNanoSecs, iGraph.topLayersPolyVerts, iGraph.topLayersComplexity)
 			Ros.Publish(self.__isoPublisher, msg)
 		return
 
@@ -87,6 +88,10 @@ class Eventifier(ColdStartable, RegionsSubscriber):
 	def createMarkers(self) -> list[RViz.Msgs.Marker]:
 		markers = []
 		return markers
+
+	def destroy_node(self) -> None:
+		Ros.LogReductionStats()
+		return super().destroy_node()
 
 def main(args=None) -> None:
 	return Eventifier.Main(args)

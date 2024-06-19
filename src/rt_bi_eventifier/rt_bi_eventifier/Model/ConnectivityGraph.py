@@ -39,6 +39,7 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 		self.__shadows: list[MapPolygon] = []
 		self.__antiShadows: list[SensingPolygon] = []
 		self.__tracklet: Tracklet | None = None
+		self.__numberOfPolygonVerts = -1
 		Ros.Log(f"Constructing Connectivity Graph @ {self.timeNanoSecs}")
 		for poly in mapPolys + sensorPolys: poly.id.copy(hIndex=self.__hIndex)
 		self.__constructMap(polys=mapPolys)
@@ -213,6 +214,7 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 
 	def addNode(self, id: NodeId, content: NodeData) -> NodeId:
 		id = id.copy(hIndex=-1) # CGraph nodes are do not have an hIndex
+		self.__numberOfPolygonVerts += 0 if content.polygon is None else len(content.polygon.edges)
 		return super().addNode(id, content)
 
 	def addEdge(self, frmId: NodeId, toId: NodeId, addReverseEdge=False, content: EdgeData | None = None) -> None:
@@ -255,6 +257,10 @@ class ConnectivityGraph(NxUtils.Graph[GraphPolygon]):
 	@property
 	def antiShadows(self) -> list[SensingPolygon]:
 		return self.__antiShadows
+
+	@property
+	def numberOfPolygonVertices(self) -> int:
+		return self.__numberOfPolygonVerts
 
 	def getMapPoly(self, id_: NxUtils.Id) -> MapPolygon:
 		id__ = id_.copy(timeNanoSecs=-1, hIndex=-1, subPartId="")

@@ -76,6 +76,18 @@ class MetricIGraph(NxUtils.Graph[GraphPolygon]):
 		if self.depth == 0: return -1
 		return self.history[-1].timeNanoSecs
 
+	@property
+	def topLayersComplexity(self) -> int:
+		g = self.topLayers()
+		return len(g.nodes) + len(g.edges)
+
+	@property
+	def topLayersPolyVerts(self) -> int:
+		if self.depth == 0: return 0
+		if self.depth == 1: return self.history[-1].numberOfPolygonVertices
+		if self.depth > 1: return self.history[-1].numberOfPolygonVertices + self.history[-2].numberOfPolygonVertices
+		raise RuntimeError("This never happens.")
+
 	def __repr__(self) -> str:
 		if self.depth == 0:
 			timeRangeStr = "0"
