@@ -2,6 +2,7 @@
 import csv
 import datetime
 import logging
+import os
 from functools import partial
 from math import inf, isnan, nan
 from pathlib import Path
@@ -18,25 +19,22 @@ __Topic = TypeVar("__Topic")
 NAMESPACE = "REZA_TESHNIZI_NS"
 __LOGGER: RcutilsLogger | None = None
 __DEFAULT_NODE: Node
-__IS_PROFILING: bool = False
 logging.basicConfig(format="[+][%(levelname)s]: %(message)s", force=True)
 __rtBiLog: Callable[[str], bool] = lambda m: False
 
 Array: TypeAlias = Sequence[__Topic] | AbstractSet[__Topic] | list[__Topic]
 
 def IsProfiling() -> bool:
-	global __IS_PROFILING
-	return __IS_PROFILING
+	return os.getenv("RT_BI_PROFILE") == "true"
 
-def SetLogger(node: Node, logger: RcutilsLogger, defaultSeverity: LoggingSeverity, isProfiling=False) -> None:
+def SetLogger(node: Node, logger: RcutilsLogger, defaultSeverity: LoggingSeverity, isProfiling: bool) -> None:
 	global __LOGGER
 	global __DEFAULT_NODE
-	global __IS_PROFILING
 	global __rtBiLog
 	__LOGGER = logger
 	__DEFAULT_NODE = node
-	__IS_PROFILING = isProfiling
 	__rtBiLog = partial(__LOGGER.log, severity=defaultSeverity)
+	if isProfiling: os.environ["RT_BI_PROFILE"] = "true"
 	return
 
 def Logger() -> RcutilsLogger | logging.Logger:
@@ -67,7 +65,7 @@ def Logger() -> RcutilsLogger | logging.Logger:
 
 def Log(msg: str, l: Iterable | None = None, indentStr = "\t\t", severity: LoggingSeverity | None = None) -> bool:
 	global __IS_PROFILING
-	if __IS_PROFILING: return True
+	if IsProfiling(): return True
 	if l is not None:
 		sep = f"\n{indentStr}"
 		if isinstance(l, str): l = [l]
@@ -254,6 +252,9 @@ def WaitForServiceToStart(node: Node, client: Client) -> None:
 	while not client.wait_for_service(): pass
 	return
 
+ReductionStats: list[tuple[int, int, int]] = []
+"""[(`time`, `poly verts`, `graph V+E`)]"""
+
 MessageStats: dict[str, list[tuple[int, int]]] = {}
 """`topic`: [(`timeNS`, `count`)]"""
 
@@ -272,15 +273,34 @@ def LogMessageStats() -> None:
 	if len(MessageStats) == 0: return
 	now = datetime.datetime.now()
 	date = now.strftime("%Y-%m-%d--%H-%M-%S")
-	dir = f"/home/reza/git/behavior-inference/log-rtbi/msg-stats/{date}"
+	dir = f"/home/reza/git/behavior-inference/log-rtbi/stats/{date}"
 	for topic in MessageStats:
 		if len(MessageStats[topic]) == 0: continue
 		fileName = f"{topic}.csv"
 		filePath = Path(f"{dir}{fileName}").absolute()
 		filePath.parent.mkdir(parents=True, exist_ok=True)
 		# Write the dictionary to a CSV file
-		with open(filePath, mode='w', newline='') as file:
+		with open(filePath, mode="w", newline="") as file:
 			writer = csv.writer(file)
 			for stat in MessageStats[topic]:
 				writer.writerow(stat)
+	return
+
+def RecordReductionStats(timeNS: int, numVerts: int, numGVE: int) -> None:
+	ReductionStats.append((timeNS, numVerts, numGVE))
+	return
+
+def LogReductionStats() -> None:
+	if len(MessageStats) == 0: return
+	now = datetime.datetime.now()
+	date = now.strftime("%Y-%m-%d--%H-%M-%S")
+	dir = f"/home/reza/git/behavior-inference/log-rtbi/stats/{date}"
+	fileName = "reduction.csv"
+	filePath = Path(f"{dir}/{fileName}").absolute()
+	filePath.parent.mkdir(parents=True, exist_ok=True)
+	# Write the dictionary to a CSV file
+	with open(filePath, mode="w", newline="") as file:
+		writer = csv.writer(file)
+		for stat in ReductionStats:
+			writer.writerow(stat)
 	return

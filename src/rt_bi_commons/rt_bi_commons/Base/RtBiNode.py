@@ -16,11 +16,11 @@ class RtBiNode(Node, ABC):
 		newKw = { "node_name": "node_base", **kwArgs}
 		super().__init__(**newKw)
 		self.__defaultLoggingSeverity: LoggingSeverity = loggingSeverity
-		Ros.SetLogger(self, self.get_logger(), self.__defaultLoggingSeverity)
 		self.declare_parameter("render", False)
 		self.shouldRender: bool = self.get_parameter("render").get_parameter_value().bool_value
 		self.declare_parameter("profile", False)
 		self.isProfiling: bool = self.get_parameter("profile").get_parameter_value().bool_value
+		Ros.SetLogger(self, self.get_logger(), self.__defaultLoggingSeverity, self.isProfiling)
 		self.log("%s is initializing." % self.get_fully_qualified_name())
 
 	def log(self, msg: str) -> bool:
@@ -52,10 +52,9 @@ class RtBiNode(Node, ABC):
 			if self.isProfiling:
 				self.get_logger().warn(f"{self.get_fully_qualified_name()} is collecting profiling statistics.")
 				date = datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
-				nodeName = {self.get_fully_qualified_name().replace('/', '--')}
-				outputFile = f"/home/reza/git/behavior-inference/log-rtbi/profiler/{nodeName}--{date}.prof"
+				nodeName = self.get_fully_qualified_name().replace("/", "X")
+				outputFile = f"/home/reza/git/behavior-inference/log-rtbi/profiler/{date}/{nodeName}.prof"
 				Path(outputFile).parent.mkdir(parents=True, exist_ok=True)
-
 				cProfile.runctx("rclpy.spin(self)",globals(), locals(), outputFile)
 			else:
 				rclpy.spin(self)
@@ -64,7 +63,6 @@ class RtBiNode(Node, ABC):
 		except Exception as e:
 			raise e
 		return
-
 
 	@final
 	def destroy_node(self) -> None:
