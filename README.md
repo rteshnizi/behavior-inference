@@ -7,10 +7,10 @@
 - [A Practical Method of Behavior Estimation in Dynamic Robotic Surveillance Settings](#a-practical-method-of-behavior-estimation-in-dynamic-robotic-surveillance-settings)
 	- [Table of Contents](#table-of-contents)
 	- [Introduction](#introduction)
+	- [Demonstration](#demonstration)
 	- [Project Structure](#project-structure)
 	- [Installation](#installation)
 	- [Usage](#usage)
-	- [Case Study](#case-study)
 	- [Citation](#citation)
 	- [License](#license)
 
@@ -30,6 +30,11 @@ by addressing this problem on three fronts by answering the questions of:
 how to write formal specifications for motion-based behavior,
 what is involved in recognizing behavior using these specifications,
 and how to design a modular perception process to integrate models for behavior recognition.
+
+## Demonstration
+A video recording of the case study presented in the dissertation is linked below.
+
+[![Video Demonstration](https://img.youtube.com/vi/ccrulp8tqR4/0.jpg)](https://www.youtube.com/watch?v=ccrulp8tqR4)
 
 ## Project Structure
 [WIP]
@@ -83,8 +88,6 @@ and how to design a modular perception process to integrate models for behavior 
 	python src/models/evaluate_model.py --config experiments/config.yaml
 	``` -->
 
-## Case Study
-[WIP]
 <!-- Experiment configurations are stored in the `experiments` directory. Each configuration file contains the parameters for a specific experiment. To run an experiment, use:
 
 ```bash
