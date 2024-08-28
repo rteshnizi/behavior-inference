@@ -103,7 +103,8 @@ If you use any part of this work in your research, please cite the dissertation 
   title        = {A Practical Method of Behavior Estimation in Dynamic Robotic Surveillance Settings},
   school       = {Texas A\&M University},
   year         = {2024},
-  address      = {College Station, USA},
+  address      = {College Station, TX, USA},
+  type         = {PhD Dissertation},
   month        = {August},
 }
 ```
