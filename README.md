@@ -1,10 +1,10 @@
-# A Practical Method of Behavior Estimation in Dynamic Robotic Surveillance Settings
+# Behavior Inference in Dynamic Surveillance Settings
 
 [![License](https://img.shields.io/badge/license-CC%20BY--NC-blue.svg)](LICENSE)
 <!-- ![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg) -->
 
 ## Table of Contents
-- [A Practical Method of Behavior Estimation in Dynamic Robotic Surveillance Settings](#a-practical-method-of-behavior-estimation-in-dynamic-robotic-surveillance-settings)
+- [Behavior Inference in Dynamic Surveillance Settings](#behavior-inference-in-dynamic-surveillance-settings)
 	- [Table of Contents](#table-of-contents)
 	- [Introduction](#introduction)
 	- [Demonstration](#demonstration)
