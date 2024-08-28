@@ -17,6 +17,7 @@
 ## Introduction
 This repository contains the code, data, and supplementary materials for my PhD dissertation titled
 **"A Practical Method of Behavior Estimation in Dynamic Robotic Surveillance Settings"**.
+The slide deck that I prepared for my defense session is available [here](/docs/derfense.pdf).
 
 This work studies how a robotic system can recognize patterns in movements
 of a target based on formal specifications given by an end-user.
